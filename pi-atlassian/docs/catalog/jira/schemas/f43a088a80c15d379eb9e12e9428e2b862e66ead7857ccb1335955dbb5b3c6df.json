@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"statusId":{"description":"The unique ID of the status.","format":"int32","readOnly":true,"type":"integer"},"statusName":{"description":"The name of the status.","readOnly":true,"type":"string"}},"type":"object"}

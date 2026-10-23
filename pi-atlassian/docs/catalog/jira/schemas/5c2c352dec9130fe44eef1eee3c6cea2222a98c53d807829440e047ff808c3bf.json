@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Error during remove field parameters operation.","properties":{"code":{"type":"string"},"message":{"type":"string"}},"type":"object"}

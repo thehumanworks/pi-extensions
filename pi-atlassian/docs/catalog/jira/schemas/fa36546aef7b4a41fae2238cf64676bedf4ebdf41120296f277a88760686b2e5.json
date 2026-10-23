@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Errors of bulk edit action.","properties":{"errorMessages":{"description":"The error messages.","items":{"type":"string"},"type":"array"},"errors":{"additionalProperties":{"type":"string"},"description":"The errors.","type":"object"}},"required":["errorMessages","errors"],"type":"object"}

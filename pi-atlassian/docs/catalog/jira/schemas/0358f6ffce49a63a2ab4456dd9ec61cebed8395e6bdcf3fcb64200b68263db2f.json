@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A parsed JQL query.","properties":{"orderBy":{"$ref":"#/components/schemas/JqlQueryOrderByClause"},"where":{"$ref":"#/components/schemas/JqlQueryClause"}},"type":"object"}

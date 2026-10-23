@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Workflow schemes using the workflow.","properties":{"workflowId":{"description":"The workflow ID.","type":"string"},"workflowSchemes":{"$ref":"#/components/schemas/WorkflowSchemeUsagePage"}},"type":"object"}

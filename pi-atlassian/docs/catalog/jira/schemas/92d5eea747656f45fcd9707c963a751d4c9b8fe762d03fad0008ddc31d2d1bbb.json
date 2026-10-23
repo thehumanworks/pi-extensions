@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of an issue navigator column item.","properties":{"label":{"description":"The issue navigator column label.","type":"string"},"value":{"description":"The issue navigator column value.","type":"string"}},"type":"object"}

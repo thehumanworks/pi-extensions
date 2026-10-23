@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The list of projects to pin or unpin the issue panel to or from.","properties":{"action":{"description":"The action to perform: PIN or UNPIN.","enum":["PIN","UNPIN"],"type":"string"},"projectIdOrKey":{"description":"The project ID or key.","type":"string"}},"required":["action","projectIdOrKey"],"type":"object"}

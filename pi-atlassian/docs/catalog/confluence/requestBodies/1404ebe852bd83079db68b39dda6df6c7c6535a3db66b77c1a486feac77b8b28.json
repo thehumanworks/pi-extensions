@@ -1,0 +1,1 @@
+{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["status","title"],"properties":{"status":{"enum":["current","draft"],"type":"string","description":"The status of the page, current or draft."},"title":{"type":"string","description":"The updated title for the page"}}}}}}

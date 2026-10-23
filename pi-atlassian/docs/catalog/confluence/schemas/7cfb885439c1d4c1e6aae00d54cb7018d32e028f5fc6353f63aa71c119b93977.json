@@ -1,0 +1,1 @@
+{"type":"object","required":["id","displayName"],"properties":{"id":{"type":"string","description":"The platform id of the permission (e.g. `VIEW_CONTENT`)."},"displayName":{"type":"string","description":"Human-readable name of the permission."}}}

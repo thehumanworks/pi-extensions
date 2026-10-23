@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"List of updates for a custom fields.","properties":{"updates":{"items":{"$ref":"#/components/schemas/MultipleCustomFieldValuesUpdate"},"type":"array"}},"type":"object","writeOnly":true}

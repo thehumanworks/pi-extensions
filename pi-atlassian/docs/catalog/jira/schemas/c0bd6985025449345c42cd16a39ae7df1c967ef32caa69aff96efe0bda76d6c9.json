@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Identifier for a field for example FIELD\\_ID.","discriminator":{"propertyName":"type"},"properties":{"identifier":{"type":"object"},"type":{"type":"string"}},"required":["type"],"type":"object","writeOnly":true}

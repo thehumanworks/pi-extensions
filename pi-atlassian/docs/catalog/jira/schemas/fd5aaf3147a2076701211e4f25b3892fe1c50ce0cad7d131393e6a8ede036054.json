@@ -1,0 +1,1 @@
+{"description":"Default value for a float (number) custom field.","properties":{"contextId":{"description":"The ID of the context.","type":"string"},"number":{"description":"The default floating-point number.","format":"double","type":"number"},"type":{"type":"string"}},"required":["contextId","number","type"],"type":"object"}

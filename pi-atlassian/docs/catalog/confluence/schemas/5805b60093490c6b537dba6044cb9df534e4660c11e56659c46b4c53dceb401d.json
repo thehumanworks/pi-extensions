@@ -1,0 +1,1 @@
+{"enum":["plain","view"],"type":"string","description":"The formats a space description can be represented as. A subset of BodyRepresentation."}

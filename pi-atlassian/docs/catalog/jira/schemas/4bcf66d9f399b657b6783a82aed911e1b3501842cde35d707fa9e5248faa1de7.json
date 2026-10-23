@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"levels":{"description":"The list of scheme levels which should be added to the security scheme.","items":{"$ref":"#/components/schemas/SecuritySchemeLevelBean"},"type":"array","writeOnly":true}},"type":"object"}

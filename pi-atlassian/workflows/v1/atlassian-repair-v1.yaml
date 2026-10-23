@@ -1,0 +1,39 @@
+# Single integration writer, followed by independent deterministic checks.
+type: graph
+# Only dotenvx may decrypt/load the local credential file; Dagu must not shadow it.
+dotenv: []
+# Explicit runner env: Dagu does not inherit arbitrary parent variables.
+# Create this private directory before launching (see workflows/README.md).
+env:
+  - TMPDIR: "${params.WORKSPACE}/.atlassian/tmp"
+max_active_steps: 2
+params:
+  - WORKSPACE: "/home/rodat/.config/mise/agents/pi/extensions/atlassian"
+harnesses:
+  pi-codex:
+    binary: pi
+    prefix_args: ["--print", "--provider", "openai", "--no-extensions", "--no-mcp", "--no-skills", "--no-prompt-templates", "--no-session", "--no-context-files", "--no-approve", "--tools", "read,bash,edit,write"]
+    prompt_mode: arg
+    prompt_position: after_flags
+steps:
+  - id: repair
+    working_dir: "${params.WORKSPACE}"
+    action: harness.run
+    with:
+      provider: pi-codex
+      model: gpt-6.1-sol
+      thinking: medium
+      prompt: "@workflows/v1/prompts/repair.md"
+    timeout_sec: 900
+    stdout: { artifact: repair/fixes.md }
+    stderr: { artifact: logs/repair.log }
+  - id: typecheck
+    depends: [repair]
+    working_dir: "${params.WORKSPACE}"
+    run: npm run check
+    stdout: { artifact: checks/typecheck.txt }
+  - id: offline_tests
+    depends: [repair]
+    working_dir: "${params.WORKSPACE}"
+    run: npm test
+    stdout: { artifact: checks/offline-tests.txt }

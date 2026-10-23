@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"current_count":{"format":"int32","type":"integer"},"entity_type":{"type":"string"},"error_code":{"type":"string"},"limit_type":{"type":"string"},"max_allowed_limit":{"format":"int32","type":"integer"},"message":{"type":"string"},"scope_id":{"type":"string"}},"type":"object"}

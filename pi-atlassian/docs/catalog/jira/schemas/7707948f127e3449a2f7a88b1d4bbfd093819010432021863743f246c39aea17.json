@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Request for associating field schemes to projects.","properties":{"projectIds":{"description":"List of project IDs to associate with field schemes","items":{"description":"List of project IDs to associate with field schemes","format":"int64","type":"integer"},"type":"array"}},"required":["projectIds"],"type":"object","writeOnly":true}

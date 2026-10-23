@@ -1,0 +1,1 @@
+{"type":"object","properties":{"inlineMarkerRef":{"type":"string","description":"Property value used to reference the highlighted element in DOM."},"inlineOriginalSelection":{"type":"string","description":"Text that is highlighted."}}}

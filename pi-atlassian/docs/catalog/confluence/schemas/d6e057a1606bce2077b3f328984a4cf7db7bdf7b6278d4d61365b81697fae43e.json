@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string","description":"ID of the ancestor"},"type":{"$ref":"#/components/schemas/AncestorType"}}}

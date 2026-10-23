@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The list of features on a project.","properties":{"features":{"description":"The project features.","items":{"$ref":"#/components/schemas/ProjectFeature"},"type":"array"}},"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details about the analysed Jira expression.","properties":{"results":{"description":"The results of Jira expressions analysis.","items":{"$ref":"#/components/schemas/JiraExpressionAnalysis"},"type":"array"}},"required":["results"],"type":"object"}

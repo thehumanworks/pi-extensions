@@ -1,0 +1,1 @@
+{"anyOf":[{"$ref":"#/components/schemas/ListOperand"},{"$ref":"#/components/schemas/ValueOperand"},{"$ref":"#/components/schemas/FunctionOperand"},{"$ref":"#/components/schemas/KeywordOperand"}],"description":"Details of an operand in a JQL clause.","type":"object"}

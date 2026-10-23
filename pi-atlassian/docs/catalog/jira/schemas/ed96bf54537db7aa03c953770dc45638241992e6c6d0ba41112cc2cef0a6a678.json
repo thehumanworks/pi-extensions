@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Associated issue type screen scheme and project.","properties":{"issueTypeScreenSchemeId":{"description":"The ID of the issue type screen scheme.","type":"string","writeOnly":true},"projectId":{"description":"The ID of the project.","type":"string","writeOnly":true}},"type":"object"}

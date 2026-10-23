@@ -1,0 +1,1 @@
+{"enum":["open","reopened","resolved","dangling"],"type":"string","description":"Inline comment resolution status"}

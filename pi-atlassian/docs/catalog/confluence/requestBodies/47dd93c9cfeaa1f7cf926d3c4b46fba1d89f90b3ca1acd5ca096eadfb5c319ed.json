@@ -1,0 +1,1 @@
+{"required":false,"content":{"application/json":{"schema":{"type":"object","properties":{"durationInMinutes":{"type":"integer","format":"int32","description":"The requested duration of admin key access in minutes, up to a maximum of 60 minutes, after which the issued admin key will automatically expire.","example":60}}}}}}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The worflow scheme.","properties":{"id":{"description":"The workflow scheme ID.","type":"string"}},"type":"object"}

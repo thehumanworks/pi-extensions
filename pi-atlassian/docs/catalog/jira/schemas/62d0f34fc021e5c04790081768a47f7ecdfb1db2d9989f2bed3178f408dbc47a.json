@@ -1,0 +1,1 @@
+{"additionalProperties":false,"nullable":true,"properties":{"boards":{"description":"The boards to be associated with the project.","items":{"$ref":"#/components/schemas/BoardPayload"},"type":"array"}},"type":"object"}

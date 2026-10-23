@@ -1,0 +1,1 @@
+{"type":"object","properties":{"operation":{"description":"The type of operation.","type":"string"},"targetType":{"description":"The type of entity the operation type targets.","type":"string"}}}

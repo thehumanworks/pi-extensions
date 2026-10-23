@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"priorityId":{"type":"string"}},"required":["priorityId"],"type":"object"}

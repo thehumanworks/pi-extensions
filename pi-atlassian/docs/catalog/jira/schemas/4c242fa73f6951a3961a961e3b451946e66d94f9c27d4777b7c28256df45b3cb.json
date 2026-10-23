@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"List of all permission schemes.","properties":{"permissionSchemes":{"description":"Permission schemes list.","items":{"$ref":"#/components/schemas/PermissionScheme"},"readOnly":true,"type":"array"}},"type":"object"}

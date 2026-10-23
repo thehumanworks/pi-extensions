@@ -1,0 +1,1 @@
+{"description":"The default value for a URL custom field.","properties":{"contextId":{"description":"The ID of the context.","type":"string"},"type":{"type":"string"},"url":{"description":"The default URL.","type":"string"}},"required":["contextId","type","url"],"type":"object"}

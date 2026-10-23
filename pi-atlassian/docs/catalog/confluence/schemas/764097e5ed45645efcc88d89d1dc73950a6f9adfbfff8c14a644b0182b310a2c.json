@@ -1,0 +1,1 @@
+{"enum":["created-date","-created-date","id","-id","modified-date","-modified-date"],"type":"string","description":"The sort fields for child custom content. The default sort direction is ascending by id. To sort in descending order, append a `-` character before the sort field. For example, `fieldName` or `-fieldName`."}

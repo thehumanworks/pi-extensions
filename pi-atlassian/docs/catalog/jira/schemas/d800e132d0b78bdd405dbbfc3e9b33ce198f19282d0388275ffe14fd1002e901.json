@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A page of issue types.","properties":{"nextPageToken":{"description":"Page token for the next page of issue type usages.","type":"string"},"values":{"description":"The list of issue types.","items":{"$ref":"#/components/schemas/StatusProjectIssueTypeUsage"},"type":"array"}},"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":true,"description":"The ID of an issue resolution.","properties":{"id":{"description":"The ID of the issue resolution.","readOnly":true,"type":"string"}},"required":["id"],"type":"object"}

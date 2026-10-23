@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"id":{"format":"int64","type":"integer"},"iso8601Date":{"type":"string"}},"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The ID of an issue type screen scheme.","properties":{"id":{"description":"The ID of the issue type screen scheme.","readOnly":true,"type":"string"}},"required":["id"],"type":"object"}

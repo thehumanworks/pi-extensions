@@ -1,0 +1,1 @@
+{"type":"object","description":"Body of the comment. Only one body format should be specified as the property\nfor this object, e.g. `storage`.","properties":{"storage":{"$ref":"#/components/schemas/CommentBodyWrite"},"atlas_doc_format":{"$ref":"#/components/schemas/CommentBodyWrite"},"wiki":{"$ref":"#/components/schemas/CommentBodyWrite"}}}

@@ -1,0 +1,1 @@
+{"additionalProperties":true,"properties":{"maxResults":{"format":"int32","type":"integer"},"startAt":{"format":"int64","type":"integer"},"total":{"format":"int64","type":"integer"}},"type":"object"}

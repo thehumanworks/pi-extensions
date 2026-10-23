@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Result of remove field parameters operation.","properties":{"results":{"items":{"$ref":"#/components/schemas/SuccessOrErrorResults"},"type":"array"}},"type":"object"}

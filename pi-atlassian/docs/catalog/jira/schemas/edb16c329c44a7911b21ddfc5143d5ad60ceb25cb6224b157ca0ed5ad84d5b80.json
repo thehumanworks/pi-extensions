@@ -1,0 +1,1 @@
+{"description":"The default value for a Forge object custom field.","properties":{"contextId":{"description":"The ID of the context.","type":"string"},"object":{"description":"The default JSON object.","type":"object"},"type":{"type":"string"}},"required":["contextId","type"],"type":"object"}

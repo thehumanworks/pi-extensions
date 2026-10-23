@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"color":{"$ref":"#/components/schemas/JiraColorInput"},"fieldId":{"type":"string"}},"required":["color","fieldId"],"type":"object"}

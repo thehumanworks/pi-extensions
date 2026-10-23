@@ -1,0 +1,1 @@
+{"type":"object","properties":{"representation":{"type":"string","description":"Type of content representation used for the value field."},"value":{"type":"string","description":"Body of the content, in the format found in the representation field."}}}

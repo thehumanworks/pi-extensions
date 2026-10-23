@@ -1,0 +1,50 @@
+# Orchestration v1.0.0. Exclusive writers: implementation vs tests.
+type: graph
+# Only dotenvx may decrypt/load the local credential file; Dagu must not shadow it.
+dotenv: []
+# Explicit runner env: Dagu does not inherit arbitrary parent variables.
+# Create this private directory before launching (see workflows/README.md).
+env:
+  - TMPDIR: "${params.WORKSPACE}/.atlassian/tmp"
+max_active_steps: 2
+params:
+  - WORKSPACE: "/home/rodat/.config/mise/agents/pi/extensions/atlassian"
+harnesses:
+  pi-codex:
+    binary: pi
+    prefix_args: ["--print", "--provider", "openai", "--no-extensions", "--no-mcp", "--no-skills", "--no-prompt-templates", "--no-session", "--no-context-files", "--no-approve", "--tools", "read,bash,edit,write"]
+    prompt_mode: arg
+    prompt_position: after_flags
+harness:
+  provider: pi-codex
+  model: gpt-6.1-sol
+  thinking: high
+steps:
+  - id: implementation
+    working_dir: "${params.WORKSPACE}"
+    action: harness.run
+    with:
+      prompt: "@workflows/v1/prompts/implement.md"
+    timeout_sec: 1500
+    stdout: { artifact: build/implementation.md }
+    stderr: { artifact: logs/implementation.log }
+  - id: independent_tests
+    working_dir: "${params.WORKSPACE}"
+    action: harness.run
+    with:
+      prompt: "@workflows/v1/prompts/test.md"
+    timeout_sec: 1200
+    stdout: { artifact: build/test-author.md }
+    stderr: { artifact: logs/test-author.log }
+  - id: typecheck
+    depends: [implementation, independent_tests]
+    working_dir: "${params.WORKSPACE}"
+    run: npm run check
+    stdout: { artifact: checks/typecheck.txt }
+    stderr: { artifact: logs/typecheck.log }
+  - id: offline_tests
+    depends: [implementation, independent_tests]
+    working_dir: "${params.WORKSPACE}"
+    run: npm test
+    stdout: { artifact: checks/offline-tests.txt }
+    stderr: { artifact: logs/offline-tests.log }

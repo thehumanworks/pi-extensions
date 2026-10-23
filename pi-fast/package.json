@@ -1,0 +1,45 @@
+{
+  "name": "@nothumanwork/pi-fast",
+  "module": "index.ts",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "test": "bun test",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@types/bun": "latest",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "trustedDependencies": [
+    "@google/genai",
+    "esbuild",
+    "protobufjs"
+  ],
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-fast"
+  },
+  "keywords": [
+    "pi-package"
+  ],
+  "files": [
+    "index.ts",
+    "README.md"
+  ]
+}

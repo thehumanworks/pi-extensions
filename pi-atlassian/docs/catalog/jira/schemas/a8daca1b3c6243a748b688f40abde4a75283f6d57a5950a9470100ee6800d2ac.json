@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"fieldId":{"type":"string"},"user":{"$ref":"#/components/schemas/JiraUserField"}},"required":["fieldId"],"type":"object"}

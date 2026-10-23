@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Response object for getting field association parameters.","properties":{"fieldId":{"type":"string"},"parameters":{"$ref":"#/components/schemas/FieldAssociationParameters"},"workTypeParameters":{"items":{"$ref":"#/components/schemas/WorkTypeParameters"},"type":"array"}},"required":["fieldId"],"type":"object"}

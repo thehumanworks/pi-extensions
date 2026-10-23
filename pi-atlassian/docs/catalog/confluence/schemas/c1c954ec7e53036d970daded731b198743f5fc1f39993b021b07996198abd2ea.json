@@ -1,0 +1,1 @@
+{"type":"object","properties":{"taskId":{"type":"string","description":"Id of the task to update the space permissions associated with the space role"}}}

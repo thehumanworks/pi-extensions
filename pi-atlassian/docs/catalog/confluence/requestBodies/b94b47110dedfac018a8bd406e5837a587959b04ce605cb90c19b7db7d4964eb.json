@@ -1,0 +1,1 @@
+{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["emails"],"properties":{"emails":{"nullable":false,"description":"List of emails to check access to site.","type":"array","minItems":1,"maxItems":100,"items":{"type":"string"}}}}}}}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"childOptionValue":{"$ref":"#/components/schemas/JiraSelectedOptionField"},"fieldId":{"type":"string"},"parentOptionValue":{"$ref":"#/components/schemas/JiraSelectedOptionField"}},"required":["fieldId","parentOptionValue"],"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details about data policy.","properties":{"anyContentBlocked":{"description":"Whether the workspace contains any content inaccessible to the requesting application.","readOnly":true,"type":"boolean"}},"type":"object"}

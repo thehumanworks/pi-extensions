@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"actuallyIncluded":{"items":{"type":"string"},"type":"array","uniqueItems":true},"excluded":{"items":{"type":"string"},"type":"array","uniqueItems":true},"included":{"items":{"type":"string"},"type":"array","uniqueItems":true}},"type":"object"}

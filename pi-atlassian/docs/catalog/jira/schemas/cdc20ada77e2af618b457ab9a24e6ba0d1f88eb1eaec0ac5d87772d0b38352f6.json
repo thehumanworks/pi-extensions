@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The scope of the status.","properties":{"project":{"$ref":"#/components/schemas/ProjectId"},"type":{"description":"The scope of the status. `GLOBAL` for company-managed projects and `PROJECT` for team-managed projects.","enum":["PROJECT","GLOBAL"],"type":"string"}},"required":["type"],"type":"object"}

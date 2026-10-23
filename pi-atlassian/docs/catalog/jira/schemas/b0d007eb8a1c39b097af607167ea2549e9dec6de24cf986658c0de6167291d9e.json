@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Issue type scheme item.","properties":{"issueTypeId":{"description":"The ID of the issue type.","type":"string"},"issueTypeSchemeId":{"description":"The ID of the issue type scheme.","type":"string"}},"required":["issueTypeId","issueTypeSchemeId"],"type":"object"}

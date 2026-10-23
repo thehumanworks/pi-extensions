@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"warnings":{"items":{"type":"string"},"type":"array"}},"type":"object"}

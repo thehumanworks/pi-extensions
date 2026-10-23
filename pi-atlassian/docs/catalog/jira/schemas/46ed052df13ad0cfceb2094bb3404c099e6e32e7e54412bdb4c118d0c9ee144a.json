@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The payload for defining quick filters","properties":{"description":{"description":"The description of the quick filter","type":"string"},"jqlQuery":{"description":"The jql query for the quick filter","type":"string"},"name":{"description":"The name of the quick filter","type":"string"}},"type":"object"}

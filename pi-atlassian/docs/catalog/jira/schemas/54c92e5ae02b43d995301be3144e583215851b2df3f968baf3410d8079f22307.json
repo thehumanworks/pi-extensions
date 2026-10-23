@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A page of workflows.","properties":{"nextPageToken":{"description":"Page token for the next page of issue type usages.","type":"string"},"values":{"description":"The list of statuses.","items":{"$ref":"#/components/schemas/StatusWorkflowUsageWorkflow"},"type":"array"}},"type":"object"}

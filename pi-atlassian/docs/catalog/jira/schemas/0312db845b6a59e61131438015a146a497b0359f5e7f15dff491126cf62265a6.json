@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"description":{"type":"string"},"isRequired":{"type":"boolean"},"rendererType":{"type":"string"}},"required":["isRequired"],"type":"object"}

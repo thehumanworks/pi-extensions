@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The list of gadgets on the dashboard.","properties":{"gadgets":{"description":"The list of gadgets.","items":{"$ref":"#/components/schemas/DashboardGadget"},"readOnly":true,"type":"array"}},"required":["gadgets"],"type":"object"}

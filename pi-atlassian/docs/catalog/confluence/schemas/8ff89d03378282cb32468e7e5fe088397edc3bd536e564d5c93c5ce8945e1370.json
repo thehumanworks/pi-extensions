@@ -1,0 +1,1 @@
+{"enum":["atlassian","app","customer","unknown"],"type":"string","description":"The account type of the user."}

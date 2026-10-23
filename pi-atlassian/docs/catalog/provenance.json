@@ -1,0 +1,49 @@
+{
+  "generatorVersion": 1,
+  "sources": [
+    {
+      "product": "confluence",
+      "source": "https://dac-static.atlassian.com/cloud/confluence/openapi-v2.v3.json",
+      "sha256": "edb639bbc700ee451a996acd2568e51db4ceab954449427537df30f0ce20ca08",
+      "retrievedAt": "2026-10-06T16:00:52.644Z",
+      "openapi": "3.0.3",
+      "info": {
+        "title": "The Confluence Cloud REST API v2",
+        "description": "This document describes Confluence's v2 APIs. This is intended to be an iteration on the existing Confluence Cloud REST API with improvements in both endpoint definitions and performance.",
+        "termsOfService": "https://developer.atlassian.com/platform/marketplace/atlassian-developer-terms/",
+        "version": "2.0.0"
+      },
+      "operations": 218,
+      "schemas": 142
+    },
+    {
+      "product": "jira",
+      "source": "https://dac-static.atlassian.com/cloud/jira/platform/swagger-v3.v3.json",
+      "sha256": "d26b518604157e26c8ba72b66e483fcebd055b1eebb4036eb03da53248199e44",
+      "retrievedAt": "2026-10-06T16:00:53.635Z",
+      "openapi": "3.0.1",
+      "info": {
+        "contact": {
+          "email": "ecosystem@atlassian.com"
+        },
+        "description": "Jira Cloud platform REST API documentation",
+        "license": {
+          "name": "Apache 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "termsOfService": "https://developer.atlassian.com/platform/marketplace/atlassian-developer-terms/",
+        "title": "The Jira Cloud platform REST API",
+        "version": "1001.0.0-SNAPSHOT-075425bbde28f069e4778bc256e773dd780217cf"
+      },
+      "operations": 620,
+      "schemas": 978
+    }
+  ],
+  "exceptions": [
+    {
+      "operationId": "searchContentByCQL",
+      "source": "https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content/#api-wiki-rest-api-content-search-get",
+      "note": "Manually reviewed V1 exception; not in V2 spec."
+    }
+  ]
+}

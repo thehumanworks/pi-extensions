@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"issueTypeId":{"type":"string"}},"required":["issueTypeId"],"type":"object"}

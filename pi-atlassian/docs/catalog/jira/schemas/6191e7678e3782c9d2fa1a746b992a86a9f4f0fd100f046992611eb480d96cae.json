@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"default":{"type":"boolean"},"description":{"type":"string"},"iconUrl":{"type":"string"},"id":{"type":"string"},"name":{"type":"string"},"self":{"type":"string"}},"type":"object"}

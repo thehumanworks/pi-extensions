@@ -1,0 +1,1 @@
+{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["spaceId"],"properties":{"spaceId":{"type":"string","description":"ID of the space."},"title":{"type":"string","description":"Title of the database."},"parentId":{"type":"string","description":"The parent content ID of the database."}}}}}}

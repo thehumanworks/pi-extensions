@@ -1,0 +1,1 @@
+{"type":"object","description":"Contains fields for each representation type requested.","properties":{"storage":{"$ref":"#/components/schemas/BodyType"},"atlas_doc_format":{"$ref":"#/components/schemas/BodyType"}}}

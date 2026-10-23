@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"List of changelogs that belong to single issue","properties":{"changeHistories":{"description":"List of changelogs that belongs to given issueId.","items":{"$ref":"#/components/schemas/Changelog"},"readOnly":true,"type":"array"},"issueId":{"description":"The ID of the issue.","readOnly":true,"type":"string"}},"type":"object"}

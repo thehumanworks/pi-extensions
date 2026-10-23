@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string","description":"ID of the label."},"name":{"type":"string","description":"Name of the label."},"prefix":{"type":"string","description":"Prefix of the label."}}}

@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": [
+    "auth.ts",
+    "cli.ts",
+    "src/**/*.ts"
+  ]
+}

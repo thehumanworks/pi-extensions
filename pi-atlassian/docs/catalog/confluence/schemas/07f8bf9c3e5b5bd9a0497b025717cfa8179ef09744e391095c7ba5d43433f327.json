@@ -1,0 +1,1 @@
+{"enum":["current","archived"],"type":"string","description":"The status of the content."}

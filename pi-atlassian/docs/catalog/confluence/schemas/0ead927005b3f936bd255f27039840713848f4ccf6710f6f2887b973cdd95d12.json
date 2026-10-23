@@ -1,0 +1,1 @@
+{"type":"object","properties":{"key":{"type":"string","description":"Key of the space property"},"value":{"description":"Value of the space property."}}}

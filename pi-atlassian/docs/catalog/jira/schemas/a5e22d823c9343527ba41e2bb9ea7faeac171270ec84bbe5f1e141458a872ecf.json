@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"customFieldId":{"description":"The custom field ID.","format":"int64","type":"integer"},"filter":{"description":"Allows filtering issues based on their values for the custom field.","type":"boolean"}},"required":["customFieldId"],"type":"object"}

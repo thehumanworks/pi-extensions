@@ -1,0 +1,1 @@
+{"type":"object","required":["id","key"],"properties":{"id":{"type":"string","description":"The space ID."},"key":{"type":"string","description":"The space key."}}}

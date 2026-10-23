@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Response bean for field scheme parameter update operations.","properties":{"results":{"items":{"$ref":"#/components/schemas/UpdateFieldSchemeParametersPartialFailure"},"type":"array","uniqueItems":true}},"required":["results"],"type":"object"}

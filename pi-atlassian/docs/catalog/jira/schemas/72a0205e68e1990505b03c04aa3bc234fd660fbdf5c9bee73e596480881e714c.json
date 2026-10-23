@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"List of security schemes.","properties":{"issueSecuritySchemes":{"description":"List of security schemes.","items":{"$ref":"#/components/schemas/SecurityScheme"},"readOnly":true,"type":"array"}},"type":"object"}

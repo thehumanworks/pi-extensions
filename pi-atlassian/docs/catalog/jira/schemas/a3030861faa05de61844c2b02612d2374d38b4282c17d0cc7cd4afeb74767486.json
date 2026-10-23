@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"holder":{"allOf":[{"$ref":"#/components/schemas/GetPermissionHolderResponse"}],"description":"The permission holder."},"type":{"description":"The permission type. This is \"View\" or \"Edit\".","enum":["View","Edit"],"type":"string"}},"required":["holder","type"],"type":"object"}

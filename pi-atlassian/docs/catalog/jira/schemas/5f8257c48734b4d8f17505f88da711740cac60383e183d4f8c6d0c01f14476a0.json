@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A list of parsed JQL queries.","properties":{"queries":{"description":"A list of parsed JQL queries.","items":{"$ref":"#/components/schemas/ParsedJqlQuery"},"minLength":1,"type":"array"}},"required":["queries"],"type":"object"}

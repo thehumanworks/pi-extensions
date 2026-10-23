@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The issue type.","properties":{"id":{"description":"The ID of the issue type.","type":"string"}},"type":"object"}

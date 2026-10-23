@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details about permissions.","properties":{"permissions":{"additionalProperties":{"$ref":"#/components/schemas/UserPermission"},"description":"List of permissions.","readOnly":true,"type":"object"}},"type":"object"}

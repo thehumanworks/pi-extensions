@@ -1,0 +1,1 @@
+{"type":"object","description":"The principal of the role assignment.","properties":{"principalType":{"$ref":"#/components/schemas/PrincipalType"},"principalId":{"type":"string","description":"The principal ID."}}}

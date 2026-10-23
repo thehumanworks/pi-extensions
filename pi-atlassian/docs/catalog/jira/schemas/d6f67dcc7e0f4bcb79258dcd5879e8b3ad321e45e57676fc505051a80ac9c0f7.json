@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A request to read a specific workflow version from history.","properties":{"version":{"format":"int64","type":"integer"},"workflowId":{"type":"string"}},"type":"object"}

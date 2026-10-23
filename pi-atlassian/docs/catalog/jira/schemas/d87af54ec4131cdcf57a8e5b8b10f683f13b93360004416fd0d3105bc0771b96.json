@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"redactions":{"items":{"$ref":"#/components/schemas/SingleRedactionRequest"},"type":"array","uniqueItems":true}},"type":"object"}

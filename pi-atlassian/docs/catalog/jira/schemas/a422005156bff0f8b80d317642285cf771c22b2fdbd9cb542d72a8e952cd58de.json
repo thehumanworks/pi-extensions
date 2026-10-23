@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"errors":{"description":"The list of validation errors.","items":{"$ref":"#/components/schemas/WorkflowValidationError"},"type":"array"}},"type":"object"}

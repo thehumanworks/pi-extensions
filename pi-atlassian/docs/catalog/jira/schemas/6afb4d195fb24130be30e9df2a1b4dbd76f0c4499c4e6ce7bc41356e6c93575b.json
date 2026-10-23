@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Meta data describing the `issues` context variable.This bean will be replacing IssuesMetaBean bean as part of new `evaluate` endpoint","properties":{"jql":{"$ref":"#/components/schemas/JExpEvaluateIssuesJqlMetaDataBean"}},"type":"object"}

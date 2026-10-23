@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Default values to update.","properties":{"defaultValues":{"items":{"$ref":"#/components/schemas/CustomFieldContextDefaultValue"},"type":"array"}},"type":"object"}

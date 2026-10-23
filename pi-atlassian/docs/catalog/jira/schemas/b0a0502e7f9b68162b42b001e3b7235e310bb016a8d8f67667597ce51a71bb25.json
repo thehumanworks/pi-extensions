@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The projects using this status.","properties":{"projects":{"$ref":"#/components/schemas/StatusProjectUsagePage"},"statusId":{"description":"The status ID.","type":"string"}},"type":"object"}

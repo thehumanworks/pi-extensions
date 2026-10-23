@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Link information for workflow transitions.","properties":{"fromPort":{"description":"The from port number.","format":"int32","type":"integer"},"fromStatusReference":{"description":"The from status reference.","type":"string"},"toPort":{"description":"The to port number.","format":"int32","type":"integer"}},"type":"object"}

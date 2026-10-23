@@ -1,0 +1,24 @@
+{
+  "name": "pi-extensions",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "pi-advisor",
+    "pi-atlassian",
+    "pi-canary",
+    "pi-fast",
+    "pi-loop",
+    "pi-voice",
+    "pi-xai"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "test:packages": "node --test scripts/packages.test.mjs",
+    "test": "npm run test --workspaces --if-present",
+    "check": "npm run check --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "pack:check": "npm run build && npm run test:packages"
+  }
+}

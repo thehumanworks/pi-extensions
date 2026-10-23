@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The project and issue type mappings.","properties":{"mappings":{"description":"The project and issue type mappings.","items":{"$ref":"#/components/schemas/ProjectIssueTypeMapping"},"type":"array","writeOnly":true}},"required":["mappings"],"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Layout coordinates for workflow elements.","properties":{"x":{"description":"The X coordinate.","format":"double","type":"number"},"y":{"description":"The Y coordinate.","format":"double","type":"number"}},"type":"object"}

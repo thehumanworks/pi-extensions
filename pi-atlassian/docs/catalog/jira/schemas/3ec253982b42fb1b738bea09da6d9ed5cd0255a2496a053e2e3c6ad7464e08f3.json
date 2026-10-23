@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A page of workflow schemes.","properties":{"nextPageToken":{"description":"Token for the next page of issue type usages.","type":"string"},"values":{"description":"The list of workflow schemes.","items":{"$ref":"#/components/schemas/WorkflowSchemeUsage"},"type":"array"}},"type":"object"}

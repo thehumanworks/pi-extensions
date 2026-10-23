@@ -1,0 +1,1 @@
+{"type":"object","required":["permissionCombinationIds","spaceSelection"],"properties":{"permissionCombinationIds":{"type":"array","description":"List of permission combination IDs to remove access for.","items":{"type":"string"}},"spaceSelection":{"$ref":"#/components/schemas/BulkTransitionSpaceSelection"}}}

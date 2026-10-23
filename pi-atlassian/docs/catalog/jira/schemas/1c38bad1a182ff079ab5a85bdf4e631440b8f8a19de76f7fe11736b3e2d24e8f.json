@@ -1,0 +1,1 @@
+{"additionalProperties":true,"description":"The ID of the issue security scheme.","properties":{"id":{"description":"The ID of the issue security scheme.","readOnly":true,"type":"string"}},"required":["id"],"type":"object"}

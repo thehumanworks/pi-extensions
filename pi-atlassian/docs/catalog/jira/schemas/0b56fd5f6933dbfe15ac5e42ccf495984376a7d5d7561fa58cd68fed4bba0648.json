@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"results":{"description":"Result for requested redactions","items":{"$ref":"#/components/schemas/SingleRedactionResponse"},"type":"array","uniqueItems":true}},"required":["results"],"type":"object"}

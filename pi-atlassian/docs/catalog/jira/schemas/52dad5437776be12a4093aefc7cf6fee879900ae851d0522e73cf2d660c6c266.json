@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Project and issue type context for workflow queries made using issue types.","properties":{"issueTypes":{"description":"The set of issue type IDs.","items":{"description":"The set of issue type IDs.","type":"string"},"type":"array"},"project":{"description":"The ID of the project.","type":"string"}},"type":"object"}

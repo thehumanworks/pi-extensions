@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Request to create a project using a custom template","properties":{"details":{"$ref":"#/components/schemas/CustomTemplatesProjectDetails"},"template":{"$ref":"#/components/schemas/CustomTemplateRequestDTO"}},"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"description":{"type":"string"},"isRequired":{"type":"boolean"},"rendererType":{"type":"string"},"workTypeId":{"format":"int64","type":"integer"}},"required":["isRequired","workTypeId"],"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The project.","properties":{"id":{"description":"The project ID.","type":"string"}},"type":"object"}

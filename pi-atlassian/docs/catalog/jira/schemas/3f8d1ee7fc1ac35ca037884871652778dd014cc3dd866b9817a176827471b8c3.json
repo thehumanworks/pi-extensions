@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"List of project associations.","properties":{"projectId":{"type":"string"}},"type":"object"}

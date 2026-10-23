@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"associations":{"type":"string"},"projects":{"type":"string"}},"type":"object"}

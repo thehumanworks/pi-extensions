@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"groupName":{"type":"string"}},"required":["groupName"],"type":"object"}

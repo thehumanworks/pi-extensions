@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"List of issue level security items in a project.","properties":{"levels":{"description":"Issue level security items list.","items":{"$ref":"#/components/schemas/SecurityLevel"},"readOnly":true,"type":"array"}},"required":["levels"],"type":"object"}

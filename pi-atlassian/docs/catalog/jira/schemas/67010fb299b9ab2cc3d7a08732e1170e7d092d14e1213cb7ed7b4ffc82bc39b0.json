@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of configurations for a custom field.","properties":{"configurations":{"description":"The list of custom field configuration details.","items":{"$ref":"#/components/schemas/ContextualConfiguration"},"maxItems":1000,"minItems":1,"type":"array","uniqueItems":true}},"required":["configurations"],"type":"object","writeOnly":true}

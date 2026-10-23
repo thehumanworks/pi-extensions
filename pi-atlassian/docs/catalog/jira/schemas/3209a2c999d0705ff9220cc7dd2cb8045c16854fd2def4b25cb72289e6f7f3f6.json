@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"optionId":{"format":"int64","type":"integer"}},"type":"object"}

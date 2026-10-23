@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A list of workflow history entries.","properties":{"entries":{"items":{"$ref":"#/components/schemas/WorkflowHistoryItemDTO"},"type":"array"}},"type":"object"}

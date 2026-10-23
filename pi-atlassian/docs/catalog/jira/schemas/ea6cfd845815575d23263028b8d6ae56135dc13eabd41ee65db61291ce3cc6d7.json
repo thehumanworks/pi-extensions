@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Request object for updating an existing field association scheme.","properties":{"description":{"description":"The description value to update","type":"string"},"name":{"description":"The name value to update","type":"string"}},"type":"object","writeOnly":true}

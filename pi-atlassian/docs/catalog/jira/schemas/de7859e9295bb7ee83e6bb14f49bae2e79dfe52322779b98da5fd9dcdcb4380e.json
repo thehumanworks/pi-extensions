@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of a field configuration to issue type mappings.","properties":{"mappings":{"description":"Field configuration to issue type mappings.","items":{"$ref":"#/components/schemas/FieldConfigurationToIssueTypeMapping"},"type":"array","uniqueItems":true,"writeOnly":true}},"required":["mappings"],"type":"object"}

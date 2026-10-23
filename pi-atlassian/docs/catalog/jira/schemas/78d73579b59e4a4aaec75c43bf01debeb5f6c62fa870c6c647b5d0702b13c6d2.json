@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"dateTime":{"$ref":"#/components/schemas/JiraDateTimeInput"},"fieldId":{"type":"string"}},"required":["dateTime","fieldId"],"type":"object"}

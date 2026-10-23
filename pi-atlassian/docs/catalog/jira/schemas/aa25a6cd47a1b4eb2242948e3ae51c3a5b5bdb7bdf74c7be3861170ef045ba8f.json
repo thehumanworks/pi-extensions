@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Workflows using the status.","properties":{"statusId":{"description":"The status ID.","type":"string"},"workflows":{"$ref":"#/components/schemas/StatusWorkflowUsagePage"}},"type":"object"}

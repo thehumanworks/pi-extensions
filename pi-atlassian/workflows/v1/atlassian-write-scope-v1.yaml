@@ -1,0 +1,32 @@
+# Correct independent-review finding without changing runtime safety semantics.
+type: graph
+dotenv: []
+env:
+  - TMPDIR: "${params.WORKSPACE}/.atlassian/tmp"
+params:
+  - WORKSPACE: "/home/rodat/.config/mise/agents/pi/extensions/atlassian"
+harnesses:
+  pi-codex:
+    binary: pi
+    prefix_args: ["--print", "--provider", "openai", "--no-extensions", "--no-mcp", "--no-skills", "--no-prompt-templates", "--no-session", "--no-context-files", "--no-approve", "--tools", "read,bash,edit,write"]
+    prompt_mode: arg
+    prompt_position: after_flags
+steps:
+  - id: correct_scope
+    working_dir: "${params.WORKSPACE}"
+    action: harness.run
+    with:
+      provider: pi-codex
+      model: gpt-6.1-sol
+      thinking: medium
+      prompt: "@workflows/v1/prompts/write-controls-scope.md"
+    timeout_sec: 360
+    stdout: { artifact: implementation/write-scope-correction.md }
+    stderr: { artifact: logs/write-scope-correction.log }
+  - id: checks
+    depends: [correct_scope]
+    working_dir: "${params.WORKSPACE}"
+    run:
+      - npm run check
+      - npm test
+    stdout: { artifact: checks/write-scope-checks.txt }

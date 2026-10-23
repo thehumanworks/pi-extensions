@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"abbreviatedName":{"type":"string"},"entryIndex":{"format":"int64","type":"integer"},"mediaType":{"type":"string"},"name":{"type":"string"},"size":{"format":"int64","type":"integer"}},"type":"object"}

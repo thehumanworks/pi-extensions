@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A group label.","properties":{"text":{"description":"The group label name.","type":"string"},"title":{"description":"The title of the group label.","type":"string"},"type":{"description":"The type of the group label.","enum":["ADMIN","SINGLE","MULTIPLE"],"type":"string"}},"type":"object","xml":{"name":"grouplabel"}}

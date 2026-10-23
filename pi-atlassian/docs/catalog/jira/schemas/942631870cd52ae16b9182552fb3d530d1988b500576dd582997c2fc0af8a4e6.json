@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Approval configuration.","properties":{"active":{"description":"The active approval configuration.","type":"string"},"transitionApproved":{"description":"The transition ID for approved state.","type":"string"},"transitionRejected":{"description":"The transition ID for rejected state.","type":"string"}},"type":"object"}

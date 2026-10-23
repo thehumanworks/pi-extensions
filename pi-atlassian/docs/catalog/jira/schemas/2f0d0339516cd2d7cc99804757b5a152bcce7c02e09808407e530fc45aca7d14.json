@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"notificationSchemeId":{"type":"string"},"projectId":{"type":"string"}},"type":"object"}

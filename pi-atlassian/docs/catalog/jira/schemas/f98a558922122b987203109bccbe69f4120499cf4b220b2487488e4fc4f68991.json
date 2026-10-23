@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of the order-by JQL clause.","properties":{"fields":{"description":"The list of order-by clause fields and their ordering directives.","items":{"$ref":"#/components/schemas/JqlQueryOrderByClauseElement"},"type":"array"}},"required":["fields"],"type":"object"}

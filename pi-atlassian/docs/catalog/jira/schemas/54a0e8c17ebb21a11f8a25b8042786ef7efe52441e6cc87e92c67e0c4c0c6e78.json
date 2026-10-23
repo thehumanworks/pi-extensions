@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"count":{"format":"int64","type":"integer"},"issueIdsOrKeys":{"items":{"type":"string"},"type":"array","uniqueItems":true},"message":{"type":"string"}},"type":"object"}

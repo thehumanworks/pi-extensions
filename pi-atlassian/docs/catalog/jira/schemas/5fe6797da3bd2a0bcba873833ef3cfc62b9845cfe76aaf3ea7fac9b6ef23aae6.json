@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The results from a JQL query.","properties":{"results":{"description":"The list of suggested item.","items":{"$ref":"#/components/schemas/AutoCompleteSuggestion"},"type":"array"}},"type":"object"}

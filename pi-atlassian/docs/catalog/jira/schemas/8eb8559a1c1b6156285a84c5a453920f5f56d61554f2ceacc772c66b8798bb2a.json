@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"formattedDateTime":{"type":"string"}},"required":["formattedDateTime"],"type":"object"}

@@ -1,0 +1,7 @@
+node_modules/
+# Local credentials, including dotenvx files (encrypted values are not source).
+.env*
+.atlassian/
+coverage/
+dist/
+*.tsbuildinfo

@@ -1,0 +1,1 @@
+{"additionalProperties":true,"description":"Details of the operations that can be performed on the issue.","properties":{"linkGroups":{"description":"Details of the link groups defining issue operations.","items":{"$ref":"#/components/schemas/LinkGroup"},"readOnly":true,"type":"array"}},"type":"object"}

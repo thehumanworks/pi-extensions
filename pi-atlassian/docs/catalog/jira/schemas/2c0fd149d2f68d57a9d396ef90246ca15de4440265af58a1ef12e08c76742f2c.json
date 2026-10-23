@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"componentId":{"format":"int64","type":"integer"}},"required":["componentId"],"type":"object"}

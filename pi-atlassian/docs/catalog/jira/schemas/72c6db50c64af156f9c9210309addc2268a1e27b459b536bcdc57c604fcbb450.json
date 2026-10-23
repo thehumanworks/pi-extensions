@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The account ID of the new owner.","properties":{"accountId":{"description":"The account ID of the new owner.","type":"string"}},"required":["accountId"],"type":"object","writeOnly":true}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of the options to update for a custom field.","properties":{"options":{"description":"Details of the options to update.","items":{"$ref":"#/components/schemas/CustomFieldOptionUpdate"},"type":"array"}},"type":"object","writeOnly":true}

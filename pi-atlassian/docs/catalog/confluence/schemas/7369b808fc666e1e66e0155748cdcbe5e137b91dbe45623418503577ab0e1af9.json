@@ -1,0 +1,1 @@
+{"type":"object","properties":{"body":{"$ref":"#/components/schemas/RedactionSectionResponse"},"title":{"$ref":"#/components/schemas/RedactionSectionResponse"}},"description":"Response containing details of all redactions that were applied to the content.\nEach redaction includes a unique ID for restoration, except that code block redactions cannot be restored.\n"}

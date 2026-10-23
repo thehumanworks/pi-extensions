@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"statusId":{"type":"string"}},"required":["statusId"],"type":"object"}

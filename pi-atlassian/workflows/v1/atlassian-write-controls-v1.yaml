@@ -1,0 +1,50 @@
+# Compatible feature iteration: one writer, deterministic checks, independent review.
+type: graph
+dotenv: []
+# Explicit runner env: Dagu does not inherit arbitrary parent variables.
+# Create this private directory before launching (see workflows/README.md).
+env:
+  - TMPDIR: "${params.WORKSPACE}/.atlassian/tmp"
+max_active_steps: 2
+params:
+  - WORKSPACE: "/home/rodat/.config/mise/agents/pi/extensions/atlassian"
+harnesses:
+  pi-codex:
+    binary: pi
+    prefix_args: ["--print", "--provider", "openai", "--no-extensions", "--no-mcp", "--no-skills", "--no-prompt-templates", "--no-session", "--no-context-files", "--no-approve", "--tools", "read,bash,edit,write"]
+    prompt_mode: arg
+    prompt_position: after_flags
+steps:
+  - id: write_controls
+    working_dir: "${params.WORKSPACE}"
+    action: harness.run
+    with:
+      provider: pi-codex
+      model: gpt-6.1-sol
+      thinking: high
+      prompt: "@workflows/v1/prompts/write-controls.md"
+    timeout_sec: 900
+    stdout: { artifact: implementation/write-controls.md }
+    stderr: { artifact: logs/write-controls.log }
+  - id: typecheck
+    depends: [write_controls]
+    working_dir: "${params.WORKSPACE}"
+    run: npm run check
+    stdout: { artifact: checks/write-controls-typecheck.txt }
+  - id: offline_tests
+    depends: [write_controls]
+    working_dir: "${params.WORKSPACE}"
+    run: npm test
+    stdout: { artifact: checks/write-controls-tests.txt }
+  - id: independent_review
+    depends: [typecheck, offline_tests]
+    working_dir: "${params.WORKSPACE}"
+    action: harness.run
+    with:
+      provider: pi-codex
+      model: gpt-6-luna
+      thinking: high
+      prompt: "@workflows/v1/prompts/write-controls-review.md"
+    timeout_sec: 600
+    stdout: { artifact: review/write-controls-review.md }
+    stderr: { artifact: logs/write-controls-review.log }

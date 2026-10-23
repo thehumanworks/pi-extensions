@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Response object after successfully deleting a field association scheme.","properties":{"deleted":{"type":"boolean"},"id":{"type":"string"}},"type":"object"}

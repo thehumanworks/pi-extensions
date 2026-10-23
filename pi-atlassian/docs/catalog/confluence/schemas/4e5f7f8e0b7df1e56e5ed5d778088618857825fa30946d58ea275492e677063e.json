@@ -1,0 +1,1 @@
+{"type":"object","properties":{"accountId":{"type":"string","description":"User identifier."},"expirationTime":{"type":"string","format":"date-time","description":"Timestamp in UTC that represents when the admin key will expire. In format \"YYYY-MM-DDTHH:mm:ss.sssZ\"."}}}

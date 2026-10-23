@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The list of statuses that will be updated.","properties":{"statuses":{"description":"The list of statuses that will be updated.","items":{"$ref":"#/components/schemas/StatusUpdate"},"type":"array"}},"required":["statuses"],"type":"object"}

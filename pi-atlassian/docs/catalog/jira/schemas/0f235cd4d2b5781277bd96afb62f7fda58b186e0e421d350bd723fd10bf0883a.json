@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"fieldId":{"type":"string"},"version":{"$ref":"#/components/schemas/JiraVersionField"}},"required":["fieldId","version"],"type":"object"}

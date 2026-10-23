@@ -1,0 +1,7 @@
+# Independent write-controls review v1.0.0 (gpt-6-luna)
+
+Read the shared CONTRACT and new index.ts/src/service.ts plus tests and README. You may WRITE ONLY docs/research/write-controls-review-v1.md. Do not delegate, modify implementation/tests/workflows, run Dagu or git commits, inspect .env*/credential values, dump env or call live endpoints. Run npm run check and npm test with mock config only. Inspect actual Pi 1.0.4 docs/types for flag/command timing. Review only evidence, not prior agent claims.
+
+Verify --atlassian-allow-writes registration/parsed timing/default-env precedence and runtime scope, /atlassian-writes TUI toggle ON/OFF, truthful status/footer, no env/file mutation, no network on controls, read handle/cursor preservation, default read-only, user-only command vs model surface, original immutable preview/exact confirm/interactive approval/single use/CAS/no-retry/headless safety. Specifically prove disabling while approval, version re-read or concurrency queue is pending revokes not-yet-dispatched mutation; re-enabling doesn't revive old approval/plan. OFF cannot undo already-dispatched writes; docs must not claim otherwise. Note closed service and session/tree semantics.
+
+Write a concise cited report with verified check counts and concrete blockers only, with file:line and reproductions using mocks. Distinguish suggestions from blockers. Never call a live mutation. Final concise verdict.

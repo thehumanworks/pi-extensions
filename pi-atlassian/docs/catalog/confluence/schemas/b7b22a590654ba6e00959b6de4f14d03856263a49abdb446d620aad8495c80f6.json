@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string","description":"ID of the property"},"key":{"type":"string","description":"Key of the property"},"value":{"description":"Value of the property. Must be a valid JSON value."},"version":{"$ref":"#/components/schemas/Version"}}}

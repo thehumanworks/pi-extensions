@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The layout of the workflow status.","properties":{"x":{"description":"The x coordinate of the status.","example":1,"format":"double","type":"number"},"y":{"description":"The y coordinate of the status.","example":2,"format":"double","type":"number"}},"type":"object"}

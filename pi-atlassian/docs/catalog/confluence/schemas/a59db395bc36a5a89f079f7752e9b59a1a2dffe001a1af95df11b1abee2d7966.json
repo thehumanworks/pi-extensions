@@ -1,0 +1,1 @@
+{"type":"object","properties":{"webui":{"type":"string","description":"Web UI link of the content."},"editui":{"type":"string","description":"Edit UI link of the content."},"tinyui":{"type":"string","description":"Web UI link of the content."}}}

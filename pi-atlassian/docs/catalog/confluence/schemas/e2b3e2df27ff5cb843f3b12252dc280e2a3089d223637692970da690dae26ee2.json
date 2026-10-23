@@ -1,0 +1,1 @@
+{"type":"string","enum":["page","whiteboard","database","embed","folder"],"description":"Content type of the parent, or null if there is no parent."}

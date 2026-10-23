@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A page of projects.","properties":{"nextPageToken":{"description":"Page token for the next page of project usages.","type":"string"},"values":{"description":"The list of projects.","items":{"$ref":"#/components/schemas/ProjectUsage"},"type":"array"}},"type":"object"}

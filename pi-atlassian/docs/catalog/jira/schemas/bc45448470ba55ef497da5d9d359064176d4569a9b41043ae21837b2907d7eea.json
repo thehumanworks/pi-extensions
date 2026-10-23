@@ -1,0 +1,1 @@
+{"description":"Defaults for a Forge user custom field.","properties":{"accountId":{"description":"The ID of the default user.","type":"string"},"contextId":{"description":"The ID of the context.","type":"string"},"type":{"type":"string"},"userFilter":{"$ref":"#/components/schemas/UserFilter"}},"required":["accountId","contextId","type","userFilter"],"type":"object"}

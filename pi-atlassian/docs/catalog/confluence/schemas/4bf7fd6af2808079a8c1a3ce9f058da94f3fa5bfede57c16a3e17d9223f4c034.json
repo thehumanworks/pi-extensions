@@ -1,0 +1,1 @@
+{"enum":["raw","storage","atlas_doc_format","view","export_view","anonymous_export_view"],"type":"string","description":"The formats a custom content body can be represented as. A subset of BodyRepresentation."}

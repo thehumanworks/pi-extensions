@@ -1,0 +1,1 @@
+{"description":"The list of operations permitted on entity.","type":"object","properties":{"operations":{"type":"array","items":{"$ref":"#/components/schemas/Operation"}}}}

@@ -1,0 +1,1 @@
+{"additionalProperties":true,"description":"The mapping of old to new status ID.","properties":{"newStatusReference":{"description":"The new status ID.","type":"string"},"oldStatusReference":{"description":"The old status ID.","type":"string"}},"required":["newStatusReference","oldStatusReference"],"type":"object"}

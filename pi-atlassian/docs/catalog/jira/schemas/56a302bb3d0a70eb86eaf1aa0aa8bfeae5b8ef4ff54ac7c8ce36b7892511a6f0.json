@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details about the operations available in this version.","properties":{"href":{"type":"string"},"iconClass":{"type":"string"},"id":{"type":"string"},"label":{"type":"string"},"styleClass":{"type":"string"},"title":{"type":"string"},"weight":{"format":"int32","type":"integer"}},"type":"object","xml":{"name":"link"}}

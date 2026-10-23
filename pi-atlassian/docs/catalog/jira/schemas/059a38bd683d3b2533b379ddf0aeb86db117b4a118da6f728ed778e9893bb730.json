@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The statuses stored for the specified version.","properties":{"description":{"type":"string"},"id":{"type":"string"},"name":{"type":"string"},"scope":{"$ref":"#/components/schemas/WorkflowScope"},"statusCategory":{"type":"string"},"statusReference":{"type":"string"}},"type":"object"}

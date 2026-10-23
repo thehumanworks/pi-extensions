@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Field mapping for mandatory fields in target","nullable":true,"properties":{"fields":{"additionalProperties":{"$ref":"#/components/schemas/fields"},"description":"Contains the value of mandatory fields","type":"object","writeOnly":true}},"required":["fields"],"type":"object","writeOnly":true}

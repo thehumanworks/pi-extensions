@@ -1,0 +1,13 @@
+# Isolated read-only probe. Authoritative .env injection, no inherited-token fallback.
+type: graph
+dotenv: []
+env:
+  - TMPDIR: "${params.WORKSPACE}/.atlassian/tmp"
+params:
+  - WORKSPACE: "/home/rodat/.config/mise/agents/pi/extensions/atlassian"
+steps:
+  - id: encrypted_environment_probe
+    working_dir: "${params.WORKSPACE}"
+    run: dotenvx run --strict --overload -f "${params.WORKSPACE}/.env" -- node --use-system-ca --import tsx workflows/v1/env-shape.mjs
+    stdout: { artifact: checks/environment-shapes.txt }
+    stderr: { artifact: logs/environment-shapes.log }

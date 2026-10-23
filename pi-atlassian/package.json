@@ -1,0 +1,60 @@
+{
+  "name": "@nothumanwork/pi-atlassian",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Bounded, source-preserving Jira and Confluence tools for Pi",
+  "keywords": [
+    "pi-package"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test tests/unit.test.ts tests/extension.test.ts tests/transport.test.ts",
+    "test:e2e": "ATLASSIAN_E2E=1 node --use-system-ca --import tsx --test tests/e2e.test.ts",
+    "catalog:update": "node scripts/catalog-update.mjs"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/node": "22.19.19",
+    "tsx": "^4.23.15",
+    "typebox": "1.3.27",
+    "typescript": "^5.9.3"
+  },
+  "aube": {
+    "allowBuilds": {
+      "@google/genai": true,
+      "protobufjs": true
+    }
+  },
+  "trustedDependencies": [
+    "@google/genai",
+    "protobufjs"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-atlassian"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "docs",
+    "README.md"
+  ]
+}

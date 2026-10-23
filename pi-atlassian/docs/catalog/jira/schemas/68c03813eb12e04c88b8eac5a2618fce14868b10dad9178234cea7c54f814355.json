@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Add or clear a single select field:\n\n *  To add, specify the option with an `optionId`.\n *  To clear, pass an option with `optionId` as `-1`.","properties":{"fieldId":{"type":"string"},"option":{"$ref":"#/components/schemas/JiraSelectedOptionField"}},"required":["fieldId","option"],"type":"object"}

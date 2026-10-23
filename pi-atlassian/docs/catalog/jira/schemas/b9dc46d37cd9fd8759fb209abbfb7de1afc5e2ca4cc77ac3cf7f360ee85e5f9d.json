@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The issue types using this status in a project.","properties":{"issueTypes":{"$ref":"#/components/schemas/StatusProjectIssueTypeUsagePage"},"projectId":{"description":"The project ID.","type":"string"},"statusId":{"description":"The status ID.","type":"string"}},"type":"object"}

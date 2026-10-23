@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Card layout configuration.","properties":{"showDaysInColumn":{"default":false,"description":"Whether to show days in column","enum":[true,false],"type":"boolean"}},"type":"object"}

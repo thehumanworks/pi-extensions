@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Default value updates grouped by context and issue type.","properties":{"defaultValues":{"description":"The default values to update.","items":{"$ref":"#/components/schemas/IssueTypeDefaultValueUpdate"},"type":"array"}},"type":"object"}

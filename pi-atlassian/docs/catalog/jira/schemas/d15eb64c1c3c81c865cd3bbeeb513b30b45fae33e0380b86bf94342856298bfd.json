@@ -1,0 +1,1 @@
+{"additionalProperties":true,"description":"The ID of a notification scheme.","properties":{"id":{"description":"The ID of a notification scheme.","readOnly":true,"type":"string"}},"required":["id"],"type":"object"}

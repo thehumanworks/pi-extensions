@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"id":{"description":"The ID of the application property.","type":"string"},"value":{"description":"The new value.","type":"string"}},"type":"object","xml":{"name":"applicationProperty"}}

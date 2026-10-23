@@ -1,0 +1,1 @@
+{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["accountIds"],"properties":{"accountIds":{"nullable":false,"description":"List of accountIds to retrieve user info for.","type":"array","minItems":1,"maxItems":250,"items":{"type":"string"}}}}}}}

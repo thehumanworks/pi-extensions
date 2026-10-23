@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"List of pairs (id and value) for precomputation updates.","properties":{"values":{"items":{"$ref":"#/components/schemas/JqlFunctionPrecomputationUpdateBean"},"type":"array"}},"type":"object","writeOnly":true}

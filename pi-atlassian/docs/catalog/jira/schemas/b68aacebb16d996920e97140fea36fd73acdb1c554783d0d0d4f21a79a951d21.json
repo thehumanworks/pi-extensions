@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The ID of a priority scheme.","properties":{"id":{"description":"The ID of the priority scheme.","readOnly":true,"type":"string"},"task":{"allOf":[{"$ref":"#/components/schemas/TaskProgressBeanJsonNode"}],"description":"The in-progress issue migration task.","readOnly":true}},"type":"object"}

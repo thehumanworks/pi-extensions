@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Trigger configuration for workflow transitions.","properties":{"id":{"description":"The ID of the trigger.","type":"string"},"ruleKey":{"description":"The key of the trigger rule.","type":"string"}},"type":"object"}

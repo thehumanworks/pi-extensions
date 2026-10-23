@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Result for requested redactions","properties":{"externalId":{"description":"An unique id for the redaction request","format":"uuid","type":"string"},"successful":{"description":"Indicates if redaction was success/failure","type":"boolean"}},"required":["externalId","successful"],"type":"object"}

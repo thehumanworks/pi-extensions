@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of a custom field option for a context.","properties":{"disabled":{"description":"Whether the option is disabled.","type":"boolean"},"id":{"description":"The ID of the custom field option.","type":"string"},"value":{"description":"The value of the custom field option.","type":"string"}},"required":["id"],"type":"object"}

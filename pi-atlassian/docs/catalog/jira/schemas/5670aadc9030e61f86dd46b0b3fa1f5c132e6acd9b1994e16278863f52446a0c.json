@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"id":{"description":"The team ID.","type":"string"},"name":{"description":"The team name. This is returned if the type is \"PlanOnly\".","type":"string"},"type":{"description":"The team type. This is \"PlanOnly\" or \"Atlassian\".","enum":["PlanOnly","Atlassian"],"type":"string"}},"required":["id","type"],"type":"object"}

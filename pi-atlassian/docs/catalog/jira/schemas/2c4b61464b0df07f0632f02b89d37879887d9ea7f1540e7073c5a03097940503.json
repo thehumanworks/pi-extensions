@@ -1,0 +1,1 @@
+{"anyOf":[{"$ref":"#/components/schemas/ValueOperand"},{"$ref":"#/components/schemas/FunctionOperand"},{"$ref":"#/components/schemas/KeywordOperand"}],"description":"An operand that can be part of a list operand.","type":"object"}

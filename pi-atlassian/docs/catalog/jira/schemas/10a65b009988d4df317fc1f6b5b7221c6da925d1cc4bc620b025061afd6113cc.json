@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The data classification.","properties":{"classifications":{"description":"The data classifications.","items":{"$ref":"#/components/schemas/DataClassificationTagBean"},"type":"array"}},"type":"object"}

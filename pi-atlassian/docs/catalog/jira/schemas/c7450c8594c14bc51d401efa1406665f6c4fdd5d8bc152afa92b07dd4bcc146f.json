@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"realType":{"enum":["BUSINESS","SOFTWARE","PRODUCT_DISCOVERY","SERVICE_DESK","CUSTOMER_SERVICE","OPS"],"type":"string"},"style":{"enum":["classic","next-gen"],"type":"string"},"type":{"enum":["BUSINESS","SOFTWARE","PRODUCT_DISCOVERY","SERVICE_DESK","CUSTOMER_SERVICE","OPS"],"type":"string"}},"type":"object"}

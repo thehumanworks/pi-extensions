@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"permissions":{"description":"A list of permission keys.","items":{"type":"string"},"type":"array"}},"required":["permissions"],"type":"object"}

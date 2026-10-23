@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"fieldId":{"type":"string"},"url":{"type":"string"}},"required":["fieldId","url"],"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"List of system avatars.","properties":{"system":{"description":"A list of avatar details.","items":{"$ref":"#/components/schemas/Avatar"},"readOnly":true,"type":"array"}},"type":"object"}

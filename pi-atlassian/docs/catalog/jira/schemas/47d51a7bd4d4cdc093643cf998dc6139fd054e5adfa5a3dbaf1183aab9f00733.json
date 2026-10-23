@@ -1,0 +1,1 @@
+{"additionalProperties":true,"description":"Details about an project using security scheme mapping.","properties":{"issueSecuritySchemeId":{"readOnly":true,"type":"string"},"projectId":{"readOnly":true,"type":"string"}},"type":"object"}

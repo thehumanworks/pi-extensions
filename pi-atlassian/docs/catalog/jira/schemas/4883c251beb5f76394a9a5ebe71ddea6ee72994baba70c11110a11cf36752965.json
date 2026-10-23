@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"count":{"description":"Number of issues matching JQL query.","format":"int64","type":"integer"}},"type":"object"}

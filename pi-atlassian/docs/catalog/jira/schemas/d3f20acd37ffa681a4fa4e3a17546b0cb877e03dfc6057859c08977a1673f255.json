@@ -1,0 +1,1 @@
+{"description":"Default value for a labels custom field.","properties":{"contextId":{"description":"The ID of the context.","type":"string"},"labels":{"description":"The default labels value.","items":{"description":"The default labels value.","type":"string"},"type":"array"},"type":{"type":"string"}},"required":["contextId","labels","type"],"type":"object"}

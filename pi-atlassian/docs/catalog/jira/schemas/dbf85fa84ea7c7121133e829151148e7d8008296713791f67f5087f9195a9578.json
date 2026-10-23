@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"ids":{"description":"Affected entity ids.","items":{"format":"int64","type":"integer","writeOnly":true},"type":"array","writeOnly":true}},"required":["ids"],"type":"object","writeOnly":true}

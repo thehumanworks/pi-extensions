@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Card layout settings of the board","properties":{"fieldId":{"type":"string"},"id":{"format":"int64","type":"integer"},"mode":{"enum":["PLAN","WORK"],"type":"string"},"position":{"format":"int32","type":"integer"}},"type":"object"}

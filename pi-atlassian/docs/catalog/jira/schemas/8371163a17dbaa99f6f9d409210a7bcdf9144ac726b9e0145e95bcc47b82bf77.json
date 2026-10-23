@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"worklogs":{"description":"A list of successfully retrieved worklogs with their issue and worklog IDs.","items":{"$ref":"#/components/schemas/WorklogKeyResult"},"type":"array"}},"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A list of issue link type beans.","properties":{"issueLinkTypes":{"description":"The issue link type bean.","items":{"$ref":"#/components/schemas/IssueLinkType"},"readOnly":true,"type":"array","xml":{"name":"issueLinkTypes"}}},"type":"object","xml":{"name":"issueLinkTypes"}}

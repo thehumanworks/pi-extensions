@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"issueId":{"description":"The issue ID.","format":"int64","type":"integer"},"worklogId":{"description":"The worklog ID.","format":"int64","type":"integer"}},"type":"object"}

@@ -1,0 +1,1 @@
+{"description":"A time predicate for a temporal JQL clause.","properties":{"operand":{"$ref":"#/components/schemas/JqlQueryClauseOperand"},"operator":{"description":"The operator between the field and the operand.","enum":["before","after","from","to","on","during","by"],"type":"string"}},"required":["operand","operator"],"type":"object"}

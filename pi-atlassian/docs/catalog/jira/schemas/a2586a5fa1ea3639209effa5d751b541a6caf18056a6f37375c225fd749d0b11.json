@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A list of custom field options for a context.","properties":{"options":{"description":"The updated custom field options.","items":{"$ref":"#/components/schemas/CustomFieldOptionUpdate"},"type":"array"}},"type":"object"}

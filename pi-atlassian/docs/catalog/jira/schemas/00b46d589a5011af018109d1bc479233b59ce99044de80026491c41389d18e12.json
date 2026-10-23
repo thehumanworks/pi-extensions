@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The date the refreshed webhooks expire.","properties":{"expirationDate":{"description":"The expiration date of all the refreshed webhooks.","format":"int64","readOnly":true,"type":"integer"}},"required":["expirationDate"],"type":"object"}

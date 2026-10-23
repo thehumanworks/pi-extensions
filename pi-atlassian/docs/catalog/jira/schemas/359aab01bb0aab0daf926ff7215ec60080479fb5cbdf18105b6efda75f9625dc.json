@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A request to read all the workflow history entries for a specific workflow.","properties":{"workflowId":{"description":"The id of the workflow to read the history for.","type":"string"}},"type":"object"}

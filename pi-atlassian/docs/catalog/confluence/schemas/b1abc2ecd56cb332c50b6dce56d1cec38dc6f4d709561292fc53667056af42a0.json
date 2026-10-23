@@ -1,0 +1,1 @@
+{"type":"object","properties":{"hasMore":{"type":"boolean","description":"Indicates if there are more available results that can be fetched."},"cursor":{"type":"string","description":"A token that can be used in the query parameter of the endpoint returned in the `_links` property to retrieve the next set of results."}}}

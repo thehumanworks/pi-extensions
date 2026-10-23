@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"payload":{"$ref":"#/components/schemas/WorkflowUpdateRequest"},"validationOptions":{"$ref":"#/components/schemas/ValidationOptionsForUpdate"}},"required":["payload"],"type":"object"}

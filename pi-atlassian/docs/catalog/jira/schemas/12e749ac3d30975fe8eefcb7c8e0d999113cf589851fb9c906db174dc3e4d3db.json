@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"fieldId":{"type":"string"},"options":{"items":{"$ref":"#/components/schemas/JiraSelectedOptionField"},"type":"array"}},"required":["fieldId","options"],"type":"object"}

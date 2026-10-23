@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The request for updating the default project classification level.","properties":{"id":{"description":"The ID of the project classification.","type":"string"}},"required":["id"],"type":"object"}

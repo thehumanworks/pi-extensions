@@ -1,0 +1,73 @@
+{
+  "name": "@nothumanwork/pi-xai",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Reusable xAI SDK toolkit with a Pi code-mode adapter",
+  "bin": {
+    "xai-auth": "./dist/cli.js"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "lint": "prettier --check index.ts pi-auth.ts auth.ts cli.ts src tests scripts package.json tsconfig.json tsconfig.build.json README.md .vscode/settings.json",
+    "format": "prettier --write index.ts pi-auth.ts auth.ts cli.ts src tests scripts package.json tsconfig.json tsconfig.build.json README.md .vscode/settings.json",
+    "auth": "node --experimental-strip-types cli.ts",
+    "test": "npm run test:unit && npm run test:auth && npm run test:pi",
+    "test:auth": "node --experimental-strip-types --test tests/oauth_test.ts tests/local_auth_test.ts tests/auth_cli_test.ts",
+    "test:unit": "node --experimental-strip-types --test tests/resources_test.ts tests/media_test.ts tests/toolkit_test.ts",
+    "test:pi": "node --experimental-strip-types --test tests/pi_codemode_test.ts tests/pi_auth_test.ts",
+    "e2e": "node --experimental-strip-types scripts/e2e.ts",
+    "e2e:cli-auth": "node --experimental-strip-types scripts/verify-cli-auth.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  },
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./pi": "./index.ts",
+    "./auth": "./dist/auth.js",
+    "./oauth": "./dist/src/oauth.js"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "@xai-official/sdk": "0.2.2",
+    "proper-lockfile": "4.1.2",
+    "zod": "4.6.5"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/node": "26.6.4",
+    "@types/proper-lockfile": "4.1.4",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-xai"
+  },
+  "keywords": [
+    "pi-package"
+  ],
+  "files": [
+    "index.ts",
+    "pi-auth.ts",
+    "auth.ts",
+    "cli.ts",
+    "src",
+    "README.md",
+    "dist"
+  ]
+}

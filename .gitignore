@@ -4,3 +4,6 @@ node_modules
 __pycache__
 dist
 .pi/worktrees
+*.tgz
+coverage/
+mise.local.toml

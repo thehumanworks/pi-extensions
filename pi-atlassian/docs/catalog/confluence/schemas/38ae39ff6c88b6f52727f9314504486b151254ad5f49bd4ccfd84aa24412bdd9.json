@@ -1,0 +1,1 @@
+{"type":"object","properties":{"redactions":{"type":"array","items":{"$ref":"#/components/schemas/RedactionPointer"},"description":"List of specific text ranges to redact within this section"}}}

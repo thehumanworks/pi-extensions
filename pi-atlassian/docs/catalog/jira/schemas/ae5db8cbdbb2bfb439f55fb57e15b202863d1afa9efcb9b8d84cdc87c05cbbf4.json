@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Describes the error that occurred when retrieving data for a particular issue.","properties":{"errorMessage":{"description":"The error that occurred when fetching this issue.","readOnly":true,"type":"string"},"id":{"description":"The ID of the issue.","readOnly":true,"type":"string"}},"type":"object"}

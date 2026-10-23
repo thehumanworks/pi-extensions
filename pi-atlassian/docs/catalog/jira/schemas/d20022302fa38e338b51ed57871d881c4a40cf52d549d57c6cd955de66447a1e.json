@@ -1,0 +1,1 @@
+{"properties":{"boardId":{"format":"int64","type":"integer"},"boardName":{"type":"string"},"simpleBoard":{"type":"boolean"},"totalBoardsInProject":{"format":"int64","type":"integer"}},"type":"object"}

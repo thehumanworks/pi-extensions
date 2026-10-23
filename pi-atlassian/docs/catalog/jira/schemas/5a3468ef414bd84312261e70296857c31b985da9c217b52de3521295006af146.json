@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Identifiers for a UI modification.","properties":{"id":{"description":"The ID of the UI modification.","readOnly":true,"type":"string"},"self":{"description":"The URL of the UI modification.","readOnly":true,"type":"string"}},"required":["id","self"],"type":"object"}

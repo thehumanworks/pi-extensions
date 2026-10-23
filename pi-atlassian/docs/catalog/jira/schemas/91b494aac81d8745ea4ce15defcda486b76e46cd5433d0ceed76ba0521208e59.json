@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"parameter":{"description":"The value corresponding to the specified member type.","type":"string","writeOnly":true},"type":{"description":"The issue security level member type, e.g `reporter`, `group`, `user`, `projectrole`, `applicationRole`.","type":"string","writeOnly":true}},"required":["type"],"type":"object","writeOnly":true}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of any errors encountered while updating workflow transition rules.","properties":{"updateResults":{"description":"A list of workflows.","items":{"$ref":"#/components/schemas/WorkflowTransitionRulesUpdateErrorDetails"},"type":"array"}},"required":["updateResults"],"type":"object"}

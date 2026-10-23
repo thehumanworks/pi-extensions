@@ -1,0 +1,1 @@
+{"type":"object","properties":{"next":{"type":"string","description":"Used for pagination. Contains the relative URL for the next set of results, using a cursor query parameter.\nThis property will not be present if there is no additional data available."},"base":{"type":"string","description":"Base url of the Confluence site."}}}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"originalEstimateField":{"type":"string"}},"required":["originalEstimateField"],"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Minimal partial failure result when updating field scheme to fields associations.","properties":{"error":{"type":"string"},"fieldId":{"type":"string"},"schemeId":{"format":"int64","type":"integer"},"success":{"type":"boolean"}},"required":["fieldId","schemeId","success"],"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Matched filters for field association scheme search.","properties":{"projectIds":{"items":{"format":"int64","type":"integer"},"type":"array","uniqueItems":true},"query":{"type":"string"}},"type":"object"}

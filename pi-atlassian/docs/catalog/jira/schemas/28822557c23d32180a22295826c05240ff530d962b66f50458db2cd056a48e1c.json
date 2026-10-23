@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"fieldId":{"type":"string"},"groups":{"items":{"$ref":"#/components/schemas/JiraGroupInput"},"type":"array"}},"required":["fieldId","groups"],"type":"object"}

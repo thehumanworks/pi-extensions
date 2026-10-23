@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"fieldId":{"type":"string"},"value":{"format":"double","type":"number"}},"required":["fieldId"],"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Project search results for field association scheme.","properties":{"avatarUrls":{"additionalProperties":{"type":"string"},"type":"object"},"deleted":{"type":"boolean"},"id":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"}},"type":"object"}

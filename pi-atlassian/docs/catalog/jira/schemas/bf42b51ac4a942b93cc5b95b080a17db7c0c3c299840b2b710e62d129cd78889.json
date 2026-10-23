@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"name":{"description":"The plan name.","type":"string"}},"required":["name"],"type":"object"}

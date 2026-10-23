@@ -1,0 +1,1 @@
+{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["status"],"properties":{"status":{"enum":["current","draft"],"type":"string","description":"Status of the content."}}}}}}

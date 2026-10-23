@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The worflow.","properties":{"id":{"description":"The workflow ID.","type":"string"}},"type":"object"}

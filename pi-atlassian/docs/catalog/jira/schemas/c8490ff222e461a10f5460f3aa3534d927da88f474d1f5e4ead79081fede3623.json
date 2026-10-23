@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Response object after successfully updating an existing field association scheme.","properties":{"description":{"type":"string"},"id":{"format":"int64","type":"integer"},"links":{"$ref":"#/components/schemas/UpdateFieldAssociationSchemeLinksBean"},"name":{"type":"string"}},"type":"object"}

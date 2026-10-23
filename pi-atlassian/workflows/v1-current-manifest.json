@@ -1,0 +1,102 @@
+{
+  "version": "1.1.0",
+  "dagu": "2.18.2",
+  "pi": "1.0.4",
+  "harness": "pi",
+  "provider": "openai (Codex OAuth)",
+  "models": {
+    "research": "gpt-6-luna",
+    "execution": "gpt-6.1-sol"
+  },
+  "note": "Current compatible iteration; initial v1-manifest.json retained. Source revisions tracked by Git.",
+  "files": [
+    {
+      "path": "workflows/v1/CONTRACT.md",
+      "sha256": "89889a249e5717dd36aa1e10c8fc814fe096c49b62583de38b2e6cffea6accbe"
+    },
+    {
+      "path": "workflows/v1/atlassian-agent-smoke-v1.yaml",
+      "sha256": "17c429de18e905e2bc6fe2d190910c88fc537c861ab2c5c2ca5c75bfd4a5cee4"
+    },
+    {
+      "path": "workflows/v1/atlassian-build-v1.yaml",
+      "sha256": "3b9b7e84d23f47d2eb8b9c54d3266e61dc0c30d1eee2d716a036cf31ee1fcb42"
+    },
+    {
+      "path": "workflows/v1/atlassian-env-probe-v1.yaml",
+      "sha256": "830b4ad52e81ed8d5a5e3cc4d95031e877e894eeb8703c1748b48e0f5218c3ae"
+    },
+    {
+      "path": "workflows/v1/atlassian-repair-v1.yaml",
+      "sha256": "742b6017cb50a8c20b0351c44cab7d158fabcd027146077a87497ae4a220f5e0"
+    },
+    {
+      "path": "workflows/v1/atlassian-research-v1.yaml",
+      "sha256": "22ac656f45af51f3a6aadfc3f28865102995e04f51394031ec622a3a56f0a096"
+    },
+    {
+      "path": "workflows/v1/atlassian-verify-v1.yaml",
+      "sha256": "ad7886a1e8b927b8c3b608d1f036e4a6a432e97772b828463aad7141f958cb42"
+    },
+    {
+      "path": "workflows/v1/atlassian-write-controls-v1.yaml",
+      "sha256": "ba4ded67d94eea2fc88c4f0775669344a84053c85e5a0f355c4a254537d4aafb"
+    },
+    {
+      "path": "workflows/v1/atlassian-write-scope-v1.yaml",
+      "sha256": "bf454db599c617e92c5a91b305e1f6035f9a679062b4c817b3f2b34cfdfc85a1"
+    },
+    {
+      "path": "workflows/v1/check-smoke.mjs",
+      "sha256": "bd3a476d353abd4f83040cc33846142819c221000496031553fc1c16dd31015f"
+    },
+    {
+      "path": "workflows/v1/env-shape.mjs",
+      "sha256": "1727d46edf28ea8fa187f0c9a9c479aae43c1a4d8ef6ff91f9f7f9fbb7d0af5a"
+    },
+    {
+      "path": "workflows/v1/prompts/agent-smoke.md",
+      "sha256": "8210dca1060dcb141fad2d46dc9c8d6c6fef2ab18401e7ba1463b45188c26f22"
+    },
+    {
+      "path": "workflows/v1/prompts/implement.md",
+      "sha256": "1a50ce9b9ba27188b8ce81a1d837276e4cae2d91c77d9838c958dbfa74e7427b"
+    },
+    {
+      "path": "workflows/v1/prompts/repair.md",
+      "sha256": "093fecdf73f6bd7a0a61da13342b11bf77fdf078d2145a7e647733ec1a026217"
+    },
+    {
+      "path": "workflows/v1/prompts/research-api.md",
+      "sha256": "d0712795515782de833538e8964c262eb1bddeb735c90030c009f60a62891eba"
+    },
+    {
+      "path": "workflows/v1/prompts/research-journeys.md",
+      "sha256": "1d27cf54a41da74a7f53bfb9b7409230cda3fa82abaa273221053bff750d17e5"
+    },
+    {
+      "path": "workflows/v1/prompts/review.md",
+      "sha256": "e8b3e829c4190fe0fe396ed72754b846bcac3acb6f5b981528e28edb18b58d61"
+    },
+    {
+      "path": "workflows/v1/prompts/test.md",
+      "sha256": "bdc1bc81259b1d85d4dd3d75e9caa9340b75d99ffb9008ce46be9ef56546ab41"
+    },
+    {
+      "path": "workflows/v1/prompts/write-controls-review.md",
+      "sha256": "983882bdef9655994243a5e4051288466262d81fbf34788c1cfe17473c7264b9"
+    },
+    {
+      "path": "workflows/v1/prompts/write-controls-scope.md",
+      "sha256": "cbdc393c1d89666a9abd1a54eb75297e35f065dbf6f6c54906ec25c7ca1d1db1"
+    },
+    {
+      "path": "workflows/v1/prompts/write-controls.md",
+      "sha256": "d2cea35c142a10eefc458bddea2b703e34ed4f03a803d119636711aa753b9ff1"
+    },
+    {
+      "path": "workflows/v1/smoke-loadout.ts",
+      "sha256": "75b97aeda55a64cf5c6c1fb38bdfd71e26ef31a6cedcc59b7492fd7035bf57c1"
+    }
+  ]
+}

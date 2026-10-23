@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"entries":{"items":{"$ref":"#/components/schemas/AttachmentArchiveEntry"},"type":"array"},"moreAvailable":{"type":"boolean"},"totalEntryCount":{"format":"int32","type":"integer"},"totalNumberOfEntriesAvailable":{"format":"int32","type":"integer"}},"type":"object"}

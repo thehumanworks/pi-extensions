@@ -1,0 +1,1 @@
+{"additionalProperties":true,"description":"The ID of an issue priority.","properties":{"id":{"description":"The ID of the issue priority.","readOnly":true,"type":"string"}},"required":["id"],"type":"object"}

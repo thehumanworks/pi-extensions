@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The specified workflow version read from history.","properties":{"statuses":{"items":{"$ref":"#/components/schemas/WorkflowDocumentStatusDTO"},"type":"array","uniqueItems":true},"workflows":{"items":{"$ref":"#/components/schemas/WorkflowDocumentDTO"},"type":"array","uniqueItems":true}},"type":"object"}

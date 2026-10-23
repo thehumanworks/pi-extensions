@@ -1,0 +1,1 @@
+{"enum":["active","inactive","closed","unknown"],"type":"string","description":"The account status of the user."}

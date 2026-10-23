@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The event ID to use for reference in the payload","properties":{"id":{"description":"The event ID to use for reference in the payload","example":"1","type":"string"}},"type":"object"}

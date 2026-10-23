@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Request to fetch precomputations by ID.","properties":{"precomputationIDs":{"items":{"type":"string","writeOnly":true},"type":"array","writeOnly":true}},"type":"object","writeOnly":true}

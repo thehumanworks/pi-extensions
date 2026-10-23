@@ -1,0 +1,38 @@
+# Orchestration v1.0.0: two independent, single-owner research tasks.
+type: graph
+# Only dotenvx may decrypt/load the local credential file; Dagu must not shadow it.
+dotenv: []
+# Explicit runner env: Dagu does not inherit arbitrary parent variables.
+# Create this private directory before launching (see workflows/README.md).
+env:
+  - TMPDIR: "${params.WORKSPACE}/.atlassian/tmp"
+max_active_steps: 2
+params:
+  - WORKSPACE: "/home/rodat/.config/mise/agents/pi/extensions/atlassian"
+harnesses:
+  pi-codex:
+    binary: pi
+    prefix_args: ["--print", "--provider", "openai", "--no-extensions", "--no-mcp", "--no-skills", "--no-prompt-templates", "--no-session", "--no-context-files", "--no-approve", "--tools", "read,bash,edit,write"]
+    prompt_mode: arg
+    prompt_position: after_flags
+harness:
+  provider: pi-codex
+  model: gpt-6-luna
+  thinking: high
+steps:
+  - id: api_research
+    working_dir: "${params.WORKSPACE}"
+    action: harness.run
+    with:
+      prompt: "@workflows/v1/prompts/research-api.md"
+    timeout_sec: 900
+    stdout: { artifact: research/api-agent.md }
+    stderr: { artifact: logs/api-agent.log }
+  - id: journey_research
+    working_dir: "${params.WORKSPACE}"
+    action: harness.run
+    with:
+      prompt: "@workflows/v1/prompts/research-journeys.md"
+    timeout_sec: 900
+    stdout: { artifact: research/journey-agent.md }
+    stderr: { artifact: logs/journey-agent.log }

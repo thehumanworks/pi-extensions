@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"bulkEditMultiSelectFieldOption":{"enum":["ADD","REMOVE","REPLACE","REMOVE_ALL"],"type":"string"},"components":{"items":{"$ref":"#/components/schemas/JiraComponentField"},"type":"array"},"fieldId":{"type":"string"}},"required":["bulkEditMultiSelectFieldOption","components","fieldId"],"type":"object"}

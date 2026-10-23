@@ -1,0 +1,1 @@
+{"type":"object","properties":{"webui":{"type":"string","description":"Web UI link of the content."},"download":{"type":"string","description":"Download link of the content."}}}

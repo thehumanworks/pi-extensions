@@ -1,0 +1,1 @@
+{"type":"object","properties":{"redactions":{"type":"array","items":{"$ref":"#/components/schemas/RedactionPointerResponse"},"description":"List of redactions that were applied to this section"}}}

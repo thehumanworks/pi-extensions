@@ -1,0 +1,9 @@
+default_provider = "op"
+
+[providers.op]
+type = "1password"
+
+[secrets]
+ATLASSIAN_API_TOKEN = { provider = "op", value = "op://vault/atlassian/api/token" }
+ATLASSIAN_API_USERNAME = { provider = "op", value = "op://vault/atlassian/api/username" }
+ATLASSIAN_BASE_URL = { provider = "op", value = "op://vault/atlassian/api/url" }

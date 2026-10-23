@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Partial failure result when updating field scheme to projects associations.","properties":{"error":{"type":"string"},"projectId":{"format":"int64","type":"integer"},"schemeId":{"format":"int64","type":"integer"},"success":{"type":"boolean"}},"required":["projectId","schemeId","success"],"type":"object"}

@@ -1,0 +1,1 @@
+{"allOf":[{"$ref":"#/components/schemas/AssociationContextObject"},{"properties":{"identifier":{"format":"int64","type":"integer"}},"type":"object"}],"type":"object"}

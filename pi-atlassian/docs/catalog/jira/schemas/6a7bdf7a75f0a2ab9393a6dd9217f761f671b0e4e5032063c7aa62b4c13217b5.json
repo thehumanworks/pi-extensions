@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of changes to a priority scheme's projects that require suggested priority mappings.","properties":{"add":{"description":"The ids of projects being added to the scheme.","items":{"format":"int64","type":"integer","writeOnly":true},"type":"array","writeOnly":true}},"type":"object","writeOnly":true}

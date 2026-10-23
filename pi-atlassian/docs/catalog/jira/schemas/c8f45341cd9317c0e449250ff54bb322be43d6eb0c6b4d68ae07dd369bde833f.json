@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Property key details.","properties":{"key":{"description":"The key of the property.","readOnly":true,"type":"string"},"self":{"description":"The URL of the property.","readOnly":true,"type":"string"}},"type":"object"}

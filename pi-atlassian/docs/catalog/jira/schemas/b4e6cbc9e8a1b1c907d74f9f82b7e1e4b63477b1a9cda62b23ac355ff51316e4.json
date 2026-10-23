@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Response item returned from get projects with field schemes.","properties":{"projectId":{"format":"int64","type":"integer"},"schemeId":{"format":"int64","type":"integer"}},"type":"object"}

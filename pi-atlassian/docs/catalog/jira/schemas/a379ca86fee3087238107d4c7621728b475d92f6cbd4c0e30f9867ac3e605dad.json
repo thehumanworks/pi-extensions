@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Details of the statuses being created and their scope.","properties":{"scope":{"$ref":"#/components/schemas/StatusScope"},"statuses":{"description":"Details of the statuses being created.","items":{"$ref":"#/components/schemas/StatusCreate"},"type":"array"}},"required":["scope","statuses"],"type":"object"}

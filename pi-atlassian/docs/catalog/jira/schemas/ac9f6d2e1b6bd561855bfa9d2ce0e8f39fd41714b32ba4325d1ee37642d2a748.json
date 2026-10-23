@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A list of issue IDs.","properties":{"issueIds":{"description":"The list of issue IDs.","items":{"type":"string"},"type":"array"}},"required":["issueIds"],"type":"object"}

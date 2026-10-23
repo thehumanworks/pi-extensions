@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"cursor":{"type":"string"},"last":{"type":"boolean"},"nextPageCursor":{"type":"string"},"size":{"format":"int32","type":"integer"},"total":{"format":"int64","type":"integer"},"values":{"items":{"$ref":"#/components/schemas/GetTeamResponseForPage"},"type":"array"}},"type":"object"}

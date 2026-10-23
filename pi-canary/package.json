@@ -1,0 +1,37 @@
+{
+  "name": "@nothumanwork/pi-canary",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Context canary and recovery for Pi",
+  "keywords": [
+    "pi-package"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-canary"
+  },
+  "files": [
+    "canary.ts",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./canary.ts"
+    ]
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0"
+  }
+}

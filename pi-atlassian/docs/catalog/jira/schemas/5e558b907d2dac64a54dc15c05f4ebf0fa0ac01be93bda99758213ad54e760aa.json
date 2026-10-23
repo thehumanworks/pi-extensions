@@ -1,0 +1,1 @@
+{"properties":{"queueCategory":{"type":"string"},"queueId":{"format":"int64","type":"integer"},"queueName":{"type":"string"}},"type":"object"}

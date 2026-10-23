@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"newStatusId":{"type":"string"},"oldStatusId":{"type":"string"}},"type":"object"}

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"errors":{"items":{"$ref":"#/components/schemas/ErrorMessage"},"type":"array"}},"type":"object"}

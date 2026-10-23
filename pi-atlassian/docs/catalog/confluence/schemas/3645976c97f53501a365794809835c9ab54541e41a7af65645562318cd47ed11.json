@@ -1,0 +1,1 @@
+{"type":"object","properties":{"key":{"type":"string","description":"Key of the content property"},"value":{"description":"Value of the content property."}}}

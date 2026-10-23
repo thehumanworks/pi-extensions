@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The payload for setting a board feature","properties":{"featureKey":{"description":"The key of the feature","enum":["ESTIMATION","SPRINTS"],"type":"string"},"state":{"description":"Whether the feature should be turned on or off","enum":[true,false],"type":"boolean"}},"type":"object"}

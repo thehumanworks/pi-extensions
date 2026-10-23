@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The ID of a screen scheme.","properties":{"screenSchemeId":{"description":"The ID of the screen scheme.","type":"string","writeOnly":true}},"required":["screenSchemeId"],"type":"object"}

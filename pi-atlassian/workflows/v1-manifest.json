@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "dagu": "2.18.2",
+  "pi": "1.0.4",
+  "harness": "pi",
+  "provider": "openai (Codex OAuth)",
+  "models": {
+    "research": "gpt-6-luna",
+    "execution": "gpt-6.1-sol"
+  },
+  "files": [
+    {
+      "path": "workflows/v1/CONTRACT.md",
+      "sha256": "89889a249e5717dd36aa1e10c8fc814fe096c49b62583de38b2e6cffea6accbe"
+    },
+    {
+      "path": "workflows/v1/atlassian-build-v1.yaml",
+      "sha256": "cf8af24530a4a5bc962e4d2d368fe370d21d378a969096e9413ac48a55a0a242"
+    },
+    {
+      "path": "workflows/v1/atlassian-repair-v1.yaml",
+      "sha256": "fd102885df084670579695dc2b595dd56f14f4331e77fb3ff1a0e0a04d849489"
+    },
+    {
+      "path": "workflows/v1/atlassian-research-v1.yaml",
+      "sha256": "5018c9b55b6f387030af9e70656a18ddec6845722127b2c8b1ba386334e20e84"
+    },
+    {
+      "path": "workflows/v1/atlassian-verify-v1.yaml",
+      "sha256": "cced0fe53c901dd4712e483b7846c3afa283950864907ec790bab4001f27e019"
+    },
+    {
+      "path": "workflows/v1/prompts/implement.md",
+      "sha256": "1a50ce9b9ba27188b8ce81a1d837276e4cae2d91c77d9838c958dbfa74e7427b"
+    },
+    {
+      "path": "workflows/v1/prompts/repair.md",
+      "sha256": "753ef6a15fd69c985000e9094e5d4e990e431e3cc3b158b546342034f510fe12"
+    },
+    {
+      "path": "workflows/v1/prompts/research-api.md",
+      "sha256": "d0712795515782de833538e8964c262eb1bddeb735c90030c009f60a62891eba"
+    },
+    {
+      "path": "workflows/v1/prompts/research-journeys.md",
+      "sha256": "1d27cf54a41da74a7f53bfb9b7409230cda3fa82abaa273221053bff750d17e5"
+    },
+    {
+      "path": "workflows/v1/prompts/review.md",
+      "sha256": "1ebab932c10eef157f17308dbcf40b1677ddd0de7628171e7b372c3976af2d7f"
+    },
+    {
+      "path": "workflows/v1/prompts/test.md",
+      "sha256": "bdc1bc81259b1d85d4dd3d75e9caa9340b75d99ffb9008ce46be9ef56546ab41"
+    }
+  ]
+}

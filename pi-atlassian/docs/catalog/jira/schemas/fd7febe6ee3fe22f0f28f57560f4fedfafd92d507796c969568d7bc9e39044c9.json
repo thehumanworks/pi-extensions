@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Response for updating field scheme to projects associations.","properties":{"results":{"items":{"$ref":"#/components/schemas/FieldSchemeToProjectsPartialFailure"},"type":"array","uniqueItems":true}},"required":["results"],"type":"object"}

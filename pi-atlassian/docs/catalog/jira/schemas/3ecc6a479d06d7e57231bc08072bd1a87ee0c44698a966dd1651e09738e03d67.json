@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"A field auto-complete suggestion.","properties":{"displayName":{"description":"The display name of a suggested item. If `fieldValue` or `predicateValue` are provided, the matching text is highlighted with the HTML bold tag.","type":"string"},"value":{"description":"The value of a suggested item.","type":"string"}},"type":"object"}

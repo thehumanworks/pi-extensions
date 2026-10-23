@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"moduleId":{"description":"The moduleId of the Forge panel that was requested.","type":"string"},"statuses":{"description":"The pin status of the issue panel, with one entry per requested project.","items":{"$ref":"#/components/schemas/ForgePanelProjectPinStatus"},"type":"array"}},"type":"object"}

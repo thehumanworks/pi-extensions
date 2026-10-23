@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"name":{"description":"The cross-project release name.","type":"string"},"releaseIds":{"description":"The IDs of the releases to include in the cross-project release.","items":{"format":"int64","type":"integer"},"type":"array","uniqueItems":true}},"required":["name"],"type":"object"}

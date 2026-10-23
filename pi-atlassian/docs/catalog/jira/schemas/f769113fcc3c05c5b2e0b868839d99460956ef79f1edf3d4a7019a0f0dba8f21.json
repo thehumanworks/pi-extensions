@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Projects using the workflow scheme.","properties":{"projects":{"$ref":"#/components/schemas/ProjectUsagePage"},"workflowSchemeId":{"description":"The workflow scheme ID.","type":"string"}},"type":"object"}

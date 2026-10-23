@@ -1,0 +1,39 @@
+# Actual Pi tool invocation, on the live site, strictly read-only.
+type: graph
+# Only dotenvx may decrypt/load the local credential file; Dagu must not shadow it.
+dotenv: []
+# Explicit runner env: Dagu does not inherit arbitrary parent variables.
+# Create this private directory before launching (see workflows/README.md).
+env:
+  - TMPDIR: "${params.WORKSPACE}/.atlassian/tmp"
+max_active_steps: 1
+params:
+  - WORKSPACE: "/home/rodat/.config/mise/agents/pi/extensions/atlassian"
+  - CA_BUNDLE: "/etc/ssl/certs/ca-certificates.crt"
+harnesses:
+  pi-codex-dotenvx:
+    binary: dotenvx
+    prefix_args: ["run", "--strict", "--overload", "--", "env", "ATLASSIAN_ALLOW_WRITES=0", "pi", "--print", "--provider", "openai", "--no-extensions", "--extension", "./index.ts", "--extension", "builtin:codemode", "--extension", "./workflows/v1/smoke-loadout.ts", "--no-mcp", "--no-skills", "--no-prompt-templates", "--no-session", "--no-context-files", "--no-approve", "--exclude-tools", "atlassian_apply,atlassian_plan"]
+    prompt_mode: arg
+    prompt_position: after_flags
+steps:
+  - id: agent_smoke
+    working_dir: "${params.WORKSPACE}"
+    env:
+      - ATLASSIAN_ALLOW_WRITES: "0"
+      - NODE_USE_SYSTEM_CA: "1"
+      - NODE_EXTRA_CA_CERTS: "${params.CA_BUNDLE}"
+    action: harness.run
+    with:
+      provider: pi-codex-dotenvx
+      model: gpt-6.1-sol
+      thinking: medium
+      prompt: "@workflows/v1/prompts/agent-smoke.md"
+    timeout_sec: 600
+    stdout: { artifact: checks/pi-agent-smoke.txt }
+    stderr: { artifact: logs/pi-agent-smoke.log }
+  - id: assert_smoke_verdict
+    depends: [agent_smoke]
+    working_dir: "${params.WORKSPACE}"
+    run: node workflows/v1/check-smoke.mjs "${agent_smoke.stdout}"
+    stdout: { artifact: checks/pi-agent-smoke-verdict.txt }

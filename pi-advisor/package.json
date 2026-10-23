@@ -1,0 +1,37 @@
+{
+  "name": "@nothumanwork/pi-advisor",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Second-opinion advisor for Pi",
+  "keywords": [
+    "pi-package"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-advisor"
+  },
+  "files": [
+    "pi-advisor.ts",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./pi-advisor.ts"
+    ]
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0"
+  }
+}

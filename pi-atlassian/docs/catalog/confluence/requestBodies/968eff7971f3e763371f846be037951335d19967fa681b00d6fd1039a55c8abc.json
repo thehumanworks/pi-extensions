@@ -1,0 +1,1 @@
+{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["contentIds"],"properties":{"contentIds":{"description":"The content ids to convert. They may be provided as strings or numbers.","type":"array","maxItems":100,"items":{"anyOf":[{"type":"string"},{"type":"number"}]}}}}}}}

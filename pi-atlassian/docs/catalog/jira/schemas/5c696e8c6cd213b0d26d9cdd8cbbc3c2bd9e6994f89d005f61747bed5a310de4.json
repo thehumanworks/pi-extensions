@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"The configuration for notification recipents","properties":{"notificationType":{"description":"The type of notification.","type":"string"},"parameter":{"description":"The parameter of the notification, should be eiither null if not required, or PCRI.","type":"string"}},"type":"object"}

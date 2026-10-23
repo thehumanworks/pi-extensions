@@ -1,0 +1,1 @@
+{"type":"object","required":["assignments","spaceSelection"],"properties":{"assignments":{"type":"array","description":"List of role assignments to apply.","items":{"$ref":"#/components/schemas/BulkTransitionRoleAssignment"}},"spaceSelection":{"$ref":"#/components/schemas/BulkTransitionSpaceSelection"}}}

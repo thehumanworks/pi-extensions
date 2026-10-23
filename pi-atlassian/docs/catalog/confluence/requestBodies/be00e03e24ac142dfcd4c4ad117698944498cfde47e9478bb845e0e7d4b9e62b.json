@@ -1,0 +1,1 @@
+{"required":true,"content":{"application/json":{"schema":{"type":"array","items":{"required":["principal"],"properties":{"principal":{"$ref":"#/components/schemas/Principal"},"roleId":{"type":"string","description":"The role to which the principal is assigned."}}}}}}}

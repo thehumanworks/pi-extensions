@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"formattedDate":{"type":"string"}},"required":["formattedDate"],"type":"object"}

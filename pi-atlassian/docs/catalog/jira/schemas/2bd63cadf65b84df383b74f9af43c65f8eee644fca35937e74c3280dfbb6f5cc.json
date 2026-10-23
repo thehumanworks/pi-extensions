@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"fieldId":{"type":"string"},"richText":{"$ref":"#/components/schemas/JiraRichTextInput"}},"required":["fieldId","richText"],"type":"object"}

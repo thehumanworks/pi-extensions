@@ -1,0 +1,1 @@
+{"enum":["current","draft","historical","trashed","deleted","any"],"type":"string","description":"The status of the content."}

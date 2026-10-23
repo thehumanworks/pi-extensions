@@ -1,0 +1,1 @@
+{"required":["path","isDefault"],"type":"object","nullable":true,"properties":{"path":{"type":"string"},"isDefault":{"type":"boolean"}},"description":"This object represents an icon. If used as a profilePicture, this may be returned as null, depending on the user's privacy setting."}

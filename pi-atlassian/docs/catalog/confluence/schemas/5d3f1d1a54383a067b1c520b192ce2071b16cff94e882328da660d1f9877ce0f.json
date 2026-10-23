@@ -1,0 +1,1 @@
+{"type":"object","properties":{"representation":{"enum":["storage","atlas_doc_format","wiki"],"type":"string","description":"Type of content representation used for the value field."},"value":{"type":"string","description":"Body of the page, in the format found in the representation field."}}}

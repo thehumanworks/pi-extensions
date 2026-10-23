@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Issue types associated with the workflow for a project.","properties":{"issueTypes":{"$ref":"#/components/schemas/WorkflowProjectIssueTypeUsagePage"},"projectId":{"description":"The ID of the project.","type":"string"},"workflowId":{"description":"The ID of the workflow.","type":"string"}},"type":"object"}
