@@ -8,6 +8,7 @@
     "pi-canary",
     "pi-fast",
     "pi-loop",
+    "pi-tps",
     "pi-voice",
     "pi-xai"
   ],
@@ -16,9 +17,15 @@
   },
   "scripts": {
     "test:packages": "node --test scripts/packages.test.mjs",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test:scripts && npm run test --workspaces --if-present",
+    "test:scripts": "node --test scripts/publish.test.mjs scripts/publish-updated.test.mjs",
+    "publish:package": "node scripts/publish.mjs",
+    "publish:updated": "node scripts/publish-updated.mjs",
     "check": "npm run check --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "pack:check": "npm run build && npm run test:packages"
+  },
+  "devDependencies": {
+    "semver": "^7.8.5"
   }
 }
