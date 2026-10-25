@@ -279,8 +279,9 @@ export default function (pi: ExtensionAPI) {
         text.slice(`${recovery.keyword}: ${HANDOVER_HEADING}\n`.length).trim()
         ? text
         : undefined;
-    } else if (message.stopReason !== "deferred" && text.trim() && !text.startsWith(`${keywordForSpan}: `)) {
-      violated = true;
+    } else {
+      // Judged at this message's turn_end, once it is known whether the agent continues.
+      violated = message.stopReason !== "deferred" && !!text.trim() && !text.startsWith(`${keywordForSpan}: `);
     }
   });
 
@@ -290,17 +291,28 @@ export default function (pi: ExtensionAPI) {
     }
   });
 
+  const requestHandover = (current: Recovery, entries: AgentBeforeSettleEvent["entries"]) => ({
+    entries: [...entries, {
+      type: "custom_message" as const,
+      customType: "canary-handover-request",
+      content: handoverRequest(current.keyword),
+      display: true,
+    }],
+    continue: true,
+  });
+
   const handleBoundary = async (
     event: AgentBeforeSettleEvent | TurnEndEvent,
     ctx: ExtensionContext,
   ) => {
-    if (event.type === "turn_end" && !recovery) return;
+    const missed = event.type === "turn_end" && violated;
+    if (event.type === "turn_end") violated = false;
+    if (!recovery && !missed) return;
     if (!keywordForSpan || activeKeyword() !== keywordForSpan || paused) return;
     // Never override Escape, provider errors, or work already queued by the user.
     // In particular, do not compact a stale snapshot.
     if (event.outcome !== "completed" || ctx.signal?.aborted) {
       recovery = undefined;
-      violated = false;
       return;
     }
     if (event.context.pendingMessages.length || ctx.hasPendingMessages()) return;
@@ -316,26 +328,28 @@ export default function (pi: ExtensionAPI) {
           : "The agent did not produce a complete, correctly prefixed handover after two attempts";
       return { ...pauseRecovery(ctx, reason, event.entries), continue: false };
     }
-    if (event.continue) return;
-
-    if (!recovery) {
-      if (!violated) return;
-      if (restarted) return pauseRecovery(ctx, "The restarted agent missed the prefix again; automatic recovery is limited to once per user message", event.entries);
+    if (!recovery && event.type === "turn_end") {
+      // A message without tool calls ends the agent's turn. A handover there is
+      // too late to be useful, so report the miss without blocking or compacting.
+      if (event.message.role !== "assistant" || !event.message.content.some((block) => block.type === "toolCall")) {
+        notify(ctx, "Canary prefix missing on the final message. No handover requested because the turn has ended.", "warning");
+        return;
+      }
+      if (restarted) {
+        ctx.abort();
+        return { ...pauseRecovery(ctx, "The restarted agent missed the prefix again; automatic recovery is limited to once per user message", event.entries), continue: false };
+      }
       recovery = { keyword: keywordForSpan, attempts: 0 };
       notify(ctx, "Canary prefix missing. Requesting a handover before compaction.", "warning");
+      return requestHandover(recovery, event.entries);
     }
+    if (event.continue || !recovery) return;
+
     const current = recovery;
     if (!current.handover) {
+      // Re-request only once the agent has stopped without a usable handover.
       if (event.type === "turn_end") return;
-      return {
-        entries: [...event.entries, {
-          type: "custom_message" as const,
-          customType: "canary-handover-request",
-          content: handoverRequest(current.keyword),
-          display: true,
-        }],
-        continue: true,
-      };
+      return requestHandover(current, event.entries);
     }
 
     // Summarize at turn_end, while ctx.signal still belongs to the live run.
@@ -363,7 +377,6 @@ export default function (pi: ExtensionAPI) {
       }
       const handover = current.handover;
       recovery = undefined;
-      violated = false;
       restarted = true;
       notify(ctx, "Canary recovery complete. Restarting with the summary and handover.");
       // A boundary compaction is atomic with continuation. Retain-none gives a

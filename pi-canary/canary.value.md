@@ -41,7 +41,9 @@ An offline lifecycle probe made 3 requests with 30 scripted tokens each. Pi repo
 
 ### Immediate tool blocking on first detected violation: unchanged
 
-This was an optional product-behaviour change, not a demonstrated optimisation. The documented detector still begins recovery at the end of the user-message span; it is not silently converted into an immediate tool-execution circuit breaker.
+This was an optional product-behaviour change, not a demonstrated optimisation. Tool calls in the message that missed the prefix still run; blocking begins with the handover request.
+
+> **Superseded detector timing (later change).** Recovery no longer waits for the end of the user-message span. The prefix is checked at each assistant message's `turn_end`. A miss on a mid-run (tool-calling) message requests the handover immediately. A miss on the final, tool-free message only produces a warning, because a handover at that point is too late to be useful. The measurements above were taken before this change; the fixtures now trigger recovery with a mid-run message.
 
 ## Verification results
 

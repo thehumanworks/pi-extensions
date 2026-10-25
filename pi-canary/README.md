@@ -41,7 +41,12 @@ Thinking/reasoning blocks, structured tool calls and their arguments, and tool r
 
 ## Recovery
 
-At the end of the agent's response to a user message, a missing prefix triggers this sequence:
+The prefix is checked after each assistant message. A handover is only useful while the agent is still working, so recovery depends on whether that message ends the turn:
+
+- **Mid-run message** (it has tool calls, so the agent will continue): recovery starts immediately, as below. Tool calls in the offending message have already run; tool calls after that are blocked.
+- **Final message** (no tool calls, so the agent is ending its turn): a warning is shown, and nothing else happens. No handover request, tool blocking, compaction, or continuation.
+
+Recovery sequence:
 
 1. Flag the failure with a visible instruction and require the agent's next response to be a self-contained handover prompt. Tool execution is blocked during this phase.
 2. Accept a complete, correctly prefixed, tool-free response beginning with `chirp: # Canary handover`, followed by a newline and handover content.
@@ -50,7 +55,7 @@ At the end of the agent's response to a user message, a missing prefix triggers 
 
 “Restart” means **fresh model context within the same session file**, not a new Pi process or new session file. The restarted model receives the system/tool checkpoint, compaction summary, and handover. Older conversation entries remain in the session history but are not replayed into the restarted context. Successful summary usage is attached to the compaction entry. Known limitation: usage from rejected or interrupted summary requests is not included in Pi's session totals; the current extension API does not expose an independent usage-recording operation.
 
-Recovery allows at most two handover responses and one automatic restart per user message. The handover-attempt budget also applies when an earlier extension requests continuation. A deferred handover pauses recovery immediately instead of submitting more requests while a provider job may still be running; this does not explicitly cancel or retrieve that provider job. Further violations pause recovery rather than creating a loop. Provider errors, missing/empty/truncated summaries, and user cancellation do not discard history or automatically restart. Queued user input takes priority; a new user message resets the recovery state. If recovery pauses, inspect the preserved handover/history and send a new instruction, or disable canary mode.
+Recovery allows at most two handover responses and one automatic restart per user message. If the restarted agent misses the prefix mid-run, the run is stopped and recovery pauses. A miss on its final message only shows a warning. The handover-attempt budget also applies when an earlier extension requests continuation. A deferred handover pauses recovery immediately instead of submitting more requests while a provider job may still be running; this does not explicitly cancel or retrieve that provider job. Further violations pause recovery rather than creating a loop. Provider errors, missing/empty/truncated summaries, and user cancellation do not discard history or automatically restart. Queued user input takes priority; a new user message resets the recovery state. If recovery pauses, inspect the preserved handover/history and send a new instruction, or disable canary mode.
 
 ## Tests
 
@@ -66,6 +71,6 @@ For a standalone extension, point the tests at your installed coding-agent entry
 PI_CANARY_SDK=/absolute/path/to/pi/dist/index.js bun test ./canary.test.ts
 ```
 
-The tests cover keyword persistence and automatic enabling/reload, settings precedence, case preservation, malformed/locked/BOM-prefixed settings, Unicode separators, symlinks, cancelled command changes, exact-prefix checks, reasoning/tool exclusions, branch restoration, bounded/deferred handover attempts, compaction failures, cancellation, queued input, preservation of other extensions' boundary drafts, headless operation, and Pi's real file loader/lifecycle with a scripted, offline provider.
+The tests cover keyword persistence and automatic enabling/reload, settings precedence, case preservation, malformed/locked/BOM-prefixed settings, Unicode separators, symlinks, cancelled command changes, exact-prefix checks, per-message checks (mid-run misses recover, final-message misses only warn), reasoning/tool exclusions, branch restoration, bounded/deferred handover attempts, compaction failures, cancellation, queued input, preservation of other extensions' boundary drafts, headless operation, and Pi's real file loader/lifecycle with a scripted, offline provider.
 
 See [Measured changes](canary.value.md) for before/after results and proposals deliberately not retained. To run the same tests against an older implementation, set `PI_CANARY_EXTENSION` to its absolute file path; both the unit harness and real loader use that implementation.

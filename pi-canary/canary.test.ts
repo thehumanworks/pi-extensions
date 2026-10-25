@@ -17,6 +17,8 @@ const usage = {
 };
 const toolCall = { type: "toolCall", id: "call-1", name: "test_tool", arguments: {} };
 const thinking = { type: "thinking", thinking: "private reasoning, not a prefix" };
+// A missed prefix only triggers recovery while the agent is still working.
+const midRun = (text = "Missing prefix", id = "call-0") => [{ type: "text", text }, { ...toolCall, id }];
 const handover = "chirp: # Canary handover\n## Goal\nFinish the original task.\n## Current state\nTests pass.\n## Next steps\nReview the changes.";
 const assistant = (content: string | any[], stopReason = "stop") => ({
   role: "assistant", content: typeof content === "string" ? [{ type: "text", text: content }] : content,
@@ -120,8 +122,7 @@ function harness(settings: Record<string, unknown> = { canary: "chirp" }) {
     async fail() {
       await this.command("on");
       await this.start();
-      await this.reply("Missing prefix");
-      return this.settle();
+      return this.reply(midRun(), "toolUse");
     },
   };
 }
@@ -380,8 +381,9 @@ describe("prefix detection", () => {
     test(`flags a non-prefix match: ${JSON.stringify(text)}`, async () => {
       const h = harness();
       await h.command("on"); await h.start();
-      expect(await h.reply(text)).toBeUndefined(); // Wait for the end of the user span.
-      expect((await h.settle()).continue).toBe(true);
+      const result = await h.reply(midRun(text), "toolUse");
+      expect(result.continue).toBe(true);
+      expect(result.entries[0].customType).toBe("canary-handover-request");
     });
   }
   test("ignores reasoning, tool-only messages, and tool results; joins text blocks", async () => {
@@ -392,13 +394,30 @@ describe("prefix detection", () => {
     await h.reply([thinking, { type: "text", text: "chir" }, { type: "text", text: "p: fine" }]);
     expect(await h.settle()).toBeUndefined();
   });
-  test("an earlier missing commentary prefix is not masked by a correct final answer", async () => {
+  test("checks each message: a mid-run miss requests a handover immediately", async () => {
     const h = harness();
     await h.command("on"); await h.start();
-    await h.reply([{ type: "text", text: "Bad commentary" }, toolCall], "toolUse");
-    await h.reply("chirp: Correct final answer");
-    expect((await h.settle()).entries[0].customType).toBe("canary-handover-request");
+    await h.reply("chirp: Planning", "toolUse");
+    const result = await h.reply(midRun("Bad commentary"), "toolUse");
+    expect(result.entries[0].customType).toBe("canary-handover-request");
+    expect((await h.emit("tool_call", { toolName: "test_tool" })).block).toBe(true);
   });
+  for (const reason of ["stop", "length"]) {
+    test(`a miss on the final message (${reason}) does not request a handover, block, or compact`, async () => {
+      const h = harness();
+      await h.command("on"); await h.start();
+      await h.reply([toolCall], "toolUse");
+      expect(await h.reply("Final answer without prefix", reason)).toBeUndefined();
+      expect(await h.settle()).toBeUndefined();
+      expect(await h.emit("tool_call", { toolName: "test_tool" })).toBeUndefined();
+      expect(h.summaryCalls).toHaveLength(0);
+      expect(h.drafts).toHaveLength(0);
+      expect(h.abortCount()).toBe(0);
+      expect(h.notifications.at(-1)).toEqual([expect.stringContaining("No handover requested"), "warning"]);
+      await h.start();
+      expect((await h.reply(midRun(), "toolUse")).continue).toBe(true);
+    });
+  }
 });
 
 describe("handover, compaction, and fresh-context continuation", () => {
@@ -455,12 +474,14 @@ describe("handover, compaction, and fresh-context continuation", () => {
 
   test("limits restarts to one per user message, but resets the limit for the next user", async () => {
     const h = harness(); await h.fail(); await h.reply(handover);
-    await h.reply("Bad again");
-    const result = await h.settle();
+    expect(await h.reply("Final answer without prefix")).toBeUndefined();
+    const result = await h.reply(midRun("Bad again"), "toolUse");
     expect(result.entries[0].content).toContain("once per user message");
-    expect(result.continue).toBeUndefined();
-    await h.start(); await h.reply("Another missing prefix");
-    expect((await h.settle()).continue).toBe(true);
+    expect(result.continue).toBe(false);
+    expect(h.abortCount()).toBe(1);
+    h.ctx.signal = new AbortController().signal;
+    await h.start();
+    expect((await h.reply(midRun("Another missing prefix"), "toolUse")).continue).toBe(true);
   });
 
   for (const outcome of ["error", "aborted"]) {
@@ -511,7 +532,12 @@ describe("handover, compaction, and fresh-context continuation", () => {
 
   test("defers to queued messages and other boundary continuations", async () => {
     const h = harness();
-    await h.command("on"); await h.start(); await h.reply("Bad prefix");
+    await h.command("on"); await h.start();
+    h.setPending(true);
+    expect(await h.reply(midRun("Bad prefix"), "toolUse")).toBeUndefined();
+    h.setPending(false);
+    expect(await h.settle()).toBeUndefined();
+    await h.fail(); await h.reply("chirp: Not a handover");
     expect(await h.settle({ continue: true })).toBeUndefined();
     h.setPending(true);
     expect(await h.settle()).toBeUndefined();
@@ -626,7 +652,7 @@ test("real Pi lifecycle: keyword command persists, reloads settings, and enables
 }, 20000);
 
 test("real Pi lifecycle: file-loaded extension -> handover -> compaction -> automatic continuation", async () => {
-  const responses = [assistant("Missing prefix"), assistant(handover), assistant("## Summary\nThe original request is complete."), assistant("chirp: Finished.")];
+  const responses = [assistant(midRun(), "toolUse"), assistant(handover), assistant("## Summary\nThe original request is complete."), assistant("chirp: Finished.")];
   const h = await realSession(responses);
   try {
     await h.session.prompt("Complete the original request.");
@@ -646,10 +672,26 @@ test("real Pi lifecycle: file-loaded extension -> handover -> compaction -> auto
   } finally { h.cleanup(); }
 }, 20000);
 
+test("real Pi lifecycle: a missed prefix on the final message ends the turn without handover or compaction", async () => {
+  const h = await realSession([assistant("chirp: Working.", "toolUse"), assistant("Done, without the prefix.")].map((message, i) =>
+    i === 0 ? { ...message, content: [...message.content, toolCall] } : message));
+  try {
+    await h.session.prompt("Complete the original request.");
+    expect(h.errors).toEqual([]);
+    expect(h.calls).toHaveLength(2);
+    expect(h.executions()).toBe(1);
+    const branch = h.session.sessionManager.getBranch();
+    expect(branch.some((entry: any) => ["canary-handover-request", "canary-recovery-failed", "canary-resume"].includes(entry.customType))).toBe(false);
+    expect(branch.some((entry: any) => entry.type === "compaction")).toBe(false);
+    expect(h.session.getLastAssistantText()).toBe("Done, without the prefix.");
+    expect(h.session.isIdle).toBe(true);
+  } finally { h.cleanup(); }
+}, 20000);
+
 test("real Pi lifecycle: abort cancels an in-flight summary without compacting or restarting", async () => {
   let started!: () => void;
   const summaryStarted = new Promise<void>((resolve) => { started = resolve; });
-  const responses = [assistant("Missing prefix"), assistant(handover), (signal: AbortSignal) => {
+  const responses = [assistant(midRun(), "toolUse"), assistant(handover), (signal: AbortSignal) => {
     started();
     return new Promise((resolve) => signal.addEventListener("abort", () => resolve(assistant("", "aborted")), { once: true }));
   }];
@@ -669,13 +711,13 @@ test("real Pi lifecycle: abort cancels an in-flight summary without compacting o
 }, 20000);
 
 test("real Pi lifecycle: two blocked handover tool attempts stop without executing tools", async () => {
-  const responses = [assistant("Missing prefix"), assistant([toolCall], "toolUse"), assistant([{ ...toolCall, id: "call-2" }], "toolUse")];
+  const responses = [assistant(midRun(), "toolUse"), assistant([toolCall], "toolUse"), assistant([{ ...toolCall, id: "call-2" }], "toolUse")];
   const h = await realSession(responses);
   try {
     await h.session.prompt("Complete the original request.");
     expect(h.errors).toEqual([]);
     expect(h.calls).toHaveLength(3);
-    expect(h.executions()).toBe(0);
+    expect(h.executions()).toBe(1); // Only the tool call that accompanied the missed prefix.
     expect(h.session.sessionManager.getBranch().some((entry: any) => entry.customType === "canary-recovery-failed")).toBe(true);
     expect(h.session.sessionManager.getBranch().some((entry: any) => entry.type === "compaction")).toBe(false);
     expect(h.session.isIdle).toBe(true);
@@ -685,7 +727,7 @@ test("real Pi lifecycle: two blocked handover tool attempts stop without executi
 describe("measured canary improvements", () => {
   test("real lifecycle: a deferred handover pauses without submitting another request", async () => {
     const responses = [
-      assistant("Missing prefix"),
+      assistant(midRun(), "toolUse"),
       assistant([], "deferred"), assistant([], "deferred"), assistant([], "deferred"),
       assistant(handover), assistant("The task is complete."), assistant("chirp: Finished."),
     ];
@@ -711,8 +753,8 @@ describe("measured canary improvements", () => {
       const prior = { type: "custom_message", customType: "other-extension-audit", content: "Preserve this audit record.", display: false };
       let result: any;
       if (boundary === "request") {
-        await h.command("on"); await h.start(); await h.reply("Missing prefix");
-        result = await h.settle({ entries: [prior] });
+        await h.command("on"); await h.start();
+        result = await h.reply(midRun(), "toolUse", { entries: [prior] });
       } else {
         await h.fail();
         if (boundary === "failure") {
@@ -827,7 +869,7 @@ describe("recovery compatibility controls", () => {
       }
     }`;
     const h = await realSession([
-      assistant("Missing prefix"), assistant(handover),
+      assistant(midRun(), "toolUse"), assistant(handover),
       assistant("The original task is complete."), assistant("chirp: Finished."),
     ], { beforeCanary });
     try {
@@ -837,7 +879,7 @@ describe("recovery compatibility controls", () => {
       const sequences = audits.map((entry: any) => entry.data.sequence);
       console.log("MEASURE real-boundary", JSON.stringify({ sequences }));
       expect(h.errors).toEqual([]);
-      expect(sequences).toEqual([1, 2, 3, 4, 5]);
+      expect(sequences).toEqual([1, 2, 3, 4]);
       expect(h.session.isIdle).toBe(true);
     } finally { h.cleanup(); }
   }, 20000);
