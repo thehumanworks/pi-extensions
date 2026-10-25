@@ -11,6 +11,7 @@
     "pi-memory",
     "pi-tps",
     "pi-voice",
+    "pi-remote",
     "pi-xai"
   ],
   "engines": {
