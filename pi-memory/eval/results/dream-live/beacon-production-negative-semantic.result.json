@@ -1,0 +1,51 @@
+{
+  "id": "beacon-production-negative-semantic",
+  "caseId": "beacon-production-negative",
+  "arm": "semantic",
+  "negative": true,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+  "parsed": {
+    "command": null,
+    "workers": null,
+    "retries": null,
+    "timeoutSeconds": null,
+    "requiresPassingPreflight": null
+  },
+  "expected": {
+    "command": null,
+    "workers": null,
+    "retries": null,
+    "timeoutSeconds": null,
+    "requiresPassingPreflight": null
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 898,
+    "output": 30,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 984,
+  "selectedIds": [
+    "m_mvnv4dfb59ea4a455cef36b554fc",
+    "m_mvnv4dfiee46363da7010862a250"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 1411,
+    "canonicalMarkdownBytes": 4680
+  },
+  "latencyMs": 4359
+}

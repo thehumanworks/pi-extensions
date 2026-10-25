@@ -1,0 +1,501 @@
+[
+  {
+    "id": "m_mvnwh5e8251884702f7c2c04c655",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "procedure",
+    "title": "Beacon staging timeout",
+    "summary": "For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed. Never use the Beacon staging verification command against production. Beacon staging verification has a 45 second timeout.",
+    "keywords": [
+      "beacon",
+      "staging",
+      "verification"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.95,
+    "source": {
+      "session": "synthetic-dream-source",
+      "entries": [
+        "fact-0"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "synthetic-dream-source",
+        "entries": [
+          "fact-0"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.432Z",
+    "updated": "2026-10-25T14:05:32.432Z",
+    "last_used": "2026-10-25T14:05:32.432Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed. Never use the Beacon staging verification command against production. Beacon staging verification has a 45 second timeout."
+  },
+  {
+    "id": "m_mvnwh5efa9dc7391422213f0f4b9",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "procedure",
+    "title": "Beacon staging retries",
+    "summary": "For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed. Never use the Beacon staging verification command against production. Beacon staging verification permits 2 retries.",
+    "keywords": [
+      "beacon",
+      "staging",
+      "verification"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.95,
+    "source": {
+      "session": "synthetic-dream-source",
+      "entries": [
+        "fact-1"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "synthetic-dream-source",
+        "entries": [
+          "fact-1"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.439Z",
+    "updated": "2026-10-25T14:05:32.439Z",
+    "last_used": "2026-10-25T14:05:32.439Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed. Never use the Beacon staging verification command against production. Beacon staging verification permits 2 retries."
+  },
+  {
+    "id": "m_mvnwh5el7056cfd8653f1ebfe5e0",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "procedure",
+    "title": "Beacon staging workers",
+    "summary": "For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed. Never use the Beacon staging verification command against production. Beacon staging verification uses 3 workers.",
+    "keywords": [
+      "beacon",
+      "staging",
+      "verification"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.95,
+    "source": {
+      "session": "synthetic-dream-source",
+      "entries": [
+        "fact-2"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "synthetic-dream-source",
+        "entries": [
+          "fact-2"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.445Z",
+    "updated": "2026-10-25T14:05:32.445Z",
+    "last_used": "2026-10-25T14:05:32.445Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed. Never use the Beacon staging verification command against production. Beacon staging verification uses 3 workers."
+  },
+  {
+    "id": "m_mvnwh5er9e0e0d5e6493f63102c1",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "procedure",
+    "title": "Zephyr staging deployment",
+    "summary": "Zephyr deployments require a passing preflight before any apply operation. Use only the command and limits specified for the named deployment environment. For Zephyr staging, use `zx stage-apply` with 3 workers, 2 retries and a 30 second timeout.",
+    "keywords": [
+      "zephyr",
+      "deployment",
+      "preflight"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.95,
+    "source": {
+      "session": "synthetic-dream-source",
+      "entries": [
+        "fact-3"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "synthetic-dream-source",
+        "entries": [
+          "fact-3"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.451Z",
+    "updated": "2026-10-25T14:05:32.451Z",
+    "last_used": "2026-10-25T14:05:32.451Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Zephyr deployments require a passing preflight before any apply operation. Use only the command and limits specified for the named deployment environment. For Zephyr staging, use `zx stage-apply` with 3 workers, 2 retries and a 30 second timeout."
+  },
+  {
+    "id": "m_mvnwh5exf7e46f98a2a21734a628",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "procedure",
+    "title": "Zephyr production deployment",
+    "summary": "Zephyr deployments require a passing preflight before any apply operation. Use only the command and limits specified for the named deployment environment. For Zephyr production, use `zx prod-apply` with 1 worker, 0 retries and a 90 second timeout.",
+    "keywords": [
+      "zephyr",
+      "deployment",
+      "preflight"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.95,
+    "source": {
+      "session": "synthetic-dream-source",
+      "entries": [
+        "fact-4"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "synthetic-dream-source",
+        "entries": [
+          "fact-4"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.457Z",
+    "updated": "2026-10-25T14:05:32.457Z",
+    "last_used": "2026-10-25T14:05:32.457Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Zephyr deployments require a passing preflight before any apply operation. Use only the command and limits specified for the named deployment environment. For Zephyr production, use `zx prod-apply` with 1 worker, 0 retries and a 90 second timeout."
+  },
+  {
+    "id": "m_mvnwh5f338e895cf87d30899d8ee",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "procedure",
+    "title": "Mercator export standard limits",
+    "summary": "Mercator exports run `mc export --batch` only after the export preflight passes. A dated incident restriction overrides the standard limits only within the stated period and export type. Standard Mercator exports use 4 workers and a 60 second timeout.",
+    "keywords": [
+      "mercator",
+      "export",
+      "limits"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.95,
+    "source": {
+      "session": "synthetic-dream-source",
+      "entries": [
+        "fact-5"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "synthetic-dream-source",
+        "entries": [
+          "fact-5"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.463Z",
+    "updated": "2026-10-25T14:05:32.463Z",
+    "last_used": "2026-10-25T14:05:32.463Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Mercator exports run `mc export --batch` only after the export preflight passes. A dated incident restriction overrides the standard limits only within the stated period and export type. Standard Mercator exports use 4 workers and a 60 second timeout."
+  },
+  {
+    "id": "m_mvnwh5f87f390bb4313e0e9c3d18",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "procedure",
+    "title": "Mercator export standard retries",
+    "summary": "Mercator exports run `mc export --batch` only after the export preflight passes. A dated incident restriction overrides the standard limits only within the stated period and export type. Standard Mercator exports permit 2 retries.",
+    "keywords": [
+      "mercator",
+      "export",
+      "limits"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.95,
+    "source": {
+      "session": "synthetic-dream-source",
+      "entries": [
+        "fact-6"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "synthetic-dream-source",
+        "entries": [
+          "fact-6"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.468Z",
+    "updated": "2026-10-25T14:05:32.468Z",
+    "last_used": "2026-10-25T14:05:32.468Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Mercator exports run `mc export --batch` only after the export preflight passes. A dated incident restriction overrides the standard limits only within the stated period and export type. Standard Mercator exports permit 2 retries."
+  },
+  {
+    "id": "m_mvnwh5fe9f38915a738bf3d6a942",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "procedure",
+    "title": "Mercator export incident limits",
+    "summary": "Mercator exports run `mc export --batch` only after the export preflight passes. A dated incident restriction overrides the standard limits only within the stated period and export type. Until 2026-10-25T15:02:15.097Z, invoice exports alone must use 1 worker and 0 retries; the timeout stays 60 secon",
+    "keywords": [
+      "mercator",
+      "export",
+      "limits"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.95,
+    "source": {
+      "session": "synthetic-dream-source",
+      "entries": [
+        "fact-7"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "synthetic-dream-source",
+        "entries": [
+          "fact-7"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "archived",
+    "created": "2026-10-25T14:05:32.474Z",
+    "updated": "2026-10-25T14:05:32.474Z",
+    "last_used": "2026-10-25T14:05:32.474Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "short",
+    "expiresAt": "2026-10-25T13:02:15.098Z",
+    "body": "Mercator exports run `mc export --batch` only after the export preflight passes. A dated incident restriction overrides the standard limits only within the stated period and export type. Until 2026-10-25T13:02:15.098Z, invoice exports alone must use 1 worker and 0 retries; the timeout stays 60 seconds. Other export types keep the standard limits.",
+    "validity": "expired"
+  },
+  {
+    "id": "m_mvnwh5fkcf0193aa409ce79930c3",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "insight",
+    "title": "Condensed: Beacon staging timeout",
+    "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+    "keywords": [
+      "beacon",
+      "staging",
+      "verification"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+      "entries": [
+        "m_mvnwcxa65d19662ce836393305a6",
+        "m_mvnwcxaf0d9ff8fc45297ff74894",
+        "m_mvnwcxakef9706eed34e49ecae2c"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+        "entries": [
+          "m_mvnwcxa65d19662ce836393305a6",
+          "m_mvnwcxaf0d9ff8fc45297ff74894",
+          "m_mvnwcxakef9706eed34e49ecae2c"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [
+      "m_mvnwh5e8251884702f7c2c04c655",
+      "m_mvnwh5efa9dc7391422213f0f4b9",
+      "m_mvnwh5el7056cfd8653f1ebfe5e0"
+    ],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.480Z",
+    "updated": "2026-10-25T14:05:32.480Z",
+    "last_used": "2026-10-25T14:05:32.480Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "derivedFrom": [
+      {
+        "id": "m_mvnwh5e8251884702f7c2c04c655",
+        "hash": "c729508d60b803ad26b1348d9484646a66333889828b239c3aa6cc810022419f"
+      },
+      {
+        "id": "m_mvnwh5efa9dc7391422213f0f4b9",
+        "hash": "e21a0a2ac658a89d5136c99cabbe306e6703c22cff9399930e85dbb4adfcf98c"
+      },
+      {
+        "id": "m_mvnwh5el7056cfd8653f1ebfe5e0",
+        "hash": "4bec5bd48defe83d0c5522ff39ead6b85fe07971f76dbdd3e61a77ff2f7eee06"
+      }
+    ],
+    "body": "Shared statements (apply only to contexts referencing them):\nF1: For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed.\nF2: Never use the Beacon staging verification command against production.\n\nContext: Beacon staging timeout\n[F1] [F2] Beacon staging verification has a 45 second timeout.\n\nContext: Beacon staging retries\n[F1] [F2] Beacon staging verification permits 2 retries.\n\nContext: Beacon staging workers\n[F1] [F2] Beacon staging verification uses 3 workers."
+  },
+  {
+    "id": "m_mvnwh5fq7e6b0f82e0b7d2c05391",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "insight",
+    "title": "Condensed: Zephyr staging deployment",
+    "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+    "keywords": [
+      "zephyr",
+      "deployment",
+      "preflight"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+      "entries": [
+        "m_mvnwcxar7ddcd5ad924a001c3cfc",
+        "m_mvnwcxax5ada592896dbcfae5ea9"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+        "entries": [
+          "m_mvnwcxar7ddcd5ad924a001c3cfc",
+          "m_mvnwcxax5ada592896dbcfae5ea9"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [
+      "m_mvnwh5er9e0e0d5e6493f63102c1",
+      "m_mvnwh5exf7e46f98a2a21734a628"
+    ],
+    "status": "active",
+    "created": "2026-10-25T14:05:32.486Z",
+    "updated": "2026-10-25T14:05:32.486Z",
+    "last_used": "2026-10-25T14:05:32.486Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "derivedFrom": [
+      {
+        "id": "m_mvnwh5er9e0e0d5e6493f63102c1",
+        "hash": "c2d02ea2561df58a7ba61476635c49821d52eea6d8637a75a81e2830ddc89515"
+      },
+      {
+        "id": "m_mvnwh5exf7e46f98a2a21734a628",
+        "hash": "7722fdd0611a1d3b655c793d018eeb4761dab308e6d3947f4c3cc139240043c4"
+      }
+    ],
+    "body": "Shared statements (apply only to contexts referencing them):\nF1: Zephyr deployments require a passing preflight before any apply operation.\nF2: Use only the command and limits specified for the named deployment environment.\n\nContext: Zephyr staging deployment\n[F1] [F2] For Zephyr staging, use `zx stage-apply` with 3 workers, 2 retries and a 30 second timeout.\n\nContext: Zephyr production deployment\n[F1] [F2] For Zephyr production, use `zx prod-apply` with 1 worker, 0 retries and a 90 second timeout."
+  }
+]

@@ -1,0 +1,129 @@
+{
+  "started": "2026-10-25T13:26:19.010Z",
+  "model": "openai/gpt-6.1-sol",
+  "piVersion": "1.4.0",
+  "temporaryRoot": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-6EZd3K",
+  "arms": [
+    "sources",
+    "compressed",
+    "semantic",
+    "combined"
+  ],
+  "sourceHashes": {
+    "index.ts": "141536862e53061516e2f0d3dae8fdf67b3cdeea0e5076e1592e88407f30f922",
+    "src/capture.ts": "0903e700b548a75b6504ca90196539f3c463ff5aec2f03f3d782e9d62bfd640f",
+    "src/config.ts": "abd051c65d6f930b18ddfea7a422d10b11eac1ddcc85618ad83fa8209ef889b8",
+    "src/dream.ts": "34fa5742e86d5e1f0f57ddea5749711445f97fa4ea7ff957d43882a3e19a4813",
+    "src/maintenance.ts": "0720b84d42f654d7331b873cc36311f252df23977a62e3b063a3e6ef50ebae3e",
+    "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+    "src/retrieve.ts": "7ab4350dc65add3cae4a72eb983d67a5b832e7471cb42c9a0d4c260741769e26",
+    "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+    "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+    "src/settings.ts": "32c41119fa00caefa2ca0883053b520f3d1415ef64861f32616ad1a984caa471",
+    "src/store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+    "src/tools.ts": "bb86a68df04c2fd836505fc34418f83f4ab8a5058e7a826fdae7a6edfe4d7b38",
+    "src/types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+    "src/ui.ts": "86733ed57d3512220bc8f216711278bd95081f327a10be45a45454622ff69d3d"
+  },
+  "fixtureHash": "c29604f956f766bc44439904cc30bac3812fa7d2b2bf5adbfb68dc448cc2a428",
+  "cases": [
+    {
+      "id": "beacon-staging",
+      "context": "Beacon staging verification, after its staging migrations have passed.",
+      "expected": {
+        "command": "pnpm beacon:smoke-v2",
+        "workers": 3,
+        "retries": 2,
+        "timeoutSeconds": 45,
+        "requiresPassingPreflight": true
+      }
+    },
+    {
+      "id": "beacon-production-negative",
+      "context": "Beacon production verification. Only staging evidence was supplied; production procedure is unknown.",
+      "expected": {
+        "command": null,
+        "workers": null,
+        "retries": null,
+        "timeoutSeconds": null,
+        "requiresPassingPreflight": null
+      },
+      "negative": true
+    },
+    {
+      "id": "zephyr-staging",
+      "context": "Zephyr staging deployment, after preflight passes.",
+      "expected": {
+        "command": "zx stage-apply",
+        "workers": 3,
+        "retries": 2,
+        "timeoutSeconds": 30,
+        "requiresPassingPreflight": true
+      }
+    },
+    {
+      "id": "zephyr-production",
+      "context": "Zephyr production deployment, after preflight passes.",
+      "expected": {
+        "command": "zx prod-apply",
+        "workers": 1,
+        "retries": 0,
+        "timeoutSeconds": 90,
+        "requiresPassingPreflight": true
+      }
+    },
+    {
+      "id": "zephyr-local-negative",
+      "context": "Zephyr local-development deployment. Only staging/production evidence was supplied; local procedure is unknown.",
+      "expected": {
+        "command": null,
+        "workers": null,
+        "retries": null,
+        "timeoutSeconds": null,
+        "requiresPassingPreflight": null
+      },
+      "negative": true
+    },
+    {
+      "id": "mercator-invoice-current",
+      "context": "Mercator invoice export while the explicitly dated incident restriction is active, after preflight passes.",
+      "expected": {
+        "command": "mc export --batch",
+        "workers": 1,
+        "retries": 0,
+        "timeoutSeconds": 60,
+        "requiresPassingPreflight": true
+      },
+      "temporary": true
+    },
+    {
+      "id": "mercator-other-current",
+      "context": "Mercator payroll export while an invoice-only incident restriction is active, after preflight passes.",
+      "expected": {
+        "command": "mc export --batch",
+        "workers": 4,
+        "retries": 2,
+        "timeoutSeconds": 60,
+        "requiresPassingPreflight": true
+      },
+      "temporary": true
+    },
+    {
+      "id": "mercator-invoice-expired",
+      "context": "Mercator invoice export after the dated incident restriction has expired, after preflight passes.",
+      "expected": {
+        "command": "mc export --batch",
+        "workers": 4,
+        "retries": 2,
+        "timeoutSeconds": 60,
+        "requiresPassingPreflight": true
+      },
+      "expired": true,
+      "temporary": true
+    }
+  ],
+  "fixtureKind": "Synthetic gold evidence. Downstream cases and expected answers are withheld from dream inference.",
+  "actionMetric": "Exact acceptance by a constrained mock executor; not live infrastructure execution",
+  "retrievalBudgetUpperBound": 1200,
+  "sourcePolicy": "Production keeps original sources. Candidate-only arms are isolated representation experiments; no production source is archived."
+}

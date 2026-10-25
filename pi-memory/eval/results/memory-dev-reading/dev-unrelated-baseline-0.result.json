@@ -1,0 +1,69 @@
+{
+  "runId": "dev-unrelated-baseline-0",
+  "caseId": "dev-unrelated",
+  "split": "dev",
+  "kind": "control",
+  "category": "unrelated",
+  "arm": "baseline",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+  "response": "{\"code\":\"function solve(values) { return values.reduce((sum, value) => sum + value, 0); }\"}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "code",
+        "args": [
+          [
+            3,
+            -2,
+            8
+          ]
+        ],
+        "expected": 9,
+        "passed": true,
+        "actual": 9
+      },
+      {
+        "type": "code",
+        "args": [
+          []
+        ],
+        "expected": 0,
+        "passed": true,
+        "actual": 0
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "selectedMemoryKeys": [],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "unrelated": {
+      "id": "m_mvnu2eop94b9391ba895b811f6f6",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 639,
+    "output": 30,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 669,
+    "cost": 0.001578
+  },
+  "latencyMs": 3386,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

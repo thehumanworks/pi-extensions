@@ -1,0 +1,4 @@
+Warning: No project session found with id '156bccc6-9e23-4869-97ad-b27cc3eaec22'; creating a new session with that id.
+Warning: No models match pattern "claude-bridge/claude-opus-5-5"
+Warning: No models match pattern "claude-bridge/claude-fable-5-1"
+pi-memory: {"status":"skipped","savedIds":[],"sourceIds":[],"hypotheses":[],"rejected":[],"usage":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"inputTokensEstimate":0,"outputTokensEstimate":0,"ceiling":{"active":3,"activeBytes":5339,"softLimit":null,"softByteLimit":1000000,"overLimit":false,"destructive":false},"reason":"No unprocessed related source groups; disjoint evidence stays separate"}

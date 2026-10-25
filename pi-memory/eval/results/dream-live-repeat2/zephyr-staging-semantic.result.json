@@ -1,0 +1,56 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 0,
+    "parentIds": [],
+    "observed": false
+  },
+  "id": "zephyr-staging-semantic",
+  "caseId": "zephyr-staging",
+  "arm": "semantic",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":\"zx stage-apply\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":30,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": "zx stage-apply",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 30,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": "zx stage-apply",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 30,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 902,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 988,
+  "selectedIds": [
+    "m_mvnw9eg3e150158045fb1ec5c8f1",
+    "m_mvnw9efxc150caa0b0a0c8de85cc"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 1466,
+    "canonicalMarkdownBytes": 4735
+  },
+  "latencyMs": 3260
+}

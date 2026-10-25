@@ -1,0 +1,350 @@
+{
+  "id": "ingestion-off-0",
+  "project": "ingestion",
+  "arm": "off",
+  "repeat": 0,
+  "fixtureHash": "c860a57b634293d60ae3e62f49844ad68c64bf9385e1049276609ac6163e38c6",
+  "sourceHash": "ea6737acb4dbb9a9a01a249473aa64e0dce2dc4084c8c74efb03d06aaf133dde",
+  "model": "openai/gpt-6.1-sol",
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-7H53fp/ingestion-off-0/project",
+  "calls": [
+    {
+      "name": "stage-1-implement",
+      "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 67897,
+      "modelRequests": 14,
+      "usage": {
+        "input": 4365,
+        "output": 1813,
+        "cacheRead": 37120,
+        "cacheWrite": 0,
+        "reasoning": 38,
+        "totalTokens": 43298,
+        "cost": 0.030572000000000002
+      },
+      "finalText": "Implemented:\n- `src/ingest.mjs`: incremental NDJSON reads, original-line appends, deduplication against existing output, atomic checkpoint replacement, and resume support.\n- `bin/ingest.mjs`: positional CLI arguments and JSON report output.\n\n**Policy caveat:** No prior agreement was present in the repository. Used default batch size **100**, identity **`(tenant, seq)`**, and count-and-skip handling for malformed or invalid records.\n\nValidation:\n- `node --test`: **1 passed**.\n- CLI demo using `fixtures/events.ndjson` and `work/demo-*` paths:\n  - Batch size 3: accepted 3, nextLine 3.\n  - Resume with default: accepted 4, nextLine 7.\n  - Run again: accepted 0, nextLine 7."
+    },
+    {
+      "name": "stage-2-temporary",
+      "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 11193,
+      "modelRequests": 3,
+      "usage": {
+        "input": 544,
+        "output": 147,
+        "cacheRead": 13056,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 13747,
+        "cost": 0.0038636000000000005
+      },
+      "finalText": "Invoked the CLI with explicit batch size **1** and the requested paths. Saved its report to `temporary-report.json`:\n\n```json\n{\"accepted\":1,\"rejected\":0,\"duplicates\":0,\"nextLine\":1}\n```\n\nThe permanent default remains unchanged."
+    },
+    {
+      "name": "stage-2-revoke",
+      "prompt": "The diagnostic override has expired. Use the normal previously agreed default for a clean production-like invocation: CLI input fixtures/events.ndjson, output work/normal.ndjson, checkpoint work/normal-checkpoint.json, with no explicit batch size. Actually run it and write its returned JSON report to normal-report.json. Keep the implementation and earlier diagnostic files.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 12719,
+      "modelRequests": 3,
+      "usage": {
+        "input": 576,
+        "output": 146,
+        "cacheRead": 13824,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 14546,
+        "cost": 0.0039944
+      },
+      "finalText": "Ran the CLI with the requested paths and no explicit batch size. Saved the returned report to `normal-report.json`:\n\n```json\n{\"accepted\":7,\"rejected\":0,\"duplicates\":0,\"nextLine\":7}\n```\n\nThe implementation and earlier diagnostic files were preserved."
+    },
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 62809,
+      "modelRequests": 10,
+      "usage": {
+        "input": 11767,
+        "output": 1436,
+        "cacheRead": 24960,
+        "cacheWrite": 0,
+        "reasoning": 53,
+        "totalTokens": 38163,
+        "cost": 0.04039
+      },
+      "finalText": "Implemented corrupt-checkpoint recovery in `src/ingest.mjs`: preserve the damaged checkpoint as a unique `.corrupt` file, replay from line zero, and deduplicate against existing output without truncating it.\n\nRan the requested CLI:\n- Accepted **2** records; skipped **1** duplicate.\n- Rebuilt `work/repair-checkpoint.json` with `nextLine: 3`.\n- Preserved the existing record in `work/repair-output.ndjson`.\n- Saved corrupt bytes to `work/repair-checkpoint.json.54d8ef12-5f87-406e-aa34-ed5b40448bfb.corrupt`.\n\nAdded recovery regression tests and ran `node --test`: **5 passed, 0 failed**."
+    }
+  ],
+  "scores": [
+    {
+      "project": "ingestion",
+      "stage": 1,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n\n7 !== 4\n"
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-7H53fp/ingestion-off-0/project/.acceptance-ibNM9F/rejected.ndjson'"
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0.3333333333333333,
+        "action": null,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 6,
+      "total": 8
+    },
+    {
+      "project": "ingestion",
+      "stage": 2,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n\n7 !== 4\n"
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-7H53fp/ingestion-off-0/project/.acceptance-s90pIo/rejected.ndjson'"
+        },
+        {
+          "name": "temporary override was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired override does not affect later action",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n\n7 !== 4\n"
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0.25,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 7,
+      "total": 10
+    },
+    {
+      "project": "ingestion",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n\n7 !== 4\n"
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-7H53fp/ingestion-off-0/project/.acceptance-ZhjjUc/rejected.ndjson'"
+        },
+        {
+          "name": "temporary override was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired override does not affect later action",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n\n7 !== 4\n"
+        },
+        {
+          "name": "new corrupt checkpoint preserves output and replays safely",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "recovery keeps corrupt checkpoint at agreed location",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-7H53fp/ingestion-off-0/project/.acceptance-Xx2VPL/recovery/checkpoint.bad.json'"
+        },
+        {
+          "name": "actual repair run preserved all three events",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0.2,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 9,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 30,
+  "wallMs": 154903,
+  "usage": {
+    "input": 17252,
+    "output": 3542,
+    "cacheRead": 88960,
+    "cacheWrite": 0,
+    "reasoning": 91,
+    "totalTokens": 109754,
+    "cost": 0.07882
+  },
+  "toolCalls": 31,
+  "actualCliRuns": 6,
+  "cliRunsByPhase": {
+    "stage-1-implement": 3,
+    "stage-2-temporary": 1,
+    "stage-2-revoke": 1,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-2-temporary",
+      "expectedArguments": "bin/ingest.mjs fixtures/events.ndjson work/temporary.ndjson work/temporary-checkpoint.json 1",
+      "matched": true
+    },
+    {
+      "phase": "stage-2-revoke",
+      "expectedArguments": "bin/ingest.mjs fixtures/events.ndjson work/normal.ndjson work/normal-checkpoint.json",
+      "matched": true
+    },
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "blockedActions": [],
+  "recalls": [],
+  "beforeMemory": {
+    "bytes": 0,
+    "files": 0
+  },
+  "afterMemory": {
+    "bytes": 0,
+    "files": 0
+  }
+}

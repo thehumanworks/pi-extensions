@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+  "exitCode": 86,
+  "timedOut": false,
+  "budgetExhausted": true,
+  "latencyMs": 121115,
+  "modelRequests": 16,
+  "usage": {
+    "input": 7686,
+    "output": 1997,
+    "cacheRead": 45440,
+    "cacheWrite": 0,
+    "reasoning": 54,
+    "totalTokens": 55123,
+    "cost": 0.039886
+  },
+  "finalText": ""
+}

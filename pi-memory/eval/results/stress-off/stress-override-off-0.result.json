@@ -1,0 +1,54 @@
+{
+  "runId": "stress-override-off-0",
+  "caseId": "stress-override",
+  "split": "dev",
+  "kind": "control",
+  "category": "clutter-with-current-override",
+  "arm": "off",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+  "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "response": "{\"format\":\"tsv\",\"retentionDays\":3}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "field",
+        "path": "format",
+        "expected": "tsv",
+        "passed": true,
+        "actual": "tsv"
+      },
+      {
+        "type": "field",
+        "path": "retentionDays",
+        "expected": 3,
+        "passed": true,
+        "actual": 3
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 543,
+    "output": 16,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 559,
+    "cost": 0.001246
+  },
+  "latencyMs": 2904,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

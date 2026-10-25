@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "name": "demo",
+  "customField": {
+    "keep": true
+  },
+  "timeoutMs": 2000,
+  "features": [
+    "a",
+    "z"
+  ],
+  "region": "eu-west-1",
+  "retry": {
+    "backoff": "exponential",
+    "maxAttempts": 5
+  }
+}

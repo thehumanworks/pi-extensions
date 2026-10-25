@@ -1,0 +1,2 @@
+{"event":"recall","query":"Remember this project-specific decision for future sessions: the Beacon staging smoke test command is pnpm beacon:verify. Always use pnpm beacon:verify for Beacon staging verification. Reply only ACK.","ids":[],"tokens":0,"tokenUpperBound":0,"content":""}
+{"event":"capture","saved":1,"skipped":false}

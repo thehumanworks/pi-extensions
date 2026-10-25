@@ -1,0 +1,63 @@
+{
+  "runId": "heldout-context-off-0",
+  "caseId": "heldout-context",
+  "split": "heldout",
+  "kind": "positive",
+  "category": "temporal-multi-fact",
+  "arm": "off",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+  "response": "{\"signatureHeader\":null,\"maxAttempts\":null,\"timeoutMs\":null}",
+  "score": 0,
+  "validation": {
+    "score": 0,
+    "passed": 0,
+    "total": 3,
+    "checks": [
+      {
+        "type": "field",
+        "path": "signatureHeader",
+        "expected": "x-meridian-proof",
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "maxAttempts",
+        "expected": 23,
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "timeoutMs",
+        "expected": 1700,
+        "passed": false,
+        "actual": null
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "selectedMemoryKeys": [],
+  "draftMemoryCount": 0,
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 545,
+    "output": 20,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 565,
+    "cost": 0.0012900000000000001
+  },
+  "latencyMs": 2919,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

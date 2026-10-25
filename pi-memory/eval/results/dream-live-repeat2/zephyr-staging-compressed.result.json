@@ -1,0 +1,55 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 0,
+    "parentIds": [],
+    "observed": false
+  },
+  "id": "zephyr-staging-compressed",
+  "caseId": "zephyr-staging",
+  "arm": "compressed",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":\"zx stage-apply\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":30,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": "zx stage-apply",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 30,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": "zx stage-apply",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 30,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 848,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 765,
+  "selectedIds": [
+    "m_mvnw9bcuf778ded1ca9770146df8"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 2064,
+    "canonicalMarkdownBytes": 6071
+  },
+  "latencyMs": 3978
+}

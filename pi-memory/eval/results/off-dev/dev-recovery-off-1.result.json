@@ -1,0 +1,59 @@
+{
+  "runId": "dev-recovery-off-1",
+  "caseId": "dev-recovery",
+  "split": "dev",
+  "kind": "positive",
+  "category": "failure-recovery",
+  "arm": "off",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "response": "{\"env\":{},\"command\":null,\"deleteLock\":false}",
+  "score": 0.3333333333333333,
+  "validation": {
+    "score": 0.3333333333333333,
+    "passed": 1,
+    "total": 3,
+    "checks": [
+      {
+        "type": "field",
+        "path": "env.AURORA_LOCK_MODE",
+        "expected": "portable",
+        "passed": false
+      },
+      {
+        "type": "field",
+        "path": "command",
+        "expected": "node tools/check.mjs",
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "deleteLock",
+        "expected": false,
+        "passed": true,
+        "actual": false
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 562,
+    "output": 40,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 20,
+    "totalTokens": 602,
+    "cost": 0.001524
+  },
+  "latencyMs": 3930,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

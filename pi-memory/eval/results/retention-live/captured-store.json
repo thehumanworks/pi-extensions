@@ -1,0 +1,53 @@
+[
+  {
+    "id": "m_mvnvn4qm043423b201d0e781a937",
+    "scope": "project:ce533c958a13e7b17520eaf4",
+    "type": "project",
+    "title": "Larch batch runner temporarily requires one worker",
+    "summary": "A temporary Larch batch runner override requires 1 worker until its explicit expiry, then the durable default resumes.",
+    "keywords": [
+      "Larch",
+      "batch runner",
+      "worker count",
+      "temporary override"
+    ],
+    "triggers": [
+      "running Larch batches",
+      "configuring Larch workers"
+    ],
+    "paths": [],
+    "importance": 7,
+    "confidence": 1,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-retention-MN4nAA/sessions/2026-10-25T13-41-56-508Z_01a1734b-e69c-764a-bce1-97304e5a8e91.jsonl",
+      "entries": [
+        "59227864"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-retention-MN4nAA/sessions/2026-10-25T13-41-56-508Z_01a1734b-e69c-764a-bce1-97304e5a8e91.jsonl",
+        "entries": [
+          "59227864"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T13:42:11.902Z",
+    "updated": "2026-10-25T13:42:11.902Z",
+    "last_used": "2026-10-25T13:42:11.902Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "short",
+    "expiresAt": "2026-10-25T13:44:56.304Z",
+    "body": "Use 1 worker for the Larch batch runner until 2026-10-25T13:44:56.304Z. At that time the override expires; resume the existing durable worker-count default without changing it."
+  }
+]

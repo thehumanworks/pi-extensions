@@ -1,0 +1,57 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 0,
+    "parentIds": [],
+    "observed": false
+  },
+  "id": "zephyr-production-sources",
+  "caseId": "zephyr-production",
+  "arm": "sources",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":\"zx prod-apply\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":90,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": "zx prod-apply",
+    "workers": 1,
+    "retries": 0,
+    "timeoutSeconds": 90,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": "zx prod-apply",
+    "workers": 1,
+    "retries": 0,
+    "timeoutSeconds": 90,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 963,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 1197,
+  "selectedIds": [
+    "m_mvnweidy0d0bcfc260ef175b59c8",
+    "m_mvnweidr7f8541521497fbd38a0b",
+    "m_mvnweidk4feffb61de557abb86a7"
+  ],
+  "sizes": {
+    "activeCount": 8,
+    "activeTextBytes": 4169,
+    "canonicalMarkdownBytes": 11174
+  },
+  "latencyMs": 3350
+}

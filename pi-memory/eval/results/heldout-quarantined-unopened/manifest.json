@@ -1,0 +1,37 @@
+{
+  "started": "2026-10-25T12:51:26.378Z",
+  "model": "openai/gpt-6.1-sol",
+  "split": "heldout",
+  "arms": [
+    "off",
+    "baseline",
+    "improved"
+  ],
+  "repeats": 2,
+  "fixturePath": "/Users/tomas/pi-extensions/pi-memory/eval/cases.json",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+  "sourceHashes": {
+    "index.ts": "288ba8677b22f22b8041885e90435cdad45db8fefa0fb75bbce9274befaf1d47",
+    "src/capture.ts": "f3f40b178dee128c73feec5e6e6d67d51e85f1c6fc4fc5f98c676e8a63f47ad4",
+    "src/config.ts": "82cc08e5c59c274b4f2e2767a8e27e470d9a066b84ac4922608fef32a92e8a8d",
+    "src/maintenance.ts": "18b6a8e0fe75598233f852fe7939875bc04993b1426b5a63644725d00f7d874a",
+    "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+    "src/retrieve.ts": "a0068fd78c828b737f64f6bf2f5c354cbfadf03ba0c277d9171fdcaaaedcb82d",
+    "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+    "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+    "src/settings.ts": "32c41119fa00caefa2ca0883053b520f3d1415ef64861f32616ad1a984caa471",
+    "src/store.ts": "cff9da564498375c05fba4d3d8f1ac3f13b187a4c0f3fcf00b1f131a6be8d4ce",
+    "src/tools.ts": "afbd33876aef05ba557867b9faa76ded58a1acc1c2b74d1bd62b790f1d173559",
+    "src/types.ts": "973f3054a0ef2f19fb8c5d98195993ce681cb9b9ee4680315907980538a482c4",
+    "src/ui.ts": "2d278e098c90818b76eee44b63f84f6a77477688ed73a17f730e1ce1548a6e8d"
+  },
+  "commonPrompt": "Complete this synthetic development task. Return only the requested JSON, without markdown or commentary. Any code field must contain JavaScript (not Python or TypeScript), defining the requested function. Do not invent prior decisions.",
+  "concurrency": 2,
+  "thinking": "low",
+  "outputTokenCap": 2048,
+  "memoryTokenCap": 1200,
+  "tools": [],
+  "temporaryRoot": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-eval-fxOIuQ"
+}

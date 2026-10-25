@@ -1,0 +1,44 @@
+{
+  "state": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v3",
+  "allPassed": true,
+  "projects": {
+    "ingestion": {
+      "scope": "project:3a558a15acd081cbba9db439",
+      "activeRecords": 3,
+      "checks": {
+        "threeActualSuccessfulSessions": true,
+        "observedProbeFailureFirst": true,
+        "observedSuccessfulFilesystemAssertions": true,
+        "probeUnmodified": true,
+        "capturedFactsPreserved": true,
+        "supersededEvidenceRetained": true,
+        "allSourcesActual": true,
+        "noGlobalPromotion": true
+      },
+      "canonicalHash": "131a04bd37547c7c487c74b3c62a662d282e7d393dfef44b8e232318aa41ff70"
+    },
+    "migration": {
+      "scope": "project:a0464b452f01701e68e8d82f",
+      "activeRecords": 3,
+      "checks": {
+        "threeActualSuccessfulSessions": true,
+        "observedProbeFailureFirst": true,
+        "observedSuccessfulFilesystemAssertions": true,
+        "probeUnmodified": true,
+        "capturedFactsPreserved": true,
+        "supersededEvidenceRetained": true,
+        "allSourcesActual": true,
+        "noGlobalPromotion": true
+      },
+      "canonicalHash": "707ff17a379c3efd8c91d52b487727d9a355738c1bddbc348916697357a8c5e3"
+    }
+  },
+  "warnings": [
+    {
+      "project": "migration",
+      "session": "observed-repair",
+      "text": "pi-memory: Background memory work failed; committed evidence retained: Memory model response incomplete: error"
+    }
+  ],
+  "pending": []
+}

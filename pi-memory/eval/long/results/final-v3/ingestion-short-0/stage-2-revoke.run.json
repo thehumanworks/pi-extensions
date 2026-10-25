@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-revoke",
+  "prompt": "The diagnostic override has expired. Use the normal previously agreed default for a clean production-like invocation: CLI input fixtures/events.ndjson, output work/normal.ndjson, checkpoint work/normal-checkpoint.json, with no explicit batch size. Actually run it and write its returned JSON report to normal-report.json. Keep the implementation and earlier diagnostic files.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 33547,
+  "modelRequests": 3,
+  "usage": {
+    "input": 1436,
+    "output": 151,
+    "cacheRead": 14848,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 16435,
+    "cost": 0.0058668
+  },
+  "finalText": "Ran the CLI with no explicit batch size, using the normal default of **4**. Saved the returned report to `normal-report.json`:\n\n```json\n{\"accepted\":4,\"rejected\":0,\"duplicates\":0,\"nextLine\":4}\n```\n\nThe implementation and earlier diagnostic files were preserved."
+}

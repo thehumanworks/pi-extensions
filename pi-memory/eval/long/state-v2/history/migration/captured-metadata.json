@@ -1,0 +1,159 @@
+[
+  {
+    "id": "m_mvnvm03691bb58d2975b4ebd9256",
+    "scope": "project:a0464b452f01701e68e8d82f",
+    "type": "project",
+    "title": "Migration v3 defaults and source-preservation decisions",
+    "summary": "Durable migration customer decisions define v3 defaults, feature ordering, unknown-field retention, and exact source backups.",
+    "keywords": [
+      "migration",
+      "version 3",
+      "defaults",
+      "legacy",
+      "backup",
+      "source.json"
+    ],
+    "triggers": [
+      "implementing migration defaults",
+      "preserving migration source data"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/migration/sessions/2026-10-25T13-40-50-045Z_ef340754-045e-4001-a2c9-414eb7fdd39c.jsonl",
+      "entries": [
+        "b32fea01"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/migration/sessions/2026-10-25T13-40-50-045Z_ef340754-045e-4001-a2c9-414eb7fdd39c.jsonl",
+        "entries": [
+          "b32fea01"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [
+      "m_mvnvn725e18408343cc33e97e894"
+    ],
+    "status": "superseded",
+    "created": "2026-10-25T13:41:19.218Z",
+    "updated": "2026-10-25T13:42:14.914Z",
+    "last_used": "2026-10-25T13:41:57.744Z",
+    "stats": {
+      "injected": 2,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 1
+    },
+    "retention": "long"
+  },
+  {
+    "id": "m_mvnvm03bf2a1dd984940f3621058",
+    "scope": "project:a0464b452f01701e68e8d82f",
+    "type": "project",
+    "title": "Auxiliary import conventions are migration-only, never ingestion",
+    "summary": "Migration auxiliary imports require batch size 9, seq-only identity, and malformed-line aborts, explicitly excluding ingestion.",
+    "keywords": [
+      "migration",
+      "auxiliary import",
+      "batch size",
+      "seq",
+      "malformed lines",
+      "ingestion"
+    ],
+    "triggers": [
+      "implementing auxiliary import jobs",
+      "distinguishing migration from ingestion"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/migration/sessions/2026-10-25T13-40-50-045Z_ef340754-045e-4001-a2c9-414eb7fdd39c.jsonl",
+      "entries": [
+        "b32fea01"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/migration/sessions/2026-10-25T13-40-50-045Z_ef340754-045e-4001-a2c9-414eb7fdd39c.jsonl",
+        "entries": [
+          "b32fea01"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T13:41:19.223Z",
+    "updated": "2026-10-25T13:42:14.916Z",
+    "last_used": "2026-10-25T13:41:57.744Z",
+    "stats": {
+      "injected": 2,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long"
+  },
+  {
+    "id": "m_mvnvn725e18408343cc33e97e894",
+    "scope": "project:a0464b452f01701e68e8d82f",
+    "type": "project",
+    "title": "Migration retry.maxAttempts is 5, replacing 3",
+    "summary": "Migration retry attempts are now 5; earlier region and backoff decisions remain unchanged.",
+    "keywords": [
+      "migration",
+      "retry.maxAttempts",
+      "retry",
+      "defaults",
+      "backoff",
+      "probe"
+    ],
+    "triggers": [
+      "configuring migration defaults",
+      "setting migration retries"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/migration/sessions/2026-10-25T13-41-57-622Z_020e9d50-3cc5-41e8-9127-72e055f1e59b.jsonl",
+      "entries": [
+        "b4823c58"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/migration/sessions/2026-10-25T13-41-57-622Z_020e9d50-3cc5-41e8-9127-72e055f1e59b.jsonl",
+        "entries": [
+          "b4823c58"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [
+      "m_mvnvm03691bb58d2975b4ebd9256"
+    ],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T13:42:14.909Z",
+    "updated": "2026-10-25T13:42:14.909Z",
+    "last_used": "2026-10-25T13:42:14.909Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long"
+  }
+]

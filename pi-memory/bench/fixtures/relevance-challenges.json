@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "description": "Adversarial follow-up probes requested after the first score-gap experiment; reported separately from the independent heldout fixture.",
+  "facts": [
+    { "key": "approval-contact", "title": "Recovery approval contact", "body": "The on-call steward grants approval for recovery operations.", "keywords": ["approval", "contact", "steward"], "confidence": 0.55, "origin": "tool_output" },
+    { "key": "invoice-order", "title": "Invoice import record order", "body": "Preserve input record order when importing invoices. Blank lines may be removed, but remaining records must not be sorted.", "keywords": ["invoice", "import", "order", "conventions"], "confidence": 0.7 }
+  ],
+  "queries": [
+    { "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval", "gold": ["cypress-recovery", "approval-contact"] },
+    { "query": "All invoice import conventions", "gold": ["invoice-amounts", "invoice-duplicates", "invoice-order"] }
+  ],
+  "isolatedFacts": ["cypress-recovery", "approval-contact"],
+  "isolatedQueries": [
+    { "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval", "gold": ["cypress-recovery", "approval-contact"] }
+  ]
+}

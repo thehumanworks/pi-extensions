@@ -1,0 +1,50 @@
+{
+  "id": "beacon-staging-compressed",
+  "caseId": "beacon-staging",
+  "arm": "compressed",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":\"pnpm beacon:smoke-v2\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":45,\"requiresPassingPreflight\":null}",
+  "parsed": {
+    "command": "pnpm beacon:smoke-v2",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 45,
+    "requiresPassingPreflight": null
+  },
+  "expected": {
+    "command": "pnpm beacon:smoke-v2",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 45,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": false
+  },
+  "actionSuccess": false,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 842,
+    "output": 37,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 777,
+  "selectedIds": [
+    "m_mvnv35y2a2ea998c23f0f37b492b"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 2064,
+    "canonicalMarkdownBytes": 6071
+  },
+  "latencyMs": 27533
+}

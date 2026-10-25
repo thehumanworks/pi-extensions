@@ -1,0 +1,68 @@
+{
+  "runId": "stress-composition-off-1",
+  "caseId": "stress-composition",
+  "split": "dev",
+  "kind": "positive",
+  "category": "four-fact-composition",
+  "arm": "off",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+  "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "response": "{\"idColumn\":null,\"encoding\":null,\"emptyValue\":null,\"duplicatePolicy\":null}",
+  "score": 0,
+  "validation": {
+    "score": 0,
+    "passed": 0,
+    "total": 4,
+    "checks": [
+      {
+        "type": "field",
+        "path": "idColumn",
+        "expected": "account_ref",
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "encoding",
+        "expected": "utf-16le",
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "emptyValue",
+        "expected": "NA_VALUE",
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "duplicatePolicy",
+        "expected": "keep-first",
+        "passed": false,
+        "actual": null
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 551,
+    "output": 24,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 575,
+    "cost": 0.0013419999999999999
+  },
+  "latencyMs": 23356,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

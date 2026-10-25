@@ -1,0 +1,50 @@
+{
+  "id": "beacon-production-negative-compressed",
+  "caseId": "beacon-production-negative",
+  "arm": "compressed",
+  "negative": true,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+  "parsed": {
+    "command": null,
+    "workers": null,
+    "retries": null,
+    "timeoutSeconds": null,
+    "requiresPassingPreflight": null
+  },
+  "expected": {
+    "command": null,
+    "workers": null,
+    "retries": null,
+    "timeoutSeconds": null,
+    "requiresPassingPreflight": null
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 842,
+    "output": 30,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 777,
+  "selectedIds": [
+    "m_mvnv48oubbbd9f2434fc97112384"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 2064,
+    "canonicalMarkdownBytes": 6071
+  },
+  "latencyMs": 6109
+}

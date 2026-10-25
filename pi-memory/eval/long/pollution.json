@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "count": 1000,
+  "timestamp": "2026-10-25T00:00:00.000Z",
+  "domains": ["billing", "rendering", "telemetry", "catalog", "scheduler", "migration", "routing", "search", "analytics", "notifications"],
+  "subjects": ["worker", "verification", "recovery", "restore", "import", "encoding", "deployment", "approval", "review", "format"],
+  "description": "Concentrated same-project noise adapted from the storage growth benchmark; no gold facts or foreign fixtures are injected. Actual captured memories remain untouched."
+}

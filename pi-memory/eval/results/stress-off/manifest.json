@@ -1,0 +1,21 @@
+{
+  "started": "2026-10-25T12:41:05.511Z",
+  "model": "openai/gpt-6.1-sol",
+  "split": "dev",
+  "arms": [
+    "off"
+  ],
+  "repeats": 2,
+  "fixturePath": "/Users/tomas/pi-extensions/pi-memory/eval/stress-cases.json",
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+  "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "sourceHashes": {},
+  "commonPrompt": "Complete this synthetic development task. Return only the requested JSON, without markdown or commentary. Any code field must contain JavaScript (not Python or TypeScript), defining the requested function. Do not invent prior decisions.",
+  "concurrency": 2,
+  "thinking": "low",
+  "outputTokenCap": 2048,
+  "memoryTokenCap": 1200,
+  "tools": [],
+  "temporaryRoot": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-eval-wpvoRC"
+}

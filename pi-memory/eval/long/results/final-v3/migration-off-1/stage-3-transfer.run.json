@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 55912,
+  "modelRequests": 10,
+  "usage": {
+    "input": 4968,
+    "output": 1677,
+    "cacheRead": 32128,
+    "cacheWrite": 0,
+    "reasoning": 79,
+    "totalTokens": 38773,
+    "cost": 0.029918800000000002
+  },
+  "finalText": "Implemented recovery in `src/migrate.mjs` using `backups/source.json` beside the output, without overwriting an existing backup.\n\nSuccessfully migrated to `work/repair-output.json`:\n- Version `3`, timeout `3000` ms, feature `ready`\n- Default region `us-east-1`; no `test-local` override\n- Extra fields preserved\n\nPreserved `work/backups/source.json` and left the truncated `work/repair-source.json` unchanged as evidence.\n\nValidation: `node --test` passed all 3 tests, and the CLI migration succeeded."
+}

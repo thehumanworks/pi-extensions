@@ -1,0 +1,60 @@
+{
+  "runId": "dev-update-off-1",
+  "caseId": "dev-update",
+  "split": "dev",
+  "kind": "positive",
+  "category": "temporal-update",
+  "arm": "off",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "response": "{\"region\":null,\"autoPromote\":null,\"batchSize\":null}",
+  "score": 0,
+  "validation": {
+    "score": 0,
+    "passed": 0,
+    "total": 3,
+    "checks": [
+      {
+        "type": "field",
+        "path": "region",
+        "expected": "canary-west",
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "autoPromote",
+        "expected": false,
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "batchSize",
+        "expected": 17,
+        "passed": false,
+        "actual": null
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 545,
+    "output": 20,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 565,
+    "cost": 0.0012900000000000001
+  },
+  "latencyMs": 3163,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

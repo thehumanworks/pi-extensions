@@ -1,0 +1,163 @@
+{
+  "runId": "stress-trust-baseline-1",
+  "caseId": "stress-trust",
+  "split": "dev",
+  "kind": "positive",
+  "category": "clutter-and-evidence",
+  "arm": "baseline",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+  "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+  "response": "{\"region\":\"north-3\",\"batchSize\":29}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "field",
+        "path": "region",
+        "expected": "north-3",
+        "passed": true,
+        "actual": "north-3"
+      },
+      {
+        "type": "field",
+        "path": "batchSize",
+        "expected": 29,
+        "passed": true,
+        "actual": 29
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvnu0apt776fe1b70080fe67939f",
+    "m_mvnu0akv3485821879b5750c7498"
+  ],
+  "selectedMemoryKeys": [
+    "signed",
+    "draft-0"
+  ],
+  "draftMemoryCount": 1,
+  "memoryIds": {
+    "draft-0": {
+      "id": "m_mvnu0akv3485821879b5750c7498",
+      "scope": "project"
+    },
+    "draft-1": {
+      "id": "m_mvnu0al1cad25401257eb6014047",
+      "scope": "project"
+    },
+    "draft-2": {
+      "id": "m_mvnu0al60ccc5831ee9f1dda8012",
+      "scope": "project"
+    },
+    "draft-3": {
+      "id": "m_mvnu0alc276c5817169f02d0256c",
+      "scope": "project"
+    },
+    "draft-4": {
+      "id": "m_mvnu0alj4da344098b6ff0d61e7b",
+      "scope": "project"
+    },
+    "draft-5": {
+      "id": "m_mvnu0alp70a251618ae59e6f959f",
+      "scope": "project"
+    },
+    "draft-6": {
+      "id": "m_mvnu0alvb954028787af8ccad580",
+      "scope": "project"
+    },
+    "draft-7": {
+      "id": "m_mvnu0am1323bd9d4d90b65b8f319",
+      "scope": "project"
+    },
+    "draft-8": {
+      "id": "m_mvnu0am7bb94dfdfbd3fe5b40c84",
+      "scope": "project"
+    },
+    "draft-9": {
+      "id": "m_mvnu0ame9e660ea15062cd82312b",
+      "scope": "project"
+    },
+    "draft-10": {
+      "id": "m_mvnu0amm40c19c28dce7682b8e09",
+      "scope": "project"
+    },
+    "draft-11": {
+      "id": "m_mvnu0amt1b387ce586bdf9ca9f6a",
+      "scope": "project"
+    },
+    "draft-12": {
+      "id": "m_mvnu0an0b9691ba515d3373e122f",
+      "scope": "project"
+    },
+    "draft-13": {
+      "id": "m_mvnu0an7f95696601f2732f5d4e1",
+      "scope": "project"
+    },
+    "draft-14": {
+      "id": "m_mvnu0anf35e06c4485f11cf01066",
+      "scope": "project"
+    },
+    "draft-15": {
+      "id": "m_mvnu0anmf3a8d17233964d0e9de1",
+      "scope": "project"
+    },
+    "draft-16": {
+      "id": "m_mvnu0anue0a95ea68baeafc435ce",
+      "scope": "project"
+    },
+    "draft-17": {
+      "id": "m_mvnu0ao3995c8ca113afaae0b4cb",
+      "scope": "project"
+    },
+    "draft-18": {
+      "id": "m_mvnu0aob064b1786613f0dcce0f0",
+      "scope": "project"
+    },
+    "draft-19": {
+      "id": "m_mvnu0aoje5f2e690bb6e1ee367ce",
+      "scope": "project"
+    },
+    "draft-20": {
+      "id": "m_mvnu0aos1aa7e017ac8b2b43f509",
+      "scope": "project"
+    },
+    "draft-21": {
+      "id": "m_mvnu0ap0750282e65faede60bfd7",
+      "scope": "project"
+    },
+    "draft-22": {
+      "id": "m_mvnu0ap984e255dbb18db3ab052f",
+      "scope": "project"
+    },
+    "draft-23": {
+      "id": "m_mvnu0apjf4b94d5eb754396ebae0",
+      "scope": "project"
+    },
+    "signed": {
+      "id": "m_mvnu0apt776fe1b70080fe67939f",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 923,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 866,
+    "output": 16,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 882,
+    "cost": 0.0018919999999999998
+  },
+  "latencyMs": 3255,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

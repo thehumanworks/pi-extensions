@@ -1,0 +1,1259 @@
+{
+  "created": "2026-10-25T13:31:19.776Z",
+  "asOf": "2026-10-25T13:31:18.914Z",
+  "node": "v26.11.1",
+  "machine": {
+    "platform": "darwin",
+    "release": "27.2.0",
+    "cpu": "Apple M3 Ultra",
+    "cores": 28
+  },
+  "fixtureHashes": {
+    "growth": "9c5aef27d939d78584294ae3eb7cab4950a40fa477a02a06a52075e52defa996",
+    "temporal": "9553172b8490b6cdf687498d0dfb3c2272f47bc4133b58a7d888ec8b9efb8660",
+    "heldout": "a60a25b41b256194ba93ea018730d15f0e57a0879f04f8f8cc5368dbb06d1231",
+    "challenges": "7f8bcedb14c2eba50bf1f4c09844573c60c2e43c65c6839167dabd144b40442c"
+  },
+  "sourceHashes": {
+    "store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+    "retrieve.ts": "7ab4350dc65add3cae4a72eb983d67a5b832e7471cb42c9a0d4c260741769e26",
+    "types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+    "project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+    "secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d"
+  },
+  "sourceSnapshot": "pi-memory/bench/results/relevance-counterexample-v1.sources",
+  "sourceStable": true,
+  "method": {
+    "repetitions": 1,
+    "queryCount": 7,
+    "warmup": "one search per query/method",
+    "budgetUpperBound": 1200,
+    "candidateCaps": [],
+    "paidModelCalls": 0
+  },
+  "identity": {
+    "sameWorktreeIdentity": true,
+    "sameRemoteIdentity": true,
+    "unrelatedRemoteIsolated": true
+  },
+  "temporal": {
+    "note": "Explicit retention/expiry metadata tests the lifetime contract. Selected evidence and canonical retirement are measured; model execution is not.",
+    "before": [
+      {
+        "query": "Release approval before publishing",
+        "relevant": [
+          "lasting-feedback"
+        ],
+        "expectedAction": "ask for explicit approval",
+        "selectedKeys": [
+          "lasting-feedback"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Response format concise",
+        "relevant": [
+          "lasting-preference"
+        ],
+        "expectedAction": "respond concisely",
+        "selectedKeys": [
+          "lasting-preference"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Current incident traffic routing cluster",
+        "relevant": [
+          "default-routing",
+          "current-override"
+        ],
+        "forbidden": [
+          "expired-override"
+        ],
+        "expectedAction": "use green during current override; retain blue default for later",
+        "selectedKeys": [
+          "current-override",
+          "default-routing"
+        ],
+        "forbiddenSelected": 0
+      }
+    ],
+    "consolidation": {
+      "archived": 1,
+      "duplicates": 0
+    },
+    "after": [
+      {
+        "query": "Release approval before publishing",
+        "relevant": [
+          "lasting-feedback"
+        ],
+        "expectedAction": "ask for explicit approval",
+        "selectedKeys": [
+          "lasting-feedback"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Response format concise",
+        "relevant": [
+          "lasting-preference"
+        ],
+        "expectedAction": "respond concisely",
+        "selectedKeys": [
+          "lasting-preference"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Current incident traffic routing cluster",
+        "relevant": [
+          "default-routing",
+          "current-override"
+        ],
+        "forbidden": [
+          "expired-override"
+        ],
+        "expectedAction": "use green during current override; retain blue default for later",
+        "selectedKeys": [
+          "current-override",
+          "default-routing"
+        ],
+        "forbiddenSelected": 0
+      }
+    ],
+    "statuses": {
+      "default-routing": "active",
+      "current-override": "active",
+      "lasting-feedback": "active",
+      "expired-override": "archived",
+      "lasting-preference": "active"
+    }
+  },
+  "rows": [
+    {
+      "size": 1000,
+      "layout": "concentrated",
+      "scopeCount": 10,
+      "visibleActiveItems": 968,
+      "seedMs": 33.775,
+      "initialIndexMs": 52.867,
+      "reindex": {
+        "p50Ms": 5.064,
+        "p95Ms": 5.073,
+        "maxMs": 5.073,
+        "samples": 3
+      },
+      "injectedRunStorage": {
+        "p50Ms": 31.956,
+        "p95Ms": 33.79,
+        "maxMs": 33.79,
+        "samples": 3
+      },
+      "disk": {
+        "totalBytes": 3213700,
+        "canonicalBytes": 1160917,
+        "indexBytes": 2052096,
+        "files": 1002
+      },
+      "results": [
+        {
+          "method": "production",
+          "latency": {
+            "p50Ms": 1.334,
+            "p95Ms": 2.063,
+            "maxMs": 2.063,
+            "samples": 7
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1173,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_03040fc8a6f72e77dec83cdf9b87",
+                "m_03ccd5c66fce4adaa726ce30d1b6",
+                "m_07da24a03e428af6e38f16d06715"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1158
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_00d6ee68aa61a908d7f6cdf4c797",
+                "m_0713fd04dda76cad2d084cacd728",
+                "m_0716037cf234bd9948b76a74eca4"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1169
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_009e89226b8a48cf9d5b54cff1e5",
+                "m_05db8877114a351ee0da54f62368"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_02a63fc5cebc7ee55b7e4240afec",
+                "m_06d2fc3cec1d21df3d276680d219",
+                "m_07135a053e7a5048471f44b82f36"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1173
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_0061c6157772c49b0220b7968757",
+                "m_03e569a0dbb34a713e522215e374"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        }
+      ],
+      "relevance": {
+        "gates": [
+          {
+            "ratio": 0,
+            "microRecall": 1,
+            "microPrecision": 0.286,
+            "misses": []
+          },
+          {
+            "ratio": 0.1,
+            "microRecall": 1,
+            "microPrecision": 0.333,
+            "misses": []
+          },
+          {
+            "ratio": 0.25,
+            "microRecall": 1,
+            "microPrecision": 1,
+            "misses": []
+          },
+          {
+            "ratio": 0.5,
+            "microRecall": 1,
+            "microPrecision": 1,
+            "misses": []
+          }
+        ],
+        "gapGates": [
+          {
+            "gap": 4,
+            "microRecall": 1,
+            "microPrecision": 1,
+            "misses": []
+          },
+          {
+            "gap": 8,
+            "microRecall": 1,
+            "microPrecision": 0.4,
+            "misses": []
+          }
+        ],
+        "examples": [
+          {
+            "query": "Juniper worker verification before restart",
+            "candidates": [
+              {
+                "id": "m_4183b7793fd28ba47ea9e79e7697",
+                "title": "Juniper worker verification",
+                "gold": true,
+                "score": 25.4084,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_03040fc8a6f72e77dec83cdf9b87",
+                "title": "migration verification detail 215",
+                "gold": false,
+                "score": 3.86368,
+                "ratioToTop": 0.152
+              },
+              {
+                "id": "m_03ccd5c66fce4adaa726ce30d1b6",
+                "title": "telemetry verification detail 212",
+                "gold": false,
+                "score": 3.86368,
+                "ratioToTop": 0.152
+              },
+              {
+                "id": "m_07da24a03e428af6e38f16d06715",
+                "title": "catalog worker detail 303",
+                "gold": false,
+                "score": 3.86368,
+                "ratioToTop": 0.152
+              },
+              {
+                "id": "m_0c5b69c9cde346acbd06549ade71",
+                "title": "telemetry verification detail 412",
+                "gold": false,
+                "score": 3.86368,
+                "ratioToTop": 0.152
+              },
+              {
+                "id": "m_0ce297e296b6694e373654f74ba8",
+                "title": "catalog verification detail 713",
+                "gold": false,
+                "score": 3.86368,
+                "ratioToTop": 0.152
+              }
+            ]
+          },
+          {
+            "query": "Snapshot recovery restore manifest order",
+            "candidates": [
+              {
+                "id": "m_f329e3a317eee6a8a1a7357f69bc",
+                "title": "Snapshot recovery order",
+                "gold": true,
+                "score": 32.7086,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_00d6ee68aa61a908d7f6cdf4c797",
+                "title": "notifications recovery detail 629",
+                "gold": false,
+                "score": 3.78147,
+                "ratioToTop": 0.116
+              },
+              {
+                "id": "m_0713fd04dda76cad2d084cacd728",
+                "title": "rendering recovery detail 721",
+                "gold": false,
+                "score": 3.78147,
+                "ratioToTop": 0.116
+              },
+              {
+                "id": "m_0716037cf234bd9948b76a74eca4",
+                "title": "notifications recovery detail 129",
+                "gold": false,
+                "score": 3.78147,
+                "ratioToTop": 0.116
+              },
+              {
+                "id": "m_08ca7c92b49cb1d6c388395bf5cc",
+                "title": "migration recovery detail 325",
+                "gold": false,
+                "score": 3.78147,
+                "ratioToTop": 0.116
+              },
+              {
+                "id": "m_09383ef8cb2eb7deae75270e639e",
+                "title": "catalog recovery detail 523",
+                "gold": false,
+                "score": 3.78147,
+                "ratioToTop": 0.116
+              }
+            ]
+          },
+          {
+            "query": "CSV import encoding decode",
+            "candidates": [
+              {
+                "id": "m_e8424ea5339b85a750ab5f4c63bd",
+                "title": "CSV import encoding",
+                "gold": true,
+                "score": 24.8126,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_000e0e46e43b23f8a41970f3dbcf",
+                "title": "routing encoding detail 356",
+                "gold": false,
+                "score": 3.61757,
+                "ratioToTop": 0.146
+              },
+              {
+                "id": "m_009e89226b8a48cf9d5b54cff1e5",
+                "title": "analytics import detail 248",
+                "gold": false,
+                "score": 3.61757,
+                "ratioToTop": 0.146
+              },
+              {
+                "id": "m_05db8877114a351ee0da54f62368",
+                "title": "analytics import detail 948",
+                "gold": false,
+                "score": 3.61757,
+                "ratioToTop": 0.146
+              },
+              {
+                "id": "m_05fec71266175df363dade3bac0c",
+                "title": "catalog encoding detail 153",
+                "gold": false,
+                "score": 3.61757,
+                "ratioToTop": 0.146
+              },
+              {
+                "id": "m_0705f49193ebb4faafcae1ed2428",
+                "title": "scheduler encoding detail 754",
+                "gold": false,
+                "score": 3.61757,
+                "ratioToTop": 0.146
+              }
+            ]
+          },
+          {
+            "query": "Production deployment approval after preview",
+            "candidates": [
+              {
+                "id": "m_9deb65b8788f41ff94a217842017",
+                "title": "Production deployment approval",
+                "gold": true,
+                "score": 24.5965,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_02a63fc5cebc7ee55b7e4240afec",
+                "title": "telemetry deployment detail 862",
+                "gold": false,
+                "score": 3.59802,
+                "ratioToTop": 0.146
+              },
+              {
+                "id": "m_06d2fc3cec1d21df3d276680d219",
+                "title": "search deployment detail 567",
+                "gold": false,
+                "score": 3.59802,
+                "ratioToTop": 0.146
+              },
+              {
+                "id": "m_07135a053e7a5048471f44b82f36",
+                "title": "analytics deployment detail 68",
+                "gold": false,
+                "score": 3.59802,
+                "ratioToTop": 0.146
+              },
+              {
+                "id": "m_0ba1ce8e46eb41faae4e81717c93",
+                "title": "routing deployment detail 566",
+                "gold": false,
+                "score": 3.59802,
+                "ratioToTop": 0.146
+              },
+              {
+                "id": "m_0ddf67f90b7dd19b9e2b68b22568",
+                "title": "telemetry approval detail 672",
+                "gold": false,
+                "score": 3.59802,
+                "ratioToTop": 0.146
+              }
+            ]
+          },
+          {
+            "query": "Review communication format concise summaries",
+            "candidates": [
+              {
+                "id": "m_d4e16994df9002e53294f899714d",
+                "title": "Review communication format",
+                "gold": true,
+                "score": 42.9202,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_0002f565ca463ae2bb5fb3e3891c",
+                "title": "telemetry format detail 992",
+                "gold": false,
+                "score": 3.74352,
+                "ratioToTop": 0.087
+              },
+              {
+                "id": "m_0061c6157772c49b0220b7968757",
+                "title": "search format detail 197",
+                "gold": false,
+                "score": 3.74352,
+                "ratioToTop": 0.087
+              },
+              {
+                "id": "m_03e569a0dbb34a713e522215e374",
+                "title": "notifications format detail 999",
+                "gold": false,
+                "score": 3.74352,
+                "ratioToTop": 0.087
+              },
+              {
+                "id": "m_0408d2b62eba50630a35ed321e50",
+                "title": "analytics review detail 288",
+                "gold": false,
+                "score": 3.74352,
+                "ratioToTop": 0.087
+              },
+              {
+                "id": "m_04624d08520ec492e87648c7fe1d",
+                "title": "analytics format detail 998",
+                "gold": false,
+                "score": 3.74352,
+                "ratioToTop": 0.087
+              }
+            ]
+          },
+          {
+            "query": "Diagram accessibility color explanation",
+            "candidates": [
+              {
+                "id": "m_714db89df42bdb7ce4beb63d373d",
+                "title": "Diagram accessibility",
+                "gold": true,
+                "score": 47.3899,
+                "ratioToTop": 1
+              }
+            ]
+          },
+          {
+            "query": "Lunar astronomy orbital eccentricity measurement",
+            "candidates": []
+          }
+        ]
+      }
+    }
+  ],
+  "heldout": [
+    {
+      "size": 1000,
+      "gates": [
+        {
+          "ratio": 0,
+          "microRecall": 1,
+          "microPrecision": 0.414,
+          "misses": []
+        },
+        {
+          "ratio": 0.1,
+          "microRecall": 1,
+          "microPrecision": 0.545,
+          "misses": []
+        },
+        {
+          "ratio": 0.25,
+          "microRecall": 1,
+          "microPrecision": 0.667,
+          "misses": []
+        },
+        {
+          "ratio": 0.5,
+          "microRecall": 1,
+          "microPrecision": 0.857,
+          "misses": []
+        }
+      ],
+      "gapGates": [
+        {
+          "gap": 4,
+          "microRecall": 1,
+          "microPrecision": 0.571,
+          "misses": []
+        },
+        {
+          "gap": 8,
+          "microRecall": 1,
+          "microPrecision": 0.48,
+          "misses": []
+        }
+      ],
+      "examples": [
+        {
+          "query": "Cypress backup recovery verification",
+          "candidates": [
+            {
+              "id": "m_3aee88b16595b812e8580a911465",
+              "title": "Cypress recovery verification",
+              "gold": true,
+              "score": 30.5187,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_cb26ad4cc52535e81f0ca1101f83",
+              "title": "Cypress backup encryption",
+              "gold": false,
+              "score": 21.614,
+              "ratioToTop": 0.708
+            },
+            {
+              "id": "m_00d6ee68aa61a908d7f6cdf4c797",
+              "title": "notifications recovery detail 629",
+              "gold": false,
+              "score": 3.80203,
+              "ratioToTop": 0.125
+            },
+            {
+              "id": "m_03040fc8a6f72e77dec83cdf9b87",
+              "title": "migration verification detail 215",
+              "gold": false,
+              "score": 3.80203,
+              "ratioToTop": 0.125
+            },
+            {
+              "id": "m_03ccd5c66fce4adaa726ce30d1b6",
+              "title": "telemetry verification detail 212",
+              "gold": false,
+              "score": 3.80203,
+              "ratioToTop": 0.125
+            },
+            {
+              "id": "m_0713fd04dda76cad2d084cacd728",
+              "title": "rendering recovery detail 721",
+              "gold": false,
+              "score": 3.80203,
+              "ratioToTop": 0.125
+            }
+          ]
+        },
+        {
+          "query": "Cypress backup encryption",
+          "candidates": [
+            {
+              "id": "m_cb26ad4cc52535e81f0ca1101f83",
+              "title": "Cypress backup encryption",
+              "gold": true,
+              "score": 35.0995,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_3aee88b16595b812e8580a911465",
+              "title": "Cypress recovery verification",
+              "gold": false,
+              "score": 21.6149,
+              "ratioToTop": 0.616
+            }
+          ]
+        },
+        {
+          "query": "Invoice import decimal amount rounding",
+          "candidates": [
+            {
+              "id": "m_cc8b02b49be207cf0f649e22df8b",
+              "title": "Invoice import amount rounding",
+              "gold": true,
+              "score": 51.8698,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_3276e334bea7395d3c40d2eb831f",
+              "title": "Invoice import duplicate handling",
+              "gold": false,
+              "score": 14.4715,
+              "ratioToTop": 0.279
+            },
+            {
+              "id": "m_009e89226b8a48cf9d5b54cff1e5",
+              "title": "analytics import detail 248",
+              "gold": false,
+              "score": 3.5805,
+              "ratioToTop": 0.069
+            },
+            {
+              "id": "m_05db8877114a351ee0da54f62368",
+              "title": "analytics import detail 948",
+              "gold": false,
+              "score": 3.5805,
+              "ratioToTop": 0.069
+            },
+            {
+              "id": "m_0739e37074e4d5c0c4fabb5f24c0",
+              "title": "routing import detail 946",
+              "gold": false,
+              "score": 3.5805,
+              "ratioToTop": 0.069
+            },
+            {
+              "id": "m_073c7a22a7001dbb65eca3693ac4",
+              "title": "billing import detail 940",
+              "gold": false,
+              "score": 3.5805,
+              "ratioToTop": 0.069
+            }
+          ]
+        },
+        {
+          "query": "Invoice import duplicate document identifiers",
+          "candidates": [
+            {
+              "id": "m_3276e334bea7395d3c40d2eb831f",
+              "title": "Invoice import duplicate handling",
+              "gold": true,
+              "score": 51.2016,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_cc8b02b49be207cf0f649e22df8b",
+              "title": "Invoice import amount rounding",
+              "gold": false,
+              "score": 14.3138,
+              "ratioToTop": 0.28
+            },
+            {
+              "id": "m_009e89226b8a48cf9d5b54cff1e5",
+              "title": "analytics import detail 248",
+              "gold": false,
+              "score": 3.5805,
+              "ratioToTop": 0.07
+            },
+            {
+              "id": "m_05db8877114a351ee0da54f62368",
+              "title": "analytics import detail 948",
+              "gold": false,
+              "score": 3.5805,
+              "ratioToTop": 0.07
+            },
+            {
+              "id": "m_0739e37074e4d5c0c4fabb5f24c0",
+              "title": "routing import detail 946",
+              "gold": false,
+              "score": 3.5805,
+              "ratioToTop": 0.07
+            },
+            {
+              "id": "m_073c7a22a7001dbb65eca3693ac4",
+              "title": "billing import detail 940",
+              "gold": false,
+              "score": 3.5805,
+              "ratioToTop": 0.07
+            }
+          ]
+        },
+        {
+          "query": "Screen reader focus after modal dismissal",
+          "candidates": [
+            {
+              "id": "m_648373a30006c89fad0d15389a12",
+              "title": "Screen reader focus after modal dismissal",
+              "gold": true,
+              "score": 68.3652,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_3aee88b16595b812e8580a911465",
+              "title": "Cypress recovery verification",
+              "gold": false,
+              "score": 17.6358,
+              "ratioToTop": 0.258
+            }
+          ]
+        },
+        {
+          "query": "Animated transitions reduced motion preference",
+          "candidates": [
+            {
+              "id": "m_a62d3a76c362bf28320d6211990d",
+              "title": "Reduced motion transitions",
+              "gold": true,
+              "score": 59.8774,
+              "ratioToTop": 1
+            }
+          ]
+        },
+        {
+          "query": "Prepare an invoice import: handle decimal amounts and duplicate identifiers",
+          "candidates": [
+            {
+              "id": "m_3276e334bea7395d3c40d2eb831f",
+              "title": "Invoice import duplicate handling",
+              "gold": true,
+              "score": 47.9212,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_cc8b02b49be207cf0f649e22df8b",
+              "title": "Invoice import amount rounding",
+              "gold": true,
+              "score": 37.6311,
+              "ratioToTop": 0.785
+            },
+            {
+              "id": "m_009e89226b8a48cf9d5b54cff1e5",
+              "title": "analytics import detail 248",
+              "gold": false,
+              "score": 3.55131,
+              "ratioToTop": 0.074
+            },
+            {
+              "id": "m_05db8877114a351ee0da54f62368",
+              "title": "analytics import detail 948",
+              "gold": false,
+              "score": 3.55131,
+              "ratioToTop": 0.074
+            },
+            {
+              "id": "m_0739e37074e4d5c0c4fabb5f24c0",
+              "title": "routing import detail 946",
+              "gold": false,
+              "score": 3.55131,
+              "ratioToTop": 0.074
+            },
+            {
+              "id": "m_073c7a22a7001dbb65eca3693ac4",
+              "title": "billing import detail 940",
+              "gold": false,
+              "score": 3.55131,
+              "ratioToTop": 0.074
+            }
+          ]
+        },
+        {
+          "query": "After restoring Cypress backup verify recovery and confirm encryption",
+          "candidates": [
+            {
+              "id": "m_3aee88b16595b812e8580a911465",
+              "title": "Cypress recovery verification",
+              "gold": true,
+              "score": 38.0793,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_cb26ad4cc52535e81f0ca1101f83",
+              "title": "Cypress backup encryption",
+              "gold": true,
+              "score": 32.9057,
+              "ratioToTop": 0.864
+            },
+            {
+              "id": "m_648373a30006c89fad0d15389a12",
+              "title": "Screen reader focus after modal dismissal",
+              "gold": false,
+              "score": 9.6967,
+              "ratioToTop": 0.255
+            },
+            {
+              "id": "m_00d6ee68aa61a908d7f6cdf4c797",
+              "title": "notifications recovery detail 629",
+              "gold": false,
+              "score": 3.75065,
+              "ratioToTop": 0.098
+            },
+            {
+              "id": "m_0713fd04dda76cad2d084cacd728",
+              "title": "rendering recovery detail 721",
+              "gold": false,
+              "score": 3.75065,
+              "ratioToTop": 0.098
+            },
+            {
+              "id": "m_0716037cf234bd9948b76a74eca4",
+              "title": "notifications recovery detail 129",
+              "gold": false,
+              "score": 3.75065,
+              "ratioToTop": 0.098
+            }
+          ]
+        },
+        {
+          "query": "Review accessible modal closing and motion transitions",
+          "candidates": [
+            {
+              "id": "m_648373a30006c89fad0d15389a12",
+              "title": "Screen reader focus after modal dismissal",
+              "gold": true,
+              "score": 34.2188,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_a62d3a76c362bf28320d6211990d",
+              "title": "Reduced motion transitions",
+              "gold": true,
+              "score": 33.1849,
+              "ratioToTop": 0.97
+            },
+            {
+              "id": "m_0408d2b62eba50630a35ed321e50",
+              "title": "analytics review detail 288",
+              "gold": false,
+              "score": 3.72996,
+              "ratioToTop": 0.109
+            },
+            {
+              "id": "m_098cacf674f3d770ac7a5c011c2c",
+              "title": "migration review detail 585",
+              "gold": false,
+              "score": 3.72996,
+              "ratioToTop": 0.109
+            },
+            {
+              "id": "m_0b13f70fd9b186bd0576af65568d",
+              "title": "search review detail 587",
+              "gold": false,
+              "score": 3.72996,
+              "ratioToTop": 0.109
+            },
+            {
+              "id": "m_0b6f4556e66ceb57151ea17cb8d6",
+              "title": "scheduler review detail 684",
+              "gold": false,
+              "score": 3.72996,
+              "ratioToTop": 0.109
+            }
+          ]
+        },
+        {
+          "query": "How far away is Jupiter",
+          "candidates": []
+        }
+      ]
+    }
+  ],
+  "challenges": [
+    {
+      "size": 1000,
+      "gates": [
+        {
+          "ratio": 0,
+          "microRecall": 1,
+          "microPrecision": 0.625,
+          "misses": []
+        },
+        {
+          "ratio": 0.1,
+          "microRecall": 1,
+          "microPrecision": 0.625,
+          "misses": []
+        },
+        {
+          "ratio": 0.25,
+          "microRecall": 0.8,
+          "microPrecision": 0.8,
+          "misses": [
+            {
+              "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval",
+              "expected": [
+                "m_3aee88b16595b812e8580a911465",
+                "m_0f6e2b2ccb8dcd09e47a5684b7d2"
+              ],
+              "selected": [
+                "m_3aee88b16595b812e8580a911465",
+                "m_cb26ad4cc52535e81f0ca1101f83"
+              ]
+            }
+          ]
+        },
+        {
+          "ratio": 0.5,
+          "microRecall": 0.8,
+          "microPrecision": 1,
+          "misses": [
+            {
+              "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval",
+              "expected": [
+                "m_3aee88b16595b812e8580a911465",
+                "m_0f6e2b2ccb8dcd09e47a5684b7d2"
+              ],
+              "selected": [
+                "m_3aee88b16595b812e8580a911465"
+              ]
+            }
+          ]
+        }
+      ],
+      "gapGates": [
+        {
+          "gap": 4,
+          "microRecall": 1,
+          "microPrecision": 0.625,
+          "misses": []
+        },
+        {
+          "gap": 8,
+          "microRecall": 1,
+          "microPrecision": 0.625,
+          "misses": []
+        }
+      ],
+      "examples": [
+        {
+          "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval",
+          "candidates": [
+            {
+              "id": "m_3aee88b16595b812e8580a911465",
+              "title": "Cypress recovery verification",
+              "gold": true,
+              "score": 62.502,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_cb26ad4cc52535e81f0ca1101f83",
+              "title": "Cypress backup encryption",
+              "gold": false,
+              "score": 21.0446,
+              "ratioToTop": 0.337
+            },
+            {
+              "id": "m_648373a30006c89fad0d15389a12",
+              "title": "Screen reader focus after modal dismissal",
+              "gold": false,
+              "score": 9.6962,
+              "ratioToTop": 0.155
+            },
+            {
+              "id": "m_0f6e2b2ccb8dcd09e47a5684b7d2",
+              "title": "Recovery approval contact",
+              "gold": true,
+              "score": 8.74726,
+              "ratioToTop": 0.14
+            },
+            {
+              "id": "m_03040fc8a6f72e77dec83cdf9b87",
+              "title": "migration verification detail 215",
+              "gold": false,
+              "score": 3.75052,
+              "ratioToTop": 0.06
+            },
+            {
+              "id": "m_03ccd5c66fce4adaa726ce30d1b6",
+              "title": "telemetry verification detail 212",
+              "gold": false,
+              "score": 3.75052,
+              "ratioToTop": 0.06
+            }
+          ]
+        },
+        {
+          "query": "All invoice import conventions",
+          "candidates": [
+            {
+              "id": "m_8a6c75ef8dc9cccc12abfdd80cfe",
+              "title": "Invoice import record order",
+              "gold": true,
+              "score": 17.2658,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_3276e334bea7395d3c40d2eb831f",
+              "title": "Invoice import duplicate handling",
+              "gold": true,
+              "score": 13.9956,
+              "ratioToTop": 0.811
+            },
+            {
+              "id": "m_cc8b02b49be207cf0f649e22df8b",
+              "title": "Invoice import amount rounding",
+              "gold": true,
+              "score": 13.843,
+              "ratioToTop": 0.802
+            },
+            {
+              "id": "m_009e89226b8a48cf9d5b54cff1e5",
+              "title": "analytics import detail 248",
+              "gold": false,
+              "score": 3.58235,
+              "ratioToTop": 0.207
+            },
+            {
+              "id": "m_05db8877114a351ee0da54f62368",
+              "title": "analytics import detail 948",
+              "gold": false,
+              "score": 3.58235,
+              "ratioToTop": 0.207
+            },
+            {
+              "id": "m_0739e37074e4d5c0c4fabb5f24c0",
+              "title": "routing import detail 946",
+              "gold": false,
+              "score": 3.58235,
+              "ratioToTop": 0.207
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "isolatedChallenges": [
+    {
+      "size": 1000,
+      "gates": [
+        {
+          "ratio": 0,
+          "microRecall": 1,
+          "microPrecision": 0.5,
+          "misses": []
+        },
+        {
+          "ratio": 0.1,
+          "microRecall": 1,
+          "microPrecision": 1,
+          "misses": []
+        },
+        {
+          "ratio": 0.25,
+          "microRecall": 0.5,
+          "microPrecision": 1,
+          "misses": [
+            {
+              "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval",
+              "expected": [
+                "m_3aee88b16595b812e8580a911465",
+                "m_0f6e2b2ccb8dcd09e47a5684b7d2"
+              ],
+              "selected": [
+                "m_3aee88b16595b812e8580a911465"
+              ]
+            }
+          ]
+        },
+        {
+          "ratio": 0.5,
+          "microRecall": 0.5,
+          "microPrecision": 1,
+          "misses": [
+            {
+              "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval",
+              "expected": [
+                "m_3aee88b16595b812e8580a911465",
+                "m_0f6e2b2ccb8dcd09e47a5684b7d2"
+              ],
+              "selected": [
+                "m_3aee88b16595b812e8580a911465"
+              ]
+            }
+          ]
+        }
+      ],
+      "gapGates": [
+        {
+          "gap": 4,
+          "microRecall": 0.5,
+          "microPrecision": 1,
+          "misses": [
+            {
+              "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval",
+              "expected": [
+                "m_3aee88b16595b812e8580a911465",
+                "m_0f6e2b2ccb8dcd09e47a5684b7d2"
+              ],
+              "selected": [
+                "m_3aee88b16595b812e8580a911465"
+              ]
+            }
+          ]
+        },
+        {
+          "gap": 8,
+          "microRecall": 1,
+          "microPrecision": 0.5,
+          "misses": []
+        }
+      ],
+      "examples": [
+        {
+          "query": "Cypress backup recovery verification after restoring a snapshot: verify the signed manifest, and tell me who grants approval",
+          "candidates": [
+            {
+              "id": "m_3aee88b16595b812e8580a911465",
+              "title": "Cypress recovery verification",
+              "gold": true,
+              "score": 65.1822,
+              "ratioToTop": 1
+            },
+            {
+              "id": "m_0f6e2b2ccb8dcd09e47a5684b7d2",
+              "title": "Recovery approval contact",
+              "gold": true,
+              "score": 8.73711,
+              "ratioToTop": 0.134
+            },
+            {
+              "id": "m_03040fc8a6f72e77dec83cdf9b87",
+              "title": "migration verification detail 215",
+              "gold": false,
+              "score": 3.74324,
+              "ratioToTop": 0.057
+            },
+            {
+              "id": "m_03ccd5c66fce4adaa726ce30d1b6",
+              "title": "telemetry verification detail 212",
+              "gold": false,
+              "score": 3.74324,
+              "ratioToTop": 0.057
+            },
+            {
+              "id": "m_0c5b69c9cde346acbd06549ade71",
+              "title": "telemetry verification detail 412",
+              "gold": false,
+              "score": 3.74324,
+              "ratioToTop": 0.057
+            },
+            {
+              "id": "m_0ce297e296b6694e373654f74ba8",
+              "title": "catalog verification detail 713",
+              "gold": false,
+              "score": 3.74324,
+              "ratioToTop": 0.057
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

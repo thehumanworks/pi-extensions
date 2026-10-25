@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 11193,
+  "modelRequests": 3,
+  "usage": {
+    "input": 544,
+    "output": 147,
+    "cacheRead": 13056,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 13747,
+    "cost": 0.0038636000000000005
+  },
+  "finalText": "Invoked the CLI with explicit batch size **1** and the requested paths. Saved its report to `temporary-report.json`:\n\n```json\n{\"accepted\":1,\"rejected\":0,\"duplicates\":0,\"nextLine\":1}\n```\n\nThe permanent default remains unchanged."
+}

@@ -1,0 +1,4 @@
+Warning: No project session found with id 'c9407a00-389f-4c38-8a8b-13847a50f40b'; creating a new session with that id.
+Warning: No models match pattern "claude-bridge/claude-opus-5-5"
+Warning: No models match pattern "claude-bridge/claude-fable-5-1"
+pi-memory: Background memory work failed; committed evidence retained: Memory model response incomplete: error

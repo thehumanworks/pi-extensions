@@ -1,0 +1,60 @@
+{
+  "runId": "dev-unrelated-off-1",
+  "caseId": "dev-unrelated",
+  "split": "dev",
+  "kind": "control",
+  "category": "unrelated",
+  "arm": "off",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "response": "{\"code\":\"function solve(values) {\\n  return values.reduce((sum, value) => sum + value, 0);\\n}\"}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "code",
+        "args": [
+          [
+            3,
+            -2,
+            8
+          ]
+        ],
+        "expected": 9,
+        "passed": true,
+        "actual": 9
+      },
+      {
+        "type": "code",
+        "args": [
+          []
+        ],
+        "expected": 0,
+        "passed": true,
+        "actual": 0
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 516,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 549,
+    "cost": 0.001362
+  },
+  "latencyMs": 3348,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

@@ -43,5 +43,11 @@ for (const dir of manifest.workspaces) {
     }
     if (dir === 'pi-loop') assert.ok(files.has('dist/worker.js'));
     if (dir === 'pi-xai') assert.ok(files.has('dist/src/index.js'));
+    if (dir === 'pi-memory') {
+      assert.ok(files.has('prompts/memory-agent.preset.md'));
+      assert.ok(files.has('src/capture.ts'));
+      assert.ok(files.has('src/store.ts'));
+      assert.ok(![...files].some(f => f.startsWith('eval/')));
+    }
   });
 }

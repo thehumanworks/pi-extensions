@@ -1,0 +1,65 @@
+{
+  "runId": "heldout-override-improved-0",
+  "caseId": "heldout-override",
+  "split": "heldout",
+  "kind": "control",
+  "category": "current-instruction-over-stale",
+  "arm": "improved",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+  "response": "{\"format\":\"csv\",\"retentionDays\":2}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "field",
+        "path": "format",
+        "expected": "csv",
+        "passed": true,
+        "actual": "csv"
+      },
+      {
+        "type": "field",
+        "path": "retentionDays",
+        "expected": 2,
+        "passed": true,
+        "actual": 2
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvntugty36febcee7026fb4c75aa"
+  ],
+  "selectedMemoryKeys": [
+    "old-default"
+  ],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "old-default": {
+      "id": "m_mvntugty36febcee7026fb4c75aa",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 406,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 713,
+    "output": 15,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 728,
+    "cost": 0.001576
+  },
+  "latencyMs": 2475,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

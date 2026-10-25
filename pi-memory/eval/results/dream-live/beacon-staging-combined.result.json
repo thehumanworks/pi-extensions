@@ -1,0 +1,51 @@
+{
+  "id": "beacon-staging-combined",
+  "caseId": "beacon-staging",
+  "arm": "combined",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":\"pnpm beacon:smoke-v2\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":45,\"requiresPassingPreflight\":null}",
+  "parsed": {
+    "command": "pnpm beacon:smoke-v2",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 45,
+    "requiresPassingPreflight": null
+  },
+  "expected": {
+    "command": "pnpm beacon:smoke-v2",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 45,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": false
+  },
+  "actionSuccess": false,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 927,
+    "output": 82,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 1110,
+  "selectedIds": [
+    "m_mvnv3yqje2a92353ad2f5c2b5db0",
+    "m_mvnv3ypif934a8d9dd94023799b2"
+  ],
+  "sizes": {
+    "activeCount": 11,
+    "activeTextBytes": 6233,
+    "canonicalMarkdownBytes": 18744
+  },
+  "latencyMs": 7860
+}

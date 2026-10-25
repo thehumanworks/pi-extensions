@@ -1,0 +1,55 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 0,
+    "parentIds": [],
+    "observed": false
+  },
+  "id": "zephyr-production-compressed",
+  "caseId": "zephyr-production",
+  "arm": "compressed",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":\"zx prod-apply\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":90,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": "zx prod-apply",
+    "workers": 1,
+    "retries": 0,
+    "timeoutSeconds": 90,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": "zx prod-apply",
+    "workers": 1,
+    "retries": 0,
+    "timeoutSeconds": 90,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 850,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 765,
+  "selectedIds": [
+    "m_mvnw9n99630ed05f08a87b66311b"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 2064,
+    "canonicalMarkdownBytes": 6071
+  },
+  "latencyMs": 4346
+}

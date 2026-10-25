@@ -1,0 +1,19 @@
+{
+  "runtime": "installed pi 1.4.0 compiled Bun",
+  "model": "openai/gpt-6.1-sol",
+  "tools": [],
+  "isolated": true,
+  "sessions": 7,
+  "capture_recall_supersession": true,
+  "pending_failure_retry_new_session": true,
+  "original_source_provenance_verified": true,
+  "expected_capture_configuration_failure": true,
+  "artifacts": [
+    "results.json",
+    "retry/results.json"
+  ],
+  "limits": [
+    "Synthetic single-project fixture",
+    "No automatic generalization or semantic consolidation evaluated"
+  ]
+}

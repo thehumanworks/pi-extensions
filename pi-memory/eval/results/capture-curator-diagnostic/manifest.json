@@ -1,0 +1,21 @@
+{
+  "originalReleaseFailure": "../capture-release/learning-correction.trace.jsonl",
+  "originalReleaseRawCuratorResponseAvailable": false,
+  "diagnostics": [
+    {
+      "label": "discarded stdin-contaminated diagnostic",
+      "validExactFixture": false,
+      "originalPath": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-curator-probe-8v8gopip/curator-response.jsonl",
+      "originalSha256": "2a076c18a9a15d23ced2aeab47afc8c94e37ceed2519ed11d094d780a2469648",
+      "textArtifact": "model-calls.json"
+    },
+    {
+      "label": "exact-prompt one-shot probe",
+      "validExactFixture": true,
+      "originalPath": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-curator-probe-8v8gopip/exact-curator-response.jsonl",
+      "originalSha256": "ef43c1c4d2dad5f5a6f4d4814aa3e9c6cc7ebecbe4d1fa23684db6670e800496",
+      "textArtifact": "exact-model-calls.json"
+    }
+  ],
+  "interpretation": "Exact failed release proves rejection and retained old command. First diagnostic raw response demonstrates broad rewrite shape but stdin contamination invalidates it as an exact-fixture proof. The one corrected exact-prompt probe returned a narrow valid edit, showing output variability; it does not erase the original failure. Broad diagnostic response is used only as a deterministic edit-shape regression. Final seven-session harness is rerun unchanged after bounded repair."
+}

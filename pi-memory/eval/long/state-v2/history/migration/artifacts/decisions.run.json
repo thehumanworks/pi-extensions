@@ -1,0 +1,19 @@
+{
+  "name": "decisions",
+  "prompt": "For the migration project, durable customer decisions: version 3 defaults are region eu-north-7, retry.maxAttempts 3, retry.backoffMs 125. Enabled feature names are sorted. Preserve unknown source fields under legacy. Before migration preserve an exact source backup at backups/source.json beside the output. Migration-only auxiliary import jobs use batch size 9, seq alone as identity, and abort on malformed lines; those conventions must never apply to the ingestion project. Remember them without implementing files yet. Reply only ACK.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 29378,
+  "modelRequests": 1,
+  "usage": {
+    "input": 676,
+    "output": 5,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 681,
+    "cost": 0.0014019999999999998
+  },
+  "finalText": "ACK"
+}

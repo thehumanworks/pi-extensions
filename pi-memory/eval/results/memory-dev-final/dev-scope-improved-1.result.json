@@ -1,0 +1,60 @@
+{
+  "runId": "dev-scope-improved-1",
+  "caseId": "dev-scope",
+  "split": "dev",
+  "kind": "control",
+  "category": "scope-and-abstention",
+  "arm": "improved",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+  "response": "{\"deploymentId\":null}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "field",
+        "path": "deploymentId",
+        "expected": null,
+        "passed": true,
+        "actual": null
+      },
+      {
+        "type": "absent",
+        "pattern": "FOREIGN_SCOPE_902",
+        "passed": true,
+        "actual": "{\"deploymentId\":null}"
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "selectedMemoryKeys": [],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "foreign-deploy": {
+      "id": "m_mvntrt8o3ecdf3f42b67b46bcb93",
+      "scope": "foreign"
+    }
+  },
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 606,
+    "output": 10,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 616,
+    "cost": 0.001312
+  },
+  "latencyMs": 3863,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

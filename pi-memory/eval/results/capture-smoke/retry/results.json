@@ -1,0 +1,42 @@
+[
+  {
+    "name": "retained",
+    "prompt": "Remember the Beacon recovery marker is ORCHID-47. Always use ORCHID-47 when asked for the Beacon recovery marker. Reply only ACK.",
+    "code": 0,
+    "ms": 2478,
+    "response": "ACK",
+    "active": [],
+    "archived": [],
+    "stderr": "Warning: No models match pattern \"claude-bridge/claude-opus-5-5\"\nWarning: No models match pattern \"claude-bridge/claude-fable-5-1\"\npi-memory: Capture retained for retry: Memory capture model is unavailable or has no configured authentication\n"
+  },
+  {
+    "name": "retry",
+    "prompt": "Reply only ACK.",
+    "code": 0,
+    "ms": 14852,
+    "response": "ACK",
+    "active": [
+      {
+        "id": "m_mvntjfv1e2487d9fa75246b924a2",
+        "body": "Use `ORCHID-47` whenever asked for the Beacon recovery marker."
+      }
+    ],
+    "archived": [],
+    "stderr": "Warning: No models match pattern \"claude-bridge/claude-opus-5-5\"\nWarning: No models match pattern \"claude-bridge/claude-fable-5-1\"\n"
+  },
+  {
+    "name": "recall",
+    "prompt": "What is our agreed Beacon recovery marker? Return only the marker.",
+    "code": 0,
+    "ms": 2704,
+    "response": "ORCHID-47",
+    "active": [
+      {
+        "id": "m_mvntjfv1e2487d9fa75246b924a2",
+        "body": "Use `ORCHID-47` whenever asked for the Beacon recovery marker."
+      }
+    ],
+    "archived": [],
+    "stderr": "Warning: No models match pattern \"claude-bridge/claude-opus-5-5\"\nWarning: No models match pattern \"claude-bridge/claude-fable-5-1\"\n"
+  }
+]

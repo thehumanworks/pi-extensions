@@ -1,0 +1,2 @@
+{"event":"recall","query":"Remember this temporary project decision: until 2026-10-25T13:44:56.304Z, the Larch batch runner must use 1 worker. After that time, the temporary override expires and the existing durable worker-count default remains in force. Reply only ACK.","ids":[],"retiredIds":[],"tokens":0,"tokenUpperBound":0,"digestTokenUpperBound":0,"content":""}
+{"event":"capture","saved":1,"skipped":false}

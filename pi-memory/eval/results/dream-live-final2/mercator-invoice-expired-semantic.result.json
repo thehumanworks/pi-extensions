@@ -1,0 +1,56 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 0,
+    "parentIds": [],
+    "observed": false
+  },
+  "id": "mercator-invoice-expired-semantic",
+  "caseId": "mercator-invoice-expired",
+  "arm": "semantic",
+  "negative": false,
+  "temporary": true,
+  "expired": true,
+  "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+  "parsed": {
+    "command": null,
+    "workers": null,
+    "retries": null,
+    "timeoutSeconds": null,
+    "requiresPassingPreflight": null
+  },
+  "expected": {
+    "command": "mc export --batch",
+    "workers": 4,
+    "retries": 2,
+    "timeoutSeconds": 60,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": false,
+    "workers": false,
+    "retries": false,
+    "timeoutSeconds": false,
+    "requiresPassingPreflight": false
+  },
+  "actionSuccess": false,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 914,
+    "output": 30,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 982,
+  "selectedIds": [
+    "m_mvnwh2433c11a14a8fc5ee4c71ed",
+    "m_mvnwh23ucdbe3d69fab9fae405d5"
+  ],
+  "sizes": {
+    "activeCount": 2,
+    "activeTextBytes": 781,
+    "canonicalMarkdownBytes": 4666
+  },
+  "latencyMs": 4235
+}

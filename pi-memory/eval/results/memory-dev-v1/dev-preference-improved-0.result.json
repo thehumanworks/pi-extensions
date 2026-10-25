@@ -1,0 +1,89 @@
+{
+  "runId": "dev-preference-improved-0",
+  "caseId": "dev-preference",
+  "split": "dev",
+  "kind": "positive",
+  "category": "preference",
+  "arm": "improved",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "c06e201321a70f9df946cfe6f23760f7910cc8f91f4bccfaebd77a6ae8320c82",
+  "response": "{\"heading\":\"Release 2.3\",\"sections\":[{\"label\":\"Changed\",\"text\":\"Startup time decreased from 80 ms to 40 ms.\"},{\"label\":\"Checked\",\"text\":\"Linux smoke test passed.\"},{\"label\":\"Unverified\",\"text\":\"Windows remains untested.\"}]}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 5,
+    "total": 5,
+    "checks": [
+      {
+        "type": "field",
+        "path": "heading",
+        "expected": "Release 2.3",
+        "passed": true,
+        "actual": "Release 2.3"
+      },
+      {
+        "type": "labels",
+        "expected": [
+          "Changed",
+          "Checked",
+          "Unverified"
+        ],
+        "passed": true,
+        "actual": [
+          "Changed",
+          "Checked",
+          "Unverified"
+        ]
+      },
+      {
+        "type": "section-fact",
+        "label": "Changed",
+        "pattern": "40.*80|80.*40",
+        "passed": true,
+        "actual": "Startup time decreased from 80 ms to 40 ms."
+      },
+      {
+        "type": "section-fact",
+        "label": "Checked",
+        "pattern": "Linux",
+        "passed": true,
+        "actual": "Linux smoke test passed."
+      },
+      {
+        "type": "section-fact",
+        "label": "Unverified",
+        "pattern": "Windows",
+        "passed": true,
+        "actual": "Windows remains untested."
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvnthb4k9b0250b6ca79441ac2a6"
+  ],
+  "memoryIds": {
+    "release-style": {
+      "id": "m_mvnthb4k9b0250b6ca79441ac2a6",
+      "scope": "global"
+    }
+  },
+  "injectedTokens": 529,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 783,
+    "output": 61,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 844,
+    "cost": 0.002176
+  },
+  "latencyMs": 4848,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

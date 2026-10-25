@@ -1,0 +1,120 @@
+{
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+  "directories": [
+    "/Users/tomas/pi-extensions/pi-memory/eval/results/stress-off",
+    "/Users/tomas/pi-extensions/pi-memory/eval/results/stress-memory-reading"
+  ],
+  "model": [
+    "openai/gpt-6.1-sol"
+  ],
+  "aggregate": {
+    "dev": {
+      "off": {
+        "n": 8,
+        "taskScore": 0.25,
+        "positiveScore": 0,
+        "controlScore": 1,
+        "p95InjectedTokens": 0,
+        "meanSelectedMemories": 0,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 549.25,
+        "meanOutputTokens": 26.75,
+        "p95LatencyMs": 23356,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "baseline": {
+        "n": 8,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 1121,
+        "meanSelectedMemories": 2.5,
+        "meanDraftMemories": 0.75,
+        "meanInputTokens": 882.875,
+        "meanOutputTokens": 20.5,
+        "p95LatencyMs": 10368,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "improved": {
+        "n": 8,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 1121,
+        "meanSelectedMemories": 1.75,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 801.125,
+        "meanOutputTokens": 20.5,
+        "p95LatencyMs": 26217,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "acceptance": {
+        "pairedKeysMatch": true,
+        "gainPercentagePoints": 75,
+        "gainAtLeast20pp": true,
+        "noControlRegression": true,
+        "scopeLeaksZero": true,
+        "p95Within1200": true,
+        "noRunErrors": true
+      }
+    },
+    "heldout": {},
+    "all": {
+      "off": {
+        "n": 8,
+        "taskScore": 0.25,
+        "positiveScore": 0,
+        "controlScore": 1,
+        "p95InjectedTokens": 0,
+        "meanSelectedMemories": 0,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 549.25,
+        "meanOutputTokens": 26.75,
+        "p95LatencyMs": 23356,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "baseline": {
+        "n": 8,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 1121,
+        "meanSelectedMemories": 2.5,
+        "meanDraftMemories": 0.75,
+        "meanInputTokens": 882.875,
+        "meanOutputTokens": 20.5,
+        "p95LatencyMs": 10368,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "improved": {
+        "n": 8,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 1121,
+        "meanSelectedMemories": 1.75,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 801.125,
+        "meanOutputTokens": 20.5,
+        "p95LatencyMs": 26217,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "acceptance": {
+        "pairedKeysMatch": true,
+        "gainPercentagePoints": 75,
+        "gainAtLeast20pp": true,
+        "noControlRegression": true,
+        "scopeLeaksZero": true,
+        "p95Within1200": true,
+        "noRunErrors": true
+      }
+    }
+  }
+}

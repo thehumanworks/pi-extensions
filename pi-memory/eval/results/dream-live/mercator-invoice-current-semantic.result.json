@@ -1,0 +1,51 @@
+{
+  "id": "mercator-invoice-current-semantic",
+  "caseId": "mercator-invoice-current",
+  "arm": "semantic",
+  "negative": false,
+  "temporary": true,
+  "expired": false,
+  "response": "{\"command\":\"mc export --batch\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": "mc export --batch",
+    "workers": 1,
+    "retries": 0,
+    "timeoutSeconds": 60,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": "mc export --batch",
+    "workers": 1,
+    "retries": 0,
+    "timeoutSeconds": 60,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 971,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 1192,
+  "selectedIds": [
+    "m_mvnv6dndaa1e7d9ee5eac55724e3",
+    "m_mvnv6dmy24fa51ef92a6110659fc"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 1411,
+    "canonicalMarkdownBytes": 4680
+  },
+  "latencyMs": 3361
+}

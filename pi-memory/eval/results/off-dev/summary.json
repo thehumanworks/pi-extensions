@@ -1,0 +1,41 @@
+{
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "directories": [
+    "/Users/tomas/pi-extensions/pi-memory/eval/results/off-dev"
+  ],
+  "model": [
+    "openai/gpt-6.1-sol"
+  ],
+  "aggregate": {
+    "dev": {
+      "off": {
+        "n": 16,
+        "taskScore": 0.4166666666666667,
+        "positiveScore": 0.06666666666666667,
+        "controlScore": 1,
+        "p95InjectedTokens": 0,
+        "meanInputTokens": 549.625,
+        "meanOutputTokens": 26.375,
+        "p95LatencyMs": 6118,
+        "errors": 0,
+        "scopeLeaks": 0
+      }
+    },
+    "heldout": {},
+    "all": {
+      "off": {
+        "n": 16,
+        "taskScore": 0.4166666666666667,
+        "positiveScore": 0.06666666666666667,
+        "controlScore": 1,
+        "p95InjectedTokens": 0,
+        "meanInputTokens": 549.625,
+        "meanOutputTokens": 26.375,
+        "p95LatencyMs": 6118,
+        "errors": 0,
+        "scopeLeaks": 0
+      }
+    }
+  }
+}

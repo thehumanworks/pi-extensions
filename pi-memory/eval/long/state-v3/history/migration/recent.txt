@@ -1,0 +1,2 @@
+Previous user message: Correction for migration: retry.maxAttempts is now 5, replacing 3. Keep the earlier region and backoff decisions. The recovery procedure you verified is approved. One-off probe overrides are temporary. Reply only ACK.
+Previous assistant reply: ACK

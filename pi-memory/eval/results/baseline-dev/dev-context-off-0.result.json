@@ -1,0 +1,59 @@
+{
+  "runId": "dev-context-off-0",
+  "caseId": "dev-context",
+  "split": "dev",
+  "kind": "positive",
+  "category": "multi-fact-context",
+  "arm": "off",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "response": "{\"region\":null,\"retentionDays\":null,\"format\":null}",
+  "score": 0,
+  "validation": {
+    "score": 0,
+    "passed": 0,
+    "total": 3,
+    "checks": [
+      {
+        "type": "field",
+        "path": "region",
+        "expected": "eu-ireland-2",
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "retentionDays",
+        "expected": 45,
+        "passed": false,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "format",
+        "expected": "ndjson",
+        "passed": false,
+        "actual": null
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 532,
+    "output": 35,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 14,
+    "totalTokens": 567,
+    "cost": 0.0014140000000000001
+  },
+  "latencyMs": 3819,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

@@ -1,0 +1,29 @@
+{
+  "status": "provisional-pending-independent-review",
+  "rawArtifactsUntouched": true,
+  "rawSha256": {
+    "results": "53ca76f7cfe02ed2f0ad2fe0554c278ffab65f66e1fdd12213d33770c9bcdf6b",
+    "summary": "c0df9498bd1a9144f941e0995076a740b5a697e9814229973c311e1f618efecb",
+    "corpus": "192039fb134eb5e732e83761e87b2f480015ee8e4c3aa9358a4f5c8dc0fda4e7"
+  },
+  "corrections": [
+    {
+      "caseId": "beacon-staging",
+      "field": "requiresPassingPreflight",
+      "original": true,
+      "proposed": null,
+      "sourceId": "m_mvnv2pmj0fd2cd4b5b984514f7aa",
+      "exactQuote": "For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed.",
+      "rationale": "The source names passed staging migrations, not a separately named preflight. Null is proposed under an explicit-preflight reading; whether migrations count as a preflight is an unresolved field-definition ambiguity for independent review."
+    },
+    {
+      "caseId": "zephyr-local-negative",
+      "field": "requiresPassingPreflight",
+      "original": null,
+      "proposed": true,
+      "sourceId": "m_mvnv2pn4366fab1e090b5c934b7f",
+      "exactQuote": "Zephyr deployments require a passing preflight before any apply operation.",
+      "rationale": "The source states a general deployment preflight requirement. Unknown local command and resource limits can remain null while this supported requirement remains true."
+    }
+  ]
+}

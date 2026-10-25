@@ -1,0 +1,52 @@
+[
+  {
+    "id": "m_mvnthpfac6a9cce27841a25bdad7",
+    "scope": "project:8c9b0f22756f71ed582a3b2c",
+    "type": "project",
+    "title": "Use pnpm beacon:verify for Beacon staging verification",
+    "summary": "The designated command for Beacon staging verification is `pnpm beacon:verify`.",
+    "keywords": [
+      "Beacon",
+      "staging",
+      "smoke test",
+      "pnpm",
+      "verification"
+    ],
+    "triggers": [
+      "Beacon staging verification",
+      "running staging smoke tests"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-smoke-SUVf76/sessions/2026-10-25T12-41-23-829Z_01a17314-7875-74b5-907b-eb7ea4602692.jsonl",
+      "entries": [
+        "9864e70e"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-smoke-SUVf76/sessions/2026-10-25T12-41-23-829Z_01a17314-7875-74b5-907b-eb7ea4602692.jsonl",
+        "entries": [
+          "9864e70e"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T12:41:59.542Z",
+    "updated": "2026-10-25T12:41:59.542Z",
+    "last_used": "2026-10-25T12:41:59.542Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "body": "Always use `pnpm beacon:verify` to run Beacon staging smoke tests and staging verification in this project."
+  }
+]

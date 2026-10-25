@@ -1,0 +1,55 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 0,
+    "parentIds": [],
+    "observed": false
+  },
+  "id": "mercator-other-current-semantic",
+  "caseId": "mercator-other-current",
+  "arm": "semantic",
+  "negative": false,
+  "temporary": true,
+  "expired": false,
+  "response": "{\"command\":\"mc export --batch\",\"workers\":4,\"retries\":2,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": "mc export --batch",
+    "workers": 4,
+    "retries": 2,
+    "timeoutSeconds": 60,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": "mc export --batch",
+    "workers": 4,
+    "retries": 2,
+    "timeoutSeconds": 60,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 909,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 892,
+  "selectedIds": [
+    "m_mvnwfxtn007f43acabf8a54043f7"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 1434,
+    "canonicalMarkdownBytes": 4703
+  },
+  "latencyMs": 3540
+}

@@ -1,0 +1,101 @@
+{
+  "completed": "2026-10-25T13:29:52.288Z",
+  "model": "openai/gpt-6.1-sol",
+  "operationalSuccess": true,
+  "sourceStable": true,
+  "aggregate": {
+    "sources": {
+      "runs": 8,
+      "actionSuccess": 5,
+      "positiveActions": 4,
+      "positiveTotal": 6,
+      "negativeCorrect": 1,
+      "negativeTotal": 2,
+      "overgeneralizations": 0,
+      "temporaryLeaks": 0,
+      "meanInjectedTextUpperBound": 1135.25,
+      "meanProviderInput": 942.125,
+      "firstRunSize": {
+        "activeCount": 8,
+        "activeTextBytes": 4169,
+        "canonicalMarkdownBytes": 11174
+      }
+    },
+    "compressed": {
+      "runs": 8,
+      "actionSuccess": 5,
+      "positiveActions": 4,
+      "positiveTotal": 6,
+      "negativeCorrect": 1,
+      "negativeTotal": 2,
+      "overgeneralizations": 0,
+      "temporaryLeaks": 0,
+      "meanInjectedTextUpperBound": 825,
+      "meanProviderInput": 866.5,
+      "firstRunSize": {
+        "activeCount": 3,
+        "activeTextBytes": 2064,
+        "canonicalMarkdownBytes": 6071
+      }
+    },
+    "semantic": {
+      "runs": 8,
+      "actionSuccess": 5,
+      "positiveActions": 4,
+      "positiveTotal": 6,
+      "negativeCorrect": 1,
+      "negativeTotal": 2,
+      "overgeneralizations": 0,
+      "temporaryLeaks": 0,
+      "meanInjectedTextUpperBound": 1036,
+      "meanProviderInput": 917.875,
+      "firstRunSize": {
+        "activeCount": 3,
+        "activeTextBytes": 1411,
+        "canonicalMarkdownBytes": 4680
+      }
+    },
+    "combined": {
+      "runs": 8,
+      "actionSuccess": 6,
+      "positiveActions": 5,
+      "positiveTotal": 6,
+      "negativeCorrect": 1,
+      "negativeTotal": 2,
+      "overgeneralizations": 0,
+      "temporaryLeaks": 0,
+      "meanInjectedTextUpperBound": 1098.25,
+      "meanProviderInput": 935.75,
+      "firstRunSize": {
+        "activeCount": 11,
+        "activeTextBytes": 6233,
+        "canonicalMarkdownBytes": 18744
+      }
+    }
+  },
+  "dream": {
+    "savedParents": 3,
+    "hypotheses": 3,
+    "usage": {
+      "input": 3489,
+      "output": 665,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "inputTokensEstimate": 3385,
+    "outputTokensEstimate": 2535,
+    "rejected": []
+  },
+  "literalCommandRetention": {
+    "total": 4,
+    "compressed": 4,
+    "semantic": 4
+  },
+  "limitations": [
+    "One synthetic corpus and one model sample per task/arm; not a broad efficacy estimate.",
+    "Action success means deterministic mock-plan acceptance, not deployed infrastructure execution.",
+    "Candidate-only arms deliberately isolate representations. Production keeps source memories active.",
+    "Temporary expiry variant consistently moves the recorded expiry into the past; no user clock or files are changed.",
+    "Conservative injected byte bounds are separate from measured provider token usage."
+  ]
+}

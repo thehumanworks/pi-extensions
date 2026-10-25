@@ -1,0 +1,57 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 0,
+    "parentIds": [],
+    "observed": false
+  },
+  "id": "beacon-staging-sources",
+  "caseId": "beacon-staging",
+  "arm": "sources",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":\"pnpm beacon:smoke-v2\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":45,\"requiresPassingPreflight\":null}",
+  "parsed": {
+    "command": "pnpm beacon:smoke-v2",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 45,
+    "requiresPassingPreflight": null
+  },
+  "expected": {
+    "command": "pnpm beacon:smoke-v2",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 45,
+    "requiresPassingPreflight": null
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 937,
+    "output": 37,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 1147,
+  "selectedIds": [
+    "m_mvnw8dtu8863f2f9bd6c75dc3b91",
+    "m_mvnw8dtn25b09eb1eed4f1565895",
+    "m_mvnw8dtfbfa8edccd101e871e206"
+  ],
+  "sizes": {
+    "activeCount": 8,
+    "activeTextBytes": 4169,
+    "canonicalMarkdownBytes": 11174
+  },
+  "latencyMs": 3486
+}

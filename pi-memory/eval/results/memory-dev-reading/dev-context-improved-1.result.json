@@ -1,0 +1,78 @@
+{
+  "runId": "dev-context-improved-1",
+  "caseId": "dev-context",
+  "split": "dev",
+  "kind": "positive",
+  "category": "multi-fact-context",
+  "arm": "improved",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+  "response": "{\"region\":\"eu-ireland-2\",\"retentionDays\":45,\"format\":\"ndjson\"}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 3,
+    "total": 3,
+    "checks": [
+      {
+        "type": "field",
+        "path": "region",
+        "expected": "eu-ireland-2",
+        "passed": true,
+        "actual": "eu-ireland-2"
+      },
+      {
+        "type": "field",
+        "path": "retentionDays",
+        "expected": 45,
+        "passed": true,
+        "actual": 45
+      },
+      {
+        "type": "field",
+        "path": "format",
+        "expected": "ndjson",
+        "passed": true,
+        "actual": "ndjson"
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvnu36z330cdcbb84f28cd92a015",
+    "m_mvnu36z9af18bdd7abc3c03885fa"
+  ],
+  "selectedMemoryKeys": [
+    "customer-eu",
+    "export-format"
+  ],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "customer-eu": {
+      "id": "m_mvnu36z330cdcbb84f28cd92a015",
+      "scope": "project"
+    },
+    "export-format": {
+      "id": "m_mvnu36z9af18bdd7abc3c03885fa",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 627,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 816,
+    "output": 25,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 841,
+    "cost": 0.001882
+  },
+  "latencyMs": 4526,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

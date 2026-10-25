@@ -1,0 +1,18 @@
+{
+  "name": "observed-repair",
+  "prompt": "Run node tools/probe.mjs FIRST to observe the real environment failure. Inspect it, fix only this invocation's environment, and rerun successfully; do not edit the probe. The successful output describes the verified recovery procedure for this project. Explain the observed failure and successful fix briefly.",
+  "exitCode": 0,
+  "timedOut": false,
+  "latencyMs": 23272,
+  "modelRequests": 4,
+  "usage": {
+    "input": 2748,
+    "output": 248,
+    "cacheRead": 5888,
+    "cacheWrite": 0,
+    "reasoning": 23,
+    "totalTokens": 8884,
+    "cost": 0.008564800000000001
+  },
+  "finalText": "The first run failed with `E_LOCK`: the probe requires `MIGRATION_LOCK_MODE=copy`. After inspecting `tools/probe.mjs`, I reran it successfully with an invocation-only environment override:\n\n```sh\nMIGRATION_LOCK_MODE=copy node tools/probe.mjs\n```\n\nNo files or persistent environment settings were changed.\n\nThe successful probe reported the verified recovery procedure: if a source JSON file is truncated, use its exact preserved backup at `backups/source.json` beside the output, move the corrupt source to `recovery/source.bad.json` beside the output, and migrate the valid backup without overwriting it."
+}

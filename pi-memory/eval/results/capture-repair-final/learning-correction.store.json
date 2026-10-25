@@ -1,0 +1,110 @@
+[
+  {
+    "id": "m_mvnxvybee3a4a566a4ff7928fe10",
+    "scope": "project:1b510851ea8f2c36b7a052f8",
+    "type": "project",
+    "title": "Use pnpm beacon:verify for Beacon staging verification",
+    "summary": "Beacon staging smoke tests and verification must use pnpm beacon:verify.",
+    "keywords": [
+      "Beacon",
+      "staging",
+      "smoke test",
+      "pnpm",
+      "verification"
+    ],
+    "triggers": [
+      "Beacon staging verification",
+      "running staging smoke tests"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-d59P2D/learning/sessions/2026-10-25T14-44-50-532Z_01a17385-7ce4-72ad-91e8-f487dc5ba507.jsonl",
+      "entries": [
+        "a9e244d7"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-d59P2D/learning/sessions/2026-10-25T14-44-50-532Z_01a17385-7ce4-72ad-91e8-f487dc5ba507.jsonl",
+        "entries": [
+          "a9e244d7"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [
+      "m_mvnxwcnsf5f322aab040f7fe88b1"
+    ],
+    "status": "superseded",
+    "created": "2026-10-25T14:45:02.714Z",
+    "updated": "2026-10-25T14:45:21.309Z",
+    "last_used": "2026-10-25T14:45:05.926Z",
+    "stats": {
+      "injected": 2,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 1
+    },
+    "retention": "long",
+    "body": "Always use `pnpm beacon:verify` for Beacon staging verification; it is the project's staging smoke test command."
+  },
+  {
+    "id": "m_mvnxwcnsf5f322aab040f7fe88b1",
+    "scope": "project:1b510851ea8f2c36b7a052f8",
+    "type": "feedback",
+    "title": "Use pnpm beacon:verify for Beacon staging verification",
+    "summary": "Always use `pnpm beacon:smoke-v2` for Beacon staging verification; it is the project's staging smoke test command.",
+    "keywords": [
+      "Beacon",
+      "staging",
+      "smoke test",
+      "pnpm",
+      "verification",
+      "beacon:smoke-v2",
+      "beacon:verify"
+    ],
+    "triggers": [
+      "Beacon staging verification",
+      "running staging smoke tests"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-d59P2D/learning/sessions/2026-10-25T14-45-05-801Z_01a17385-b889-7742-bb51-e1d020d2387f.jsonl",
+      "entries": [
+        "5fee7e4f"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-d59P2D/learning/sessions/2026-10-25T14-45-05-801Z_01a17385-b889-7742-bb51-e1d020d2387f.jsonl",
+        "entries": [
+          "5fee7e4f"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [
+      "m_mvnxvybee3a4a566a4ff7928fe10"
+    ],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:45:21.304Z",
+    "updated": "2026-10-25T14:45:21.304Z",
+    "last_used": "2026-10-25T14:45:21.304Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Always use `pnpm beacon:smoke-v2` for Beacon staging verification; it is the project's staging smoke test command."
+  }
+]

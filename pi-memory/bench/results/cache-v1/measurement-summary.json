@@ -1,0 +1,114 @@
+{
+  "allCompletedRequestsIncluded": true,
+  "originalResultsUnmodified": true,
+  "totals": {
+    "off": {
+      "sessions": 2,
+      "requests": 12,
+      "measurementErrors": [],
+      "originalHarnessErrors": [
+        "Unexpected model output"
+      ],
+      "outputDeviations": [
+        {
+          "turn": 2,
+          "text": "ACK."
+        },
+        {
+          "turn": 3,
+          "text": "ACK."
+        },
+        {
+          "turn": 4,
+          "text": "ACK."
+        },
+        {
+          "turn": 5,
+          "text": "ACK."
+        },
+        {
+          "turn": 6,
+          "text": "ACK."
+        }
+      ],
+      "inputTokens": 75400,
+      "ordinaryInputTokens": 26760,
+      "cachedInputTokens": 48640,
+      "cacheWriteTokens": 0,
+      "cachedShare": 0.6450928381962865,
+      "warmCachedShare": 0.7719409617521028,
+      "meanFirstTextMs": 2459.1666666666665,
+      "meanResponseMs": 2667.5833333333335,
+      "sdkEstimatedCost": 0.05903399999999999,
+      "prefixStableChecks": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "append-only-memory": {
+      "sessions": 2,
+      "requests": 12,
+      "measurementErrors": [],
+      "originalHarnessErrors": [],
+      "outputDeviations": [],
+      "inputTokens": 80838,
+      "ordinaryInputTokens": 21830,
+      "cachedInputTokens": 59008,
+      "cacheWriteTokens": 0,
+      "cachedShare": 0.7299537346297533,
+      "warmCachedShare": 0.8736748593426118,
+      "meanFirstTextMs": 2727.8333333333335,
+      "meanResponseMs": 2947.25,
+      "sdkEstimatedCost": 0.050160799999999985,
+      "prefixStableChecks": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "prefix-breaking-control": {
+      "sessions": 2,
+      "requests": 12,
+      "measurementErrors": [],
+      "originalHarnessErrors": [],
+      "outputDeviations": [],
+      "inputTokens": 80832,
+      "ordinaryInputTokens": 74176,
+      "cachedInputTokens": 6656,
+      "cacheWriteTokens": 0,
+      "cachedShare": 0.08234362628661916,
+      "warmCachedShare": 0.0985563041385948,
+      "meanFirstTextMs": 5726.75,
+      "meanResponseMs": 5942.666666666667,
+      "sdkEstimatedCost": 0.14961760000000002,
+      "prefixStableChecks": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "limitation": "Acknowledgment-only requests test caching, not task quality. Non-ACK punctuation is recorded separately and never excludes token usage. This is a small provider-dependent sample; SDK cost estimates are not invoices."
+}

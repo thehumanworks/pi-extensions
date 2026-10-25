@@ -1,0 +1,93 @@
+{
+  "runId": "dev-preference-baseline-1",
+  "caseId": "dev-preference",
+  "split": "dev",
+  "kind": "positive",
+  "category": "preference",
+  "arm": "baseline",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+  "response": "{\"heading\":\"Release 2.3\",\"sections\":[{\"label\":\"Changed\",\"text\":\"Startup time decreased from 80 ms to 40 ms.\"},{\"label\":\"Checked\",\"text\":\"Linux smoke test passed.\"},{\"label\":\"Unverified\",\"text\":\"Windows remains untested.\"}]}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 5,
+    "total": 5,
+    "checks": [
+      {
+        "type": "field",
+        "path": "heading",
+        "expected": "Release 2.3",
+        "passed": true,
+        "actual": "Release 2.3"
+      },
+      {
+        "type": "labels",
+        "expected": [
+          "Changed",
+          "Checked",
+          "Unverified"
+        ],
+        "passed": true,
+        "actual": [
+          "Changed",
+          "Checked",
+          "Unverified"
+        ]
+      },
+      {
+        "type": "section-fact",
+        "label": "Changed",
+        "pattern": "40.*80|80.*40",
+        "passed": true,
+        "actual": "Startup time decreased from 80 ms to 40 ms."
+      },
+      {
+        "type": "section-fact",
+        "label": "Checked",
+        "pattern": "Linux",
+        "passed": true,
+        "actual": "Linux smoke test passed."
+      },
+      {
+        "type": "section-fact",
+        "label": "Unverified",
+        "pattern": "Windows",
+        "passed": true,
+        "actual": "Windows remains untested."
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvntrawq8c747ae69f5e02f4c2ab"
+  ],
+  "selectedMemoryKeys": [
+    "release-style"
+  ],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "release-style": {
+      "id": "m_mvntrawq8c747ae69f5e02f4c2ab",
+      "scope": "global"
+    }
+  },
+  "injectedTokens": 447,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 763,
+    "output": 61,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 824,
+    "cost": 0.002136
+  },
+  "latencyMs": 3496,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

@@ -1,0 +1,588 @@
+{
+  "created": "2026-10-25T13:31:59.951Z",
+  "asOf": "2026-10-25T13:31:37.899Z",
+  "node": "v26.11.1",
+  "machine": {
+    "platform": "darwin",
+    "release": "27.2.0",
+    "cpu": "Apple M3 Ultra",
+    "cores": 28
+  },
+  "fixtureHashes": {
+    "growth": "9c5aef27d939d78584294ae3eb7cab4950a40fa477a02a06a52075e52defa996",
+    "temporal": "9553172b8490b6cdf687498d0dfb3c2272f47bc4133b58a7d888ec8b9efb8660",
+    "heldout": "a60a25b41b256194ba93ea018730d15f0e57a0879f04f8f8cc5368dbb06d1231",
+    "challenges": "7f8bcedb14c2eba50bf1f4c09844573c60c2e43c65c6839167dabd144b40442c"
+  },
+  "sourceHashes": {
+    "store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+    "retrieve.ts": "7ab4350dc65add3cae4a72eb983d67a5b832e7471cb42c9a0d4c260741769e26",
+    "types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+    "project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+    "secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d"
+  },
+  "sourceSnapshot": "pi-memory/bench/results/store-growth-100k.sources",
+  "sourceStable": true,
+  "method": {
+    "repetitions": 1,
+    "queryCount": 7,
+    "warmup": "one search per query/method",
+    "budgetUpperBound": 1200,
+    "candidateCaps": [],
+    "paidModelCalls": 0
+  },
+  "identity": {
+    "sameWorktreeIdentity": true,
+    "sameRemoteIdentity": true,
+    "unrelatedRemoteIsolated": true
+  },
+  "temporal": {
+    "note": "Explicit retention/expiry metadata tests the lifetime contract. Selected evidence and canonical retirement are measured; model execution is not.",
+    "before": [
+      {
+        "query": "Release approval before publishing",
+        "relevant": [
+          "lasting-feedback"
+        ],
+        "expectedAction": "ask for explicit approval",
+        "selectedKeys": [
+          "lasting-feedback"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Response format concise",
+        "relevant": [
+          "lasting-preference"
+        ],
+        "expectedAction": "respond concisely",
+        "selectedKeys": [
+          "lasting-preference"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Current incident traffic routing cluster",
+        "relevant": [
+          "default-routing",
+          "current-override"
+        ],
+        "forbidden": [
+          "expired-override"
+        ],
+        "expectedAction": "use green during current override; retain blue default for later",
+        "selectedKeys": [
+          "current-override",
+          "default-routing"
+        ],
+        "forbiddenSelected": 0
+      }
+    ],
+    "consolidation": {
+      "archived": 1,
+      "duplicates": 0
+    },
+    "after": [
+      {
+        "query": "Release approval before publishing",
+        "relevant": [
+          "lasting-feedback"
+        ],
+        "expectedAction": "ask for explicit approval",
+        "selectedKeys": [
+          "lasting-feedback"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Response format concise",
+        "relevant": [
+          "lasting-preference"
+        ],
+        "expectedAction": "respond concisely",
+        "selectedKeys": [
+          "lasting-preference"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Current incident traffic routing cluster",
+        "relevant": [
+          "default-routing",
+          "current-override"
+        ],
+        "forbidden": [
+          "expired-override"
+        ],
+        "expectedAction": "use green during current override; retain blue default for later",
+        "selectedKeys": [
+          "current-override",
+          "default-routing"
+        ],
+        "forbiddenSelected": 0
+      }
+    ],
+    "statuses": {
+      "default-routing": "active",
+      "current-override": "active",
+      "lasting-feedback": "active",
+      "expired-override": "archived",
+      "lasting-preference": "active"
+    }
+  },
+  "rows": [
+    {
+      "size": 100000,
+      "layout": "concentrated",
+      "scopeCount": 10,
+      "visibleActiveItems": 99968,
+      "seedMs": 4140.163,
+      "initialIndexMs": 5873.168,
+      "reindex": {
+        "p50Ms": 449.864,
+        "p95Ms": 495.295,
+        "maxMs": 495.295,
+        "samples": 3
+      },
+      "injectedRunStorage": {
+        "p50Ms": 1083.257,
+        "p95Ms": 1127.351,
+        "maxMs": 1127.351,
+        "samples": 3
+      },
+      "disk": {
+        "totalBytes": 321130396,
+        "canonicalBytes": 118267117,
+        "indexBytes": 202862592,
+        "files": 100002
+      },
+      "results": [
+        {
+          "method": "production",
+          "latency": {
+            "p50Ms": 47.769,
+            "p95Ms": 160.881,
+            "maxMs": 160.881,
+            "samples": 7
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1194,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_00010266d7551ac9554454630729",
+                "m_0001088f763e9fa4a336e577b2ff",
+                "m_0001ec9d41373e9060637b5a6242"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1194
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_0008eb98afe5fe52ca43cf086ed2",
+                "m_00191aa36f70852dbf9d4f821fba"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1165
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_000085ed4a47febc163ff935ee0f",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_0004cb7d02b1a021f971064de32b"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1126
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0002afba6b7424707b882c94f4fb",
+                "m_000501d8ef0e5b0b98d7e2c85598",
+                "m_0009b84b91a921faf406a73fa498"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1193
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_000a9b0e9235c8adf2423b0d3c81",
+                "m_000f33dc6bf70982046290ace616"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1128
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        }
+      ],
+      "relevance": {
+        "gates": [
+          {
+            "ratio": 0,
+            "microRecall": 1,
+            "microPrecision": 0.286,
+            "misses": []
+          },
+          {
+            "ratio": 0.1,
+            "microRecall": 1,
+            "microPrecision": 1,
+            "misses": []
+          },
+          {
+            "ratio": 0.25,
+            "microRecall": 1,
+            "microPrecision": 1,
+            "misses": []
+          },
+          {
+            "ratio": 0.5,
+            "microRecall": 1,
+            "microPrecision": 1,
+            "misses": []
+          }
+        ],
+        "gapGates": [
+          {
+            "gap": 4,
+            "microRecall": 1,
+            "microPrecision": 1,
+            "misses": []
+          },
+          {
+            "gap": 8,
+            "microRecall": 1,
+            "microPrecision": 1,
+            "misses": []
+          }
+        ],
+        "examples": [
+          {
+            "query": "Juniper worker verification before restart",
+            "candidates": [
+              {
+                "id": "m_4183b7793fd28ba47ea9e79e7697",
+                "title": "Juniper worker verification",
+                "gold": true,
+                "score": 42.3495,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_00010266d7551ac9554454630729",
+                "title": "analytics worker detail 92808",
+                "gold": false,
+                "score": 3.85426,
+                "ratioToTop": 0.091
+              },
+              {
+                "id": "m_0001088f763e9fa4a336e577b2ff",
+                "title": "notifications verification detail 48619",
+                "gold": false,
+                "score": 3.85426,
+                "ratioToTop": 0.091
+              },
+              {
+                "id": "m_0001ec9d41373e9060637b5a6242",
+                "title": "migration verification detail 28215",
+                "gold": false,
+                "score": 3.85426,
+                "ratioToTop": 0.091
+              },
+              {
+                "id": "m_00029c4b5d9492077482f85434e2",
+                "title": "catalog worker detail 62203",
+                "gold": false,
+                "score": 3.85426,
+                "ratioToTop": 0.091
+              },
+              {
+                "id": "m_000843a321c1dd4318be79c32a5d",
+                "title": "search verification detail 56617",
+                "gold": false,
+                "score": 3.85426,
+                "ratioToTop": 0.091
+              }
+            ]
+          },
+          {
+            "query": "Snapshot recovery restore manifest order",
+            "candidates": [
+              {
+                "id": "m_f329e3a317eee6a8a1a7357f69bc",
+                "title": "Snapshot recovery order",
+                "gold": true,
+                "score": 57.1643,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_000106d1af4aede5959ff93bbbb3",
+                "title": "billing recovery detail 7720",
+                "gold": false,
+                "score": 3.77226,
+                "ratioToTop": 0.066
+              },
+              {
+                "id": "m_0008eb98afe5fe52ca43cf086ed2",
+                "title": "scheduler recovery detail 42624",
+                "gold": false,
+                "score": 3.77226,
+                "ratioToTop": 0.066
+              },
+              {
+                "id": "m_00191aa36f70852dbf9d4f821fba",
+                "title": "scheduler recovery detail 9624",
+                "gold": false,
+                "score": 3.77226,
+                "ratioToTop": 0.066
+              },
+              {
+                "id": "m_001a91448363e817f5417f7b62b0",
+                "title": "migration recovery detail 3525",
+                "gold": false,
+                "score": 3.77226,
+                "ratioToTop": 0.066
+              },
+              {
+                "id": "m_00211e50beb9d9a9a41c76c19966",
+                "title": "billing recovery detail 94420",
+                "gold": false,
+                "score": 3.77226,
+                "ratioToTop": 0.066
+              }
+            ]
+          },
+          {
+            "query": "CSV import encoding decode",
+            "candidates": [
+              {
+                "id": "m_e8424ea5339b85a750ab5f4c63bd",
+                "title": "CSV import encoding",
+                "gold": true,
+                "score": 42.2206,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_000085ed4a47febc163ff935ee0f",
+                "title": "analytics import detail 90448",
+                "gold": false,
+                "score": 3.79084,
+                "ratioToTop": 0.09
+              },
+              {
+                "id": "m_0000afac9a34560905c9939cce9f",
+                "title": "billing import detail 6840",
+                "gold": false,
+                "score": 3.79084,
+                "ratioToTop": 0.09
+              },
+              {
+                "id": "m_0004cb7d02b1a021f971064de32b",
+                "title": "billing import detail 96040",
+                "gold": false,
+                "score": 3.79084,
+                "ratioToTop": 0.09
+              },
+              {
+                "id": "m_00069c16608d3247becc2119b7b9",
+                "title": "catalog encoding detail 33953",
+                "gold": false,
+                "score": 3.79084,
+                "ratioToTop": 0.09
+              },
+              {
+                "id": "m_000e0e46e43b23f8a41970f3dbcf",
+                "title": "routing encoding detail 356",
+                "gold": false,
+                "score": 3.79084,
+                "ratioToTop": 0.09
+              }
+            ]
+          },
+          {
+            "query": "Production deployment approval after preview",
+            "candidates": [
+              {
+                "id": "m_9deb65b8788f41ff94a217842017",
+                "title": "Production deployment approval",
+                "gold": true,
+                "score": 41.7096,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_0002afba6b7424707b882c94f4fb",
+                "title": "search deployment detail 95267",
+                "gold": false,
+                "score": 3.77035,
+                "ratioToTop": 0.09
+              },
+              {
+                "id": "m_000501d8ef0e5b0b98d7e2c85598",
+                "title": "scheduler deployment detail 82664",
+                "gold": false,
+                "score": 3.77035,
+                "ratioToTop": 0.09
+              },
+              {
+                "id": "m_0009b84b91a921faf406a73fa498",
+                "title": "catalog deployment detail 4363",
+                "gold": false,
+                "score": 3.77035,
+                "ratioToTop": 0.09
+              },
+              {
+                "id": "m_000b082bc0638deb0ed84ef80837",
+                "title": "billing approval detail 61170",
+                "gold": false,
+                "score": 3.77035,
+                "ratioToTop": 0.09
+              },
+              {
+                "id": "m_000beaa6f9461dfc6a14063eede1",
+                "title": "telemetry approval detail 57772",
+                "gold": false,
+                "score": 3.77035,
+                "ratioToTop": 0.09
+              }
+            ]
+          },
+          {
+            "query": "Review communication format concise summaries",
+            "candidates": [
+              {
+                "id": "m_d4e16994df9002e53294f899714d",
+                "title": "Review communication format",
+                "gold": true,
+                "score": 67.5629,
+                "ratioToTop": 1
+              },
+              {
+                "id": "m_0002f565ca463ae2bb5fb3e3891c",
+                "title": "telemetry format detail 992",
+                "gold": false,
+                "score": 3.77187,
+                "ratioToTop": 0.056
+              },
+              {
+                "id": "m_000a9b0e9235c8adf2423b0d3c81",
+                "title": "migration format detail 26495",
+                "gold": false,
+                "score": 3.77187,
+                "ratioToTop": 0.056
+              },
+              {
+                "id": "m_000f33dc6bf70982046290ace616",
+                "title": "catalog review detail 84983",
+                "gold": false,
+                "score": 3.77187,
+                "ratioToTop": 0.056
+              },
+              {
+                "id": "m_0015ebe03a2c29b7b8e02302f837",
+                "title": "billing review detail 14780",
+                "gold": false,
+                "score": 3.77187,
+                "ratioToTop": 0.056
+              },
+              {
+                "id": "m_001a4227574508015c3641d2e226",
+                "title": "telemetry review detail 35382",
+                "gold": false,
+                "score": 3.77187,
+                "ratioToTop": 0.056
+              }
+            ]
+          },
+          {
+            "query": "Diagram accessibility color explanation",
+            "candidates": [
+              {
+                "id": "m_714db89df42bdb7ce4beb63d373d",
+                "title": "Diagram accessibility",
+                "gold": true,
+                "score": 81.0105,
+                "ratioToTop": 1
+              }
+            ]
+          },
+          {
+            "query": "Lunar astronomy orbital eccentricity measurement",
+            "candidates": []
+          }
+        ]
+      }
+    }
+  ],
+  "heldout": [],
+  "challenges": [],
+  "isolatedChallenges": []
+}

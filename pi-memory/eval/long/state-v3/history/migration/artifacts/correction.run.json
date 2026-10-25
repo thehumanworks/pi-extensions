@@ -1,0 +1,19 @@
+{
+  "name": "correction",
+  "prompt": "Correction for migration: retry.maxAttempts is now 5, replacing 3. Keep the earlier region and backoff decisions. The recovery procedure you verified is approved. One-off probe overrides are temporary. Reply only ACK.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 26388,
+  "modelRequests": 1,
+  "usage": {
+    "input": 850,
+    "output": 5,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 855,
+    "cost": 0.0017499999999999998
+  },
+  "finalText": "ACK"
+}

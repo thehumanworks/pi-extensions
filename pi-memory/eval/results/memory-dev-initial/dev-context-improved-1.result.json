@@ -1,0 +1,46 @@
+{
+  "runId": "dev-context-improved-1",
+  "caseId": "dev-context",
+  "split": "dev",
+  "kind": "positive",
+  "category": "multi-fact-context",
+  "arm": "improved",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "38f2b98f3a39adc846df8ac7b9611005febee624dec65b7d6cbcff4e777c8113",
+  "response": "",
+  "score": 0,
+  "validation": {
+    "score": 0,
+    "passed": 0,
+    "total": 3,
+    "errors": [
+      "Invalid JSON: Unexpected end of JSON input"
+    ]
+  },
+  "errors": [
+    "Pi exit 1",
+    "No successful assistant response",
+    "Output cap hook did not execute",
+    "Missing actual retrieval trace"
+  ],
+  "selectedIds": [],
+  "memoryIds": {
+    "customer-eu": {
+      "id": "m_mvntboy99f5709d115e0166bf98c",
+      "scope": "project"
+    },
+    "export-format": {
+      "id": "m_mvntboyf6c8e00450951aaf0353f",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {},
+  "latencyMs": 292,
+  "exitCode": 1,
+  "budgetVerified": false
+}

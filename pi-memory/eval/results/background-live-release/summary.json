@@ -1,0 +1,336 @@
+{
+  "model": "openai/gpt-6.1-sol",
+  "base": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-kQJYeZ",
+  "sourceHashes": {
+    "index.ts": "31ef2b27cf8638ba949674912e675f6901d0fcf0c896734fb33d39e62ac703b4",
+    "src/config.ts": "6a5e7636f8260bf9584f6a846335b91ac2e9e6003ea9cb3b5761083861be7b16",
+    "src/dream.ts": "bc5982ae0908d97b7ece42748c502e50ea929159e28d77d4415cbe92bd5a2666",
+    "src/scheduler.ts": "43b42e25cc20b9f46ed36d5e2543435ce7e20f2a214223eba374c73e03536740",
+    "src/store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+    "src/retrieve.ts": "85b3bd33556b38aca411fbbc53f33a32531d9c318814ef24698279c260413f3f"
+  },
+  "sourceStable": true,
+  "passed": true,
+  "results": [
+    {
+      "scenario": "completion",
+      "model": "openai/gpt-6.1-sol",
+      "idleDelayMs": 1000,
+      "args": [
+        "-ne",
+        "-ns",
+        "-np",
+        "-nc",
+        "--no-mcp",
+        "--no-tools",
+        "--no-session",
+        "-e",
+        "/Users/tomas/pi-extensions/pi-memory/index.ts",
+        "--memory-dir",
+        "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-kQJYeZ/completion/memory",
+        "--model",
+        "openai/gpt-6.1-sol",
+        "--thinking",
+        "low",
+        "--mode",
+        "rpc"
+      ],
+      "errors": [],
+      "settledAt": "2026-10-25T14:11:00.149Z",
+      "observedAt": "2026-10-25T14:11:09.698Z",
+      "dream": {
+        "event": "dream",
+        "status": "completed",
+        "savedIds": [
+          "m_mvnwodli3e7c2da215fceb6626b4"
+        ],
+        "sourceIds": [
+          "m_mvnwo3ukd71444fca551f029f0d4",
+          "m_mvnwo3urd9261b516b3242d6a8ce",
+          "m_mvnwo3ux7636da04b6ced16e57e4"
+        ],
+        "hypotheses": [
+          {
+            "retention": "long",
+            "id": "h_f69946279e600a93d3123aca",
+            "sourceIds": [
+              "m_mvnwo3ukd71444fca551f029f0d4",
+              "m_mvnwo3urd9261b516b3242d6a8ce",
+              "m_mvnwo3ux7636da04b6ced16e57e4"
+            ],
+            "title": "Larch staging preflight requirements and service-specific verification commands",
+            "body": "The sources indicate a shared Larch staging requirement: before applying any changes in every staging operation, inspect the complete preflight report, confirm passing results for all staged migration checks, and record the verification identifier. Production deployment is outside the scope of these staging procedures. The verification commands differ by source: alpha specifies `larch verify alpha`, beta specifies `larch verify beta`, and gamma specifies `larch verify gamma`.",
+            "scope": "project:f647737c360f27cd401a9d4a",
+            "status": "unreviewed",
+            "path": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-kQJYeZ/completion/memory/dream/hypotheses/h_f69946279e600a93d3123aca.json",
+            "limitations": [
+              "Applies only to Larch staging in the supplied project scope, not production deployment.",
+              "The sources specify different verification commands without establishing whether alpha, beta, and gamma are separate service contexts or conflicting instructions for the same context; do not treat the commands as interchangeable or select one without confirming applicability."
+            ]
+          }
+        ],
+        "rejected": [],
+        "usage": {
+          "input": 670,
+          "output": 238,
+          "cacheRead": 2048,
+          "cacheWrite": 0
+        },
+        "inputTokensEstimate": 1502,
+        "outputTokensEstimate": 901,
+        "ceiling": {
+          "active": 3,
+          "activeBytes": 4552,
+          "softLimit": null,
+          "softByteLimit": 1000000,
+          "overLimit": false,
+          "destructive": false
+        }
+      },
+      "items": [
+        {
+          "id": "m_mvnwo3ukd71444fca551f029f0d4",
+          "scope": "project:f647737c360f27cd401a9d4a",
+          "type": "project",
+          "title": "Larch staging alpha",
+          "summary": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm passing results for all staged migration checks, and record the verification identifier before applying any changes. Production deployment is outside the scope of Larch staging procedures. The servi",
+          "keywords": [
+            "larch",
+            "staging"
+          ],
+          "triggers": [],
+          "paths": [],
+          "importance": 5,
+          "confidence": 0.95,
+          "source": {
+            "session": "synthetic-scheduler-fixture",
+            "entries": [
+              "u0"
+            ],
+            "origin": "user_statement"
+          },
+          "sources": [
+            {
+              "session": "synthetic-scheduler-fixture",
+              "entries": [
+                "u0"
+              ],
+              "origin": "user_statement"
+            }
+          ],
+          "supersedes": [],
+          "links": [],
+          "status": "active",
+          "created": "2026-10-25T14:10:57.020Z",
+          "updated": "2026-10-25T14:10:57.020Z",
+          "last_used": "2026-10-25T14:10:57.020Z",
+          "stats": {
+            "injected": 0,
+            "used": 0,
+            "helpful": 0,
+            "harmful": 0
+          },
+          "retention": "long",
+          "body": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm passing results for all staged migration checks, and record the verification identifier before applying any changes. Production deployment is outside the scope of Larch staging procedures. The service verification command is larch verify alpha."
+        },
+        {
+          "id": "m_mvnwo3urd9261b516b3242d6a8ce",
+          "scope": "project:f647737c360f27cd401a9d4a",
+          "type": "project",
+          "title": "Larch staging beta",
+          "summary": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm passing results for all staged migration checks, and record the verification identifier before applying any changes. Production deployment is outside the scope of Larch staging procedures. The servi",
+          "keywords": [
+            "larch",
+            "staging"
+          ],
+          "triggers": [],
+          "paths": [],
+          "importance": 5,
+          "confidence": 0.95,
+          "source": {
+            "session": "synthetic-scheduler-fixture",
+            "entries": [
+              "u1"
+            ],
+            "origin": "user_statement"
+          },
+          "sources": [
+            {
+              "session": "synthetic-scheduler-fixture",
+              "entries": [
+                "u1"
+              ],
+              "origin": "user_statement"
+            }
+          ],
+          "supersedes": [],
+          "links": [],
+          "status": "active",
+          "created": "2026-10-25T14:10:57.027Z",
+          "updated": "2026-10-25T14:10:57.027Z",
+          "last_used": "2026-10-25T14:10:57.027Z",
+          "stats": {
+            "injected": 0,
+            "used": 0,
+            "helpful": 0,
+            "harmful": 0
+          },
+          "retention": "long",
+          "body": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm passing results for all staged migration checks, and record the verification identifier before applying any changes. Production deployment is outside the scope of Larch staging procedures. The service verification command is larch verify beta."
+        },
+        {
+          "id": "m_mvnwo3ux7636da04b6ced16e57e4",
+          "scope": "project:f647737c360f27cd401a9d4a",
+          "type": "project",
+          "title": "Larch staging gamma",
+          "summary": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm passing results for all staged migration checks, and record the verification identifier before applying any changes. Production deployment is outside the scope of Larch staging procedures. The servi",
+          "keywords": [
+            "larch",
+            "staging"
+          ],
+          "triggers": [],
+          "paths": [],
+          "importance": 5,
+          "confidence": 0.95,
+          "source": {
+            "session": "synthetic-scheduler-fixture",
+            "entries": [
+              "u2"
+            ],
+            "origin": "user_statement"
+          },
+          "sources": [
+            {
+              "session": "synthetic-scheduler-fixture",
+              "entries": [
+                "u2"
+              ],
+              "origin": "user_statement"
+            }
+          ],
+          "supersedes": [],
+          "links": [],
+          "status": "active",
+          "created": "2026-10-25T14:10:57.033Z",
+          "updated": "2026-10-25T14:10:57.033Z",
+          "last_used": "2026-10-25T14:10:57.033Z",
+          "stats": {
+            "injected": 0,
+            "used": 0,
+            "helpful": 0,
+            "harmful": 0
+          },
+          "retention": "long",
+          "body": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm passing results for all staged migration checks, and record the verification identifier before applying any changes. Production deployment is outside the scope of Larch staging procedures. The service verification command is larch verify gamma."
+        },
+        {
+          "id": "m_mvnwodli3e7c2da215fceb6626b4",
+          "scope": "project:f647737c360f27cd401a9d4a",
+          "type": "insight",
+          "title": "Condensed: Larch staging alpha",
+          "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+          "keywords": [
+            "larch",
+            "staging"
+          ],
+          "triggers": [],
+          "paths": [],
+          "importance": 5,
+          "confidence": 0.85,
+          "source": {
+            "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-kQJYeZ/completion/memory/dream/runs/aa844ca9446fe17de55c4a3b4b152d04cb89c9e2578c99b8ed46691362a10e25.json",
+            "entries": [
+              "m_mvnwo3ukd71444fca551f029f0d4",
+              "m_mvnwo3urd9261b516b3242d6a8ce",
+              "m_mvnwo3ux7636da04b6ced16e57e4"
+            ],
+            "origin": "consolidation"
+          },
+          "sources": [
+            {
+              "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-kQJYeZ/completion/memory/dream/runs/aa844ca9446fe17de55c4a3b4b152d04cb89c9e2578c99b8ed46691362a10e25.json",
+              "entries": [
+                "m_mvnwo3ukd71444fca551f029f0d4",
+                "m_mvnwo3urd9261b516b3242d6a8ce",
+                "m_mvnwo3ux7636da04b6ced16e57e4"
+              ],
+              "origin": "consolidation"
+            }
+          ],
+          "supersedes": [],
+          "links": [
+            "m_mvnwo3ukd71444fca551f029f0d4",
+            "m_mvnwo3urd9261b516b3242d6a8ce",
+            "m_mvnwo3ux7636da04b6ced16e57e4"
+          ],
+          "status": "active",
+          "created": "2026-10-25T14:11:09.654Z",
+          "updated": "2026-10-25T14:11:09.654Z",
+          "last_used": "2026-10-25T14:11:09.654Z",
+          "stats": {
+            "injected": 0,
+            "used": 0,
+            "helpful": 0,
+            "harmful": 0
+          },
+          "retention": "long",
+          "derivedFrom": [
+            {
+              "id": "m_mvnwo3ukd71444fca551f029f0d4",
+              "hash": "728b42a8cdffed368fe2baea85f8274901aedf7fd887de910eb77b8fa5c4e536"
+            },
+            {
+              "id": "m_mvnwo3urd9261b516b3242d6a8ce",
+              "hash": "b7981be228c8316309a13ef24264660b5a7ac0174fe7499c6127dca09e48aacf"
+            },
+            {
+              "id": "m_mvnwo3ux7636da04b6ced16e57e4",
+              "hash": "e2bd1693487d74ecf6ed8576a886b24cfe3b1d14744adab07bf7cabed496ecb2"
+            }
+          ],
+          "body": "Shared statements (apply only to contexts referencing them):\nF1: Every Larch staging operation requires the operator to inspect the complete preflight report, confirm passing results for all staged migration checks, and record the verification identifier before applying any changes.\nF2: Production deployment is outside the scope of Larch staging procedures.\n\nContext: Larch staging alpha\n[F1] [F2] The service verification command is larch verify alpha.\n\nContext: Larch staging beta\n[F1] [F2] The service verification command is larch verify beta.\n\nContext: Larch staging gamma\n[F1] [F2] The service verification command is larch verify gamma."
+        }
+      ],
+      "completedDreamCalls": 1,
+      "finalResponses": [
+        "ACK",
+        "READY"
+      ]
+    },
+    {
+      "scenario": "cancel-before-start",
+      "model": "openai/gpt-6.1-sol",
+      "idleDelayMs": 5000,
+      "args": [
+        "-ne",
+        "-ns",
+        "-np",
+        "-nc",
+        "--no-mcp",
+        "--no-tools",
+        "--no-session",
+        "-e",
+        "/Users/tomas/pi-extensions/pi-memory/index.ts",
+        "--memory-dir",
+        "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-kQJYeZ/cancel-before-start/memory",
+        "--model",
+        "openai/gpt-6.1-sol",
+        "--thinking",
+        "low",
+        "--mode",
+        "rpc"
+      ],
+      "errors": [],
+      "settledAt": "2026-10-25T14:11:29.252Z",
+      "scheduler": null,
+      "finalResponses": [
+        "ACK"
+      ]
+    }
+  ],
+  "limitations": [
+    "Synthetic canonical sources and persisted pending trigger isolate scheduler integration; automatic source capture and threshold detection are tested separately",
+    "Cancellation case cancels before inference, while in-flight cancellation and durable retry are covered by scheduler unit tests",
+    "This measures execution and provider usage, not semantic quality or user-perceived latency under load"
+  ]
+}

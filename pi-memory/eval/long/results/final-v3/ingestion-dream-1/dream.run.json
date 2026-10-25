@@ -1,0 +1,11 @@
+{
+  "name": "dream",
+  "prompt": "/memory dream --force",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 9661,
+  "modelRequests": 0,
+  "usage": {},
+  "finalText": ""
+}

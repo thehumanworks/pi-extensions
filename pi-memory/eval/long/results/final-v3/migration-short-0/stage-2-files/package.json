@@ -1,0 +1,1 @@
+{"name":"synthetic-migration","type":"module","scripts":{"test":"node --test"}}

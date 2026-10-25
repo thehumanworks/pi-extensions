@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "name": "demo",
+  "timeoutMs": 2000,
+  "features": [
+    "a",
+    "z"
+  ],
+  "region": "eu-north-7",
+  "retry": {
+    "maxAttempts": 5,
+    "backoffMs": 125
+  },
+  "legacy": {
+    "customField": {
+      "keep": true
+    }
+  }
+}

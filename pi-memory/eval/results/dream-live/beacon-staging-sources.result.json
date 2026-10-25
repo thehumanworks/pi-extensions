@@ -1,0 +1,52 @@
+{
+  "id": "beacon-staging-sources",
+  "caseId": "beacon-staging",
+  "arm": "sources",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\n  \"command\": \"pnpm beacon:smoke-v2\",\n  \"workers\": 3,\n  \"retries\": 2,\n  \"timeoutSeconds\": 45,\n  \"requiresPassingPreflight\": null\n}",
+  "parsed": {
+    "command": "pnpm beacon:smoke-v2",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 45,
+    "requiresPassingPreflight": null
+  },
+  "expected": {
+    "command": "pnpm beacon:smoke-v2",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 45,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": false
+  },
+  "actionSuccess": false,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 937,
+    "output": 71,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 1147,
+  "selectedIds": [
+    "m_mvnv32emab3058e9d334b6a1b963",
+    "m_mvnv32eg25b4b3944c71d7dc2ca1",
+    "m_mvnv32e9f2d1499bf69280bea5c8"
+  ],
+  "sizes": {
+    "activeCount": 8,
+    "activeTextBytes": 4169,
+    "canonicalMarkdownBytes": 11174
+  },
+  "latencyMs": 4547
+}

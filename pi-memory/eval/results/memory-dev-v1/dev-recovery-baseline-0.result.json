@@ -1,0 +1,68 @@
+{
+  "runId": "dev-recovery-baseline-0",
+  "caseId": "dev-recovery",
+  "split": "dev",
+  "kind": "positive",
+  "category": "failure-recovery",
+  "arm": "baseline",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "c06e201321a70f9df946cfe6f23760f7910cc8f91f4bccfaebd77a6ae8320c82",
+  "response": "{\"env\":{\"AURORA_LOCK_MODE\":\"portable\"},\"command\":\"node tools/check.mjs\",\"deleteLock\":false}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 3,
+    "total": 3,
+    "checks": [
+      {
+        "type": "field",
+        "path": "env.AURORA_LOCK_MODE",
+        "expected": "portable",
+        "passed": true,
+        "actual": "portable"
+      },
+      {
+        "type": "field",
+        "path": "command",
+        "expected": "node tools/check.mjs",
+        "passed": true,
+        "actual": "node tools/check.mjs"
+      },
+      {
+        "type": "field",
+        "path": "deleteLock",
+        "expected": false,
+        "passed": true,
+        "actual": false
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvnthewj9781fe8ad7d8bddbbd29"
+  ],
+  "memoryIds": {
+    "lock-recovery": {
+      "id": "m_mvnthewj9781fe8ad7d8bddbbd29",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 586,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 790,
+    "output": 53,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 22,
+    "totalTokens": 843,
+    "cost": 0.00211
+  },
+  "latencyMs": 6962,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

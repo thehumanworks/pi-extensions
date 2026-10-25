@@ -1,0 +1,15 @@
+{
+  "fixtureHash": "171b4047ff097f654bf85c330ddcc540ce33d8c576963458a0c25885ff7dc86b",
+  "model": "openai/gpt-6.1-sol",
+  "arms": [
+    "off"
+  ],
+  "repeats": 1,
+  "wallSeconds": 180,
+  "requestLimit": 24,
+  "state": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v1",
+  "started": "2026-10-25T13:23:18.678Z",
+  "recentBudgetBytes": 600,
+  "recallBudgetUpperBound": 1200,
+  "digestBudget": 0
+}

@@ -1,0 +1,318 @@
+{
+  "oracle": "Accepted reviewed per-case oracle; historical raw outputs untouched. Zephyr local preflight remains a refusal-semantics ambiguity.",
+  "coInjectionDefinition": "A recall selects a derived parent and at least one of its original derivedFrom source IDs in the same call.",
+  "sameFixtureTextAcrossRunsIgnoringExpiry": true,
+  "sameProductionSourcesAcrossRuns": true,
+  "changedSourceFilesAcrossRuns": [],
+  "runs": [
+    {
+      "directory": "pi-memory/eval/results/dream-live-final1",
+      "started": "2026-10-25T14:02:15.099Z",
+      "completed": "2026-10-25T14:05:01.588Z",
+      "sourceHashes": {
+        "index.ts": "31ef2b27cf8638ba949674912e675f6901d0fcf0c896734fb33d39e62ac703b4",
+        "src/capture.ts": "497d3e7e3110a813cebd353e88bab65f91d23fe2e351d7d8025000f668bd55e9",
+        "src/config.ts": "6a5e7636f8260bf9584f6a846335b91ac2e9e6003ea9cb3b5761083861be7b16",
+        "src/dream.ts": "bc5982ae0908d97b7ece42748c502e50ea929159e28d77d4415cbe92bd5a2666",
+        "src/maintenance.ts": "7b5cbce70ebf23746f958141e603722ebe2a74ecfb5b15ff4734a75346fb685a",
+        "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+        "src/retrieve.ts": "85b3bd33556b38aca411fbbc53f33a32531d9c318814ef24698279c260413f3f",
+        "src/scheduler.ts": "43b42e25cc20b9f46ed36d5e2543435ce7e20f2a214223eba374c73e03536740",
+        "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+        "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+        "src/settings.ts": "32c41119fa00caefa2ca0883053b520f3d1415ef64861f32616ad1a984caa471",
+        "src/store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+        "src/tools.ts": "bb86a68df04c2fd836505fc34418f83f4ab8a5058e7a826fdae7a6edfe4d7b38",
+        "src/types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+        "src/ui.ts": "86733ed57d3512220bc8f216711278bd95081f327a10be45a45454622ff69d3d"
+      },
+      "normalizedFixtureSha256": "ba6e6f54ae59599ae13a853a7f3aea7a43943126d0736e16b6870486f262d5ee",
+      "sourceStable": true,
+      "artifactSha256": {
+        "manifest.json": "6b69e7d0aa7bdf6c87dc513327744fa89d0b0c8484472c60333e290dcc93794c",
+        "summary.json": "ec336695e2d9b06bdc9d38a9d7cddd341e6df1919713c75f7d714cb5dbe5e227",
+        "results.json": "e60fcdd2f6b7b955956da153e48d9e3d995fbee8a7afeffa4252391c3b6ea7c8",
+        "source-corpus.json": "842e4705d058dfd41c8a54a4cee13d6d7fa9232e3625dd074f22ffe331856b6e"
+      },
+      "scoringArtifact": "results.json",
+      "generationUsage": {
+        "input": 1439,
+        "output": 637,
+        "cacheRead": 2048,
+        "cacheWrite": 0
+      },
+      "downstreamUsage": {
+        "input": 29595,
+        "output": 1111,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "literalCommandRetention": {
+        "total": 4,
+        "compressed": 4,
+        "semantic": 4
+      },
+      "dreamParents": 3,
+      "dreamHypotheses": 3
+    },
+    {
+      "directory": "pi-memory/eval/results/dream-live-final2",
+      "started": "2026-10-25T14:02:15.099Z",
+      "completed": "2026-10-25T14:05:36.403Z",
+      "sourceHashes": {
+        "index.ts": "31ef2b27cf8638ba949674912e675f6901d0fcf0c896734fb33d39e62ac703b4",
+        "src/capture.ts": "497d3e7e3110a813cebd353e88bab65f91d23fe2e351d7d8025000f668bd55e9",
+        "src/config.ts": "6a5e7636f8260bf9584f6a846335b91ac2e9e6003ea9cb3b5761083861be7b16",
+        "src/dream.ts": "bc5982ae0908d97b7ece42748c502e50ea929159e28d77d4415cbe92bd5a2666",
+        "src/maintenance.ts": "7b5cbce70ebf23746f958141e603722ebe2a74ecfb5b15ff4734a75346fb685a",
+        "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+        "src/retrieve.ts": "85b3bd33556b38aca411fbbc53f33a32531d9c318814ef24698279c260413f3f",
+        "src/scheduler.ts": "43b42e25cc20b9f46ed36d5e2543435ce7e20f2a214223eba374c73e03536740",
+        "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+        "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+        "src/settings.ts": "32c41119fa00caefa2ca0883053b520f3d1415ef64861f32616ad1a984caa471",
+        "src/store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+        "src/tools.ts": "bb86a68df04c2fd836505fc34418f83f4ab8a5058e7a826fdae7a6edfe4d7b38",
+        "src/types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+        "src/ui.ts": "86733ed57d3512220bc8f216711278bd95081f327a10be45a45454622ff69d3d"
+      },
+      "normalizedFixtureSha256": "ba6e6f54ae59599ae13a853a7f3aea7a43943126d0736e16b6870486f262d5ee",
+      "sourceStable": true,
+      "artifactSha256": {
+        "manifest.json": "19217b2f8392a32084fc516a4d4dec5b9c1584826d03e45fa225a997ef0800c7",
+        "summary.json": "2b53d0323c363f871d8fb437197787ca5f56acff59f93139da34d9b66cc58967",
+        "results.json": "8bc297e1a8193713ab27238aa13d9d7f25e6d3e55eeedea7b52df8d612d60968",
+        "source-corpus.json": "74d533c9e68a7e9c548691433845b602ca04195ce31c1eef9abc98dd8c19fc70"
+      },
+      "scoringArtifact": "results.json",
+      "generationUsage": {
+        "input": 1451,
+        "output": 651,
+        "cacheRead": 2048,
+        "cacheWrite": 0
+      },
+      "downstreamUsage": {
+        "input": 29566,
+        "output": 1106,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "literalCommandRetention": {
+        "total": 4,
+        "compressed": 4,
+        "semantic": 4
+      },
+      "dreamParents": 3,
+      "dreamHypotheses": 3
+    }
+  ],
+  "aggregate": {
+    "sources": {
+      "runs": 16,
+      "actionSuccess": 14,
+      "perRunActionSuccess": [
+        7,
+        7
+      ],
+      "coInjectedRuns": 0,
+      "coInjectionRate": 0.0,
+      "meanInjectedByteBound": 1146.75,
+      "meanProviderInputIncludingCache": 957.5,
+      "meanProviderOutput": 34.3125,
+      "activeTextBytesByRun": [
+        4169,
+        4169
+      ],
+      "failures": [
+        {
+          "run": "pi-memory/eval/results/dream-live-final1",
+          "case": "mercator-other-current",
+          "fields": [
+            "workers"
+          ],
+          "actual": {
+            "command": "mc export --batch",
+            "workers": null,
+            "retries": 2,
+            "timeoutSeconds": 60,
+            "requiresPassingPreflight": true
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-final2",
+          "case": "mercator-other-current",
+          "fields": [
+            "workers"
+          ],
+          "actual": {
+            "command": "mc export --batch",
+            "workers": null,
+            "retries": 2,
+            "timeoutSeconds": 60,
+            "requiresPassingPreflight": true
+          }
+        }
+      ]
+    },
+    "compressed": {
+      "runs": 16,
+      "actionSuccess": 12,
+      "perRunActionSuccess": [
+        6,
+        6
+      ],
+      "coInjectedRuns": 0,
+      "coInjectionRate": 0.0,
+      "meanInjectedByteBound": 836.5,
+      "meanProviderInputIncludingCache": 881.6875,
+      "meanProviderOutput": 38.0625,
+      "activeTextBytesByRun": [
+        2064,
+        2064
+      ],
+      "failures": [
+        {
+          "run": "pi-memory/eval/results/dream-live-final1",
+          "case": "zephyr-local-negative",
+          "fields": [
+            "requiresPassingPreflight"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": null
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-final1",
+          "case": "mercator-invoice-expired",
+          "fields": [
+            "command",
+            "workers",
+            "retries",
+            "timeoutSeconds"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": true
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-final2",
+          "case": "zephyr-local-negative",
+          "fields": [
+            "requiresPassingPreflight"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": null
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-final2",
+          "case": "mercator-invoice-expired",
+          "fields": [
+            "command",
+            "workers",
+            "retries",
+            "timeoutSeconds",
+            "requiresPassingPreflight"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": null
+          }
+        }
+      ]
+    },
+    "semantic": {
+      "runs": 16,
+      "actionSuccess": 14,
+      "perRunActionSuccess": [
+        7,
+        7
+      ],
+      "coInjectedRuns": 0,
+      "coInjectionRate": 0.0,
+      "meanInjectedByteBound": 952.0,
+      "meanProviderInputIncludingCache": 907.875,
+      "meanProviderOutput": 32.375,
+      "activeTextBytesByRun": [
+        1434,
+        1397
+      ],
+      "failures": [
+        {
+          "run": "pi-memory/eval/results/dream-live-final1",
+          "case": "mercator-invoice-expired",
+          "fields": [
+            "command",
+            "workers",
+            "retries",
+            "timeoutSeconds"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": true
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-final2",
+          "case": "mercator-invoice-expired",
+          "fields": [
+            "command",
+            "workers",
+            "retries",
+            "timeoutSeconds",
+            "requiresPassingPreflight"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": null
+          }
+        }
+      ]
+    },
+    "combined": {
+      "runs": 16,
+      "actionSuccess": 16,
+      "perRunActionSuccess": [
+        8,
+        8
+      ],
+      "coInjectedRuns": 10,
+      "coInjectionRate": 0.625,
+      "meanInjectedByteBound": 1109.75,
+      "meanProviderInputIncludingCache": 950.5,
+      "meanProviderOutput": 33.8125,
+      "activeTextBytesByRun": [
+        6233,
+        6233
+      ],
+      "failures": []
+    }
+  },
+  "limitations": [
+    "Synthetic evidence and mock operation-plan acceptance; no deployed infrastructure execution.",
+    "Small repeated sample on one corpus does not establish broad generalization.",
+    "Generation costs are additional to downstream model tokens.",
+    "Short-expiry variants move the timestamp consistently into the past. Actual clock expiry is evaluated separately."
+  ]
+}

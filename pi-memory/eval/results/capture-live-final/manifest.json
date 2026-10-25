@@ -1,0 +1,27 @@
+{
+  "started": "2026-10-25T12:57:04.027Z",
+  "piVersion": "1.4.0",
+  "executable": "pi",
+  "model": "openai/gpt-6.1-sol",
+  "thinking": "low",
+  "tools": [],
+  "temporaryRoot": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-cf1Upi",
+  "sources": {
+    "index.ts": "611cf10e03481f913ab2d562bc719a2902f031c8153a5dd2efeeaaa9b3163744",
+    "prompts/memory-agent.preset.md": "91aed47c9a7393b2146df22a73df14c48461a849ef35037417450370aa895de4",
+    "src/capture.ts": "f3f40b178dee128c73feec5e6e6d67d51e85f1c6fc4fc5f98c676e8a63f47ad4",
+    "src/config.ts": "82cc08e5c59c274b4f2e2767a8e27e470d9a066b84ac4922608fef32a92e8a8d",
+    "src/maintenance.ts": "18b6a8e0fe75598233f852fe7939875bc04993b1426b5a63644725d00f7d874a",
+    "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+    "src/retrieve.ts": "2a2bdd3d7ecd6d0b1e96505fd4e7fe1fda0ac0f2a9f972f3efda608eef731d1f",
+    "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+    "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+    "src/settings.ts": "32c41119fa00caefa2ca0883053b520f3d1415ef64861f32616ad1a984caa471",
+    "src/store.ts": "cff9da564498375c05fba4d3d8f1ac3f13b187a4c0f3fcf00b1f131a6be8d4ce",
+    "src/tools.ts": "afbd33876aef05ba557867b9faa76ded58a1acc1c2b74d1bd62b790f1d173559",
+    "src/types.ts": "973f3054a0ef2f19fb8c5d98195993ce681cb9b9ee4680315907980538a482c4",
+    "src/ui.ts": "86733ed57d3512220bc8f216711278bd95081f327a10be45a45454622ff69d3d"
+  },
+  "timeoutMs": 180000,
+  "captureFailureInjection": "Unavailable model lookup, no request sent to that model"
+}

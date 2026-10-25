@@ -1,0 +1,7 @@
+{
+  "base": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-smoke-2t166l",
+  "cwd": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-smoke-2t166l/project",
+  "memoryDir": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-smoke-2t166l/memory",
+  "model": "openai/gpt-6.1-sol",
+  "created": "2026-10-25T12:37:58.881Z"
+}

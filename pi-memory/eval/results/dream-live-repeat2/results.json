@@ -1,0 +1,1799 @@
+[
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "beacon-staging-sources",
+    "caseId": "beacon-staging",
+    "arm": "sources",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"pnpm beacon:smoke-v2\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":45,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": "pnpm beacon:smoke-v2",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 45,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": "pnpm beacon:smoke-v2",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 45,
+      "requiresPassingPreflight": null
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 937,
+      "output": 37,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1147,
+    "selectedIds": [
+      "m_mvnw8dtu8863f2f9bd6c75dc3b91",
+      "m_mvnw8dtn25b09eb1eed4f1565895",
+      "m_mvnw8dtfbfa8edccd101e871e206"
+    ],
+    "sizes": {
+      "activeCount": 8,
+      "activeTextBytes": 4169,
+      "canonicalMarkdownBytes": 11174
+    },
+    "latencyMs": 3486
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "beacon-staging-compressed",
+    "caseId": "beacon-staging",
+    "arm": "compressed",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\n  \"command\": \"pnpm beacon:smoke-v2\",\n  \"workers\": 3,\n  \"retries\": 2,\n  \"timeoutSeconds\": 45,\n  \"requiresPassingPreflight\": null\n}",
+    "parsed": {
+      "command": "pnpm beacon:smoke-v2",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 45,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": "pnpm beacon:smoke-v2",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 45,
+      "requiresPassingPreflight": null
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 842,
+      "output": 72,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 777,
+    "selectedIds": [
+      "m_mvnw8gjw60a1dbf91b2066eb314a"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 2064,
+      "canonicalMarkdownBytes": 6071
+    },
+    "latencyMs": 4704
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "beacon-staging-semantic",
+    "caseId": "beacon-staging",
+    "arm": "semantic",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"pnpm beacon:smoke-v2\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":45,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": "pnpm beacon:smoke-v2",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 45,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": "pnpm beacon:smoke-v2",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 45,
+      "requiresPassingPreflight": null
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 906,
+      "output": 37,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 988,
+    "selectedIds": [
+      "m_mvnw8k7d2cb5f1dbb11ab14016e3",
+      "m_mvnw8k7l0db912bb7b0b6f08d348"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 1466,
+      "canonicalMarkdownBytes": 4735
+    },
+    "latencyMs": 5059
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 1,
+      "parentIds": [
+        "m_mvnw8o5x9b20d9c0c237cecb7f56"
+      ],
+      "observed": true
+    },
+    "id": "beacon-staging-combined",
+    "caseId": "beacon-staging",
+    "arm": "combined",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"pnpm beacon:smoke-v2\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":45,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": "pnpm beacon:smoke-v2",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 45,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": "pnpm beacon:smoke-v2",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 45,
+      "requiresPassingPreflight": null
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 929,
+      "output": 52,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1110,
+    "selectedIds": [
+      "m_mvnw8o5x9b20d9c0c237cecb7f56",
+      "m_mvnw8o4z510e710c2ceaade26a33"
+    ],
+    "sizes": {
+      "activeCount": 11,
+      "activeTextBytes": 6233,
+      "canonicalMarkdownBytes": 18744
+    },
+    "latencyMs": 6607
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "beacon-production-negative-sources",
+    "caseId": "beacon-production-negative",
+    "arm": "sources",
+    "negative": true,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 943,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1147,
+    "selectedIds": [
+      "m_mvnw8tai9a3f8bd0ccdf3dd9bc44",
+      "m_mvnw8tab1dfc71fe1e05d9282a50",
+      "m_mvnw8ta427635b0d16086a0a2058"
+    ],
+    "sizes": {
+      "activeCount": 8,
+      "activeTextBytes": 4169,
+      "canonicalMarkdownBytes": 11174
+    },
+    "latencyMs": 3754
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "beacon-production-negative-compressed",
+    "caseId": "beacon-production-negative",
+    "arm": "compressed",
+    "negative": true,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 846,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 777,
+    "selectedIds": [
+      "m_mvnw8w8183e83cd2fd7cf932f99a"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 2064,
+      "canonicalMarkdownBytes": 6071
+    },
+    "latencyMs": 3167
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "beacon-production-negative-semantic",
+    "caseId": "beacon-production-negative",
+    "arm": "semantic",
+    "negative": true,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 902,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 988,
+    "selectedIds": [
+      "m_mvnw8yor34e266854df74e63b253",
+      "m_mvnw8yozf871dae11e8636c2b8bc"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 1466,
+      "canonicalMarkdownBytes": 4735
+    },
+    "latencyMs": 9023
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 1,
+      "parentIds": [
+        "m_mvnw95pm035954ac2922fe2fc9b3"
+      ],
+      "observed": true
+    },
+    "id": "beacon-production-negative-combined",
+    "caseId": "beacon-production-negative",
+    "arm": "combined",
+    "negative": true,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 928,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1110,
+    "selectedIds": [
+      "m_mvnw95pm035954ac2922fe2fc9b3",
+      "m_mvnw95oj17ddda5e24916293e6f1"
+    ],
+    "sizes": {
+      "activeCount": 11,
+      "activeTextBytes": 6233,
+      "canonicalMarkdownBytes": 18744
+    },
+    "latencyMs": 2845
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-staging-sources",
+    "caseId": "zephyr-staging",
+    "arm": "sources",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"zx stage-apply\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":30,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "zx stage-apply",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 30,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "zx stage-apply",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 30,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 957,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1197,
+    "selectedIds": [
+      "m_mvnw97xwc0e90ca79f2c44076629",
+      "m_mvnw97y37a82d8749f4a3db50648",
+      "m_mvnw97xq844b183fe9ec1cd00921"
+    ],
+    "sizes": {
+      "activeCount": 8,
+      "activeTextBytes": 4169,
+      "canonicalMarkdownBytes": 11174
+    },
+    "latencyMs": 4375
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-staging-compressed",
+    "caseId": "zephyr-staging",
+    "arm": "compressed",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"zx stage-apply\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":30,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "zx stage-apply",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 30,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "zx stage-apply",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 30,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 848,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 765,
+    "selectedIds": [
+      "m_mvnw9bcuf778ded1ca9770146df8"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 2064,
+      "canonicalMarkdownBytes": 6071
+    },
+    "latencyMs": 3978
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-staging-semantic",
+    "caseId": "zephyr-staging",
+    "arm": "semantic",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"zx stage-apply\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":30,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "zx stage-apply",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 30,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "zx stage-apply",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 30,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 902,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 988,
+    "selectedIds": [
+      "m_mvnw9eg3e150158045fb1ec5c8f1",
+      "m_mvnw9efxc150caa0b0a0c8de85cc"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 1466,
+      "canonicalMarkdownBytes": 4735
+    },
+    "latencyMs": 3260
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 1,
+      "parentIds": [
+        "m_mvnw9h0ve0f2fdffe9144cf8a4b9"
+      ],
+      "observed": true
+    },
+    "id": "zephyr-staging-combined",
+    "caseId": "zephyr-staging",
+    "arm": "combined",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"zx stage-apply\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":30,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "zx stage-apply",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 30,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "zx stage-apply",
+      "workers": 3,
+      "retries": 2,
+      "timeoutSeconds": 30,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 948,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1127,
+    "selectedIds": [
+      "m_mvnw9h0ve0f2fdffe9144cf8a4b9",
+      "m_mvnw9gzr2488736c23fb58aa131f"
+    ],
+    "sizes": {
+      "activeCount": 11,
+      "activeTextBytes": 6233,
+      "canonicalMarkdownBytes": 18744
+    },
+    "latencyMs": 3588
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-production-sources",
+    "caseId": "zephyr-production",
+    "arm": "sources",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"zx prod-apply\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":90,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "zx prod-apply",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 90,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "zx prod-apply",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 90,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 956,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1197,
+    "selectedIds": [
+      "m_mvnw9jtx2fb55f2fceb4520d4c89",
+      "m_mvnw9jtq351dde0b456022ee2271",
+      "m_mvnw9jti021f3957e93649222af3"
+    ],
+    "sizes": {
+      "activeCount": 8,
+      "activeTextBytes": 4169,
+      "canonicalMarkdownBytes": 11174
+    },
+    "latencyMs": 4397
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-production-compressed",
+    "caseId": "zephyr-production",
+    "arm": "compressed",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"zx prod-apply\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":90,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "zx prod-apply",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 90,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "zx prod-apply",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 90,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 850,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 765,
+    "selectedIds": [
+      "m_mvnw9n99630ed05f08a87b66311b"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 2064,
+      "canonicalMarkdownBytes": 6071
+    },
+    "latencyMs": 4346
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-production-semantic",
+    "caseId": "zephyr-production",
+    "arm": "semantic",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"zx prod-apply\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":90,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "zx prod-apply",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 90,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "zx prod-apply",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 90,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 898,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 988,
+    "selectedIds": [
+      "m_mvnw9qmp597fb129dac487bf2190",
+      "m_mvnw9qmh3c0499c30d2beba233b8"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 1466,
+      "canonicalMarkdownBytes": 4735
+    },
+    "latencyMs": 3434
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 1,
+      "parentIds": [
+        "m_mvnw9tcb473d4d127230d9fb451f"
+      ],
+      "observed": true
+    },
+    "id": "zephyr-production-combined",
+    "caseId": "zephyr-production",
+    "arm": "combined",
+    "negative": false,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":\"zx prod-apply\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":90,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "zx prod-apply",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 90,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "zx prod-apply",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 90,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 951,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1131,
+    "selectedIds": [
+      "m_mvnw9tcb473d4d127230d9fb451f",
+      "m_mvnw9tbhca1a2e285b3b7b9f40e7"
+    ],
+    "sizes": {
+      "activeCount": 11,
+      "activeTextBytes": 6233,
+      "canonicalMarkdownBytes": 18744
+    },
+    "latencyMs": 3600
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-local-negative-sources",
+    "caseId": "zephyr-local-negative",
+    "arm": "sources",
+    "negative": true,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 967,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1197,
+    "selectedIds": [
+      "m_mvnw9w5g736fa7c4ec9ecaa4bec3",
+      "m_mvnw9w5m345e468813061fc550c0",
+      "m_mvnw9w5923f14ceef183ffd8b11b"
+    ],
+    "sizes": {
+      "activeCount": 8,
+      "activeTextBytes": 4169,
+      "canonicalMarkdownBytes": 11174
+    },
+    "latencyMs": 3233
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-local-negative-compressed",
+    "caseId": "zephyr-local-negative",
+    "arm": "compressed",
+    "negative": true,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": false
+    },
+    "actionSuccess": false,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 859,
+      "output": 110,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 765,
+    "selectedIds": [
+      "m_mvnw9yon6d5d435ab618bfa3b449"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 2064,
+      "canonicalMarkdownBytes": 6071
+    },
+    "latencyMs": 7376
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "zephyr-local-negative-semantic",
+    "caseId": "zephyr-local-negative",
+    "arm": "semantic",
+    "negative": true,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 907,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 988,
+    "selectedIds": [
+      "m_mvnwa4e95d9ec70aa57c510546cf",
+      "m_mvnwa4e18deb7c308bc5649ee7b2"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 1466,
+      "canonicalMarkdownBytes": 4735
+    },
+    "latencyMs": 4044
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 1,
+      "parentIds": [
+        "m_mvnwa7kl2e58bdfe59809ea00880"
+      ],
+      "observed": true
+    },
+    "id": "zephyr-local-negative-combined",
+    "caseId": "zephyr-local-negative",
+    "arm": "combined",
+    "negative": true,
+    "temporary": false,
+    "expired": false,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 955,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1127,
+    "selectedIds": [
+      "m_mvnwa7kl2e58bdfe59809ea00880",
+      "m_mvnwa7jm3d2c0f07f67bfdc5cfbb"
+    ],
+    "sizes": {
+      "activeCount": 11,
+      "activeTextBytes": 6233,
+      "canonicalMarkdownBytes": 18744
+    },
+    "latencyMs": 2890
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-invoice-current-sources",
+    "caseId": "mercator-invoice-current",
+    "arm": "sources",
+    "negative": false,
+    "temporary": true,
+    "expired": false,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 923,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1001,
+    "selectedIds": [
+      "m_mvnwa9uo3ed9a8d5a9b91b060073",
+      "m_mvnwa9ui7052bbf42905f09c6da8"
+    ],
+    "sizes": {
+      "activeCount": 8,
+      "activeTextBytes": 4169,
+      "canonicalMarkdownBytes": 11174
+    },
+    "latencyMs": 3636
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-invoice-current-compressed",
+    "caseId": "mercator-invoice-current",
+    "arm": "compressed",
+    "negative": false,
+    "temporary": true,
+    "expired": false,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 918,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 993,
+    "selectedIds": [
+      "m_mvnwacoh779797e3048a598a7080"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 2064,
+      "canonicalMarkdownBytes": 6071
+    },
+    "latencyMs": 3201
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-invoice-current-semantic",
+    "caseId": "mercator-invoice-current",
+    "arm": "semantic",
+    "negative": false,
+    "temporary": true,
+    "expired": false,
+    "response": "{\n  \"command\": \"mc export --batch\",\n  \"workers\": 1,\n  \"retries\": 0,\n  \"timeoutSeconds\": 60,\n  \"requiresPassingPreflight\": true\n}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 881,
+      "output": 48,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 863,
+    "selectedIds": [
+      "m_mvnwaf661d1508fa88bad436044a"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 1466,
+      "canonicalMarkdownBytes": 4735
+    },
+    "latencyMs": 5550
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-invoice-current-combined",
+    "caseId": "mercator-invoice-current",
+    "arm": "combined",
+    "negative": false,
+    "temporary": true,
+    "expired": false,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":1,\"retries\":0,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 1,
+      "retries": 0,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 917,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 993,
+    "selectedIds": [
+      "m_mvnwajii7cd805469d2175583ffe"
+    ],
+    "sizes": {
+      "activeCount": 11,
+      "activeTextBytes": 6233,
+      "canonicalMarkdownBytes": 18744
+    },
+    "latencyMs": 4142
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-other-current-sources",
+    "caseId": "mercator-other-current",
+    "arm": "sources",
+    "negative": false,
+    "temporary": true,
+    "expired": false,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":null,\"retries\":2,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": null,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": false,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": false,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 917,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1001,
+    "selectedIds": [
+      "m_mvnwamqu6b451b053ebb8e9e1dec",
+      "m_mvnwamr01aa65575817a35f57251"
+    ],
+    "sizes": {
+      "activeCount": 8,
+      "activeTextBytes": 4169,
+      "canonicalMarkdownBytes": 11174
+    },
+    "latencyMs": 20783
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-other-current-compressed",
+    "caseId": "mercator-other-current",
+    "arm": "compressed",
+    "negative": false,
+    "temporary": true,
+    "expired": false,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":4,\"retries\":2,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 923,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 993,
+    "selectedIds": [
+      "m_mvnwb2t12e5bbb0c1a7ad8e39df5"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 2064,
+      "canonicalMarkdownBytes": 6071
+    },
+    "latencyMs": 6618
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-other-current-semantic",
+    "caseId": "mercator-other-current",
+    "arm": "semantic",
+    "negative": false,
+    "temporary": true,
+    "expired": false,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":4,\"retries\":2,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 884,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 863,
+    "selectedIds": [
+      "m_mvnwb7xmc7efbb48ac2053a715e3"
+    ],
+    "sizes": {
+      "activeCount": 3,
+      "activeTextBytes": 1466,
+      "canonicalMarkdownBytes": 4735
+    },
+    "latencyMs": 3616
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-other-current-combined",
+    "caseId": "mercator-other-current",
+    "arm": "combined",
+    "negative": false,
+    "temporary": true,
+    "expired": false,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":4,\"retries\":2,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 920,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 993,
+    "selectedIds": [
+      "m_mvnwbarydcd9a6ccbc7917b1b126"
+    ],
+    "sizes": {
+      "activeCount": 11,
+      "activeTextBytes": 6233,
+      "canonicalMarkdownBytes": 18744
+    },
+    "latencyMs": 3352
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-invoice-expired-sources",
+    "caseId": "mercator-invoice-expired",
+    "arm": "sources",
+    "negative": false,
+    "temporary": true,
+    "expired": true,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":4,\"retries\":2,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 950,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1195,
+    "selectedIds": [
+      "m_mvnwbdej318b55d58c7ed299eb84",
+      "m_mvnwbded4a8b18bff479219a89af",
+      "m_mvnwbddv2191459cc2ea6ffbc221"
+    ],
+    "sizes": {
+      "activeCount": 7,
+      "activeTextBytes": 3488,
+      "canonicalMarkdownBytes": 11174
+    },
+    "latencyMs": 3298
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-invoice-expired-compressed",
+    "caseId": "mercator-invoice-expired",
+    "arm": "compressed",
+    "negative": false,
+    "temporary": true,
+    "expired": true,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": false,
+      "workers": false,
+      "retries": false,
+      "timeoutSeconds": false,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": false,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 858,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 765,
+    "selectedIds": [
+      "m_mvnwbfyx6a8d8fe487a8049bf1ae"
+    ],
+    "sizes": {
+      "activeCount": 2,
+      "activeTextBytes": 1256,
+      "canonicalMarkdownBytes": 6071
+    },
+    "latencyMs": 14350
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-invoice-expired-semantic",
+    "caseId": "mercator-invoice-expired",
+    "arm": "semantic",
+    "negative": false,
+    "temporary": true,
+    "expired": true,
+    "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+    "parsed": {
+      "command": null,
+      "workers": null,
+      "retries": null,
+      "timeoutSeconds": null,
+      "requiresPassingPreflight": null
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": false,
+      "workers": false,
+      "retries": false,
+      "timeoutSeconds": false,
+      "requiresPassingPreflight": false
+    },
+    "actionSuccess": false,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 905,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 988,
+    "selectedIds": [
+      "m_mvnwbr2a7da01097913f3ba2a610",
+      "m_mvnwbr23b722a5eb25e452642ed0"
+    ],
+    "sizes": {
+      "activeCount": 2,
+      "activeTextBytes": 800,
+      "canonicalMarkdownBytes": 4735
+    },
+    "latencyMs": 3655
+  },
+  {
+    "coInjection": {
+      "parentSourcePairs": 0,
+      "parentIds": [],
+      "observed": false
+    },
+    "id": "mercator-invoice-expired-combined",
+    "caseId": "mercator-invoice-expired",
+    "arm": "combined",
+    "negative": false,
+    "temporary": true,
+    "expired": true,
+    "response": "{\"command\":\"mc export --batch\",\"workers\":4,\"retries\":2,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+    "parsed": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "expected": {
+      "command": "mc export --batch",
+      "workers": 4,
+      "retries": 2,
+      "timeoutSeconds": 60,
+      "requiresPassingPreflight": true
+    },
+    "checks": {
+      "command": true,
+      "workers": true,
+      "retries": true,
+      "timeoutSeconds": true,
+      "requiresPassingPreflight": true
+    },
+    "actionSuccess": true,
+    "overgeneralized": false,
+    "temporaryLeak": false,
+    "errors": [],
+    "usage": {
+      "input": 948,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "injectedTextUpperBound": 1195,
+    "selectedIds": [
+      "m_mvnwbtxadab41fe14606e4df1224",
+      "m_mvnwbtx47d6d34fb41a150fb13fc",
+      "m_mvnwbtwm944f98657469a759e305"
+    ],
+    "sizes": {
+      "activeCount": 9,
+      "activeTextBytes": 4744,
+      "canonicalMarkdownBytes": 15988
+    },
+    "latencyMs": 3302
+  }
+]

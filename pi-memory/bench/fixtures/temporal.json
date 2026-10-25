@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "description": "Explicit lifetime contract cases. The baseline ignored these annotations; later runs measure their implementation without claiming model action execution.",
+  "items": [
+    { "key": "lasting-feedback", "type": "feedback", "title": "Release approval policy", "body": "Require explicit approval before publishing a release.", "keywords": ["release", "approval", "publishing"], "importance": 9, "ageDays": 730, "retention": "long" },
+    { "key": "lasting-preference", "type": "preference", "title": "Response format preference", "body": "Keep status responses concise and include actionable blockers.", "keywords": ["response", "format", "concise"], "importance": 8, "ageDays": 365, "retention": "long" },
+    { "key": "default-routing", "type": "project", "title": "Traffic routing default", "body": "Route traffic through the blue cluster unless a current incident override applies.", "keywords": ["traffic", "routing", "cluster", "default"], "importance": 8, "ageDays": 90, "retention": "long" },
+    { "key": "current-override", "type": "project", "title": "Current traffic routing override", "body": "During the current incident route traffic through the green cluster. This override expires after the incident window.", "keywords": ["traffic", "routing", "cluster", "incident"], "importance": 8, "ageDays": 1, "retention": "short", "expiresInDays": 1 },
+    { "key": "expired-override", "type": "project", "title": "Previous traffic routing override", "body": "The previous incident routed traffic through the red cluster. Its temporary window has ended.", "keywords": ["traffic", "routing", "cluster", "incident"], "importance": 8, "ageDays": 2, "retention": "short", "expiresInDays": -1 }
+  ],
+  "queries": [
+    { "query": "Release approval before publishing", "relevant": ["lasting-feedback"], "expectedAction": "ask for explicit approval" },
+    { "query": "Response format concise", "relevant": ["lasting-preference"], "expectedAction": "respond concisely" },
+    { "query": "Current incident traffic routing cluster", "relevant": ["default-routing", "current-override"], "forbidden": ["expired-override"], "expectedAction": "use green during current override; retain blue default for later" }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 59373,
+  "modelRequests": 10,
+  "usage": {
+    "input": 5005,
+    "output": 1283,
+    "cacheRead": 29312,
+    "cacheWrite": 0,
+    "reasoning": 39,
+    "totalTokens": 35600,
+    "cost": 0.025771200000000005
+  },
+  "finalText": "Implemented recovery in `src/migrate.mjs`: malformed source JSON falls back to the output-adjacent `backups/source.json`. Valid but unsupported configurations still fail rather than silently recovering.\n\n- Migrated successfully to `work/repair-output.json`.\n- Preserved `work/backups/source.json` unchanged.\n- Preserved truncated `work/repair-source.json` unchanged as corruption evidence.\n- Did not apply the expired `test-local` region override.\n- Ran `node --test`: **2 tests passed**.\n- Ran the migration CLI successfully; output is version 3 with `timeoutMs: 3000`, `features: [\"ready\"]`, and customer fields retained."
+}

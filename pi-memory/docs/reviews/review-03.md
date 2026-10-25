@@ -1,0 +1,34 @@
+# Claude Fable review, checkpoint 3
+
+Checkpoint 3 review follows. Bounded to the changed paths and the completed reports in brief-03.
+
+**Verdict.** No blocker remains in the scheduler, fingerprint, or maintenance paths. Capture now provably handles the two real history failures, and the fresh state-v3 recapture shows correct one-sentence supersession with every other sentence preserved byte for byte. Two concrete defects remain in capture, one of which is a paid retry loop on a reachable path. One completed report rests on a pre-freeze index.ts and needs a rerun or a stated caveat.
+
+## Implementation
+
+**Scheduler and fingerprints are clean.** The double-start race is closed: `scheduling` reserves before the file read and the timer callback rejects an already running task at `pi-memory/src/scheduler.ts:46`. The overlapping-schedule test asserts one call and a delivered abort. Invalidation in `pi-memory/index.ts:147-166` retires on missing, inactive, expired, or hash-changed items, treats undefined legacy versions as changed, and lets retired IDs be re-recalled while still excluding unchanged ones. Proposals carry `evidenceVersion: 1` with a full hash and old proposals become invalid silently, which is conservative and should go in release notes. One cost note: with any applied hook, every tool call reads the proposal directory and runs an unchanged-scan reindex, which the storage report measures at roughly 41 ms at 10k items and 450 ms at 100k.
+
+**Defect 1, paid retry loop on curate failures.** Reflect-phase problems are now per-candidate, but every curate-phase check still throws for the whole batch: unknown neighbor, scope, and all `reconcile` rejections. The pending delta written at `pi-memory/src/capture.ts:235` is cleared only after a successful commit, and `resumePending` reruns that same delta with force on every later capture trigger with no attempt cap. A model that deterministically emits a SUPERSEDE without edits on a bundled memory, which is exactly what state-v2 did, costs two model calls and an error notice on every settled turn in that project. The test at `pi-memory/test/capture.test.ts:309` asserts the throw but nothing covers the retry. Fix is small: skip the offending operation with a recorded reason, as the reflect phase does, or count attempts in the capture state and mark the delta processed after a few failures. This does not affect the running matrix, whose history captures left no pending state. It is a release blocker for capture as a default.
+
+**Defect 2, adjacent-qualifier false attachment.** The linker at `pi-memory/src/capture.ts:112` accepts clauses opening with until, expires, or for the next in either direction. Those openers start new facts at least as often as they qualify the previous one. "The retry limit is 5. Until 2026-11-01T00:00:00Z, use 1 worker." saves the retry limit as short-lived. "Until Friday, use 1 worker. The retry limit is 5." absorbs a temporary cue with no ISO expiry and drops the durable fact, which is the checkpoint-1 failure in a narrower form. The excerpt path does not protect against this because the adjacency loop runs on the selected clauses regardless. Restrict those three openers to the following clause only, keep anaphora in both directions and colon headings before, and add both sentences above as tests.
+
+**Minor.** The literal guard at `reconcile` uses substring matching, so a removed "3" is excused by any "3" in the cited turn. An `expiresAt` mismatch is reported as "lacks a grounded lifetime". Resumed pending captures are never traced because the resume result is discarded at `pi-memory/index.ts:81`, which is why the migration observed-repair trace shows no capture event although its procedure item exists.
+
+## Capture evidence
+
+**Yes, the regressions match the observed failures.** The traces show three distinct stages. In state-final both corrections were skipped with no model call, the salience miss from checkpoint 1. In state-v2 the ingestion correction called the model and saved nothing, leaving batch size 2 active, and the migration correction saved a one-fact item that superseded the whole bundled v3 defaults memory, dropping region, backoff, legacy, and backup from active recall. In state-v3 both corrections saved exactly one item each with no rejections; the new bodies differ from the archived originals in one sentence only, the old items are superseded, no capture file holds a pending delta, and the scope audit shows no global items and only real session sources. The tests at lines 231, 280, 288, 296, and 309 of the capture tests cover salience, durable facts beside temporary mentions, excerpt laundering, narrow patching with metadata retention, and refusal of wholesale replacement. One gap: the v2 ingestion zero-save has no recorded reason because per-candidate diagnostics did not exist yet, so that match is inferred, not shown.
+
+## Reports and handoff checks
+
+- **BACKGROUND-EVALUATION.md** claims the tested hashes stayed unchanged. True within the run, but its index.ts and retrieve.ts hashes differ from the frozen set in the final-v3 manifest, while scheduler, store, dream, and config match. The frozen index.ts changed the same hooks the scheduler integration runs through. Rerun the harness on frozen sources or state that the run predates them.
+- **DREAMING.md** says sources-only missed "one standard retry limit". The failed field in that result was `workers`, expected 4 and returned null, while retries was correct. Say standard worker count.
+- CACHE-EVALUATION, STORAGE-EVALUATION, LONG-RUN-EVALUATION, and review-02 check out against their artifacts and arithmetic.
+
+Minimum checks before handoff:
+
+1. **Hash equality.** Every accepted artifact's source hashes match the final-v3 manifest, and that manifest matches the working tree at handoff. I could not compute hashes with read-only tools.
+2. **Matrix completeness.** All 18 jobs present with exit codes, budget exhaustion and stage-deadline skips reported per cell, nothing dropped, no duplicate job IDs.
+3. **Provenance.** Every recalled ID in the memory arms resolves to the state-v3 store, zero wrong-project recall IDs, and the other-project artifact control passes in every cell.
+4. **Corrected values reached stage 3.** Fresh-session repair traces show batch size 4 and maxAttempts 5 injected, not the archived values.
+5. **Reporting.** Per-cell category scores with paired long-versus-short, long-versus-empty, and dream-versus-long differences by project, plus co-injection counts per dream cell. No single efficacy number and no generalization claim unless dream beats long on the same cells in both repeats.
+6. **Deferred evidence.** The real-clock expiry test, repeated representation runs, and action-level cache counts are either present with their own hashes or listed as not done. I'm available for the final results check.

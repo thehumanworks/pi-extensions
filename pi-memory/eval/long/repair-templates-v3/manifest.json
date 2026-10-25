@@ -1,0 +1,57 @@
+{
+  "source": "/Users/tomas/pi-extensions/pi-memory/eval/long/results/final-v3",
+  "created": "2026-10-25T14:31:19.844Z",
+  "description": "Two identical copies of short-history stage-2 code. The long-0 path aliases satisfy the unchanged runner convention; they do not indicate long-arm origin.",
+  "projects": {
+    "ingestion": {
+      "originId": "ingestion-short-0",
+      "originPath": "/Users/tomas/pi-extensions/pi-memory/eval/long/results/final-v3/ingestion-short-0/stage-2-files",
+      "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+      "protocolHash": "faa7e3c12114bdf9e800de4606a05e416dddcf2bb1cef8f46b1f2c57dea42b1b",
+      "sourceHash": "684514f94f06071f70ebd31fb357b61cd6a406cb2606505d890bcb9fdd88f2ae",
+      "files": {
+        "bin/ingest.mjs": "4d6c9b244a7f3246e16884615585c5bcb44e3cf700c78687ddd78168624e73aa",
+        "fixtures/events.ndjson": "00c0f1e75b6009242500ccb2cdaacecf1f2ee7878321c049549b81c8f114d111",
+        "normal-report.json": "6c9661dc6df1c94888925aeaee8aa84358aaf8b242c44be0c26d2d87735c8261",
+        "package.json": "3e2e37fcc321bea18da918150dbe3d24a937d424f19e6931c78176a9e3c07e10",
+        "src/ingest.mjs": "945eb10c0a5923a8bc7efb7b6809f1bbd7a0c70f0c9da06930cd88c2d8c98a5f",
+        "temporary-report.json": "aee3bac05e6965e5757322b1ddea91509114e45b7621455bca2ac6ed43d77684",
+        "test/basic.test.mjs": "d28be94996d8d8e0496c7df24ce7e8093e996dac3abb4fb5f05544216c27d5f9",
+        "work/demo/checkpoint.json": "5d79d676c9314eb5c4d875dc9fe6de32977340e57222b318249595f5d7197dd2",
+        "work/demo/output.ndjson": "00c0f1e75b6009242500ccb2cdaacecf1f2ee7878321c049549b81c8f114d111",
+        "work/normal-checkpoint.json": "1fdef47d395d8df32d0cb7023babf74af68c9671ac8acf7ae97cce6b7535afee",
+        "work/normal.ndjson": "9689d7c72577c6a4a12e3c1444ca1078626354cb83a48fd275bbae3f5350abd1",
+        "work/temporary-checkpoint.json": "1bec1826fc96e8c9e505d708c84c7ff6e31f200421ef4391a72eb1961669ece5",
+        "work/temporary.ndjson": "5ece6b1dee9206956b83d29140da916673d4632901169aa50a4879d14828948a"
+      },
+      "copies": {
+        "long": "/Users/tomas/pi-extensions/pi-memory/eval/long/repair-templates-v3/long/ingestion-long-0/stage-2-files",
+        "polluted": "/Users/tomas/pi-extensions/pi-memory/eval/long/repair-templates-v3/polluted/ingestion-long-0/stage-2-files"
+      }
+    },
+    "migration": {
+      "originId": "migration-short-0",
+      "originPath": "/Users/tomas/pi-extensions/pi-memory/eval/long/results/final-v3/migration-short-0/stage-2-files",
+      "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+      "protocolHash": "faa7e3c12114bdf9e800de4606a05e416dddcf2bb1cef8f46b1f2c57dea42b1b",
+      "sourceHash": "684514f94f06071f70ebd31fb357b61cd6a406cb2606505d890bcb9fdd88f2ae",
+      "files": {
+        "bin/migrate.mjs": "7b6c37529a5fca30ebd31ac5ea1d0ab27980b312259a7cbdc4b237db34fe1947",
+        "fixtures/config.json": "046bc6cbb3e6fdaaf2ea639e39f0fe8ee369d4b29a5db8e5cfdcb9a5b64fcde0",
+        "normal-report.json": "35ac07072470f5c89427b6a7a0c73a46285d354bcd59bc54ff936ee6ca7bbd61",
+        "package.json": "8a9a9f0676c632c4b008ce34b74fd062a252a5e7ee86ddd4c7256da588e42aa7",
+        "src/migrate.mjs": "2ddf2a1274a9c347768f1fdd62a94abf2f09c11c14c4b7880d9472460788a5e2",
+        "temporary-report.json": "5c8cd5edecda0464a5389b6f67f2aa3955324b6157d39d419b93fd3fb08b953b",
+        "test/basic.test.mjs": "76e66b1c3f2a9cb22d27c3305d028d9a8a93e2be90b3ebe4f75f724b3213ddc0",
+        "work/config-v3.json": "35ac07072470f5c89427b6a7a0c73a46285d354bcd59bc54ff936ee6ca7bbd61",
+        "work/normal.json": "35ac07072470f5c89427b6a7a0c73a46285d354bcd59bc54ff936ee6ca7bbd61",
+        "work/temporary.json": "5c8cd5edecda0464a5389b6f67f2aa3955324b6157d39d419b93fd3fb08b953b"
+      },
+      "copies": {
+        "long": "/Users/tomas/pi-extensions/pi-memory/eval/long/repair-templates-v3/long/migration-long-0/stage-2-files",
+        "polluted": "/Users/tomas/pi-extensions/pi-memory/eval/long/repair-templates-v3/polluted/migration-long-0/stage-2-files"
+      }
+    }
+  },
+  "identicalAcrossArms": true
+}

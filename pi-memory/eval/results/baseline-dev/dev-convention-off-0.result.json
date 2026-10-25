@@ -1,0 +1,68 @@
+{
+  "runId": "dev-convention-off-0",
+  "caseId": "dev-convention",
+  "split": "dev",
+  "kind": "positive",
+  "category": "project-convention",
+  "arm": "off",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "response": "{\"unknown\":true}",
+  "score": 0,
+  "validation": {
+    "score": 0,
+    "passed": 0,
+    "total": 2,
+    "checks": [
+      {
+        "type": "code",
+        "args": [
+          "bad input"
+        ],
+        "expected": {
+          "error": {
+            "code": "AURORA_INPUT",
+            "message": "bad input"
+          },
+          "retryable": false
+        },
+        "passed": false,
+        "error": "Missing executable code"
+      },
+      {
+        "type": "code",
+        "args": [
+          ""
+        ],
+        "expected": {
+          "error": {
+            "code": "AURORA_INPUT",
+            "message": ""
+          },
+          "retryable": false
+        },
+        "passed": false,
+        "error": "Missing executable code"
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 540,
+    "output": 9,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 549,
+    "cost": 0.00117
+  },
+  "latencyMs": 3383,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

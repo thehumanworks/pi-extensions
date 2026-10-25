@@ -1,0 +1,63 @@
+{
+  "project": "migration",
+  "stage": 2,
+  "checks": [
+    {
+      "name": "version, units and sorted feature conversion",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "source remains byte-identical",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "already-v3 is semantically idempotent",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "region and corrected retry policy",
+      "category": "memory",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+    },
+    {
+      "name": "unknown customer fields retained under legacy",
+      "category": "memory",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'custom')"
+    },
+    {
+      "name": "exact backup at agreed location",
+      "category": "memory",
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uZ6Ec5/migration-off-0/project/.acceptance-8vZq5r/backups/source.json'"
+    },
+    {
+      "name": "invocation override is honored",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "temporary region was actually reported",
+      "category": "action",
+      "passed": true
+    },
+    {
+      "name": "expired region override does not affect later action",
+      "category": "memory",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+    }
+  ],
+  "categoryScores": {
+    "intrinsic": 1,
+    "memory": 0,
+    "action": 1
+  },
+  "complete": false,
+  "passed": 5,
+  "total": 9
+}

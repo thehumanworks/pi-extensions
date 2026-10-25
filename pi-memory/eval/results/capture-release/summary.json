@@ -1,0 +1,71 @@
+{
+  "completed": "2026-10-25T14:35:58.017Z",
+  "model": "openai/gpt-6.1-sol",
+  "executable": "pi",
+  "piVersion": "1.4.0",
+  "passed": false,
+  "sessions": 7,
+  "passedSessions": 4,
+  "sourceStable": true,
+  "limitations": [
+    "Synthetic single-project fixture per scenario; no broad memory quality estimate"
+  ],
+  "results": [
+    {
+      "id": "learning-capture",
+      "score": 1,
+      "response": "ACK",
+      "errors": [],
+      "latencyMs": 15254
+    },
+    {
+      "id": "learning-recall",
+      "score": 1,
+      "response": "pnpm beacon:verify",
+      "errors": [],
+      "latencyMs": 2989
+    },
+    {
+      "id": "learning-correction",
+      "score": 0,
+      "response": "ACK",
+      "errors": [
+        "Correction did not persist the replacement command",
+        "Correction did not supersede the original memory"
+      ],
+      "latencyMs": 23456
+    },
+    {
+      "id": "learning-recall-correction",
+      "score": 0,
+      "response": "pnpm beacon:verify",
+      "errors": [
+        "Expected \"pnpm beacon:smoke-v2\", received \"pnpm beacon:verify\""
+      ],
+      "latencyMs": 3756
+    },
+    {
+      "id": "retry-retained",
+      "score": 0,
+      "response": "ACK",
+      "errors": [
+        "Configuration failure did not retain a durable pending delta"
+      ],
+      "latencyMs": 3261
+    },
+    {
+      "id": "retry-repaired",
+      "score": 1,
+      "response": "ACK",
+      "errors": [],
+      "latencyMs": 14889
+    },
+    {
+      "id": "retry-recall",
+      "score": 1,
+      "response": "ORCHID-47",
+      "errors": [],
+      "latencyMs": 2762
+    }
+  ]
+}

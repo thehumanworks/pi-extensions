@@ -1,0 +1,72 @@
+[
+  {
+    "name": "capture",
+    "prompt": "Remember this project-specific decision for future sessions: the Beacon staging smoke test command is pnpm beacon:verify. Always use pnpm beacon:verify for Beacon staging verification. Reply only ACK.",
+    "code": 0,
+    "ms": 35907,
+    "response": "ACK",
+    "active": [
+      {
+        "id": "m_mvnthpfac6a9cce27841a25bdad7",
+        "body": "Always use `pnpm beacon:verify` to run Beacon staging smoke tests and staging verification in this project."
+      }
+    ],
+    "archived": [],
+    "stderr": "Warning: No models match pattern \"claude-bridge/claude-opus-5-5\"\nWarning: No models match pattern \"claude-bridge/claude-fable-5-1\"\n"
+  },
+  {
+    "name": "recall",
+    "prompt": "What is our agreed Beacon staging smoke test command? Return only the command.",
+    "code": 0,
+    "ms": 3289,
+    "response": "pnpm beacon:verify",
+    "active": [
+      {
+        "id": "m_mvnthpfac6a9cce27841a25bdad7",
+        "body": "Always use `pnpm beacon:verify` to run Beacon staging smoke tests and staging verification in this project."
+      }
+    ],
+    "archived": [],
+    "stderr": "Warning: No models match pattern \"claude-bridge/claude-opus-5-5\"\nWarning: No models match pattern \"claude-bridge/claude-fable-5-1\"\n"
+  },
+  {
+    "name": "correction",
+    "prompt": "Correction: never use pnpm beacon:verify for Beacon staging anymore. The new agreed Beacon staging smoke test command is pnpm beacon:smoke-v2. Remember this replaces the previous command. Reply only ACK.",
+    "code": 0,
+    "ms": 12505,
+    "response": "ACK",
+    "active": [
+      {
+        "id": "m_mvnti1ng3cf4ecbcb2df01d3bd76",
+        "body": "Use `pnpm beacon:smoke-v2` for Beacon staging smoke tests. This replaces the previous command `pnpm beacon:verify`, which must no longer be used for Beacon staging."
+      }
+    ],
+    "archived": [
+      {
+        "id": "m_mvnthpfac6a9cce27841a25bdad7",
+        "status": "superseded"
+      }
+    ],
+    "stderr": "Warning: No models match pattern \"claude-bridge/claude-opus-5-5\"\nWarning: No models match pattern \"claude-bridge/claude-fable-5-1\"\n"
+  },
+  {
+    "name": "recall-correction",
+    "prompt": "What is our current agreed Beacon staging smoke test command? Return only the current command.",
+    "code": 0,
+    "ms": 2903,
+    "response": "pnpm beacon:smoke-v2",
+    "active": [
+      {
+        "id": "m_mvnti1ng3cf4ecbcb2df01d3bd76",
+        "body": "Use `pnpm beacon:smoke-v2` for Beacon staging smoke tests. This replaces the previous command `pnpm beacon:verify`, which must no longer be used for Beacon staging."
+      }
+    ],
+    "archived": [
+      {
+        "id": "m_mvnthpfac6a9cce27841a25bdad7",
+        "status": "superseded"
+      }
+    ],
+    "stderr": "Warning: No models match pattern \"claude-bridge/claude-opus-5-5\"\nWarning: No models match pattern \"claude-bridge/claude-fable-5-1\"\n"
+  }
+]

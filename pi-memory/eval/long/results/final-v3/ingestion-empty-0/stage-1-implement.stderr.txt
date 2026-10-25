@@ -1,0 +1,3 @@
+Warning: No project session found with id 'b944fe84-6e2a-4de4-90f6-b498aaaeef13'; creating a new session with that id.
+Warning: No models match pattern "claude-bridge/claude-opus-5-5"
+Warning: No models match pattern "claude-bridge/claude-fable-5-1"

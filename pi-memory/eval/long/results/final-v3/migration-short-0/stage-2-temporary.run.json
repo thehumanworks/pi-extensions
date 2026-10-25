@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 17391,
+  "modelRequests": 4,
+  "usage": {
+    "input": 779,
+    "output": 253,
+    "cacheRead": 19712,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 20744,
+    "cost": 0.0060592
+  },
+  "finalText": "Ran:\n```sh\nnode bin/migrate.mjs fixtures/config.json work/temporary.json test-local\n```\n\nCreated `work/temporary.json` and `temporary-report.json`, both with `\"region\": \"test-local\"`.\n\nPermanent defaults and `fixtures/config.json` were not changed."
+}

@@ -1,0 +1,136 @@
+{
+  "label": "discarded stdin-contaminated diagnostic",
+  "validExactFixture": false,
+  "calls": [
+    {
+      "phase": "reflect",
+      "input": {
+        "phase": "reflect",
+        "captureAt": "2026-10-25T14:41:07.924Z",
+        "alreadyDocumented": {
+          "sha256": "86822a19474d6e05deca3be067168fb7463a2b740ef53c00c302ac08985bbb86",
+          "text": "You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.\n\n<tools>\n(none)\n\nIn addition to the tools above, you may have access to other custom tools depending on the project.\n</tools>\n\n<rules>\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>\n\n<docs>\nPi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):\n- Main documentation: /Users/tomas/.local/share/mise/installs/pi/1.4.0/pi/README.md\n- Additional docs: /Users/tomas/.local/share/mise/installs/pi/1.4.0/pi/docs\n- Examples: /Users/tomas/.local/share/mise/installs/pi/1.4.0/pi/examples (extensions, custom tools, SDK)\n- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory\n- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), pi packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)\n- When working on pi topics, read the docs and examples, and follow .md cross-references before implementing\n- Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)\n</docs>\n\n<cwd>\n/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-ERNWOl/learning/project\n</cwd>"
+        },
+        "transcript": [
+          {
+            "id": "211f1821",
+            "role": "user",
+            "timestamp": "2026-10-25T14:40:59.585Z",
+            "text": "import json,pathlib,subprocess,os\nx=json.load(open('/tmp/pi-memory-curator-probe-current.json')); b=pathlib.Path(x['base'])\nprompt='Correction: never use pnpm beacon:verify for Beacon staging anymore. The new agreed Beacon staging smoke test command is pnpm beacon:smoke-v2. Remember this replaces the previous command. Reply only ACK.'\nenv=dict(os.environ,PI_MEMORY_CAPTURE='1',PI_MEMORY_DISABLED='0',PI_MEMORY_MODEL='openai/gpt-6.1-sol',PI_MEMORY_CAPTURE_PROBE=str(b/'curator-response.jsonl'),PI_MEMORY_TRACE=str(b/'capture.trace.jsonl'))\nargs=['pi','-ne','-ns','-np','-nc','--no-mcp','--no-tools','-e',str(pathlib.Path(x['package'])/'index.ts'),'--memory-dir',x['memory'],'--memory-mode','inject','--memory-model','openai/gpt-6.1-sol','--session-dir',str(b/'sessions'),'--model','openai/gpt-6.1-sol','--thinking','low','--mode','json','-p',prompt]\nwith open(b/'events.jsonl','w') as out,open(b/'stderr.txt','w') as err: result=subprocess.run(args,cwd=x['cwd'],env=env,stdout=out,stderr=err,timeout=180)\nprint('exit',result.returncode,'probe',b/'curator-response.jsonl'); print((b/'capture.trace.jsonl').read_text())Correction: never use pnpm beacon:verify for Beacon staging anymore. The new agreed Beacon staging smoke test command is pnpm beacon:smoke-v2. Remember this replaces the previous command. Reply only ACK."
+          },
+          {
+            "id": "1c375c9d",
+            "role": "assistant",
+            "timestamp": "2026-10-25T14:41:07.912Z",
+            "text": "ACK"
+          }
+        ],
+        "injected": [
+          {
+            "id": "m_mvnxj6e9a50474a6275230914636",
+            "title": "Use pnpm beacon:verify for Beacon staging verification",
+            "body": "Always use `pnpm beacon:verify` for Beacon staging verification; it is the project's staging smoke test command."
+          }
+        ]
+      },
+      "stopReason": "stop",
+      "responseText": "{\"candidates\":[{\"title\":\"Use pnpm beacon:smoke-v2 for Beacon staging verification\",\"body\":\"Use `pnpm beacon:smoke-v2` for Beacon staging smoke tests. It replaces `pnpm beacon:verify`; never use the previous command for Beacon staging.\",\"type\":\"feedback\",\"scope\":\"project\",\"summary\":\"Beacon staging smoke tests must use pnpm beacon:smoke-v2 instead of pnpm beacon:verify.\",\"keywords\":[\"Beacon\",\"staging\",\"smoke test\",\"pnpm\",\"beacon:smoke-v2\",\"beacon:verify\"],\"triggers\":[\"verifying Beacon staging\",\"running staging smoke tests\"],\"paths\":[],\"importance\":9,\"confidence\":1,\"retention\":\"long\",\"source\":{\"entries\":[\"211f1821\"],\"origin\":\"user_statement\",\"excerpt\":\"Correction: never use pnpm beacon:verify for Beacon staging anymore. The new agreed Beacon staging smoke test command is pnpm beacon:smoke-v2. Remember this replaces the previous command.\"}}],\"verdicts\":[{\"id\":\"m_mvnxj6e9a50474a6275230914636\",\"verdict\":\"harmful\"}]}"
+    },
+    {
+      "phase": "curate",
+      "input": {
+        "phase": "curate",
+        "candidates": [
+          {
+            "retention": "long",
+            "title": "Use pnpm beacon:smoke-v2 for Beacon staging verification",
+            "body": "Use `pnpm beacon:smoke-v2` for Beacon staging smoke tests. It replaces `pnpm beacon:verify`; never use the previous command for Beacon staging.",
+            "type": "feedback",
+            "scope": "project",
+            "summary": "Beacon staging smoke tests must use pnpm beacon:smoke-v2 instead of pnpm beacon:verify.",
+            "keywords": [
+              "Beacon",
+              "staging",
+              "smoke test",
+              "pnpm",
+              "beacon:smoke-v2",
+              "beacon:verify"
+            ],
+            "triggers": [
+              "verifying Beacon staging",
+              "running staging smoke tests"
+            ],
+            "paths": [],
+            "importance": 9,
+            "confidence": 1,
+            "source": {
+              "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-curator-probe-8v8gopip/sessions/2026-10-25T14-40-59-249Z_01a17381-f571-75ac-bf78-a4e52b488245.jsonl",
+              "entries": [
+                "211f1821"
+              ],
+              "origin": "user_statement"
+            }
+          }
+        ],
+        "neighbors": [
+          [
+            {
+              "id": "m_mvnxj6e9a50474a6275230914636",
+              "scope": "project:9579b827eb4eae9d1daa3337",
+              "type": "project",
+              "title": "Use pnpm beacon:verify for Beacon staging verification",
+              "summary": "Beacon staging smoke tests must run with pnpm beacon:verify.",
+              "keywords": [
+                "Beacon",
+                "staging",
+                "smoke test",
+                "pnpm",
+                "verification"
+              ],
+              "triggers": [
+                "Beacon staging verification",
+                "running staging smoke tests"
+              ],
+              "paths": [],
+              "importance": 9,
+              "confidence": 1,
+              "source": {
+                "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-ERNWOl/learning/sessions/2026-10-25T14-34-51-630Z_01a1737c-596e-7498-bdf8-d604e984c1df.jsonl",
+                "entries": [
+                  "0c824fb4"
+                ],
+                "origin": "user_statement"
+              },
+              "sources": [
+                {
+                  "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-ERNWOl/learning/sessions/2026-10-25T14-34-51-630Z_01a1737c-596e-7498-bdf8-d604e984c1df.jsonl",
+                  "entries": [
+                    "0c824fb4"
+                  ],
+                  "origin": "user_statement"
+                }
+              ],
+              "supersedes": [],
+              "links": [],
+              "status": "active",
+              "created": "2026-10-25T14:35:06.657Z",
+              "updated": "2026-10-25T14:35:33.178Z",
+              "last_used": "2026-10-25T14:40:59.580Z",
+              "stats": {
+                "injected": 4,
+                "used": 0,
+                "helpful": 0,
+                "harmful": 1
+              },
+              "retention": "long",
+              "body": "Always use `pnpm beacon:verify` for Beacon staging verification; it is the project's staging smoke test command.",
+              "score": 1.4805225185981962e-05
+            }
+          ]
+        ]
+      },
+      "stopReason": "stop",
+      "responseText": "{\"operations\":[{\"candidate\":0,\"action\":\"SUPERSEDE\",\"id\":\"m_mvnxj6e9a50474a6275230914636\",\"edits\":[{\"before\":\"Always use `pnpm beacon:verify` for Beacon staging verification; it is the project's staging smoke test command.\",\"after\":\"Use `pnpm beacon:smoke-v2` for Beacon staging smoke tests. It replaces `pnpm beacon:verify`; never use the previous command for Beacon staging.\"}]}]}"
+    }
+  ]
+}

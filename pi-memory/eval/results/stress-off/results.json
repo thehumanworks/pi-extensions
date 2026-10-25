@@ -1,0 +1,460 @@
+[
+  {
+    "runId": "stress-composition-off-0",
+    "caseId": "stress-composition",
+    "split": "dev",
+    "kind": "positive",
+    "category": "four-fact-composition",
+    "arm": "off",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+    "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+    "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "response": "{\"idColumn\":null,\"encoding\":null,\"emptyValue\":null,\"duplicatePolicy\":null}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 4,
+      "checks": [
+        {
+          "type": "field",
+          "path": "idColumn",
+          "expected": "account_ref",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "encoding",
+          "expected": "utf-16le",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "emptyValue",
+          "expected": "NA_VALUE",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "duplicatePolicy",
+          "expected": "keep-first",
+          "passed": false,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 551,
+      "output": 24,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 575,
+      "cost": 0.0013419999999999999
+    },
+    "latencyMs": 4010,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "stress-trust-off-0",
+    "caseId": "stress-trust",
+    "split": "dev",
+    "kind": "positive",
+    "category": "clutter-and-evidence",
+    "arm": "off",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+    "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+    "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "response": "{\"region\":null,\"batchSize\":null}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "north-3",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "batchSize",
+          "expected": 29,
+          "passed": false,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 551,
+      "output": 31,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 15,
+      "totalTokens": 582,
+      "cost": 0.0014119999999999998
+    },
+    "latencyMs": 4264,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "stress-override-off-0",
+    "caseId": "stress-override",
+    "split": "dev",
+    "kind": "control",
+    "category": "clutter-with-current-override",
+    "arm": "off",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+    "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+    "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "response": "{\"format\":\"tsv\",\"retentionDays\":3}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "tsv",
+          "passed": true,
+          "actual": "tsv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 3,
+          "passed": true,
+          "actual": 3
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 543,
+      "output": 16,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 559,
+      "cost": 0.001246
+    },
+    "latencyMs": 2904,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "stress-paraphrase-off-0",
+    "caseId": "stress-paraphrase",
+    "split": "dev",
+    "kind": "positive",
+    "category": "paraphrased-failure",
+    "arm": "off",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+    "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+    "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "response": "{\"env\":{},\"restart\":null}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "env.NACRE_INIT_MODE",
+          "expected": "serial",
+          "passed": false
+        },
+        {
+          "type": "field",
+          "path": "restart",
+          "expected": true,
+          "passed": false,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 552,
+      "output": 36,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 21,
+      "totalTokens": 588,
+      "cost": 0.001464
+    },
+    "latencyMs": 4153,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "stress-trust-off-1",
+    "caseId": "stress-trust",
+    "split": "dev",
+    "kind": "positive",
+    "category": "clutter-and-evidence",
+    "arm": "off",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+    "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+    "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "response": "{\"region\":null,\"batchSize\":null}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "north-3",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "batchSize",
+          "expected": 29,
+          "passed": false,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 551,
+      "output": 32,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 16,
+      "totalTokens": 583,
+      "cost": 0.0014219999999999999
+    },
+    "latencyMs": 5189,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "stress-paraphrase-off-1",
+    "caseId": "stress-paraphrase",
+    "split": "dev",
+    "kind": "positive",
+    "category": "paraphrased-failure",
+    "arm": "off",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+    "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+    "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "response": "{\"env\":{},\"restart\":null}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "env.NACRE_INIT_MODE",
+          "expected": "serial",
+          "passed": false
+        },
+        {
+          "type": "field",
+          "path": "restart",
+          "expected": true,
+          "passed": false,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 552,
+      "output": 35,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 20,
+      "totalTokens": 587,
+      "cost": 0.001454
+    },
+    "latencyMs": 3516,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "stress-override-off-1",
+    "caseId": "stress-override",
+    "split": "dev",
+    "kind": "control",
+    "category": "clutter-with-current-override",
+    "arm": "off",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+    "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+    "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "response": "{\"format\":\"tsv\",\"retentionDays\":3}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "tsv",
+          "passed": true,
+          "actual": "tsv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 3,
+          "passed": true,
+          "actual": 3
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 543,
+      "output": 16,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 559,
+      "cost": 0.001246
+    },
+    "latencyMs": 15402,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "stress-composition-off-1",
+    "caseId": "stress-composition",
+    "split": "dev",
+    "kind": "positive",
+    "category": "four-fact-composition",
+    "arm": "off",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+    "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+    "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "response": "{\"idColumn\":null,\"encoding\":null,\"emptyValue\":null,\"duplicatePolicy\":null}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 4,
+      "checks": [
+        {
+          "type": "field",
+          "path": "idColumn",
+          "expected": "account_ref",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "encoding",
+          "expected": "utf-16le",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "emptyValue",
+          "expected": "NA_VALUE",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "duplicatePolicy",
+          "expected": "keep-first",
+          "passed": false,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 551,
+      "output": 24,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 575,
+      "cost": 0.0013419999999999999
+    },
+    "latencyMs": 23356,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  }
+]

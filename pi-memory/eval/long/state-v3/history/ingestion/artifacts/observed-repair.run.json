@@ -1,0 +1,19 @@
+{
+  "name": "observed-repair",
+  "prompt": "Run node tools/probe.mjs FIRST so the actual environment failure is observed. Then inspect the script, fix only this invocation's environment, and rerun it successfully. Do not edit the probe. The successful output describes our verified recovery procedure. Explain the observed failure and successful fix briefly.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 75102,
+  "modelRequests": 10,
+  "usage": {
+    "input": 4317,
+    "output": 390,
+    "cacheRead": 23552,
+    "cacheWrite": 0,
+    "reasoning": 11,
+    "totalTokens": 28259,
+    "cost": 0.0148892
+  },
+  "finalText": "The first run failed with `E_ORDER`: the probe requires `INGEST_ORDER=tenant-first`.\n\nAfter inspecting `tools/probe.mjs`, I reran it successfully with an invocation-only environment override:\n\n```sh\nINGEST_ORDER=tenant-first node tools/probe.mjs\n```\n\nFilesystem assertions verified the recovery procedure: move the corrupt checkpoint to `recovery/checkpoint.bad.json`, preserve existing output, and replay while deduplicating by `(tenant, seq)`. All three events survived, including two tenants sharing sequence 1. Never truncate output.\n\nNo source files or persistent environment settings were changed. The visible test separately fails because `processBatch` is unimplemented; the CLI stub runs without output."
+}

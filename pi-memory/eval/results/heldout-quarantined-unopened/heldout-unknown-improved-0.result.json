@@ -1,0 +1,65 @@
+{
+  "runId": "heldout-unknown-improved-0",
+  "caseId": "heldout-unknown",
+  "split": "heldout",
+  "kind": "control",
+  "category": "unknown",
+  "arm": "improved",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+  "response": "{\"limit\":null,\"currency\":null}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "field",
+        "path": "limit",
+        "expected": null,
+        "passed": true,
+        "actual": null
+      },
+      {
+        "type": "field",
+        "path": "currency",
+        "expected": null,
+        "passed": true,
+        "actual": null
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvntuali9f06f7ae690873fad3a2"
+  ],
+  "selectedMemoryKeys": [
+    "draft-cost"
+  ],
+  "draftMemoryCount": 1,
+  "memoryIds": {
+    "draft-cost": {
+      "id": "m_mvntuali9f06f7ae690873fad3a2",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 384,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 714,
+    "output": 13,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 727,
+    "cost": 0.001558
+  },
+  "latencyMs": 2857,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

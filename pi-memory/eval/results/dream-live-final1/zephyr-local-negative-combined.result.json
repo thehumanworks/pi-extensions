@@ -1,0 +1,58 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 1,
+    "parentIds": [
+      "m_mvnwf08kfff6d4f82f07addbfb0f"
+    ],
+    "observed": true
+  },
+  "id": "zephyr-local-negative-combined",
+  "caseId": "zephyr-local-negative",
+  "arm": "combined",
+  "negative": true,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": null,
+    "workers": null,
+    "retries": null,
+    "timeoutSeconds": null,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": null,
+    "workers": null,
+    "retries": null,
+    "timeoutSeconds": null,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 963,
+    "output": 30,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 1127,
+  "selectedIds": [
+    "m_mvnwf08kfff6d4f82f07addbfb0f",
+    "m_mvnwf07lfec4def2ba3371392617"
+  ],
+  "sizes": {
+    "activeCount": 11,
+    "activeTextBytes": 6233,
+    "canonicalMarkdownBytes": 18744
+  },
+  "latencyMs": 3551
+}

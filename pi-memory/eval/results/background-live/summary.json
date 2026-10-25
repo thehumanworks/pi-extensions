@@ -1,0 +1,271 @@
+{
+  "model": "openai/gpt-6.1-sol",
+  "base": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-qfS4hI",
+  "sourceHashes": {
+    "index.ts": "a783f9c0cea3f893de34d60ed5f7ca4e21dfaaceef38100e707e0baf9629a862",
+    "src/config.ts": "6a5e7636f8260bf9584f6a846335b91ac2e9e6003ea9cb3b5761083861be7b16",
+    "src/dream.ts": "bc5982ae0908d97b7ece42748c502e50ea929159e28d77d4415cbe92bd5a2666",
+    "src/scheduler.ts": "43b42e25cc20b9f46ed36d5e2543435ce7e20f2a214223eba374c73e03536740",
+    "src/store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+    "src/retrieve.ts": "7ab4350dc65add3cae4a72eb983d67a5b832e7471cb42c9a0d4c260741769e26"
+  },
+  "sourceStable": true,
+  "passed": false,
+  "results": [
+    {
+      "scenario": "completion",
+      "model": "openai/gpt-6.1-sol",
+      "idleDelayMs": 1000,
+      "args": [
+        "-ne",
+        "-ns",
+        "-np",
+        "-nc",
+        "--no-mcp",
+        "--no-tools",
+        "--no-session",
+        "-e",
+        "/Users/tomas/pi-extensions/pi-memory/index.ts",
+        "--memory-dir",
+        "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-qfS4hI/completion/memory",
+        "--model",
+        "openai/gpt-6.1-sol",
+        "--thinking",
+        "low",
+        "--mode",
+        "rpc"
+      ],
+      "errors": [
+        "Automatic dreaming did not save a parent with actual provider usage"
+      ],
+      "settledAt": "2026-10-25T13:51:20.536Z",
+      "observedAt": "2026-10-25T13:51:29.753Z",
+      "dream": {
+        "event": "dream",
+        "status": "completed",
+        "savedIds": [],
+        "sourceIds": [
+          "m_mvnvyty6de6d1c01bcbb228500db",
+          "m_mvnvytyeba83f23d53f22bfc19d3",
+          "m_mvnvytykf8f11080fc371562f817"
+        ],
+        "hypotheses": [
+          {
+            "retention": "long",
+            "id": "h_578229af0935a45a4a954a1e",
+            "sourceIds": [
+              "m_mvnvyty6de6d1c01bcbb228500db",
+              "m_mvnvytyeba83f23d53f22bfc19d3",
+              "m_mvnvytykf8f11080fc371562f817"
+            ],
+            "title": "Larch staging preflight requirements and service-specific verification",
+            "body": "For every Larch staging operation, the operator must inspect the complete preflight report, confirm that all staged migration checks passed, and record the verification identifier before applying any changes. The service-specific verification commands are `larch verify alpha`, `larch verify beta`, and `larch verify gamma` for alpha, beta, and gamma respectively. Production deployment is outside the scope of this staging procedure.",
+            "scope": "project:6a9669f391b4d184db903f6a",
+            "status": "unreviewed",
+            "path": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-qfS4hI/completion/memory/dream/hypotheses/h_578229af0935a45a4a954a1e.json",
+            "limitations": [
+              "Applies only to Larch staging in project:6a9669f391b4d184db903f6a; it does not define a production deployment procedure.",
+              "The three commands are service-specific variants, not interchangeable commands or evidence that all three must run for every operation."
+            ]
+          }
+        ],
+        "rejected": [
+          "Source group m_mvnvyty6de6d1c01bcbb228500db,m_mvnvytyeba83f23d53f22bfc19d3,m_mvnvytykf8f11080fc371562f817 has no smaller in-budget lossless representation"
+        ],
+        "usage": {
+          "input": 675,
+          "output": 227,
+          "cacheRead": 2048,
+          "cacheWrite": 0
+        },
+        "inputTokensEstimate": 0,
+        "outputTokensEstimate": 0,
+        "ceiling": {
+          "active": 3,
+          "activeBytes": 4573,
+          "softLimit": null,
+          "softByteLimit": 1000000,
+          "overLimit": false,
+          "destructive": false
+        }
+      },
+      "items": [
+        {
+          "id": "m_mvnvyty6de6d1c01bcbb228500db",
+          "scope": "project:6a9669f391b4d184db903f6a",
+          "type": "project",
+          "title": "Larch staging alpha",
+          "summary": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm that all staged migration checks passed, and record the verification identifier before applying any changes. Production deployment is outside the scope of this staging procedure. The verification co",
+          "keywords": [
+            "larch",
+            "staging"
+          ],
+          "triggers": [],
+          "paths": [],
+          "importance": 5,
+          "confidence": 0.95,
+          "source": {
+            "session": "synthetic-scheduler-fixture",
+            "entries": [
+              "u0"
+            ],
+            "origin": "user_statement"
+          },
+          "sources": [
+            {
+              "session": "synthetic-scheduler-fixture",
+              "entries": [
+                "u0"
+              ],
+              "origin": "user_statement"
+            }
+          ],
+          "supersedes": [],
+          "links": [],
+          "status": "active",
+          "created": "2026-10-25T13:51:17.789Z",
+          "updated": "2026-10-25T13:51:17.789Z",
+          "last_used": "2026-10-25T13:51:17.789Z",
+          "stats": {
+            "injected": 0,
+            "used": 0,
+            "helpful": 0,
+            "harmful": 0
+          },
+          "retention": "long",
+          "body": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm that all staged migration checks passed, and record the verification identifier before applying any changes. Production deployment is outside the scope of this staging procedure. The verification command for this staging service is larch verify alpha."
+        },
+        {
+          "id": "m_mvnvytyeba83f23d53f22bfc19d3",
+          "scope": "project:6a9669f391b4d184db903f6a",
+          "type": "project",
+          "title": "Larch staging beta",
+          "summary": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm that all staged migration checks passed, and record the verification identifier before applying any changes. Production deployment is outside the scope of this staging procedure. The verification co",
+          "keywords": [
+            "larch",
+            "staging"
+          ],
+          "triggers": [],
+          "paths": [],
+          "importance": 5,
+          "confidence": 0.95,
+          "source": {
+            "session": "synthetic-scheduler-fixture",
+            "entries": [
+              "u1"
+            ],
+            "origin": "user_statement"
+          },
+          "sources": [
+            {
+              "session": "synthetic-scheduler-fixture",
+              "entries": [
+                "u1"
+              ],
+              "origin": "user_statement"
+            }
+          ],
+          "supersedes": [],
+          "links": [],
+          "status": "active",
+          "created": "2026-10-25T13:51:17.798Z",
+          "updated": "2026-10-25T13:51:17.798Z",
+          "last_used": "2026-10-25T13:51:17.798Z",
+          "stats": {
+            "injected": 0,
+            "used": 0,
+            "helpful": 0,
+            "harmful": 0
+          },
+          "retention": "long",
+          "body": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm that all staged migration checks passed, and record the verification identifier before applying any changes. Production deployment is outside the scope of this staging procedure. The verification command for this staging service is larch verify beta."
+        },
+        {
+          "id": "m_mvnvytykf8f11080fc371562f817",
+          "scope": "project:6a9669f391b4d184db903f6a",
+          "type": "project",
+          "title": "Larch staging gamma",
+          "summary": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm that all staged migration checks passed, and record the verification identifier before applying any changes. Production deployment is outside the scope of this staging procedure. The verification co",
+          "keywords": [
+            "larch",
+            "staging"
+          ],
+          "triggers": [],
+          "paths": [],
+          "importance": 5,
+          "confidence": 0.95,
+          "source": {
+            "session": "synthetic-scheduler-fixture",
+            "entries": [
+              "u2"
+            ],
+            "origin": "user_statement"
+          },
+          "sources": [
+            {
+              "session": "synthetic-scheduler-fixture",
+              "entries": [
+                "u2"
+              ],
+              "origin": "user_statement"
+            }
+          ],
+          "supersedes": [],
+          "links": [],
+          "status": "active",
+          "created": "2026-10-25T13:51:17.804Z",
+          "updated": "2026-10-25T13:51:17.804Z",
+          "last_used": "2026-10-25T13:51:17.804Z",
+          "stats": {
+            "injected": 0,
+            "used": 0,
+            "helpful": 0,
+            "harmful": 0
+          },
+          "retention": "long",
+          "body": "Every Larch staging operation requires the operator to inspect the complete preflight report, confirm that all staged migration checks passed, and record the verification identifier before applying any changes. Production deployment is outside the scope of this staging procedure. The verification command for this staging service is larch verify gamma."
+        }
+      ],
+      "completedDreamCalls": 1,
+      "finalResponses": [
+        "ACK",
+        "READY"
+      ]
+    },
+    {
+      "scenario": "cancel-before-start",
+      "model": "openai/gpt-6.1-sol",
+      "idleDelayMs": 5000,
+      "args": [
+        "-ne",
+        "-ns",
+        "-np",
+        "-nc",
+        "--no-mcp",
+        "--no-tools",
+        "--no-session",
+        "-e",
+        "/Users/tomas/pi-extensions/pi-memory/index.ts",
+        "--memory-dir",
+        "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-background-qfS4hI/cancel-before-start/memory",
+        "--model",
+        "openai/gpt-6.1-sol",
+        "--thinking",
+        "low",
+        "--mode",
+        "rpc"
+      ],
+      "errors": [],
+      "settledAt": "2026-10-25T13:51:37.566Z",
+      "scheduler": null,
+      "finalResponses": [
+        "ACK"
+      ]
+    }
+  ],
+  "limitations": [
+    "Synthetic canonical sources and persisted pending trigger isolate scheduler integration; automatic source capture and threshold detection are tested separately",
+    "Cancellation case cancels before inference, while in-flight cancellation and durable retry are covered by scheduler unit tests",
+    "This measures execution and provider usage, not semantic quality or user-perceived latency under load"
+  ]
+}

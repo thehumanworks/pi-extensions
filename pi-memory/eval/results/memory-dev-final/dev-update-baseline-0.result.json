@@ -1,0 +1,76 @@
+{
+  "runId": "dev-update-baseline-0",
+  "caseId": "dev-update",
+  "split": "dev",
+  "kind": "positive",
+  "category": "temporal-update",
+  "arm": "baseline",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+  "response": "{\"region\":\"canary-west\",\"autoPromote\":false,\"batchSize\":17}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 3,
+    "total": 3,
+    "checks": [
+      {
+        "type": "field",
+        "path": "region",
+        "expected": "canary-west",
+        "passed": true,
+        "actual": "canary-west"
+      },
+      {
+        "type": "field",
+        "path": "autoPromote",
+        "expected": false,
+        "passed": true,
+        "actual": false
+      },
+      {
+        "type": "field",
+        "path": "batchSize",
+        "expected": 17,
+        "passed": true,
+        "actual": 17
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvntpxwedacd2bb665c69cdd3285"
+  ],
+  "selectedMemoryKeys": [
+    "new-rollout"
+  ],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "old-rollout": {
+      "id": "m_mvntpxw7d5ff2d01d6991de89922",
+      "scope": "project"
+    },
+    "new-rollout": {
+      "id": "m_mvntpxwedacd2bb665c69cdd3285",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 409,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 718,
+    "output": 22,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 740,
+    "cost": 0.001656
+  },
+  "latencyMs": 4227,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

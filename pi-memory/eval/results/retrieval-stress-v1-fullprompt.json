@@ -1,0 +1,87 @@
+{
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "created": "2026-10-25T12:42:36.826Z",
+  "rows": [
+    {
+      "caseId": "stress-trust",
+      "strategy": "baseline",
+      "selectedKeys": [
+        "signed",
+        "draft-0"
+      ],
+      "draftCount": 1,
+      "injectedTokenUpperBound": 1052
+    },
+    {
+      "caseId": "stress-trust",
+      "strategy": "improved",
+      "selectedKeys": [
+        "signed",
+        "draft-22"
+      ],
+      "draftCount": 1,
+      "injectedTokenUpperBound": 1056
+    },
+    {
+      "caseId": "stress-composition",
+      "strategy": "baseline",
+      "selectedKeys": [
+        "empty",
+        "column",
+        "encoding"
+      ],
+      "draftCount": 0,
+      "injectedTokenUpperBound": 1064
+    },
+    {
+      "caseId": "stress-composition",
+      "strategy": "improved",
+      "selectedKeys": [
+        "empty",
+        "column",
+        "encoding"
+      ],
+      "draftCount": 0,
+      "injectedTokenUpperBound": 1064
+    },
+    {
+      "caseId": "stress-paraphrase",
+      "strategy": "baseline",
+      "selectedKeys": [
+        "verified-boot",
+        "draft-0"
+      ],
+      "draftCount": 1,
+      "injectedTokenUpperBound": 1096
+    },
+    {
+      "caseId": "stress-paraphrase",
+      "strategy": "improved",
+      "selectedKeys": [
+        "draft-23"
+      ],
+      "draftCount": 1,
+      "injectedTokenUpperBound": 705
+    },
+    {
+      "caseId": "stress-override",
+      "strategy": "baseline",
+      "selectedKeys": [
+        "defaults",
+        "draft-2"
+      ],
+      "draftCount": 1,
+      "injectedTokenUpperBound": 963
+    },
+    {
+      "caseId": "stress-override",
+      "strategy": "improved",
+      "selectedKeys": [
+        "defaults",
+        "draft-23"
+      ],
+      "draftCount": 1,
+      "injectedTokenUpperBound": 965
+    }
+  ]
+}

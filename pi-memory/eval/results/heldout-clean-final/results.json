@@ -1,0 +1,1650 @@
+[
+  {
+    "runId": "heldout-convention-off-0",
+    "caseId": "heldout-convention",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "off",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"unknown\":true}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 3,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            0
+          ],
+          "expected": 7,
+          "passed": false,
+          "error": "Missing executable code"
+        },
+        {
+          "type": "code",
+          "args": [
+            2
+          ],
+          "expected": 28,
+          "passed": false,
+          "error": "Missing executable code"
+        },
+        {
+          "type": "code",
+          "args": [
+            8
+          ],
+          "expected": 37,
+          "passed": false,
+          "error": "Missing executable code"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 554,
+      "output": 27,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 16,
+      "totalTokens": 581,
+      "cost": 0.001378
+    },
+    "latencyMs": 4783,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-convention-baseline-0",
+    "caseId": "heldout-convention",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"code\":\"function solve(attempt) { return attempt >= 3 ? 37 : 7 * (2 ** attempt); }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            0
+          ],
+          "expected": 7,
+          "passed": true,
+          "actual": 7
+        },
+        {
+          "type": "code",
+          "args": [
+            2
+          ],
+          "expected": 28,
+          "passed": true,
+          "actual": 28
+        },
+        {
+          "type": "code",
+          "args": [
+            8
+          ],
+          "expected": 37,
+          "passed": true,
+          "actual": 37
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu58d8abad8db8d4be003f5a7f"
+    ],
+    "selectedMemoryKeys": [
+      "delay-policy"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "delay-policy": {
+        "id": "m_mvnu58d8abad8db8d4be003f5a7f",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 399,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 764,
+      "output": 32,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 796,
+      "cost": 0.0018479999999999998
+    },
+    "latencyMs": 5449,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-context-off-0",
+    "caseId": "heldout-context",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "temporal-multi-fact",
+    "arm": "off",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"signatureHeader\":null,\"maxAttempts\":null,\"timeoutMs\":null}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "signatureHeader",
+          "expected": "x-meridian-proof",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "maxAttempts",
+          "expected": 23,
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "timeoutMs",
+          "expected": 1700,
+          "passed": false,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 544,
+      "output": 20,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 564,
+      "cost": 0.001288
+    },
+    "latencyMs": 3155,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-convention-improved-0",
+    "caseId": "heldout-convention",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"code\":\"function solve(attempt) { return Math.min(37, 7 * Math.pow(2, attempt)); }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            0
+          ],
+          "expected": 7,
+          "passed": true,
+          "actual": 7
+        },
+        {
+          "type": "code",
+          "args": [
+            2
+          ],
+          "expected": 28,
+          "passed": true,
+          "actual": 28
+        },
+        {
+          "type": "code",
+          "args": [
+            8
+          ],
+          "expected": 37,
+          "passed": true,
+          "actual": 37
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5c22cb941f0963b01a88ec22"
+    ],
+    "selectedMemoryKeys": [
+      "delay-policy"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "delay-policy": {
+        "id": "m_mvnu5c22cb941f0963b01a88ec22",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 399,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 762,
+      "output": 31,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 793,
+      "cost": 0.001834
+    },
+    "latencyMs": 4498,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-context-baseline-0",
+    "caseId": "heldout-context",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "temporal-multi-fact",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"signatureHeader\":\"x-meridian-proof\",\"maxAttempts\":23,\"timeoutMs\":1700}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "signatureHeader",
+          "expected": "x-meridian-proof",
+          "passed": true,
+          "actual": "x-meridian-proof"
+        },
+        {
+          "type": "field",
+          "path": "maxAttempts",
+          "expected": 23,
+          "passed": true,
+          "actual": 23
+        },
+        {
+          "type": "field",
+          "path": "timeoutMs",
+          "expected": 1700,
+          "passed": true,
+          "actual": 1700
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5f1uf86532a37ee7f418093d",
+      "m_mvnu5f2b3e293202283fd6100cb5"
+    ],
+    "selectedMemoryKeys": [
+      "webhook-new",
+      "signature"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "webhook-old": {
+        "id": "m_mvnu5f1n91e155f30a62d10ae2b6",
+        "scope": "project"
+      },
+      "webhook-new": {
+        "id": "m_mvnu5f1uf86532a37ee7f418093d",
+        "scope": "project"
+      },
+      "signature": {
+        "id": "m_mvnu5f2b3e293202283fd6100cb5",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 607,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 807,
+      "output": 24,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 831,
+      "cost": 0.001854
+    },
+    "latencyMs": 2888,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-unknown-off-0",
+    "caseId": "heldout-unknown",
+    "split": "heldout",
+    "kind": "control",
+    "category": "unknown",
+    "arm": "off",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"limit\":null,\"currency\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "limit",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "currency",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 551,
+      "output": 13,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 564,
+      "cost": 0.001232
+    },
+    "latencyMs": 4007,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-context-improved-0",
+    "caseId": "heldout-context",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "temporal-multi-fact",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"signatureHeader\":\"x-meridian-proof\",\"maxAttempts\":23,\"timeoutMs\":1700}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "signatureHeader",
+          "expected": "x-meridian-proof",
+          "passed": true,
+          "actual": "x-meridian-proof"
+        },
+        {
+          "type": "field",
+          "path": "maxAttempts",
+          "expected": 23,
+          "passed": true,
+          "actual": 23
+        },
+        {
+          "type": "field",
+          "path": "timeoutMs",
+          "expected": 1700,
+          "passed": true,
+          "actual": 1700
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5fkbfc77dd9bd14f2ed86388",
+      "m_mvnu5fks684ffeb608816a4a4897"
+    ],
+    "selectedMemoryKeys": [
+      "webhook-new",
+      "signature"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "webhook-old": {
+        "id": "m_mvnu5fk497278aff838be733f9f6",
+        "scope": "project"
+      },
+      "webhook-new": {
+        "id": "m_mvnu5fkbfc77dd9bd14f2ed86388",
+        "scope": "project"
+      },
+      "signature": {
+        "id": "m_mvnu5fks684ffeb608816a4a4897",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 607,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 806,
+      "output": 24,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 830,
+      "cost": 0.001852
+    },
+    "latencyMs": 9647,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-unknown-baseline-0",
+    "caseId": "heldout-unknown",
+    "split": "heldout",
+    "kind": "control",
+    "category": "unknown",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"limit\":null,\"currency\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "limit",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "currency",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5kf25c2d4456ffcd2c7c939e"
+    ],
+    "selectedMemoryKeys": [
+      "draft-cost"
+    ],
+    "draftMemoryCount": 1,
+    "memoryIds": {
+      "draft-cost": {
+        "id": "m_mvnu5kf25c2d4456ffcd2c7c939e",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 391,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 752,
+      "output": 13,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 765,
+      "cost": 0.001634
+    },
+    "latencyMs": 4517,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-unknown-improved-0",
+    "caseId": "heldout-unknown",
+    "split": "heldout",
+    "kind": "control",
+    "category": "unknown",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"limit\":null,\"currency\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "limit",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "currency",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5n21ce77be50cfd1d352293f"
+    ],
+    "selectedMemoryKeys": [
+      "draft-cost"
+    ],
+    "draftMemoryCount": 1,
+    "memoryIds": {
+      "draft-cost": {
+        "id": "m_mvnu5n21ce77be50cfd1d352293f",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 391,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 750,
+      "output": 13,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 763,
+      "cost": 0.00163
+    },
+    "latencyMs": 3041,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-override-off-0",
+    "caseId": "heldout-override",
+    "split": "heldout",
+    "kind": "control",
+    "category": "current-instruction-over-stale",
+    "arm": "off",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"format\":\"csv\",\"retentionDays\":2}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "csv",
+          "passed": true,
+          "actual": "csv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 2,
+          "passed": true,
+          "actual": 2
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 546,
+      "output": 15,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 561,
+      "cost": 0.0012419999999999998
+    },
+    "latencyMs": 3256,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-override-baseline-0",
+    "caseId": "heldout-override",
+    "split": "heldout",
+    "kind": "control",
+    "category": "current-instruction-over-stale",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"format\":\"csv\",\"retentionDays\":2}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "csv",
+          "passed": true,
+          "actual": "csv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 2,
+          "passed": true,
+          "actual": 2
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5pfsdb737403eaf9368d7900"
+    ],
+    "selectedMemoryKeys": [
+      "old-default"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "old-default": {
+        "id": "m_mvnu5pfsdb737403eaf9368d7900",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 413,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 749,
+      "output": 15,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 764,
+      "cost": 0.001648
+    },
+    "latencyMs": 2571,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-convention-baseline-1",
+    "caseId": "heldout-convention",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"code\":\"function solve(attempt) { return Math.min(7 * Math.pow(2, attempt), 37); }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            0
+          ],
+          "expected": 7,
+          "passed": true,
+          "actual": 7
+        },
+        {
+          "type": "code",
+          "args": [
+            2
+          ],
+          "expected": 28,
+          "passed": true,
+          "actual": 28
+        },
+        {
+          "type": "code",
+          "args": [
+            8
+          ],
+          "expected": 37,
+          "passed": true,
+          "actual": 37
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5rgf288b277706f889ce617d"
+    ],
+    "selectedMemoryKeys": [
+      "delay-policy"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "delay-policy": {
+        "id": "m_mvnu5rgf288b277706f889ce617d",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 399,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 760,
+      "output": 31,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 791,
+      "cost": 0.0018299999999999998
+    },
+    "latencyMs": 4248,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-override-improved-0",
+    "caseId": "heldout-override",
+    "split": "heldout",
+    "kind": "control",
+    "category": "current-instruction-over-stale",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"format\":\"csv\",\"retentionDays\":2}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "csv",
+          "passed": true,
+          "actual": "csv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 2,
+          "passed": true,
+          "actual": 2
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5qggb5d88e848daeea7347d8"
+    ],
+    "selectedMemoryKeys": [
+      "old-default"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "old-default": {
+        "id": "m_mvnu5qggb5d88e848daeea7347d8",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 413,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 752,
+      "output": 15,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 767,
+      "cost": 0.0016539999999999999
+    },
+    "latencyMs": 7350,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-convention-improved-1",
+    "caseId": "heldout-convention",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"code\":\"function solve(attempt) { return Math.min(7 * 2 ** attempt, 37); }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            0
+          ],
+          "expected": 7,
+          "passed": true,
+          "actual": 7
+        },
+        {
+          "type": "code",
+          "args": [
+            2
+          ],
+          "expected": 28,
+          "passed": true,
+          "actual": 28
+        },
+        {
+          "type": "code",
+          "args": [
+            8
+          ],
+          "expected": 37,
+          "passed": true,
+          "actual": 37
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5urk609f760512778a4d1935"
+    ],
+    "selectedMemoryKeys": [
+      "delay-policy"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "delay-policy": {
+        "id": "m_mvnu5urk609f760512778a4d1935",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 399,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 760,
+      "output": 29,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 789,
+      "cost": 0.00181
+    },
+    "latencyMs": 3513,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-convention-off-1",
+    "caseId": "heldout-convention",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "off",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"unknown\":true}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 3,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            0
+          ],
+          "expected": 7,
+          "passed": false,
+          "error": "Missing executable code"
+        },
+        {
+          "type": "code",
+          "args": [
+            2
+          ],
+          "expected": 28,
+          "passed": false,
+          "error": "Missing executable code"
+        },
+        {
+          "type": "code",
+          "args": [
+            8
+          ],
+          "expected": 37,
+          "passed": false,
+          "error": "Missing executable code"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 554,
+      "output": 27,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 16,
+      "totalTokens": 581,
+      "cost": 0.001378
+    },
+    "latencyMs": 3531,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-context-baseline-1",
+    "caseId": "heldout-context",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "temporal-multi-fact",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"signatureHeader\":\"x-meridian-proof\",\"maxAttempts\":23,\"timeoutMs\":1700}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "signatureHeader",
+          "expected": "x-meridian-proof",
+          "passed": true,
+          "actual": "x-meridian-proof"
+        },
+        {
+          "type": "field",
+          "path": "maxAttempts",
+          "expected": 23,
+          "passed": true,
+          "actual": 23
+        },
+        {
+          "type": "field",
+          "path": "timeoutMs",
+          "expected": 1700,
+          "passed": true,
+          "actual": 1700
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5xil1454f7871523b34a8f0e",
+      "m_mvnu5xj2eeb2eab3335a11abeaf4"
+    ],
+    "selectedMemoryKeys": [
+      "webhook-new",
+      "signature"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "webhook-old": {
+        "id": "m_mvnu5xie489db9b5b40b18d96e01",
+        "scope": "project"
+      },
+      "webhook-new": {
+        "id": "m_mvnu5xil1454f7871523b34a8f0e",
+        "scope": "project"
+      },
+      "signature": {
+        "id": "m_mvnu5xj2eeb2eab3335a11abeaf4",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 607,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 811,
+      "output": 24,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 835,
+      "cost": 0.001862
+    },
+    "latencyMs": 3643,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-context-off-1",
+    "caseId": "heldout-context",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "temporal-multi-fact",
+    "arm": "off",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"signatureHeader\":null,\"maxAttempts\":null,\"timeoutMs\":null}",
+    "score": 0,
+    "validation": {
+      "score": 0,
+      "passed": 0,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "signatureHeader",
+          "expected": "x-meridian-proof",
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "maxAttempts",
+          "expected": 23,
+          "passed": false,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "timeoutMs",
+          "expected": 1700,
+          "passed": false,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 544,
+      "output": 35,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 13,
+      "totalTokens": 579,
+      "cost": 0.001438
+    },
+    "latencyMs": 3241,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-context-improved-1",
+    "caseId": "heldout-context",
+    "split": "heldout",
+    "kind": "positive",
+    "category": "temporal-multi-fact",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"signatureHeader\":\"x-meridian-proof\",\"maxAttempts\":23,\"timeoutMs\":1700}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "signatureHeader",
+          "expected": "x-meridian-proof",
+          "passed": true,
+          "actual": "x-meridian-proof"
+        },
+        {
+          "type": "field",
+          "path": "maxAttempts",
+          "expected": 23,
+          "passed": true,
+          "actual": 23
+        },
+        {
+          "type": "field",
+          "path": "timeoutMs",
+          "expected": 1700,
+          "passed": true,
+          "actual": 1700
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu5yw868162748649915e013ae",
+      "m_mvnu5ywp371c3cb817b095348d91"
+    ],
+    "selectedMemoryKeys": [
+      "webhook-new",
+      "signature"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "webhook-old": {
+        "id": "m_mvnu5yw0ed8a0cc94a78aaee8820",
+        "scope": "project"
+      },
+      "webhook-new": {
+        "id": "m_mvnu5yw868162748649915e013ae",
+        "scope": "project"
+      },
+      "signature": {
+        "id": "m_mvnu5ywp371c3cb817b095348d91",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 607,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 802,
+      "output": 24,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 826,
+      "cost": 0.001844
+    },
+    "latencyMs": 9345,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-unknown-baseline-1",
+    "caseId": "heldout-unknown",
+    "split": "heldout",
+    "kind": "control",
+    "category": "unknown",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"limit\":null,\"currency\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "limit",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "currency",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu62vi98544df0718249b28ed2"
+    ],
+    "selectedMemoryKeys": [
+      "draft-cost"
+    ],
+    "draftMemoryCount": 1,
+    "memoryIds": {
+      "draft-cost": {
+        "id": "m_mvnu62vi98544df0718249b28ed2",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 391,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 748,
+      "output": 13,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 761,
+      "cost": 0.0016259999999999998
+    },
+    "latencyMs": 4559,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-unknown-off-1",
+    "caseId": "heldout-unknown",
+    "split": "heldout",
+    "kind": "control",
+    "category": "unknown",
+    "arm": "off",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"limit\":null,\"currency\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "limit",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "currency",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 551,
+      "output": 13,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 564,
+      "cost": 0.001232
+    },
+    "latencyMs": 3175,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-unknown-improved-1",
+    "caseId": "heldout-unknown",
+    "split": "heldout",
+    "kind": "control",
+    "category": "unknown",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"limit\":null,\"currency\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "limit",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "field",
+          "path": "currency",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu665j5aa5653b659c65dfa79c"
+    ],
+    "selectedMemoryKeys": [
+      "draft-cost"
+    ],
+    "draftMemoryCount": 1,
+    "memoryIds": {
+      "draft-cost": {
+        "id": "m_mvnu665j5aa5653b659c65dfa79c",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 391,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 749,
+      "output": 13,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 762,
+      "cost": 0.001628
+    },
+    "latencyMs": 4168,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-override-baseline-1",
+    "caseId": "heldout-override",
+    "split": "heldout",
+    "kind": "control",
+    "category": "current-instruction-over-stale",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"format\":\"csv\",\"retentionDays\":2}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "csv",
+          "passed": true,
+          "actual": "csv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 2,
+          "passed": true,
+          "actual": 2
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu68vld0ce150010d97e83d2e7"
+    ],
+    "selectedMemoryKeys": [
+      "old-default"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "old-default": {
+        "id": "m_mvnu68vld0ce150010d97e83d2e7",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 413,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 751,
+      "output": 15,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 766,
+      "cost": 0.0016519999999999998
+    },
+    "latencyMs": 2512,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-override-off-1",
+    "caseId": "heldout-override",
+    "split": "heldout",
+    "kind": "control",
+    "category": "current-instruction-over-stale",
+    "arm": "off",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"format\":\"csv\",\"retentionDays\":2}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "csv",
+          "passed": true,
+          "actual": "csv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 2,
+          "passed": true,
+          "actual": 2
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {},
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 546,
+      "output": 15,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 561,
+      "cost": 0.0012419999999999998
+    },
+    "latencyMs": 2721,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "heldout-override-improved-1",
+    "caseId": "heldout-override",
+    "split": "heldout",
+    "kind": "control",
+    "category": "current-instruction-over-stale",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+    "response": "{\"format\":\"csv\",\"retentionDays\":2}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "csv",
+          "passed": true,
+          "actual": "csv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 2,
+          "passed": true,
+          "actual": 2
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvnu69eff817243a51c36dde448a"
+    ],
+    "selectedMemoryKeys": [
+      "old-default"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "old-default": {
+        "id": "m_mvnu69eff817243a51c36dde448a",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 413,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 747,
+      "output": 15,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 762,
+      "cost": 0.0016439999999999998
+    },
+    "latencyMs": 4610,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  }
+]

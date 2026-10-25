@@ -1,0 +1,82 @@
+{
+  "runId": "heldout-context-baseline-0",
+  "caseId": "heldout-context",
+  "split": "heldout",
+  "kind": "positive",
+  "category": "temporal-multi-fact",
+  "arm": "baseline",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+  "response": "{\"signatureHeader\":\"x-meridian-proof\",\"maxAttempts\":23,\"timeoutMs\":1700}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 3,
+    "total": 3,
+    "checks": [
+      {
+        "type": "field",
+        "path": "signatureHeader",
+        "expected": "x-meridian-proof",
+        "passed": true,
+        "actual": "x-meridian-proof"
+      },
+      {
+        "type": "field",
+        "path": "maxAttempts",
+        "expected": 23,
+        "passed": true,
+        "actual": 23
+      },
+      {
+        "type": "field",
+        "path": "timeoutMs",
+        "expected": 1700,
+        "passed": true,
+        "actual": 1700
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvnu5f1uf86532a37ee7f418093d",
+    "m_mvnu5f2b3e293202283fd6100cb5"
+  ],
+  "selectedMemoryKeys": [
+    "webhook-new",
+    "signature"
+  ],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "webhook-old": {
+      "id": "m_mvnu5f1n91e155f30a62d10ae2b6",
+      "scope": "project"
+    },
+    "webhook-new": {
+      "id": "m_mvnu5f1uf86532a37ee7f418093d",
+      "scope": "project"
+    },
+    "signature": {
+      "id": "m_mvnu5f2b3e293202283fd6100cb5",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 607,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 807,
+    "output": 24,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 831,
+    "cost": 0.001854
+  },
+  "latencyMs": 2888,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

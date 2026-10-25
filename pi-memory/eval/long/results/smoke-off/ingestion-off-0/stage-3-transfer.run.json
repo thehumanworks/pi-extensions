@@ -1,0 +1,18 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "Work only in this synthetic repository. Implement working files, not a proposed solution. Use read, write and edit for files; bash is restricted to node --test or node <relative-script.mjs> commands, optionally prefixed by INGEST_ORDER=tenant-first or MIGRATION_LOCK_MODE=copy. No shell chains, redirects or network. Run the visible tests and the CLI. Keep existing data. Prior project decisions may be available as remembered evidence; apply current temporary overrides only for their stated lifetime. Do not write a separate policy/instructions document. Finish with a concise factual result.\n\nA different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 86,
+  "timedOut": false,
+  "latencyMs": 6466,
+  "modelRequests": 2,
+  "usage": {
+    "input": 2054,
+    "output": 40,
+    "cacheRead": 1664,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 3758,
+    "cost": 0.0046743999999999996
+  },
+  "finalText": ""
+}

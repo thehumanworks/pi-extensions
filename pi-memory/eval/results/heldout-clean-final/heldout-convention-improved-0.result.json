@@ -1,0 +1,78 @@
+{
+  "runId": "heldout-convention-improved-0",
+  "caseId": "heldout-convention",
+  "split": "heldout",
+  "kind": "positive",
+  "category": "project-convention",
+  "arm": "improved",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+  "response": "{\"code\":\"function solve(attempt) { return Math.min(37, 7 * Math.pow(2, attempt)); }\"}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 3,
+    "total": 3,
+    "checks": [
+      {
+        "type": "code",
+        "args": [
+          0
+        ],
+        "expected": 7,
+        "passed": true,
+        "actual": 7
+      },
+      {
+        "type": "code",
+        "args": [
+          2
+        ],
+        "expected": 28,
+        "passed": true,
+        "actual": 28
+      },
+      {
+        "type": "code",
+        "args": [
+          8
+        ],
+        "expected": 37,
+        "passed": true,
+        "actual": 37
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvnu5c22cb941f0963b01a88ec22"
+  ],
+  "selectedMemoryKeys": [
+    "delay-policy"
+  ],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "delay-policy": {
+      "id": "m_mvnu5c22cb941f0963b01a88ec22",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 399,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 762,
+    "output": 31,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 793,
+    "cost": 0.001834
+  },
+  "latencyMs": 4498,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "description": "Independent synthetic retrieval corpus. No production or paid evaluation cases are reused.",
+  "facts": [
+    { "key": "verification", "type": "procedure", "title": "Juniper worker verification", "body": "Run juniper-check before restarting the queue worker. Keep the queue paused until verification succeeds.", "keywords": ["juniper", "worker", "verification", "restart"], "query": "Juniper worker verification before restart", "action": "run juniper-check before restart" },
+    { "key": "restore", "type": "failure", "title": "Snapshot recovery order", "body": "Restore metadata before restoring object contents. Validate the manifest before reconnecting the object reader.", "keywords": ["snapshot", "recovery", "restore", "manifest"], "query": "Snapshot recovery restore manifest order", "action": "restore metadata before object contents" },
+    { "key": "encoding", "type": "project", "title": "CSV import encoding", "body": "Decode partner CSV files as UTF-8. Reject invalid byte sequences before parsing records.", "keywords": ["csv", "import", "encoding", "decode"], "query": "CSV import encoding decode", "action": "decode UTF-8 and reject invalid bytes" },
+    { "key": "approval", "type": "feedback", "title": "Production deployment approval", "body": "Obtain explicit approval before deploying to production. A passing preview build does not authorize production deployment.", "keywords": ["production", "deployment", "approval", "preview"], "query": "Production deployment approval after preview", "action": "obtain explicit approval before production deployment" },
+    { "key": "communication", "type": "preference", "scope": "global", "title": "Review communication format", "body": "Keep review summaries concise. List concrete blockers before optional improvements.", "keywords": ["review", "communication", "format", "concise"], "query": "Review communication format concise summaries", "action": "state blockers concisely before optional improvements" },
+    { "key": "accessibility", "type": "preference", "scope": "global", "title": "Diagram accessibility", "body": "Provide a text explanation alongside diagrams. Do not rely on color alone to distinguish states.", "keywords": ["diagram", "accessibility", "color", "explanation"], "query": "Diagram accessibility color explanation", "action": "include text and non-color state distinctions" }
+  ],
+  "noiseDomains": ["billing", "rendering", "telemetry", "catalog", "scheduler", "migration", "routing", "search", "analytics", "notifications"],
+  "noiseSubjects": ["worker", "verification", "recovery", "restore", "import", "encoding", "deployment", "approval", "review", "format"],
+  "abstentionQuery": "Lunar astronomy orbital eccentricity measurement"
+}

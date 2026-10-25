@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 99874,
+  "modelRequests": 13,
+  "usage": {
+    "input": 7149,
+    "output": 3052,
+    "cacheRead": 49920,
+    "cacheWrite": 0,
+    "reasoning": 117,
+    "totalTokens": 60121,
+    "cost": 0.04981
+  },
+  "finalText": "Implemented `src/ingest.mjs` and `bin/ingest.mjs`.\n\n- Streams NDJSON incrementally and preserves original records and arrival order.\n- Defaults to **4 accepted records** per batch; explicit sizes override it.\n- Deduplicates by `(tenant, seq)`, including previously written output.\n- Quarantines malformed records in `rejected.ndjson` beside the output.\n- Saves `{nextLine}` via atomic rename.\n- Preserves corrupt checkpoints under `recovery/` and replays without erasing output.\n\n**Validation:** All 4 tests pass.\n\nCLI demonstrated using `fixtures/events.ndjson` and `work/ingest-demo/`:\n- Default batch: 4 accepted, `nextLine: 4`\n- Explicit batch of 2: 2 accepted, `nextLine: 6`\n- Resume: 1 accepted, `nextLine: 7`\n- Repeat at EOF: 0 accepted, `nextLine: 7`"
+}

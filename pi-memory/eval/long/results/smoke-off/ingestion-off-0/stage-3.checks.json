@@ -1,0 +1,91 @@
+{
+  "project": "ingestion",
+  "stage": 3,
+  "checks": [
+    {
+      "name": "module-load",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Access to this API has been restricted. Use --allow-fs-read to manage permissions."
+    },
+    {
+      "name": "explicit batch limit and checkpoint",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "resume appends without repeating prior records",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "duplicates within tenant are suppressed",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "small batch does not materialize a 48 MiB input",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "current default batch is four",
+      "category": "memory",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "identity includes tenant",
+      "category": "memory",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "malformed line is quarantined and processing continues",
+      "category": "memory",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "temporary override was actually reported",
+      "category": "action",
+      "passed": true
+    },
+    {
+      "name": "expired override does not affect later action",
+      "category": "memory",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n7 !== 4\n"
+    },
+    {
+      "name": "new corrupt checkpoint preserves output and replays safely",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "recovery keeps corrupt checkpoint at agreed location",
+      "category": "memory",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "actual repair run preserved all three events",
+      "category": "action",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n1 !== 3\n"
+    }
+  ],
+  "categoryScores": {
+    "intrinsic": 0,
+    "memory": 0,
+    "action": 0.5
+  },
+  "complete": false,
+  "passed": 1,
+  "total": 13
+}

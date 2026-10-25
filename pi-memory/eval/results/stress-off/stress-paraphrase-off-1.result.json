@@ -1,0 +1,53 @@
+{
+  "runId": "stress-paraphrase-off-1",
+  "caseId": "stress-paraphrase",
+  "split": "dev",
+  "kind": "positive",
+  "category": "paraphrased-failure",
+  "arm": "off",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+  "sourceHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "response": "{\"env\":{},\"restart\":null}",
+  "score": 0,
+  "validation": {
+    "score": 0,
+    "passed": 0,
+    "total": 2,
+    "checks": [
+      {
+        "type": "field",
+        "path": "env.NACRE_INIT_MODE",
+        "expected": "serial",
+        "passed": false
+      },
+      {
+        "type": "field",
+        "path": "restart",
+        "expected": true,
+        "passed": false,
+        "actual": null
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 552,
+    "output": 35,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 20,
+    "totalTokens": 587,
+    "cost": 0.001454
+  },
+  "latencyMs": 3516,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

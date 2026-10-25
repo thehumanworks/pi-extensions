@@ -1,0 +1,151 @@
+[
+  {
+    "id": "m_mvnwdd9p7e017c41f1f43ac12d56",
+    "scope": "project:35b801ca9620d95016156a71",
+    "type": "insight",
+    "title": "Condensed: Beacon staging timeout",
+    "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+    "keywords": [
+      "beacon",
+      "staging",
+      "verification"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vKmqwF/corpus/dream/runs/952cb7a3a7c4579191dd71aa58ac2b8c675715cac0e4b96a405aa1bb44c20769.json",
+      "entries": [
+        "m_mvnwcxax0ef35d9a2ee56d267546",
+        "m_mvnwcxbc37091fcacd94803e6270",
+        "m_mvnwcxbl7637f9bf5e090583a36d"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vKmqwF/corpus/dream/runs/952cb7a3a7c4579191dd71aa58ac2b8c675715cac0e4b96a405aa1bb44c20769.json",
+        "entries": [
+          "m_mvnwcxax0ef35d9a2ee56d267546",
+          "m_mvnwcxbc37091fcacd94803e6270",
+          "m_mvnwcxbl7637f9bf5e090583a36d"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:02:36.013Z",
+    "updated": "2026-10-25T14:02:36.013Z",
+    "last_used": "2026-10-25T14:02:36.013Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Shared statements (apply only to contexts referencing them):\nF1: For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed.\nF2: Never use the Beacon staging verification command against production.\n\nContext: Beacon staging timeout\n[F1] [F2] Beacon staging verification has a 45 second timeout.\n\nContext: Beacon staging retries\n[F1] [F2] Beacon staging verification permits 2 retries.\n\nContext: Beacon staging workers\n[F1] [F2] Beacon staging verification uses 3 workers."
+  },
+  {
+    "id": "m_mvnwdd9x5412284750d0da7e7e40",
+    "scope": "project:35b801ca9620d95016156a71",
+    "type": "insight",
+    "title": "Condensed: Zephyr staging deployment",
+    "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+    "keywords": [
+      "zephyr",
+      "deployment",
+      "preflight"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vKmqwF/corpus/dream/runs/952cb7a3a7c4579191dd71aa58ac2b8c675715cac0e4b96a405aa1bb44c20769.json",
+      "entries": [
+        "m_mvnwcxbv08051d52a77f00d859ba",
+        "m_mvnwcxc1783a6db9079cc40d0882"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vKmqwF/corpus/dream/runs/952cb7a3a7c4579191dd71aa58ac2b8c675715cac0e4b96a405aa1bb44c20769.json",
+        "entries": [
+          "m_mvnwcxbv08051d52a77f00d859ba",
+          "m_mvnwcxc1783a6db9079cc40d0882"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:02:36.021Z",
+    "updated": "2026-10-25T14:02:36.021Z",
+    "last_used": "2026-10-25T14:02:36.021Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Shared statements (apply only to contexts referencing them):\nF1: Zephyr deployments require a passing preflight before any apply operation.\nF2: Use only the command and limits specified for the named deployment environment.\n\nContext: Zephyr staging deployment\n[F1] [F2] For Zephyr staging, use `zx stage-apply` with 3 workers, 2 retries and a 30 second timeout.\n\nContext: Zephyr production deployment\n[F1] [F2] For Zephyr production, use `zx prod-apply` with 1 worker, 0 retries and a 90 second timeout."
+  },
+  {
+    "id": "m_mvnwdda452958daece20fd389765",
+    "scope": "project:35b801ca9620d95016156a71",
+    "type": "insight",
+    "title": "Condensed: Mercator export standard limits",
+    "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+    "keywords": [
+      "mercator",
+      "export",
+      "limits"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vKmqwF/corpus/dream/runs/952cb7a3a7c4579191dd71aa58ac2b8c675715cac0e4b96a405aa1bb44c20769.json",
+      "entries": [
+        "m_mvnwcxc6f91eb3d72eb8da1ed23f",
+        "m_mvnwcxcc9d8d66440cccc0c1c654",
+        "m_mvnwcxcjbc155f3be55661211505"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vKmqwF/corpus/dream/runs/952cb7a3a7c4579191dd71aa58ac2b8c675715cac0e4b96a405aa1bb44c20769.json",
+        "entries": [
+          "m_mvnwcxc6f91eb3d72eb8da1ed23f",
+          "m_mvnwcxcc9d8d66440cccc0c1c654",
+          "m_mvnwcxcjbc155f3be55661211505"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:02:36.028Z",
+    "updated": "2026-10-25T14:02:36.028Z",
+    "last_used": "2026-10-25T14:02:36.028Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "short",
+    "expiresAt": "2026-10-25T15:02:15.097Z",
+    "body": "Shared statements (apply only to contexts referencing them):\nF1: Mercator exports run `mc export --batch` only after the export preflight passes.\nF2: A dated incident restriction overrides the standard limits only within the stated period and export type.\n\nContext: Mercator export standard limits\n[F1] [F2] Standard Mercator exports use 4 workers and a 60 second timeout.\n\nContext: Mercator export standard retries\n[F1] [F2] Standard Mercator exports permit 2 retries.\n\nContext: Mercator export incident limits\n[F1] [F2] Until 2026-10-25T15:02:15.097Z, invoice exports alone must use 1 worker and 0 retries; the timeout stays 60 seconds. Other export types keep the standard limits."
+  }
+]

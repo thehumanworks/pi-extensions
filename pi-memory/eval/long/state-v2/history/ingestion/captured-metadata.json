@@ -1,0 +1,158 @@
+[
+  {
+    "id": "m_mvnvkf4715217ca25b72fbf20146",
+    "scope": "project:3a558a15acd081cbba9db439",
+    "type": "project",
+    "title": "Ingestion batching, event identity, and preservation rules",
+    "summary": "Ingestion defaults to batches of two accepted records with tenant-and-seq identity and unchanged events in arrival order.",
+    "keywords": [
+      "ingestion",
+      "batch size",
+      "tenant",
+      "seq",
+      "identity",
+      "arrival order"
+    ],
+    "triggers": [
+      "implementing ingestion",
+      "deduplicating events",
+      "batching records"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/ingestion/sessions/2026-10-25T13-39-44-212Z_d173c1ff-a43a-4663-a1bb-c51792e7d817.jsonl",
+      "entries": [
+        "b3df8ee1"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/ingestion/sessions/2026-10-25T13-39-44-212Z_d173c1ff-a43a-4663-a1bb-c51792e7d817.jsonl",
+        "entries": [
+          "b3df8ee1"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T13:40:05.383Z",
+    "updated": "2026-10-25T13:40:49.781Z",
+    "last_used": "2026-10-25T13:40:36.023Z",
+    "stats": {
+      "injected": 1,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 1
+    },
+    "retention": "long"
+  },
+  {
+    "id": "m_mvnvkf4c23e9d8546c903f4c59a6",
+    "scope": "project:3a558a15acd081cbba9db439",
+    "type": "project",
+    "title": "Ingestion must quarantine malformed lines and preserve checkpoint output",
+    "summary": "Ingestion must continue after quarantining malformed lines and recover checkpoints without erasing existing output.",
+    "keywords": [
+      "ingestion",
+      "malformed",
+      "rejected.ndjson",
+      "checkpoint",
+      "recovery",
+      "output"
+    ],
+    "triggers": [
+      "handling malformed input",
+      "implementing checkpoint recovery"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/ingestion/sessions/2026-10-25T13-39-44-212Z_d173c1ff-a43a-4663-a1bb-c51792e7d817.jsonl",
+      "entries": [
+        "b3df8ee1"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/ingestion/sessions/2026-10-25T13-39-44-212Z_d173c1ff-a43a-4663-a1bb-c51792e7d817.jsonl",
+        "entries": [
+          "b3df8ee1"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T13:40:05.388Z",
+    "updated": "2026-10-25T13:40:49.785Z",
+    "last_used": "2026-10-25T13:40:36.023Z",
+    "stats": {
+      "injected": 2,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long"
+  },
+  {
+    "id": "m_mvnvkf4fa3ddc97c8d8e03fd65ee",
+    "scope": "project:3a558a15acd081cbba9db439",
+    "type": "project",
+    "title": "Auxiliary config region and retry overrides are ingestion-only",
+    "summary": "Ingestion auxiliary configs use us-west-9 and retry 11/900, explicitly excluded from migration.",
+    "keywords": [
+      "ingestion",
+      "migration",
+      "auxiliary configs",
+      "region",
+      "us-west-9",
+      "retry",
+      "maxAttempts",
+      "backoffMs"
+    ],
+    "triggers": [
+      "configuring ingestion auxiliaries",
+      "sharing configuration with migration"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/ingestion/sessions/2026-10-25T13-39-44-212Z_d173c1ff-a43a-4663-a1bb-c51792e7d817.jsonl",
+      "entries": [
+        "b3df8ee1"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v2/history/ingestion/sessions/2026-10-25T13-39-44-212Z_d173c1ff-a43a-4663-a1bb-c51792e7d817.jsonl",
+        "entries": [
+          "b3df8ee1"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T13:40:05.391Z",
+    "updated": "2026-10-25T13:40:49.787Z",
+    "last_used": "2026-10-25T13:40:36.023Z",
+    "stats": {
+      "injected": 2,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long"
+  }
+]

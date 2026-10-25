@@ -1,0 +1,82 @@
+{
+  "status": "frozen-verified-not-applied",
+  "isolatedCopy": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-review-final-abr2zsrr/pi-memory",
+  "patch": "/Users/tomas/pi-extensions/pi-memory/docs/reviews/capture-hardening.patch",
+  "patchSha256": "ed65adb1125ea3b775deaff7552d34383c46c819758fce97d932343677d02ce3",
+  "workspaceProductionUnchanged": true,
+  "hashes": {
+    "src/capture.ts": {
+      "before": "497d3e7e3110a813cebd353e88bab65f91d23fe2e351d7d8025000f668bd55e9",
+      "after": "a6af1ebb682f9162f8e594f15dddbd173f99e8eb4bf05abd80850952d332cc29"
+    },
+    "index.ts": {
+      "before": "31ef2b27cf8638ba949674912e675f6901d0fcf0c896734fb33d39e62ac703b4",
+      "after": "c225b057153f6a7483a2bfbb2473e6afe732bbb39dbf60f58ca3c5856214d1b7"
+    },
+    "test/capture.test.ts": {
+      "before": "d2f5a22be67e1fbbd78b0219c08bc98b2b34b495debeee83201fcce50e3acb30",
+      "after": "8302219bd2e2d0c9ea953c2af4ce1f5c3b87795899d9ac5e28a6440ad721324e"
+    },
+    "test/extension.test.ts": {
+      "before": "7918d7b6fc0d8edf22106346ec265b8cea3cdb8c3ea5754038667e53a721fd60",
+      "after": "51d8b218a884c2426ae65e6ce0d236a42b1fed9f8d9c0fdb065d815107ef2105"
+    },
+    "test/capture-live.mjs": {
+      "before": "6d264a7a8de2334c986ff7ad80c5ed44f837cd46012bf9a4d7d2d36fc25e2b0f",
+      "after": "b97ab6a0a714090489c2066323c89eb13b5ab62f7dbfd7ed68d200cee22a2a3a"
+    }
+  },
+  "checks": {
+    "allDeterministicTypeScriptTests": {
+      "passed": 126,
+      "failed": 0
+    },
+    "captureTests": {
+      "passed": 55,
+      "failed": 0
+    },
+    "notificationRegressions": [
+      "one notice for malformed envelope or invalid source from one model call",
+      "one notice for invalid curate operation from its reflect+curate calls",
+      "subsequent capture makes no additional model call or notice",
+      "no unsupported facts stored",
+      "temporary-without-lifetime and already-documented skips remain quiet",
+      "resumed rejection reaches the existing notice flow once",
+      "resumed saved outcome reaches maintenance even when current capture skips"
+    ],
+    "typescript": "pass",
+    "gitApplyCheck": "pass",
+    "liveCapturePreFinalMalformedRepairGuard": {
+      "passed": 7,
+      "sessions": 7,
+      "sourceStable": true,
+      "artifact": "eval/results/capture-repair-final/summary.json"
+    },
+    "liveCaptureFinal": {
+      "passed": 7,
+      "sessions": 7,
+      "sourceStable": true,
+      "allFinalSourceHashesMatch": true,
+      "unchangedSurroundingTextPreserved": true,
+      "artifact": "eval/results/capture-repair-release/summary.json"
+    }
+  },
+  "semantics": [
+    "Completed malformed JSON/envelopes and output-contract length violations checkpoint once with diagnostics; no automatic retry.",
+    "Invalid curator operations reject only their candidate, retaining valid siblings. Missing/duplicate operations reject that candidate. Diagnostics capped at 32 reasons, each 200 characters.",
+    "Network/provider errors and cancellation preserve pending evidence for retry. Original session evidence is not deleted or rewritten.",
+    "Standalone neighboring facts beginning Until or For the next do not qualify the preceding fact. Bare following expiry, direct anaphoric qualifiers, and bare preceding temporal headings still attach.",
+    "Literal validation matches complete Unicode tokens and numeric decimals, so source 300 cannot justify removing old 3.",
+    "After capture tracing, notify once using the first actual rejected-output reason; skip expected temporary-lifetime and already-documented rejections. No automatic retry was added.",
+    "Resumed and current results aggregate saved counts, require both skipped flags, and concatenate rejection diagnostics before the existing trace, notice, and maintenance handling.",
+    "At most one curator repair call per entire capture pass, only for edit-shape errors after authority/scope checks; candidate, action, and neighbor remain fixed and all guards revalidate.",
+    "Malformed repair output records a rejection, preserves original operations and valid siblings, and checkpoints invalid candidates without later paid retries. Transport/abort still retains pending evidence.",
+    "The capture live harness now tests retained pending state plus the actual unavailable-model failure, rather than an obsolete notice string."
+  ],
+  "limitations": [
+    "Original failed capture-release and diagnostic probes remain preserved. Contaminated diagnostic is excluded from exact-fixture proof; labelled broad output is a deterministic test fixture.",
+    "Live proof covers one synthetic capture/correction/retry sequence; no broad memory-quality claim."
+  ],
+  "captureOffActionRuntimeUnchanged": true,
+  "diagnosticEvidence": "eval/results/capture-curator-diagnostic/manifest.json"
+}

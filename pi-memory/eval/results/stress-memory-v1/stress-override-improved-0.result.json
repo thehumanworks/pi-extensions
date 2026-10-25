@@ -1,0 +1,163 @@
+{
+  "runId": "stress-override-improved-0",
+  "caseId": "stress-override",
+  "split": "dev",
+  "kind": "control",
+  "category": "clutter-with-current-override",
+  "arm": "improved",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+  "sourceHash": "c06e201321a70f9df946cfe6f23760f7910cc8f91f4bccfaebd77a6ae8320c82",
+  "response": "{\"format\":\"tsv\",\"retentionDays\":3}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "field",
+        "path": "format",
+        "expected": "tsv",
+        "passed": true,
+        "actual": "tsv"
+      },
+      {
+        "type": "field",
+        "path": "retentionDays",
+        "expected": 3,
+        "passed": true,
+        "actual": 3
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvntkuk80a6def5cd359cb9bbf92",
+    "m_mvntkujx5e8fb34c277aadd546e4"
+  ],
+  "selectedMemoryKeys": [
+    "defaults",
+    "draft-23"
+  ],
+  "draftMemoryCount": 1,
+  "memoryIds": {
+    "draft-0": {
+      "id": "m_mvntkuezdc69470d086183718ae5",
+      "scope": "project"
+    },
+    "draft-1": {
+      "id": "m_mvntkuf7ba4c3d6b04dc5718222d",
+      "scope": "project"
+    },
+    "draft-2": {
+      "id": "m_mvntkufdced389a207dd4f4afba5",
+      "scope": "project"
+    },
+    "draft-3": {
+      "id": "m_mvntkufk28dc306b7f9451a0e79e",
+      "scope": "project"
+    },
+    "draft-4": {
+      "id": "m_mvntkufr0c3d3d9e481271acbadd",
+      "scope": "project"
+    },
+    "draft-5": {
+      "id": "m_mvntkufzc17f4ded36238d3d2cf1",
+      "scope": "project"
+    },
+    "draft-6": {
+      "id": "m_mvntkug6ee00f73854f40375a3fd",
+      "scope": "project"
+    },
+    "draft-7": {
+      "id": "m_mvntkugcd997cd1879ac7d64fcd3",
+      "scope": "project"
+    },
+    "draft-8": {
+      "id": "m_mvntkugj4f3d52ed1cba4c9e8ea6",
+      "scope": "project"
+    },
+    "draft-9": {
+      "id": "m_mvntkugqdd5d6f1b36d315258bb1",
+      "scope": "project"
+    },
+    "draft-10": {
+      "id": "m_mvntkugya5f29de8c16ff99629ab",
+      "scope": "project"
+    },
+    "draft-11": {
+      "id": "m_mvntkuh5b246fcab897ce3f3e6b8",
+      "scope": "project"
+    },
+    "draft-12": {
+      "id": "m_mvntkuhc348c28add82ab18f0367",
+      "scope": "project"
+    },
+    "draft-13": {
+      "id": "m_mvntkuhk7ab14c800714ef05e5b8",
+      "scope": "project"
+    },
+    "draft-14": {
+      "id": "m_mvntkuhq6c8aff1a9c3cde40b59f",
+      "scope": "project"
+    },
+    "draft-15": {
+      "id": "m_mvntkuhyb3843980347aff3f6e23",
+      "scope": "project"
+    },
+    "draft-16": {
+      "id": "m_mvntkui71ba11c8678874699bf4c",
+      "scope": "project"
+    },
+    "draft-17": {
+      "id": "m_mvntkuif5abe91d1ff7cfd1e345c",
+      "scope": "project"
+    },
+    "draft-18": {
+      "id": "m_mvntkuind2e79f9af2192c8de052",
+      "scope": "project"
+    },
+    "draft-19": {
+      "id": "m_mvntkuiw67aa964e34ed4266f864",
+      "scope": "project"
+    },
+    "draft-20": {
+      "id": "m_mvntkuj56dc04f12d0b0ce54a513",
+      "scope": "project"
+    },
+    "draft-21": {
+      "id": "m_mvntkuje1cf7a7c6cd8c14d77e19",
+      "scope": "project"
+    },
+    "draft-22": {
+      "id": "m_mvntkujnb7bef1595d07a10b28c8",
+      "scope": "project"
+    },
+    "draft-23": {
+      "id": "m_mvntkujx5e8fb34c277aadd546e4",
+      "scope": "project"
+    },
+    "defaults": {
+      "id": "m_mvntkuk80a6def5cd359cb9bbf92",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 983,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 869,
+    "output": 16,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 885,
+    "cost": 0.001898
+  },
+  "latencyMs": 2986,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

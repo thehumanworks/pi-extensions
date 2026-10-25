@@ -1,0 +1,55 @@
+{
+  "coInjection": {
+    "parentSourcePairs": 0,
+    "parentIds": [],
+    "observed": false
+  },
+  "id": "mercator-invoice-expired-compressed",
+  "caseId": "mercator-invoice-expired",
+  "arm": "compressed",
+  "negative": false,
+  "temporary": true,
+  "expired": true,
+  "response": "{\"command\":null,\"workers\":null,\"retries\":null,\"timeoutSeconds\":null,\"requiresPassingPreflight\":null}",
+  "parsed": {
+    "command": null,
+    "workers": null,
+    "retries": null,
+    "timeoutSeconds": null,
+    "requiresPassingPreflight": null
+  },
+  "expected": {
+    "command": "mc export --batch",
+    "workers": 4,
+    "retries": 2,
+    "timeoutSeconds": 60,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": false,
+    "workers": false,
+    "retries": false,
+    "timeoutSeconds": false,
+    "requiresPassingPreflight": false
+  },
+  "actionSuccess": false,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 867,
+    "output": 30,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 765,
+  "selectedIds": [
+    "m_mvnwgyu174fd6b8ee1f2145b5aad"
+  ],
+  "sizes": {
+    "activeCount": 2,
+    "activeTextBytes": 1256,
+    "canonicalMarkdownBytes": 6071
+  },
+  "latencyMs": 4220
+}

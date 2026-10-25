@@ -1,0 +1,310 @@
+{
+  "oracle": "Accepted reviewed per-case oracle; historical raw outputs untouched. Zephyr local preflight remains a refusal-semantics ambiguity.",
+  "coInjectionDefinition": "A recall selects a derived parent and at least one of its original derivedFrom source IDs in the same call.",
+  "sameFixtureTextAcrossRunsIgnoringExpiry": true,
+  "sameProductionSourcesAcrossRuns": false,
+  "changedSourceFilesAcrossRuns": [
+    "index.ts",
+    "src/capture.ts",
+    "src/config.ts",
+    "src/dream.ts",
+    "src/maintenance.ts",
+    "src/scheduler.ts"
+  ],
+  "runs": [
+    {
+      "directory": "pi-memory/eval/results/dream-live",
+      "started": "2026-10-25T13:26:19.010Z",
+      "completed": "2026-10-25T13:29:52.288Z",
+      "sourceHashes": {
+        "index.ts": "141536862e53061516e2f0d3dae8fdf67b3cdeea0e5076e1592e88407f30f922",
+        "src/capture.ts": "0903e700b548a75b6504ca90196539f3c463ff5aec2f03f3d782e9d62bfd640f",
+        "src/config.ts": "abd051c65d6f930b18ddfea7a422d10b11eac1ddcc85618ad83fa8209ef889b8",
+        "src/dream.ts": "34fa5742e86d5e1f0f57ddea5749711445f97fa4ea7ff957d43882a3e19a4813",
+        "src/maintenance.ts": "0720b84d42f654d7331b873cc36311f252df23977a62e3b063a3e6ef50ebae3e",
+        "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+        "src/retrieve.ts": "7ab4350dc65add3cae4a72eb983d67a5b832e7471cb42c9a0d4c260741769e26",
+        "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+        "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+        "src/settings.ts": "32c41119fa00caefa2ca0883053b520f3d1415ef64861f32616ad1a984caa471",
+        "src/store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+        "src/tools.ts": "bb86a68df04c2fd836505fc34418f83f4ab8a5058e7a826fdae7a6edfe4d7b38",
+        "src/types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+        "src/ui.ts": "86733ed57d3512220bc8f216711278bd95081f327a10be45a45454622ff69d3d"
+      },
+      "normalizedFixtureSha256": "ba6e6f54ae59599ae13a853a7f3aea7a43943126d0736e16b6870486f262d5ee",
+      "sourceStable": true,
+      "artifactSha256": {
+        "manifest.json": "ba45414ed72b7be670c04048f0878fbd105595eaa44d55c39bc7f10ff06fa130",
+        "summary.json": "c0df9498bd1a9144f941e0995076a740b5a697e9814229973c311e1f618efecb",
+        "results.provisional-rescore.json": "fb25b9e97a718e614506b5d3662d00c751209ecabd5bfa3863f8fcf12e5966df",
+        "source-corpus.json": "192039fb134eb5e732e83761e87b2f480015ee8e4c3aa9358a4f5c8dc0fda4e7"
+      },
+      "scoringArtifact": "results.provisional-rescore.json",
+      "generationUsage": {
+        "input": 3489,
+        "output": 665,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "downstreamUsage": {
+        "input": 29298,
+        "output": 1174,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "literalCommandRetention": {
+        "total": 4,
+        "compressed": 4,
+        "semantic": 4
+      },
+      "dreamParents": 3,
+      "dreamHypotheses": 3
+    },
+    {
+      "directory": "pi-memory/eval/results/dream-live-repeat2",
+      "started": "2026-10-25T13:58:25.721Z",
+      "completed": "2026-10-25T14:01:27.615Z",
+      "sourceHashes": {
+        "index.ts": "a783f9c0cea3f893de34d60ed5f7ca4e21dfaaceef38100e707e0baf9629a862",
+        "src/capture.ts": "497d3e7e3110a813cebd353e88bab65f91d23fe2e351d7d8025000f668bd55e9",
+        "src/config.ts": "6a5e7636f8260bf9584f6a846335b91ac2e9e6003ea9cb3b5761083861be7b16",
+        "src/dream.ts": "bc5982ae0908d97b7ece42748c502e50ea929159e28d77d4415cbe92bd5a2666",
+        "src/maintenance.ts": "7b5cbce70ebf23746f958141e603722ebe2a74ecfb5b15ff4734a75346fb685a",
+        "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+        "src/retrieve.ts": "7ab4350dc65add3cae4a72eb983d67a5b832e7471cb42c9a0d4c260741769e26",
+        "src/scheduler.ts": "43b42e25cc20b9f46ed36d5e2543435ce7e20f2a214223eba374c73e03536740",
+        "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+        "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+        "src/settings.ts": "32c41119fa00caefa2ca0883053b520f3d1415ef64861f32616ad1a984caa471",
+        "src/store.ts": "a48e98b048b59f87020d74aee133cb9e7a2037e8f1d997105d55e481d0275f7f",
+        "src/tools.ts": "bb86a68df04c2fd836505fc34418f83f4ab8a5058e7a826fdae7a6edfe4d7b38",
+        "src/types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+        "src/ui.ts": "86733ed57d3512220bc8f216711278bd95081f327a10be45a45454622ff69d3d"
+      },
+      "normalizedFixtureSha256": "ba6e6f54ae59599ae13a853a7f3aea7a43943126d0736e16b6870486f262d5ee",
+      "sourceStable": true,
+      "artifactSha256": {
+        "manifest.json": "fbe6d307a6cc0d88918beb02833b2ce46943474d24bfffe3084c7fed5c7241a6",
+        "summary.json": "89c14db508b51a53c23e13cb0dd0f3aaf3b14dace1ea917151ba0d94c7ca0b07",
+        "results.json": "ea90c5b51e928d844e67a41ac21b473e535c6c90a34e045dc9b6291dca25e0e7",
+        "source-corpus.json": "33947fd66217885710f7da3ba459fdc311145f6cc671874b353a58bee2088917"
+      },
+      "scoringArtifact": "results.json",
+      "generationUsage": {
+        "input": 1465,
+        "output": 668,
+        "cacheRead": 2048,
+        "cacheWrite": 0
+      },
+      "downstreamUsage": {
+        "input": 29175,
+        "output": 1187,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "literalCommandRetention": {
+        "total": 4,
+        "compressed": 4,
+        "semantic": 4
+      },
+      "dreamParents": 3,
+      "dreamHypotheses": 3
+    }
+  ],
+  "aggregate": {
+    "sources": {
+      "runs": 16,
+      "actionSuccess": 14,
+      "perRunActionSuccess": [
+        7,
+        7
+      ],
+      "coInjectedRuns": 0,
+      "coInjectionRate": 0.0,
+      "meanInjectedByteBound": 1135.25,
+      "meanProviderInputIncludingCache": 942.9375,
+      "meanProviderOutput": 36.375,
+      "activeTextBytesByRun": [
+        4169,
+        4169
+      ],
+      "failures": [
+        {
+          "run": "pi-memory/eval/results/dream-live",
+          "case": "mercator-other-current",
+          "fields": [
+            "workers"
+          ],
+          "actual": {
+            "command": "mc export --batch",
+            "workers": null,
+            "retries": 2,
+            "timeoutSeconds": 60,
+            "requiresPassingPreflight": true
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-repeat2",
+          "case": "mercator-other-current",
+          "fields": [
+            "workers"
+          ],
+          "actual": {
+            "command": "mc export --batch",
+            "workers": null,
+            "retries": 2,
+            "timeoutSeconds": 60,
+            "requiresPassingPreflight": true
+          }
+        }
+      ]
+    },
+    "compressed": {
+      "runs": 16,
+      "actionSuccess": 13,
+      "perRunActionSuccess": [
+        7,
+        6
+      ],
+      "coInjectedRuns": 0,
+      "coInjectionRate": 0.0,
+      "meanInjectedByteBound": 825.0,
+      "meanProviderInputIncludingCache": 867.25,
+      "meanProviderOutput": 41.375,
+      "activeTextBytesByRun": [
+        2064,
+        2064
+      ],
+      "failures": [
+        {
+          "run": "pi-memory/eval/results/dream-live",
+          "case": "mercator-invoice-expired",
+          "fields": [
+            "command",
+            "workers",
+            "retries",
+            "timeoutSeconds",
+            "requiresPassingPreflight"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": null
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-repeat2",
+          "case": "zephyr-local-negative",
+          "fields": [
+            "requiresPassingPreflight"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": null
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-repeat2",
+          "case": "mercator-invoice-expired",
+          "fields": [
+            "command",
+            "workers",
+            "retries",
+            "timeoutSeconds"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": true
+          }
+        }
+      ]
+    },
+    "semantic": {
+      "runs": 16,
+      "actionSuccess": 14,
+      "perRunActionSuccess": [
+        7,
+        7
+      ],
+      "coInjectedRuns": 0,
+      "coInjectionRate": 0.0,
+      "meanInjectedByteBound": 996.375,
+      "meanProviderInputIncludingCache": 908.0,
+      "meanProviderOutput": 33.3125,
+      "activeTextBytesByRun": [
+        1411,
+        1466
+      ],
+      "failures": [
+        {
+          "run": "pi-memory/eval/results/dream-live",
+          "case": "mercator-invoice-expired",
+          "fields": [
+            "command",
+            "workers",
+            "retries",
+            "timeoutSeconds"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": true
+          }
+        },
+        {
+          "run": "pi-memory/eval/results/dream-live-repeat2",
+          "case": "mercator-invoice-expired",
+          "fields": [
+            "command",
+            "workers",
+            "retries",
+            "timeoutSeconds",
+            "requiresPassingPreflight"
+          ],
+          "actual": {
+            "command": null,
+            "workers": null,
+            "retries": null,
+            "timeoutSeconds": null,
+            "requiresPassingPreflight": null
+          }
+        }
+      ]
+    },
+    "combined": {
+      "runs": 16,
+      "actionSuccess": 16,
+      "perRunActionSuccess": [
+        8,
+        8
+      ],
+      "coInjectedRuns": 10,
+      "coInjectionRate": 0.625,
+      "meanInjectedByteBound": 1098.25,
+      "meanProviderInputIncludingCache": 936.375,
+      "meanProviderOutput": 36.5,
+      "activeTextBytesByRun": [
+        6233,
+        6233
+      ],
+      "failures": []
+    }
+  },
+  "limitations": [
+    "Synthetic evidence and mock operation-plan acceptance; no deployed infrastructure execution.",
+    "Small repeated sample on one corpus does not establish broad generalization.",
+    "Generation costs are additional to downstream model tokens.",
+    "Short-expiry variants move the timestamp consistently into the past. Actual clock expiry is evaluated separately."
+  ]
+}

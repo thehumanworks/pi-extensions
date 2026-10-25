@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 101219,
+  "modelRequests": 13,
+  "usage": {
+    "input": 7368,
+    "output": 1981,
+    "cacheRead": 39424,
+    "cacheWrite": 0,
+    "reasoning": 65,
+    "totalTokens": 48773,
+    "cost": 0.0384884
+  },
+  "finalText": "Implemented `src/ingest.mjs` and `bin/ingest.mjs` with:\n- Incremental NDJSON processing and default batch size **4 accepted records**.\n- Explicit batch-size overrides.\n- `(tenant, seq)` deduplication, including existing output.\n- Malformed-line rejection with checkpoint advancement.\n- Atomic checkpoint replacement and resumable appends.\n- JSON CLI reports.\n\nValidation: `node --test` passed.\n\nCLI demonstration using `fixtures/events.ndjson` and `work/demo/`:\n```json\n{\"accepted\":4,\"rejected\":0,\"duplicates\":0,\"nextLine\":4}\n{\"accepted\":3,\"rejected\":0,\"duplicates\":0,\"nextLine\":7}\n{\"accepted\":0,\"rejected\":0,\"duplicates\":0,\"nextLine\":7}\n```\nThe final invocation used explicit batch size `1`; no records remained."
+}

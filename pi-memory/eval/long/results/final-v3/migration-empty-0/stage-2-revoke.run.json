@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-revoke",
+  "prompt": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 19221,
+  "modelRequests": 4,
+  "usage": {
+    "input": 746,
+    "output": 278,
+    "cacheRead": 21632,
+    "cacheWrite": 0,
+    "reasoning": 27,
+    "totalTokens": 22656,
+    "cost": 0.0064352
+  },
+  "finalText": "Ran without an override:\n```sh\nnode bin/migrate.mjs fixtures/config.json work/normal.json\n```\n\nCopied the result to `normal-report.json`. The source and previous diagnostic artifacts were preserved.\n\n**Default region remains unresolved:** the current implementation emits no region without an override, and the agreed default value is absent from the available context. What region should I restore?"
+}

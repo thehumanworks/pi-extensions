@@ -1,0 +1,54 @@
+  be measured at all.
+
+  3. High: short-term memory semantics are not exercised anywhere with a model. Capture is off during task stages (run.mjs:46), the temporary prompt has no
+  explicit expiry (fixtures.mjs:20), and the revoke prompt tells the model the override has expired (fixtures.mjs:21). Stages 1 and 2 also share one session, so
+  the override is in the transcript regardless of memory. The only test of retention: short is the no-model temporal fixture in store-growth. The plan's "short
+  term" arm is a different concept entirely: a recent transcript window. The user's question about short versus long-term memory needs both senses stated and
+  tested. Recommended design: capture on during the temporary stage with an explicit "until ISO" expiry a few minutes ahead, then run the revoke stage in a
+  fresh session without mentioning expiry, once before and once after the timestamp. That yields a clean 2 by 2 where the before case should apply the override
+  and the after case should not.
+
+  4. Medium-high: background scheduling contradicts the documented trigger. The 1 MB soft trigger in src/dream.ts:160 is bypassed because index.ts:80-83 calls
+  dream with force whenever consolidation is due, and the first saving capture with two project sources is always due since the schedule timestamp starts at
+  zero. Two different active-byte definitions exist: serialized files, project scope only, in index.ts:75, versus title plus summary plus body across both
+  scopes in src/dream.ts:155. The dream call runs inside the capture promise, so session_before_compact at index.ts:144 can wait on a 60-second model call, and
+  any new prompt aborts it (index.ts:116), which writes an incomplete report (src/dream.ts:242) and retries the full model call next time. An active user can
+  pay for repeated aborted dreams. The eval sidesteps this with the dream flag set to zero, so production behaviour is unmeasured. Recommend decoupling dream
+  from the compaction and shutdown paths, adding a minimum idle delay and backoff on aborted reports, and unifying the byte definition.
+
+  5. Medium: budgets will dominate completion. The default job wall clock is 180 seconds for all four stages (run.mjs:13, :109-112), and one 24-request file
+  spans every stage (run.mjs:101), with guard.ts:10 killing the process mid-stage on exhaustion. Expect most runs to be incomplete regardless of arm, which
+  collapses the primary metric into "which arm ran out first". Fewer wasted requests is a real memory benefit, but it should be reported separately from
+  completion. Recommend per-stage request and time budgets, the 600-second ceiling, and budget exhaustion as its own outcome category.
+
+  6. Medium: context allowance is not equalized and a key negative control is missing. The plan requires a common context allowance, but long and dream arms get
+  the 600-byte window plus up to 1,200 bytes of recall plus the guidance system section (index.ts:118), the short arm gets 600 bytes, and the off arm gets
+  none. There is no "extension loaded, empty store" arm, so guidance-prompt effects and recall effects cannot be separated, and cache-share comparisons are
+  confounded by prefix length. The plan's distractor episodes, instruction-shaped tool output, and missing-approval controls are not implemented in history
+  mode. Recommend adding the empty-store arm and reporting absolute uncached input tokens rather than cached share.
+
+  7. Medium: scoring can be gamed and one guard setting needs a smoke check. Action checks read report files the agent writes itself (check.mjs:53-54, :96-97,
+  :65, :108). The CLI-run count at run.mjs:128 matches only a filename, not the expected arguments or stdout. Tie each report to a traced bash call with the
+  exact paths and compare the tool stdout JSON to the file. No check detects wrong-project policy use or global-scope leakage even though the plan lists both.
+  Add assertions that ingestion creates no backups or recovery source file, migration creates no rejected.ndjson, and the captured store has zero global-scope
+  items after history. Separately, guard.ts:33 runs node with the permission model but without child-process permission. node --test spawns a child per file by
+  default, so visible tests may fail with an access-denied error in every arm and burn requests. Verify in the smoke run and add --allow-child-process or
+  --test-isolation=none if so.
+
+  8. Medium-low, partly documented: size ceilings are never tested with a model. The latest store-growth artifact fixed latency but same-scope precision is
+  unchanged at 1,000 and 10,000 items (bench/results/store-growth-v5.json:1715-1717, :2787-2789), and the longitudinal stores will hold a dozen items, so the
+  trigger never fires. A cheap polluted-store arm answers the ceiling question: seed the history store with the concentrated noise corpus in the same project
+  scope and rerun stage 3 only.
+
+  Next check
+
+  Before any paid history run: write the offline capture test from finding 1, then run a single-fixture smoke with --arms=long --repeats=1 --wall-seconds=600
+  and inspect the captured store for the corrections, the action trace for blocked or access-denied test runs, and the recall traces for parent plus source
+  co-injection. I'll stay available for the implementation and results checkpoint.
+
+✻ Cooked for 7m 45s · done 1:28 PM
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── pi-memory-review ─
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏸ plan mode on (shift+tab to cycle) · ← 8 agents

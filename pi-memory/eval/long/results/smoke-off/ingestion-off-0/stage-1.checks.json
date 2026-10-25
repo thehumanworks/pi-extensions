@@ -1,0 +1,62 @@
+{
+  "project": "ingestion",
+  "stage": 1,
+  "checks": [
+    {
+      "name": "module-load",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Access to this API has been restricted. Use --allow-fs-read to manage permissions."
+    },
+    {
+      "name": "explicit batch limit and checkpoint",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "resume appends without repeating prior records",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "duplicates within tenant are suppressed",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "small batch does not materialize a 48 MiB input",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "current default batch is four",
+      "category": "memory",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "identity includes tenant",
+      "category": "memory",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    },
+    {
+      "name": "malformed line is quarantined and processing continues",
+      "category": "memory",
+      "passed": false,
+      "error": "Cannot read properties of undefined (reading 'processBatch')"
+    }
+  ],
+  "categoryScores": {
+    "intrinsic": 0,
+    "memory": 0,
+    "action": null
+  },
+  "complete": false,
+  "passed": 0,
+  "total": 8
+}

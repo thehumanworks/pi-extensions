@@ -1,0 +1,173 @@
+{
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "directories": [
+    "/Users/tomas/pi-extensions/pi-memory/eval/results/off-dev",
+    "/Users/tomas/pi-extensions/pi-memory/eval/results/memory-dev-reading",
+    "/Users/tomas/pi-extensions/pi-memory/eval/results/heldout-clean-final"
+  ],
+  "model": [
+    "openai/gpt-6.1-sol"
+  ],
+  "aggregate": {
+    "dev": {
+      "off": {
+        "n": 16,
+        "taskScore": 0.4166666666666667,
+        "positiveScore": 0.06666666666666667,
+        "controlScore": 1,
+        "p95InjectedTokens": 0,
+        "meanSelectedMemories": 0,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 549.625,
+        "meanOutputTokens": 26.375,
+        "p95LatencyMs": 6118,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "baseline": {
+        "n": 16,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 627,
+        "meanSelectedMemories": 0.875,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 745.875,
+        "meanOutputTokens": 27.875,
+        "p95LatencyMs": 24885,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "improved": {
+        "n": 16,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 627,
+        "meanSelectedMemories": 0.875,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 745.9375,
+        "meanOutputTokens": 28.1875,
+        "p95LatencyMs": 25066,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "acceptance": {
+        "pairedKeysMatch": true,
+        "gainPercentagePoints": 58.33333333333333,
+        "gainAtLeast20pp": true,
+        "noControlRegression": true,
+        "scopeLeaksZero": true,
+        "p95Within1200": true,
+        "noRunErrors": true
+      }
+    },
+    "heldout": {
+      "off": {
+        "n": 8,
+        "taskScore": 0.5,
+        "positiveScore": 0,
+        "controlScore": 1,
+        "p95InjectedTokens": 0,
+        "meanSelectedMemories": 0,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 548.75,
+        "meanOutputTokens": 20.625,
+        "p95LatencyMs": 4783,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "baseline": {
+        "n": 8,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 607,
+        "meanSelectedMemories": 1.25,
+        "meanDraftMemories": 0.25,
+        "meanInputTokens": 767.75,
+        "meanOutputTokens": 20.875,
+        "p95LatencyMs": 5449,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "improved": {
+        "n": 8,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 607,
+        "meanSelectedMemories": 1.25,
+        "meanDraftMemories": 0.25,
+        "meanInputTokens": 766,
+        "meanOutputTokens": 20.5,
+        "p95LatencyMs": 9647,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "acceptance": {
+        "pairedKeysMatch": true,
+        "gainPercentagePoints": 50,
+        "gainAtLeast20pp": true,
+        "noControlRegression": true,
+        "scopeLeaksZero": true,
+        "p95Within1200": true,
+        "noRunErrors": true
+      }
+    },
+    "all": {
+      "off": {
+        "n": 24,
+        "taskScore": 0.4444444444444445,
+        "positiveScore": 0.047619047619047616,
+        "controlScore": 1,
+        "p95InjectedTokens": 0,
+        "meanSelectedMemories": 0,
+        "meanDraftMemories": 0,
+        "meanInputTokens": 549.3333333333334,
+        "meanOutputTokens": 24.458333333333332,
+        "p95LatencyMs": 5332,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "baseline": {
+        "n": 24,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 627,
+        "meanSelectedMemories": 1,
+        "meanDraftMemories": 0.08333333333333333,
+        "meanInputTokens": 753.1666666666666,
+        "meanOutputTokens": 25.541666666666668,
+        "p95LatencyMs": 24500,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "improved": {
+        "n": 24,
+        "taskScore": 1,
+        "positiveScore": 1,
+        "controlScore": 1,
+        "p95InjectedTokens": 627,
+        "meanSelectedMemories": 1,
+        "meanDraftMemories": 0.08333333333333333,
+        "meanInputTokens": 752.625,
+        "meanOutputTokens": 25.625,
+        "p95LatencyMs": 14849,
+        "errors": 0,
+        "scopeLeaks": 0
+      },
+      "acceptance": {
+        "pairedKeysMatch": true,
+        "gainPercentagePoints": 55.55555555555556,
+        "gainAtLeast20pp": true,
+        "noControlRegression": true,
+        "scopeLeaksZero": true,
+        "p95Within1200": true,
+        "noRunErrors": true
+      }
+    }
+  }
+}

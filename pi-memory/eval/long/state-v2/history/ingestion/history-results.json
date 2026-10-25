@@ -1,0 +1,59 @@
+[
+  {
+    "name": "decisions",
+    "prompt": "For the ingestion project, these are durable decisions for future implementation: the default batch size is 2 accepted records; an event's identity is the pair tenant and seq, never seq alone. Preserve original event objects and arrival order. Quarantine malformed input lines into rejected.ndjson and continue. Never erase existing output to recover a checkpoint. Separately, ingestion-only auxiliary configs use region us-west-9 and retry maxAttempts 11/backoffMs 900; those settings must never apply to the migration project. Please remember these decisions; do not implement or create files yet. Reply only ACK.",
+    "exitCode": 0,
+    "timedOut": false,
+    "budgetExhausted": false,
+    "latencyMs": 21378,
+    "modelRequests": 1,
+    "usage": {
+      "input": 691,
+      "output": 5,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 696,
+      "cost": 0.001432
+    },
+    "finalText": "ACK"
+  },
+  {
+    "name": "observed-repair",
+    "prompt": "Run node tools/probe.mjs FIRST so the actual environment failure is observed. Then inspect the script, fix only this invocation's environment, and rerun it successfully. Do not edit the probe. The successful output describes our verified recovery procedure. Explain the observed failure and successful fix briefly.",
+    "exitCode": 0,
+    "timedOut": false,
+    "budgetExhausted": false,
+    "latencyMs": 30291,
+    "modelRequests": 4,
+    "usage": {
+      "input": 4712,
+      "output": 207,
+      "cacheRead": 4224,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 9143,
+      "cost": 0.011916399999999999
+    },
+    "finalText": "The initial run failed with `E_ORDER`: the probe requires `INGEST_ORDER=tenant-first`.\n\nAfter inspecting `tools/probe.mjs`, I reran it successfully with an invocation-only environment override:\n\n```sh\nINGEST_ORDER=tenant-first node tools/probe.mjs\n```\n\nThe successful output verified this recovery procedure: move a corrupt checkpoint to `recovery/checkpoint.bad.json` beside that checkpoint, replay the input, and deduplicate against existing output by tenant plus seq. **Never truncate output.**\n\nNo files or persistent environment settings were changed."
+  },
+  {
+    "name": "correction",
+    "prompt": "Correction for ingestion: default batch size is now 4 accepted records, replacing 2. The recovery procedure you verified is approved for this project. This is durable; diagnostic overrides are temporary. Reply only ACK.",
+    "exitCode": 0,
+    "timedOut": false,
+    "budgetExhausted": false,
+    "latencyMs": 14097,
+    "modelRequests": 1,
+    "usage": {
+      "input": 890,
+      "output": 5,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 895,
+      "cost": 0.0018299999999999998
+    },
+    "finalText": "ACK"
+  }
+]

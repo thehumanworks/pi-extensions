@@ -1,0 +1,10 @@
+stage:
+  ./scripts/git.py personal stage -A
+
+# Commit currently staged changes with the supplied message.
+commit message:
+  ./scripts/git.py personal commit -m {{quote(message)}}
+
+# Push a branch to a remote (defaults to origin main).
+push remote="origin" branch="main":
+  ./scripts/git.py personal push {{quote(remote)}} {{quote(branch)}}

@@ -1,0 +1,56 @@
+{
+  "runId": "heldout-override-off-0",
+  "caseId": "heldout-override",
+  "split": "heldout",
+  "kind": "control",
+  "category": "current-instruction-over-stale",
+  "arm": "off",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "1defd0429289cfa36bcadea80b1ad4577696841578f63e7c2a6556bc2738631c",
+  "response": "{\"format\":\"csv\",\"retentionDays\":2}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "field",
+        "path": "format",
+        "expected": "csv",
+        "passed": true,
+        "actual": "csv"
+      },
+      {
+        "type": "field",
+        "path": "retentionDays",
+        "expected": 2,
+        "passed": true,
+        "actual": 2
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "selectedMemoryKeys": [],
+  "draftMemoryCount": 0,
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 546,
+    "output": 15,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 561,
+    "cost": 0.0012419999999999998
+  },
+  "latencyMs": 3256,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

@@ -1,0 +1,51 @@
+{
+  "id": "zephyr-staging-semantic",
+  "caseId": "zephyr-staging",
+  "arm": "semantic",
+  "negative": false,
+  "temporary": false,
+  "expired": false,
+  "response": "{\"command\":\"zx stage-apply\",\"workers\":3,\"retries\":2,\"timeoutSeconds\":30,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": "zx stage-apply",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 30,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": "zx stage-apply",
+    "workers": 3,
+    "retries": 2,
+    "timeoutSeconds": 30,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 899,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 984,
+  "selectedIds": [
+    "m_mvnv4wa57a3b4a64ecb17f2391a7",
+    "m_mvnv4w9x5c20de734106bfba3435"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 1411,
+    "canonicalMarkdownBytes": 4680
+  },
+  "latencyMs": 6107
+}

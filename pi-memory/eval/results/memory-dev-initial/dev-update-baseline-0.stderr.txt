@@ -1,0 +1,5 @@
+Warning: No models match pattern "claude-bridge/claude-opus-5-5"
+Warning: No models match pattern "claude-bridge/claude-fable-5-1"
+Error: Unknown options: --memory-dir, --memory-mode
+Error: Failed to load extension "/Users/tomas/pi-extensions/pi-memory/index.ts": Failed to load extension: ResolveMessage: No such built-in module: node:sqlite
+Hint: Start without extensions using "pi -ne".

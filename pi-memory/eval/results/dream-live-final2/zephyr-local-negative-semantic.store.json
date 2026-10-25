@@ -1,0 +1,151 @@
+[
+  {
+    "id": "m_mvnwf3oc0698deae44cac46a2070",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "insight",
+    "title": "Beacon staging verification prerequisites and limits",
+    "summary": "Beacon staging verification prerequisites and limits",
+    "keywords": [
+      "beacon",
+      "staging",
+      "verification"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "experimental-unreviewed-hypothesis",
+      "entries": [
+        "m_mvnwcxa65d19662ce836393305a6",
+        "m_mvnwcxaf0d9ff8fc45297ff74894",
+        "m_mvnwcxakef9706eed34e49ecae2c"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "experimental-unreviewed-hypothesis",
+        "entries": [
+          "m_mvnwcxa65d19662ce836393305a6",
+          "m_mvnwcxaf0d9ff8fc45297ff74894",
+          "m_mvnwcxakef9706eed34e49ecae2c"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:03:56.892Z",
+    "updated": "2026-10-25T14:03:56.892Z",
+    "last_used": "2026-10-25T14:03:56.892Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed. Never use this staging verification command against production. Verification uses 3 workers, permits 2 retries, and has a 45 second timeout."
+  },
+  {
+    "id": "m_mvnwf3oj3fa8e34719bd84b8ee63",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "insight",
+    "title": "Zephyr deployment preflight and environment-specific limits",
+    "summary": "Zephyr deployment preflight and environment-specific limits",
+    "keywords": [
+      "zephyr",
+      "deployment",
+      "preflight"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "experimental-unreviewed-hypothesis",
+      "entries": [
+        "m_mvnwcxar7ddcd5ad924a001c3cfc",
+        "m_mvnwcxax5ada592896dbcfae5ea9"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "experimental-unreviewed-hypothesis",
+        "entries": [
+          "m_mvnwcxar7ddcd5ad924a001c3cfc",
+          "m_mvnwcxax5ada592896dbcfae5ea9"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:03:56.899Z",
+    "updated": "2026-10-25T14:03:56.899Z",
+    "last_used": "2026-10-25T14:03:56.899Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Zephyr deployments require a passing preflight before any apply operation. Use only the command and limits specified for the named environment: staging uses `zx stage-apply` with 3 workers, 2 retries, and a 30 second timeout; production uses `zx prod-apply` with 1 worker, 0 retries, and a 90 second timeout."
+  },
+  {
+    "id": "m_mvnwf3opabfa0cfbdf5d82e3f43e",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "insight",
+    "title": "Mercator export defaults and temporary invoice-only incident override",
+    "summary": "Mercator export defaults and temporary invoice-only incident override",
+    "keywords": [
+      "mercator",
+      "export",
+      "limits"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "experimental-unreviewed-hypothesis",
+      "entries": [
+        "m_mvnwcxb7ce6361085e3975bde698",
+        "m_mvnwcxbdb44cae3cb0fcf19f8157",
+        "m_mvnwcxbm19b0395b020016aed59c"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "experimental-unreviewed-hypothesis",
+        "entries": [
+          "m_mvnwcxb7ce6361085e3975bde698",
+          "m_mvnwcxbdb44cae3cb0fcf19f8157",
+          "m_mvnwcxbm19b0395b020016aed59c"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:03:56.905Z",
+    "updated": "2026-10-25T14:03:56.905Z",
+    "last_used": "2026-10-25T14:03:56.905Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "short",
+    "expiresAt": "2026-10-25T15:02:15.097Z",
+    "body": "Mercator exports run `mc export --batch` only after the export preflight passes. Standard limits are 4 workers, 2 retries, and a 60 second timeout. Until 2026-10-25T15:02:15.097Z, invoice exports alone must instead use 1 worker and 0 retries; their timeout remains 60 seconds. Other export types retain standard limits. A dated incident restriction overrides defaults only within its stated period and export type. This combined hypothesis expires at 2026-10-25T15:02:15.097Z."
+  }
+]

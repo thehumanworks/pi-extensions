@@ -1,0 +1,51 @@
+{
+  "id": "mercator-other-current-semantic",
+  "caseId": "mercator-other-current",
+  "arm": "semantic",
+  "negative": false,
+  "temporary": true,
+  "expired": false,
+  "response": "{\"command\":\"mc export --batch\",\"workers\":4,\"retries\":2,\"timeoutSeconds\":60,\"requiresPassingPreflight\":true}",
+  "parsed": {
+    "command": "mc export --batch",
+    "workers": 4,
+    "retries": 2,
+    "timeoutSeconds": 60,
+    "requiresPassingPreflight": true
+  },
+  "expected": {
+    "command": "mc export --batch",
+    "workers": 4,
+    "retries": 2,
+    "timeoutSeconds": 60,
+    "requiresPassingPreflight": true
+  },
+  "checks": {
+    "command": true,
+    "workers": true,
+    "retries": true,
+    "timeoutSeconds": true,
+    "requiresPassingPreflight": true
+  },
+  "actionSuccess": true,
+  "overgeneralized": false,
+  "temporaryLeak": false,
+  "errors": [],
+  "usage": {
+    "input": 970,
+    "output": 33,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "injectedTextUpperBound": 1192,
+  "selectedIds": [
+    "m_mvnv6pjx0faf5ee0e485264521ab",
+    "m_mvnv6pjibe28fd4ef6cefae9c6e1"
+  ],
+  "sizes": {
+    "activeCount": 3,
+    "activeTextBytes": 1411,
+    "canonicalMarkdownBytes": 4680
+  },
+  "latencyMs": 4814
+}

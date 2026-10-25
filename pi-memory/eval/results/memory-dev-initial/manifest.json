@@ -1,0 +1,35 @@
+{
+  "started": "2026-10-25T12:37:14.976Z",
+  "model": "openai/gpt-6.1-sol",
+  "split": "dev",
+  "arms": [
+    "baseline",
+    "improved"
+  ],
+  "repeats": 2,
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "38f2b98f3a39adc846df8ac7b9611005febee624dec65b7d6cbcff4e777c8113",
+  "sourceHashes": {
+    "index.ts": "4c5097e3e4d024ff847df63e4f1b5e0c4e65606598eea93896680defb2041290",
+    "src/capture.ts": "a2b02bedf7c5438411d570cbba2c53cacaa7a22390ae01d55fea053f8987247f",
+    "src/config.ts": "0d47b0636b357ff00835d75416e7e58b82b02d309a07b1253ec0d7f76ab02af0",
+    "src/maintenance.ts": "d8585f30bb55d59376a89a220cbf9b8fa62f4f454bfcedbf81bc4ede3945d5bc",
+    "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+    "src/retrieve.ts": "67357253c47b7ac703a4037c433708cb71512259e2c2c4558e647b157b56163c",
+    "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+    "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+    "src/settings.ts": "32c41119fa00caefa2ca0883053b520f3d1415ef64861f32616ad1a984caa471",
+    "src/store.ts": "13204537ebad99647f3d30fb1a048d04c75d4a1d99db7e3cae8715b48b48ba0f",
+    "src/tools.ts": "e189bd211c18c8c94c560d1a798aa69780f51ccb566cd25ef49c3cd8dc80c466",
+    "src/types.ts": "9ac2ed1cf1b9d8eba645d8abb11cfe6c3162717e3d3ce43b804f8ee3a6b45aa8",
+    "src/ui.ts": "1792b88ce8b7d49ead170b4684ac6250b1a8defaa60547cdec036c2c3d07aae8"
+  },
+  "commonPrompt": "Complete this synthetic development task. Return only the requested JSON, without markdown or commentary. Any code field must contain JavaScript (not Python or TypeScript), defining the requested function. Do not invent prior decisions.",
+  "concurrency": 2,
+  "thinking": "low",
+  "outputTokenCap": 2048,
+  "memoryTokenCap": 1200,
+  "tools": [],
+  "temporaryRoot": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-eval-8y5QRR"
+}

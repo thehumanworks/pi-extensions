@@ -1,0 +1,2 @@
+{"event":"recall","query":"Remember this durable project decision: the Larch batch runner uses 4 workers by default. A temporary worker-count override must not replace this durable default. Reply only ACK.","ids":[],"retiredIds":[],"tokens":0,"tokenUpperBound":0,"digestTokenUpperBound":0,"content":""}
+{"event":"capture","saved":0,"skipped":false}

@@ -1,0 +1,89 @@
+{
+  "runId": "dev-convention-improved-1",
+  "caseId": "dev-convention",
+  "split": "dev",
+  "kind": "positive",
+  "category": "project-convention",
+  "arm": "improved",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "c06e201321a70f9df946cfe6f23760f7910cc8f91f4bccfaebd77a6ae8320c82",
+  "response": "{\"code\":\"function solve(message) { return { error: { code: 'AURORA_INPUT', message: message }, retryable: false }; }\"}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "code",
+        "args": [
+          "bad input"
+        ],
+        "expected": {
+          "error": {
+            "code": "AURORA_INPUT",
+            "message": "bad input"
+          },
+          "retryable": false
+        },
+        "passed": true,
+        "actual": {
+          "error": {
+            "code": "AURORA_INPUT",
+            "message": "bad input"
+          },
+          "retryable": false
+        }
+      },
+      {
+        "type": "code",
+        "args": [
+          ""
+        ],
+        "expected": {
+          "error": {
+            "code": "AURORA_INPUT",
+            "message": ""
+          },
+          "retryable": false
+        },
+        "passed": true,
+        "actual": {
+          "error": {
+            "code": "AURORA_INPUT",
+            "message": ""
+          },
+          "retryable": false
+        }
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvnti5z1b02dfa78b5e6547bf16e"
+  ],
+  "memoryIds": {
+    "error-format": {
+      "id": "m_mvnti5z1b02dfa78b5e6547bf16e",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 567,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 777,
+    "output": 62,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 24,
+    "totalTokens": 839,
+    "cost": 0.0021739999999999997
+  },
+  "latencyMs": 5091,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

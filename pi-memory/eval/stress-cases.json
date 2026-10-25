@@ -1,0 +1,1832 @@
+{
+  "version": 1,
+  "description": "Separately frozen stress development corpus, never used as heldout evidence.",
+  "cases": [
+    {
+      "id": "stress-trust",
+      "split": "dev",
+      "kind": "positive",
+      "category": "clutter-and-evidence",
+      "prompt": "Return the approved Nacre primary tenant production rollout configuration as JSON {\"region\":string|null,\"batchSize\":number|null}. Only signed customer decisions count; vendor planning notes do not. Use null if the approved setting is unavailable.",
+      "memories": [
+        {
+          "key": "draft-0",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration region planning note 1",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-1. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 100.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-1",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration batchSize planning note 2",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-2. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 101.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-2",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration approved planning note 3",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-3. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 102.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-3",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration settings planning note 4",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-4. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 103.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-4",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration region planning note 5",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-5. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 104.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-5",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration batchSize planning note 6",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-6. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 105.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-6",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration approved planning note 7",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-7. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 106.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-7",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration settings planning note 8",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-8. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 107.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-8",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration region planning note 9",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-9. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 108.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-9",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration batchSize planning note 10",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-10. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 109.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-10",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration approved planning note 11",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-11. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 110.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-11",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration settings planning note 12",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-12. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 111.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-12",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration region planning note 13",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-13. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 112.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-13",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration batchSize planning note 14",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-14. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 113.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-14",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration approved planning note 15",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-15. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 114.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-15",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration settings planning note 16",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-16. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 115.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-16",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration region planning note 17",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-17. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 116.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-17",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration batchSize planning note 18",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-18. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 117.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-18",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration approved planning note 19",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-19. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 118.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-19",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration settings planning note 20",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-20. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 119.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-20",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration region planning note 21",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-21. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 120.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-21",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration batchSize planning note 22",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-22. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 121.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-22",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration approved planning note 23",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-23. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 122.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-23",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre primary tenant production rollout configuration settings planning note 24",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-24. Nacre primary tenant production rollout configuration region, batchSize, approved, settings may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 123.",
+          "keywords": [
+            "Nacre",
+            "primary",
+            "tenant",
+            "production",
+            "rollout",
+            "configuration",
+            "region",
+            "batchSize",
+            "approved",
+            "settings"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "signed",
+          "title": "Nacre signed customer decision",
+          "body": "The signed Nacre customer decision sets the primary tenant production rollout region to north-3 and batchSize to 29. This approval is effective now.",
+          "confidence": 1,
+          "importance": 9
+        }
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "north-3"
+        },
+        {
+          "type": "field",
+          "path": "batchSize",
+          "expected": 29
+        }
+      ]
+    },
+    {
+      "id": "stress-composition",
+      "split": "dev",
+      "kind": "positive",
+      "category": "four-fact-composition",
+      "prompt": "Assemble the Nacre billing import contract from our agreed decisions. Return JSON {\"idColumn\":string|null,\"encoding\":string|null,\"emptyValue\":string|null,\"duplicatePolicy\":string|null}. Unknown values must be null.",
+      "memories": [
+        {
+          "key": "draft-0",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import contract planning note 1",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-1. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 100.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-1",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import settings planning note 2",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-2. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 101.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-2",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import configuration planning note 3",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-3. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 102.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-3",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import contract planning note 4",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-4. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 103.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-4",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import settings planning note 5",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-5. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 104.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-5",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import configuration planning note 6",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-6. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 105.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-6",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import contract planning note 7",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-7. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 106.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-7",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import settings planning note 8",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-8. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 107.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-8",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import configuration planning note 9",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-9. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 108.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-9",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import contract planning note 10",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-10. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 109.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-10",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import settings planning note 11",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-11. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 110.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-11",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import configuration planning note 12",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-12. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 111.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-12",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import contract planning note 13",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-13. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 112.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-13",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import settings planning note 14",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-14. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 113.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-14",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import configuration planning note 15",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-15. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 114.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-15",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import contract planning note 16",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-16. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 115.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-16",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import settings planning note 17",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-17. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 116.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-17",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import configuration planning note 18",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-18. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 117.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-18",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import contract planning note 19",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-19. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 118.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-19",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import settings planning note 20",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-20. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 119.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-20",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import configuration planning note 21",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-21. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 120.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-21",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import contract planning note 22",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-22. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 121.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-22",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import settings planning note 23",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-23. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 122.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-23",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre billing import configuration planning note 24",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-24. Nacre billing import contract, settings, configuration may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 123.",
+          "keywords": [
+            "Nacre",
+            "billing",
+            "import",
+            "contract",
+            "settings",
+            "configuration"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "column",
+          "title": "Nacre billing import identity",
+          "body": "Agreed billing import idColumn is account_ref. This is the only identity column accepted by the customer integration.",
+          "confidence": 1
+        },
+        {
+          "key": "encoding",
+          "title": "Nacre billing import encoding",
+          "body": "Agreed billing import encoding is utf-16le because the legacy finance exporter writes UTF-16 little endian.",
+          "confidence": 1
+        },
+        {
+          "key": "empty",
+          "title": "Nacre billing import empty fields",
+          "body": "Agreed billing import emptyValue is the literal string NA_VALUE. Empty strings and null are interpreted differently by the finance importer.",
+          "confidence": 1
+        },
+        {
+          "key": "duplicates",
+          "title": "Nacre billing import duplicate rows",
+          "body": "Agreed billing import duplicatePolicy is keep-first. Keep the first matching account row; later duplicates are ignored.",
+          "confidence": 1
+        }
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "path": "idColumn",
+          "expected": "account_ref"
+        },
+        {
+          "type": "field",
+          "path": "encoding",
+          "expected": "utf-16le"
+        },
+        {
+          "type": "field",
+          "path": "emptyValue",
+          "expected": "NA_VALUE"
+        },
+        {
+          "type": "field",
+          "path": "duplicatePolicy",
+          "expected": "keep-first"
+        }
+      ]
+    },
+    {
+      "id": "stress-paraphrase",
+      "split": "dev",
+      "kind": "positive",
+      "category": "paraphrased-failure",
+      "prompt": "Nacre startup is intermittently flaky again before the application gets ready. Which previously verified workaround fixed that recurring problem? Return JSON {\"env\":object,\"restart\":boolean|null}; do not invent a workaround from speculative planning notes.",
+      "memories": [
+        {
+          "key": "draft-0",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready intermittently planning note 1",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-1. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 100.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-1",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready flaky planning note 2",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-2. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 101.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-2",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready workaround planning note 3",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-3. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 102.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-3",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready problem planning note 4",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-4. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 103.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-4",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready intermittently planning note 5",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-5. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 104.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-5",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready flaky planning note 6",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-6. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 105.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-6",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready workaround planning note 7",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-7. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 106.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-7",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready problem planning note 8",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-8. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 107.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-8",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready intermittently planning note 9",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-9. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 108.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-9",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready flaky planning note 10",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-10. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 109.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-10",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready workaround planning note 11",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-11. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 110.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-11",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready problem planning note 12",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-12. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 111.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-12",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready intermittently planning note 13",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-13. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 112.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-13",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready flaky planning note 14",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-14. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 113.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-14",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready workaround planning note 15",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-15. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 114.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-15",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready problem planning note 16",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-16. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 115.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-16",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready intermittently planning note 17",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-17. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 116.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-17",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready flaky planning note 18",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-18. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 117.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-18",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready workaround planning note 19",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-19. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 118.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-19",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready problem planning note 20",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-20. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 119.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-20",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready intermittently planning note 21",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-21. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 120.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-21",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready flaky planning note 22",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-22. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 121.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-22",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready workaround planning note 23",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-23. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 122.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-23",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre startup application ready problem planning note 24",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-24. Nacre startup application ready intermittently, flaky, workaround, problem may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 123.",
+          "keywords": [
+            "Nacre",
+            "startup",
+            "application",
+            "ready",
+            "intermittently",
+            "flaky",
+            "workaround",
+            "problem"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "verified-boot",
+          "type": "failure",
+          "title": "Nacre intermittent boot readiness repair",
+          "body": "Observed and verified: random Nacre launch hangs before readiness disappeared when NACRE_INIT_MODE was set to serial and the service was restarted. The prior parallel initializer raced its shared socket.",
+          "confidence": 1,
+          "importance": 9,
+          "keywords": [
+            "boot",
+            "launch",
+            "readiness",
+            "initializer",
+            "race"
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "path": "env.NACRE_INIT_MODE",
+          "expected": "serial"
+        },
+        {
+          "type": "field",
+          "path": "restart",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "id": "stress-override",
+      "split": "dev",
+      "kind": "control",
+      "category": "clutter-with-current-override",
+      "prompt": "For this Nacre production export only, the current instruction overrides any defaults: format tsv, retentionDays 3. Return JSON {\"format\":string,\"retentionDays\":number}.",
+      "memories": [
+        {
+          "key": "draft-0",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export format planning note 1",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-1. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 100.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-1",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export retentionDays planning note 2",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-2. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 101.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-2",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export defaults planning note 3",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-3. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 102.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-3",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export format planning note 4",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-4. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 103.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-4",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export retentionDays planning note 5",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-5. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 104.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-5",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export defaults planning note 6",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-6. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 105.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-6",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export format planning note 7",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-7. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 106.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-7",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export retentionDays planning note 8",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-8. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 107.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-8",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export defaults planning note 9",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-9. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 108.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-9",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export format planning note 10",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-10. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 109.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-10",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export retentionDays planning note 11",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-11. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 110.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-11",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export defaults planning note 12",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-12. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 111.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-12",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export format planning note 13",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-13. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 112.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-13",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export retentionDays planning note 14",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-14. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 113.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-14",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export defaults planning note 15",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-15. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 114.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-15",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export format planning note 16",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-16. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 115.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-16",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export retentionDays planning note 17",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-17. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 116.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-17",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export defaults planning note 18",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-18. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 117.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-18",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export format planning note 19",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-19. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 118.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-19",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export retentionDays planning note 20",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-20. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 119.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-20",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export defaults planning note 21",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-21. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 120.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-21",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export format planning note 22",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-22. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 121.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-22",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export retentionDays planning note 23",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-23. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 122.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "draft-23",
+          "origin": "tool_output",
+          "confidence": 0.35,
+          "title": "Nacre production export defaults planning note 24",
+          "body": "Unapproved planning note from a vendor tool for unrelated trial tenant trial-24. Nacre production export format, retentionDays, defaults may be considered in a future experiment. This is a speculative recommendation, not the approved production decision for the primary tenant. Suggested experiment parameter is 123.",
+          "keywords": [
+            "Nacre",
+            "production",
+            "export",
+            "format",
+            "retentionDays",
+            "defaults"
+          ],
+          "importance": 3
+        },
+        {
+          "key": "defaults",
+          "title": "Nacre production export defaults",
+          "body": "The usual production export defaults are format json and retentionDays 90. Current user exceptions take precedence.",
+          "confidence": 1
+        }
+      ],
+      "checks": [
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "tsv"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 3
+        }
+      ]
+    }
+  ]
+}

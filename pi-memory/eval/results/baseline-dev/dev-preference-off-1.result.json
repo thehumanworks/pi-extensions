@@ -1,0 +1,76 @@
+{
+  "runId": "dev-preference-off-1",
+  "caseId": "dev-preference",
+  "split": "dev",
+  "kind": "positive",
+  "category": "preference",
+  "arm": "off",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "response": "{\"heading\":\"Version 2.3\",\"sections\":[{\"label\":\"Performance\",\"text\":\"Startup time decreased from 80 ms to 40 ms, a 50% reduction.\"},{\"label\":\"Testing\",\"text\":\"The Linux smoke test passed. Windows remains untested.\"}]}",
+  "score": 0,
+  "validation": {
+    "score": 0,
+    "passed": 0,
+    "total": 5,
+    "checks": [
+      {
+        "type": "field",
+        "path": "heading",
+        "expected": "Release 2.3",
+        "passed": false,
+        "actual": "Version 2.3"
+      },
+      {
+        "type": "labels",
+        "expected": [
+          "Changed",
+          "Checked",
+          "Unverified"
+        ],
+        "passed": false,
+        "actual": [
+          "Performance",
+          "Testing"
+        ]
+      },
+      {
+        "type": "section-fact",
+        "label": "Changed",
+        "pattern": "40.*80|80.*40",
+        "passed": false
+      },
+      {
+        "type": "section-fact",
+        "label": "Checked",
+        "pattern": "Linux",
+        "passed": false
+      },
+      {
+        "type": "section-fact",
+        "label": "Unverified",
+        "pattern": "Windows",
+        "passed": false
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {},
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 560,
+    "output": 60,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 620,
+    "cost": 0.00172
+  },
+  "latencyMs": 6110,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

@@ -1,0 +1,59 @@
+[
+  {
+    "name": "decisions",
+    "prompt": "For the migration project, durable customer decisions: version 3 defaults are region eu-north-7, retry.maxAttempts 3, retry.backoffMs 125. Enabled feature names are sorted. Preserve unknown source fields under legacy. Before migration preserve an exact source backup at backups/source.json beside the output. Migration-only auxiliary import jobs use batch size 9, seq alone as identity, and abort on malformed lines; those conventions must never apply to the ingestion project. Remember them without implementing files yet. Reply only ACK.",
+    "exitCode": 0,
+    "timedOut": false,
+    "budgetExhausted": false,
+    "latencyMs": 29378,
+    "modelRequests": 1,
+    "usage": {
+      "input": 676,
+      "output": 5,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 681,
+      "cost": 0.0014019999999999998
+    },
+    "finalText": "ACK"
+  },
+  {
+    "name": "observed-repair",
+    "prompt": "Run node tools/probe.mjs FIRST to observe the real environment failure. Inspect it, fix only this invocation's environment, and rerun successfully; do not edit the probe. The successful output describes the verified recovery procedure for this project. Explain the observed failure and successful fix briefly.",
+    "exitCode": 0,
+    "timedOut": false,
+    "budgetExhausted": false,
+    "latencyMs": 38181,
+    "modelRequests": 4,
+    "usage": {
+      "input": 2820,
+      "output": 219,
+      "cacheRead": 6272,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 9311,
+      "cost": 0.0084572
+    },
+    "finalText": "The first run failed with `E_LOCK`: the probe requires `MIGRATION_LOCK_MODE=copy`. After inspecting `tools/probe.mjs`, I reran it successfully with an invocation-only override:\n\n```sh\nMIGRATION_LOCK_MODE=copy node tools/probe.mjs\n```\n\nThe successful output verified this recovery procedure: if source JSON is truncated, use its exact preserved backup at `backups/source.json` beside the output, move the corrupt source to `recovery/source.bad.json` beside the output, and migrate the valid backup without overwriting it.\n\nNo files or persistent environment settings were changed."
+  },
+  {
+    "name": "correction",
+    "prompt": "Correction for migration: retry.maxAttempts is now 5, replacing 3. Keep the earlier region and backoff decisions. The recovery procedure you verified is approved. One-off probe overrides are temporary. Reply only ACK.",
+    "exitCode": 0,
+    "timedOut": false,
+    "budgetExhausted": false,
+    "latencyMs": 17508,
+    "modelRequests": 1,
+    "usage": {
+      "input": 842,
+      "output": 5,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 847,
+      "cost": 0.0017339999999999999
+    },
+    "finalText": "ACK"
+  }
+]

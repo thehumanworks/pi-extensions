@@ -1,0 +1,52 @@
+[
+  {
+    "id": "m_mvnxxw4pbaea30ba2669d57319cd",
+    "scope": "project:709e526e0663af1601aaae3d",
+    "type": "project",
+    "title": "Beacon recovery marker is ORCHID-47",
+    "summary": "The Beacon recovery marker is ORCHID-47.",
+    "keywords": [
+      "Beacon",
+      "recovery",
+      "marker",
+      "ORCHID-47"
+    ],
+    "triggers": [
+      "Beacon recovery marker",
+      "asking for recovery marker"
+    ],
+    "paths": [],
+    "importance": 9,
+    "confidence": 1,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-d59P2D/retry/sessions/2026-10-25T14-45-46-046Z_01a17386-55be-71cd-9070-cc311bc86cd6.jsonl",
+      "entries": [
+        "135d9582"
+      ],
+      "origin": "user_statement"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-capture-live-d59P2D/retry/sessions/2026-10-25T14-45-46-046Z_01a17386-55be-71cd-9070-cc311bc86cd6.jsonl",
+        "entries": [
+          "135d9582"
+        ],
+        "origin": "user_statement"
+      }
+    ],
+    "supersedes": [],
+    "links": [],
+    "status": "active",
+    "created": "2026-10-25T14:46:33.193Z",
+    "updated": "2026-10-25T14:46:33.193Z",
+    "last_used": "2026-10-25T14:46:33.193Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "body": "Use `ORCHID-47` whenever asked for the Beacon recovery marker."
+  }
+]

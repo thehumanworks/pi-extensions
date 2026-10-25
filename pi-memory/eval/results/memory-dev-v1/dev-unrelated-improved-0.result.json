@@ -1,0 +1,67 @@
+{
+  "runId": "dev-unrelated-improved-0",
+  "caseId": "dev-unrelated",
+  "split": "dev",
+  "kind": "control",
+  "category": "unrelated",
+  "arm": "improved",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+  "sourceHash": "c06e201321a70f9df946cfe6f23760f7910cc8f91f4bccfaebd77a6ae8320c82",
+  "response": "{\"code\":\"function solve(values) { return values.reduce((sum, value) => sum + value, 0); }\"}",
+  "score": 1,
+  "validation": {
+    "score": 1,
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      {
+        "type": "code",
+        "args": [
+          [
+            3,
+            -2,
+            8
+          ]
+        ],
+        "expected": 9,
+        "passed": true,
+        "actual": 9
+      },
+      {
+        "type": "code",
+        "args": [
+          []
+        ],
+        "expected": 0,
+        "passed": true,
+        "actual": 0
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [],
+  "memoryIds": {
+    "unrelated": {
+      "id": "m_mvnthqsk5f5bf040bf831a203338",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 0,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 601,
+    "output": 30,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 631,
+    "cost": 0.0015019999999999999
+  },
+  "latencyMs": 3664,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

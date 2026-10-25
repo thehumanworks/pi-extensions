@@ -1,0 +1,16 @@
+{
+  "started": "2026-10-25T12:34:16.777Z",
+  "model": "openai/gpt-6.1-sol",
+  "split": "dev",
+  "arms": [
+    "off"
+  ],
+  "repeats": 2,
+  "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+  "concurrency": 2,
+  "thinking": "low",
+  "outputTokenCap": 2048,
+  "memoryTokenCap": 1200,
+  "tools": [],
+  "temporaryRoot": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-eval-DP6vcd"
+}

@@ -1,0 +1,19 @@
+{
+  "name": "decisions",
+  "prompt": "For the ingestion project, these are durable decisions for future implementation: the default batch size is 2 accepted records; an event's identity is the pair tenant and seq, never seq alone. Preserve original event objects and arrival order. Quarantine malformed input lines into rejected.ndjson and continue. Never erase existing output to recover a checkpoint. Separately, ingestion-only auxiliary configs use region us-west-9 and retry maxAttempts 11/backoffMs 900; those settings must never apply to the migration project. Please remember these decisions; do not implement or create files yet. Reply only ACK.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 21378,
+  "modelRequests": 1,
+  "usage": {
+    "input": 691,
+    "output": 5,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 696,
+    "cost": 0.001432
+  },
+  "finalText": "ACK"
+}

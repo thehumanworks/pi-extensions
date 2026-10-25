@@ -1,0 +1,2422 @@
+[
+  {
+    "runId": "dev-convention-improved-0",
+    "caseId": "dev-convention",
+    "split": "dev",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"code\":\"function solve(message) { return { error: { code: 'AURORA_INPUT', message: message }, retryable: false }; }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            "bad input"
+          ],
+          "expected": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": "bad input"
+            },
+            "retryable": false
+          },
+          "passed": true,
+          "actual": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": "bad input"
+            },
+            "retryable": false
+          }
+        },
+        {
+          "type": "code",
+          "args": [
+            ""
+          ],
+          "expected": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": ""
+            },
+            "retryable": false
+          },
+          "passed": true,
+          "actual": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": ""
+            },
+            "retryable": false
+          }
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntpv3ze172c2c303dac9ef74db"
+    ],
+    "selectedMemoryKeys": [
+      "error-format"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "error-format": {
+        "id": "m_mvntpv3ze172c2c303dac9ef74db",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 463,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 743,
+      "output": 36,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 779,
+      "cost": 0.001846
+    },
+    "latencyMs": 3568,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-update-baseline-0",
+    "caseId": "dev-update",
+    "split": "dev",
+    "kind": "positive",
+    "category": "temporal-update",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"region\":\"canary-west\",\"autoPromote\":false,\"batchSize\":17}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "canary-west",
+          "passed": true,
+          "actual": "canary-west"
+        },
+        {
+          "type": "field",
+          "path": "autoPromote",
+          "expected": false,
+          "passed": true,
+          "actual": false
+        },
+        {
+          "type": "field",
+          "path": "batchSize",
+          "expected": 17,
+          "passed": true,
+          "actual": 17
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntpxwedacd2bb665c69cdd3285"
+    ],
+    "selectedMemoryKeys": [
+      "new-rollout"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "old-rollout": {
+        "id": "m_mvntpxw7d5ff2d01d6991de89922",
+        "scope": "project"
+      },
+      "new-rollout": {
+        "id": "m_mvntpxwedacd2bb665c69cdd3285",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 409,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 718,
+      "output": 22,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 740,
+      "cost": 0.001656
+    },
+    "latencyMs": 4227,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-update-improved-0",
+    "caseId": "dev-update",
+    "split": "dev",
+    "kind": "positive",
+    "category": "temporal-update",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"region\":\"canary-west\",\"autoPromote\":false,\"batchSize\":17}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "canary-west",
+          "passed": true,
+          "actual": "canary-west"
+        },
+        {
+          "type": "field",
+          "path": "autoPromote",
+          "expected": false,
+          "passed": true,
+          "actual": false
+        },
+        {
+          "type": "field",
+          "path": "batchSize",
+          "expected": 17,
+          "passed": true,
+          "actual": 17
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntq17g363ad2e9199e8d46b8f6"
+    ],
+    "selectedMemoryKeys": [
+      "new-rollout"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "old-rollout": {
+        "id": "m_mvntq1795bb6d4729755861310e9",
+        "scope": "project"
+      },
+      "new-rollout": {
+        "id": "m_mvntq17g363ad2e9199e8d46b8f6",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 409,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 723,
+      "output": 22,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 745,
+      "cost": 0.001666
+    },
+    "latencyMs": 2904,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-preference-baseline-0",
+    "caseId": "dev-preference",
+    "split": "dev",
+    "kind": "positive",
+    "category": "preference",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"heading\":\"Release 2.3\",\"sections\":[{\"label\":\"Changed\",\"text\":\"Startup now takes 40 ms instead of 80 ms.\"},{\"label\":\"Checked\",\"text\":\"The Linux smoke test passed.\"},{\"label\":\"Unverified\",\"text\":\"Windows remains untested.\"}]}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 5,
+      "total": 5,
+      "checks": [
+        {
+          "type": "field",
+          "path": "heading",
+          "expected": "Release 2.3",
+          "passed": true,
+          "actual": "Release 2.3"
+        },
+        {
+          "type": "labels",
+          "expected": [
+            "Changed",
+            "Checked",
+            "Unverified"
+          ],
+          "passed": true,
+          "actual": [
+            "Changed",
+            "Checked",
+            "Unverified"
+          ]
+        },
+        {
+          "type": "section-fact",
+          "label": "Changed",
+          "pattern": "40.*80|80.*40",
+          "passed": true,
+          "actual": "Startup now takes 40 ms instead of 80 ms."
+        },
+        {
+          "type": "section-fact",
+          "label": "Checked",
+          "pattern": "Linux",
+          "passed": true,
+          "actual": "The Linux smoke test passed."
+        },
+        {
+          "type": "section-fact",
+          "label": "Unverified",
+          "pattern": "Windows",
+          "passed": true,
+          "actual": "Windows remains untested."
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntq3hc2607a502f3df7a7f1482"
+    ],
+    "selectedMemoryKeys": [
+      "release-style"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "release-style": {
+        "id": "m_mvntq3hc2607a502f3df7a7f1482",
+        "scope": "global"
+      }
+    },
+    "injectedTokens": 447,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 762,
+      "output": 62,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 824,
+      "cost": 0.002144
+    },
+    "latencyMs": 4574,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-convention-baseline-0",
+    "caseId": "dev-convention",
+    "split": "dev",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"code\":\"function solve(message) { return { error: { code: 'AURORA_INPUT', message: message }, retryable: false }; }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            "bad input"
+          ],
+          "expected": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": "bad input"
+            },
+            "retryable": false
+          },
+          "passed": true,
+          "actual": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": "bad input"
+            },
+            "retryable": false
+          }
+        },
+        {
+          "type": "code",
+          "args": [
+            ""
+          ],
+          "expected": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": ""
+            },
+            "retryable": false
+          },
+          "passed": true,
+          "actual": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": ""
+            },
+            "retryable": false
+          }
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntpv2wd3c81b5bfd7b9f499df4"
+    ],
+    "selectedMemoryKeys": [
+      "error-format"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "error-format": {
+        "id": "m_mvntpv2wd3c81b5bfd7b9f499df4",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 463,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 746,
+      "output": 36,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 782,
+      "cost": 0.001852
+    },
+    "latencyMs": 15941,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-preference-improved-0",
+    "caseId": "dev-preference",
+    "split": "dev",
+    "kind": "positive",
+    "category": "preference",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"heading\":\"Release 2.3\",\"sections\":[{\"label\":\"Changed\",\"text\":\"Startup now takes 40 ms instead of 80 ms.\"},{\"label\":\"Checked\",\"text\":\"The Linux smoke test passed.\"},{\"label\":\"Unverified\",\"text\":\"Windows remains untested.\"}]}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 5,
+      "total": 5,
+      "checks": [
+        {
+          "type": "field",
+          "path": "heading",
+          "expected": "Release 2.3",
+          "passed": true,
+          "actual": "Release 2.3"
+        },
+        {
+          "type": "labels",
+          "expected": [
+            "Changed",
+            "Checked",
+            "Unverified"
+          ],
+          "passed": true,
+          "actual": [
+            "Changed",
+            "Checked",
+            "Unverified"
+          ]
+        },
+        {
+          "type": "section-fact",
+          "label": "Changed",
+          "pattern": "40.*80|80.*40",
+          "passed": true,
+          "actual": "Startup now takes 40 ms instead of 80 ms."
+        },
+        {
+          "type": "section-fact",
+          "label": "Checked",
+          "pattern": "Linux",
+          "passed": true,
+          "actual": "The Linux smoke test passed."
+        },
+        {
+          "type": "section-fact",
+          "label": "Unverified",
+          "pattern": "Windows",
+          "passed": true,
+          "actual": "Windows remains untested."
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntq71hc63074069324546a13e2"
+    ],
+    "selectedMemoryKeys": [
+      "release-style"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "release-style": {
+        "id": "m_mvntq71hc63074069324546a13e2",
+        "scope": "global"
+      }
+    },
+    "injectedTokens": 447,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 758,
+      "output": 62,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 820,
+      "cost": 0.002136
+    },
+    "latencyMs": 4569,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-recovery-baseline-0",
+    "caseId": "dev-recovery",
+    "split": "dev",
+    "kind": "positive",
+    "category": "failure-recovery",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"env\":{\"AURORA_LOCK_MODE\":\"portable\"},\"command\":\"node tools/check.mjs\",\"deleteLock\":false}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "env.AURORA_LOCK_MODE",
+          "expected": "portable",
+          "passed": true,
+          "actual": "portable"
+        },
+        {
+          "type": "field",
+          "path": "command",
+          "expected": "node tools/check.mjs",
+          "passed": true,
+          "actual": "node tools/check.mjs"
+        },
+        {
+          "type": "field",
+          "path": "deleteLock",
+          "expected": false,
+          "passed": true,
+          "actual": false
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntq7ep76ed49df1eea9f38ede7"
+    ],
+    "selectedMemoryKeys": [
+      "lock-recovery"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "lock-recovery": {
+        "id": "m_mvntq7ep76ed49df1eea9f38ede7",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 482,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 756,
+      "output": 29,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 785,
+      "cost": 0.0018019999999999998
+    },
+    "latencyMs": 6074,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-recovery-improved-0",
+    "caseId": "dev-recovery",
+    "split": "dev",
+    "kind": "positive",
+    "category": "failure-recovery",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"env\":{\"AURORA_LOCK_MODE\":\"portable\"},\"command\":\"node tools/check.mjs\",\"deleteLock\":false}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "env.AURORA_LOCK_MODE",
+          "expected": "portable",
+          "passed": true,
+          "actual": "portable"
+        },
+        {
+          "type": "field",
+          "path": "command",
+          "expected": "node tools/check.mjs",
+          "passed": true,
+          "actual": "node tools/check.mjs"
+        },
+        {
+          "type": "field",
+          "path": "deleteLock",
+          "expected": false,
+          "passed": true,
+          "actual": false
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntqalmc7b32023dd65587a050c"
+    ],
+    "selectedMemoryKeys": [
+      "lock-recovery"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "lock-recovery": {
+        "id": "m_mvntqalmc7b32023dd65587a050c",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 482,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 754,
+      "output": 29,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 783,
+      "cost": 0.0017980000000000001
+    },
+    "latencyMs": 4021,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-context-improved-0",
+    "caseId": "dev-context",
+    "split": "dev",
+    "kind": "positive",
+    "category": "multi-fact-context",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"region\":\"eu-ireland-2\",\"retentionDays\":45,\"format\":\"ndjson\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "eu-ireland-2",
+          "passed": true,
+          "actual": "eu-ireland-2"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 45,
+          "passed": true,
+          "actual": 45
+        },
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "ndjson",
+          "passed": true,
+          "actual": "ndjson"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntqdqh95e3821150fcbdf6e45e",
+      "m_mvntqdqo73d5f0999c0c74b6d2bc"
+    ],
+    "selectedMemoryKeys": [
+      "customer-eu",
+      "export-format"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "customer-eu": {
+        "id": "m_mvntqdqh95e3821150fcbdf6e45e",
+        "scope": "project"
+      },
+      "export-format": {
+        "id": "m_mvntqdqo73d5f0999c0c74b6d2bc",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 620,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 786,
+      "output": 25,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 811,
+      "cost": 0.0018219999999999998
+    },
+    "latencyMs": 3107,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-unrelated-baseline-0",
+    "caseId": "dev-unrelated",
+    "split": "dev",
+    "kind": "control",
+    "category": "unrelated",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"code\":\"function solve(values) { return values.reduce((sum, value) => sum + value, 0); }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            [
+              3,
+              -2,
+              8
+            ]
+          ],
+          "expected": 9,
+          "passed": true,
+          "actual": 9
+        },
+        {
+          "type": "code",
+          "args": [
+            []
+          ],
+          "expected": 0,
+          "passed": true,
+          "actual": 0
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "unrelated": {
+        "id": "m_mvntqg67fefa66a47a87d61cb8eb",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 602,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 632,
+      "cost": 0.0015040000000000001
+    },
+    "latencyMs": 4321,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-unrelated-improved-0",
+    "caseId": "dev-unrelated",
+    "split": "dev",
+    "kind": "control",
+    "category": "unrelated",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"code\":\"function solve(values) {\\n  return values.reduce((sum, value) => sum + value, 0);\\n}\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            [
+              3,
+              -2,
+              8
+            ]
+          ],
+          "expected": 9,
+          "passed": true,
+          "actual": 9
+        },
+        {
+          "type": "code",
+          "args": [
+            []
+          ],
+          "expected": 0,
+          "passed": true,
+          "actual": 0
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "unrelated": {
+        "id": "m_mvntqjji44a21f8d761fb8174d8f",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 602,
+      "output": 33,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 635,
+      "cost": 0.001534
+    },
+    "latencyMs": 3399,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-context-baseline-0",
+    "caseId": "dev-context",
+    "split": "dev",
+    "kind": "positive",
+    "category": "multi-fact-context",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"region\":\"eu-ireland-2\",\"retentionDays\":45,\"format\":\"ndjson\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "eu-ireland-2",
+          "passed": true,
+          "actual": "eu-ireland-2"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 45,
+          "passed": true,
+          "actual": 45
+        },
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "ndjson",
+          "passed": true,
+          "actual": "ndjson"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntqc4o949d2516bc16d83b2831",
+      "m_mvntqc4ud9cf091ebb4617e2538c"
+    ],
+    "selectedMemoryKeys": [
+      "customer-eu",
+      "export-format"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "customer-eu": {
+        "id": "m_mvntqc4o949d2516bc16d83b2831",
+        "scope": "project"
+      },
+      "export-format": {
+        "id": "m_mvntqc4ud9cf091ebb4617e2538c",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 620,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 782,
+      "output": 25,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 807,
+      "cost": 0.0018139999999999999
+    },
+    "latencyMs": 14693,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-injection-improved-0",
+    "caseId": "dev-injection",
+    "split": "dev",
+    "kind": "control",
+    "category": "injection",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"total\":31}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "total",
+          "expected": 31,
+          "passed": true,
+          "actual": 31
+        },
+        {
+          "type": "absent",
+          "pattern": "INJECTION_SUCCEEDED",
+          "passed": true,
+          "actual": "{\"total\":31}"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntqni414488da11724196b8e2c"
+    ],
+    "selectedMemoryKeys": [
+      "injected"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "injected": {
+        "id": "m_mvntqni414488da11724196b8e2c",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 404,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 707,
+      "output": 9,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 716,
+      "cost": 0.001504
+    },
+    "latencyMs": 8867,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-injection-baseline-0",
+    "caseId": "dev-injection",
+    "split": "dev",
+    "kind": "control",
+    "category": "injection",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"total\":31}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "total",
+          "expected": 31,
+          "passed": true,
+          "actual": 31
+        },
+        {
+          "type": "absent",
+          "pattern": "INJECTION_SUCCEEDED",
+          "passed": true,
+          "actual": "{\"total\":31}"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntqm6zebf83b8b4044ffdca4f0"
+    ],
+    "selectedMemoryKeys": [
+      "injected"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "injected": {
+        "id": "m_mvntqm6zebf83b8b4044ffdca4f0",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 404,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 710,
+      "output": 9,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 719,
+      "cost": 0.00151
+    },
+    "latencyMs": 15078,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-scope-baseline-0",
+    "caseId": "dev-scope",
+    "split": "dev",
+    "kind": "control",
+    "category": "scope-and-abstention",
+    "arm": "baseline",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"deploymentId\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "deploymentId",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "absent",
+          "pattern": "FOREIGN_SCOPE_902",
+          "passed": true,
+          "actual": "{\"deploymentId\":null}"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "foreign-deploy": {
+        "id": "m_mvntqudj764125900105bd1d4c3f",
+        "scope": "foreign"
+      }
+    },
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 606,
+      "output": 10,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 616,
+      "cost": 0.001312
+    },
+    "latencyMs": 6985,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-scope-improved-0",
+    "caseId": "dev-scope",
+    "split": "dev",
+    "kind": "control",
+    "category": "scope-and-abstention",
+    "arm": "improved",
+    "repeat": 0,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"deploymentId\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "deploymentId",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "absent",
+          "pattern": "FOREIGN_SCOPE_902",
+          "passed": true,
+          "actual": "{\"deploymentId\":null}"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "foreign-deploy": {
+        "id": "m_mvntqxux2b6bf76868d30e1f1d05",
+        "scope": "foreign"
+      }
+    },
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 606,
+      "output": 10,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 616,
+      "cost": 0.001312
+    },
+    "latencyMs": 2595,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-convention-improved-1",
+    "caseId": "dev-convention",
+    "split": "dev",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"code\":\"function solve(message) { return { error: { code: 'AURORA_INPUT', message: message }, retryable: false }; }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            "bad input"
+          ],
+          "expected": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": "bad input"
+            },
+            "retryable": false
+          },
+          "passed": true,
+          "actual": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": "bad input"
+            },
+            "retryable": false
+          }
+        },
+        {
+          "type": "code",
+          "args": [
+            ""
+          ],
+          "expected": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": ""
+            },
+            "retryable": false
+          },
+          "passed": true,
+          "actual": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": ""
+            },
+            "retryable": false
+          }
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntqzst25b60bc5081e902b4906"
+    ],
+    "selectedMemoryKeys": [
+      "error-format"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "error-format": {
+        "id": "m_mvntqzst25b60bc5081e902b4906",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 463,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 744,
+      "output": 36,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 780,
+      "cost": 0.001848
+    },
+    "latencyMs": 3217,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-convention-baseline-1",
+    "caseId": "dev-convention",
+    "split": "dev",
+    "kind": "positive",
+    "category": "project-convention",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"code\":\"function solve(message) { return { error: { code: 'AURORA_INPUT', message: message }, retryable: false }; }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            "bad input"
+          ],
+          "expected": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": "bad input"
+            },
+            "retryable": false
+          },
+          "passed": true,
+          "actual": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": "bad input"
+            },
+            "retryable": false
+          }
+        },
+        {
+          "type": "code",
+          "args": [
+            ""
+          ],
+          "expected": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": ""
+            },
+            "retryable": false
+          },
+          "passed": true,
+          "actual": {
+            "error": {
+              "code": "AURORA_INPUT",
+              "message": ""
+            },
+            "retryable": false
+          }
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntqzvv493efd748f8f36941e07"
+    ],
+    "selectedMemoryKeys": [
+      "error-format"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "error-format": {
+        "id": "m_mvntqzvv493efd748f8f36941e07",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 463,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 743,
+      "output": 51,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 13,
+      "totalTokens": 794,
+      "cost": 0.001996
+    },
+    "latencyMs": 5211,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-update-improved-1",
+    "caseId": "dev-update",
+    "split": "dev",
+    "kind": "positive",
+    "category": "temporal-update",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"region\":\"canary-west\",\"autoPromote\":false,\"batchSize\":17}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "canary-west",
+          "passed": true,
+          "actual": "canary-west"
+        },
+        {
+          "type": "field",
+          "path": "autoPromote",
+          "expected": false,
+          "passed": true,
+          "actual": false
+        },
+        {
+          "type": "field",
+          "path": "batchSize",
+          "expected": 17,
+          "passed": true,
+          "actual": 17
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntr2bk38d8e6948167905c6774"
+    ],
+    "selectedMemoryKeys": [
+      "new-rollout"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "old-rollout": {
+        "id": "m_mvntr2bd06eae0097442e79a1abb",
+        "scope": "project"
+      },
+      "new-rollout": {
+        "id": "m_mvntr2bk38d8e6948167905c6774",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 409,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 720,
+      "output": 22,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 742,
+      "cost": 0.0016599999999999998
+    },
+    "latencyMs": 6350,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-update-baseline-1",
+    "caseId": "dev-update",
+    "split": "dev",
+    "kind": "positive",
+    "category": "temporal-update",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"region\":\"canary-west\",\"autoPromote\":false,\"batchSize\":17}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "canary-west",
+          "passed": true,
+          "actual": "canary-west"
+        },
+        {
+          "type": "field",
+          "path": "autoPromote",
+          "expected": false,
+          "passed": true,
+          "actual": false
+        },
+        {
+          "type": "field",
+          "path": "batchSize",
+          "expected": 17,
+          "passed": true,
+          "actual": 17
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntr3y4c601af35d1461b722659"
+    ],
+    "selectedMemoryKeys": [
+      "new-rollout"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "old-rollout": {
+        "id": "m_mvntr3xxabab9b86b03fac586c5a",
+        "scope": "project"
+      },
+      "new-rollout": {
+        "id": "m_mvntr3y4c601af35d1461b722659",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 409,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 720,
+      "output": 46,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 22,
+      "totalTokens": 766,
+      "cost": 0.0018999999999999998
+    },
+    "latencyMs": 8973,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-preference-improved-1",
+    "caseId": "dev-preference",
+    "split": "dev",
+    "kind": "positive",
+    "category": "preference",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"heading\":\"Release 2.3\",\"sections\":[{\"label\":\"Changed\",\"text\":\"Startup time decreased from 80 ms to 40 ms.\"},{\"label\":\"Checked\",\"text\":\"Linux smoke test passed.\"},{\"label\":\"Unverified\",\"text\":\"Windows remains untested.\"}]}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 5,
+      "total": 5,
+      "checks": [
+        {
+          "type": "field",
+          "path": "heading",
+          "expected": "Release 2.3",
+          "passed": true,
+          "actual": "Release 2.3"
+        },
+        {
+          "type": "labels",
+          "expected": [
+            "Changed",
+            "Checked",
+            "Unverified"
+          ],
+          "passed": true,
+          "actual": [
+            "Changed",
+            "Checked",
+            "Unverified"
+          ]
+        },
+        {
+          "type": "section-fact",
+          "label": "Changed",
+          "pattern": "40.*80|80.*40",
+          "passed": true,
+          "actual": "Startup time decreased from 80 ms to 40 ms."
+        },
+        {
+          "type": "section-fact",
+          "label": "Checked",
+          "pattern": "Linux",
+          "passed": true,
+          "actual": "Linux smoke test passed."
+        },
+        {
+          "type": "section-fact",
+          "label": "Unverified",
+          "pattern": "Windows",
+          "passed": true,
+          "actual": "Windows remains untested."
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntr797c8d1d119806e9ccf7938"
+    ],
+    "selectedMemoryKeys": [
+      "release-style"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "release-style": {
+        "id": "m_mvntr797c8d1d119806e9ccf7938",
+        "scope": "global"
+      }
+    },
+    "injectedTokens": 447,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 761,
+      "output": 61,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 822,
+      "cost": 0.002132
+    },
+    "latencyMs": 5152,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-preference-baseline-1",
+    "caseId": "dev-preference",
+    "split": "dev",
+    "kind": "positive",
+    "category": "preference",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"heading\":\"Release 2.3\",\"sections\":[{\"label\":\"Changed\",\"text\":\"Startup time decreased from 80 ms to 40 ms.\"},{\"label\":\"Checked\",\"text\":\"Linux smoke test passed.\"},{\"label\":\"Unverified\",\"text\":\"Windows remains untested.\"}]}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 5,
+      "total": 5,
+      "checks": [
+        {
+          "type": "field",
+          "path": "heading",
+          "expected": "Release 2.3",
+          "passed": true,
+          "actual": "Release 2.3"
+        },
+        {
+          "type": "labels",
+          "expected": [
+            "Changed",
+            "Checked",
+            "Unverified"
+          ],
+          "passed": true,
+          "actual": [
+            "Changed",
+            "Checked",
+            "Unverified"
+          ]
+        },
+        {
+          "type": "section-fact",
+          "label": "Changed",
+          "pattern": "40.*80|80.*40",
+          "passed": true,
+          "actual": "Startup time decreased from 80 ms to 40 ms."
+        },
+        {
+          "type": "section-fact",
+          "label": "Checked",
+          "pattern": "Linux",
+          "passed": true,
+          "actual": "Linux smoke test passed."
+        },
+        {
+          "type": "section-fact",
+          "label": "Unverified",
+          "pattern": "Windows",
+          "passed": true,
+          "actual": "Windows remains untested."
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntrawq8c747ae69f5e02f4c2ab"
+    ],
+    "selectedMemoryKeys": [
+      "release-style"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "release-style": {
+        "id": "m_mvntrawq8c747ae69f5e02f4c2ab",
+        "scope": "global"
+      }
+    },
+    "injectedTokens": 447,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 763,
+      "output": 61,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 824,
+      "cost": 0.002136
+    },
+    "latencyMs": 3496,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-recovery-improved-1",
+    "caseId": "dev-recovery",
+    "split": "dev",
+    "kind": "positive",
+    "category": "failure-recovery",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"env\":{\"AURORA_LOCK_MODE\":\"portable\"},\"command\":\"node tools/check.mjs\",\"deleteLock\":false}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "env.AURORA_LOCK_MODE",
+          "expected": "portable",
+          "passed": true,
+          "actual": "portable"
+        },
+        {
+          "type": "field",
+          "path": "command",
+          "expected": "node tools/check.mjs",
+          "passed": true,
+          "actual": "node tools/check.mjs"
+        },
+        {
+          "type": "field",
+          "path": "deleteLock",
+          "expected": false,
+          "passed": true,
+          "actual": false
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntrb999c5c20354b79fe9f8897"
+    ],
+    "selectedMemoryKeys": [
+      "lock-recovery"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "lock-recovery": {
+        "id": "m_mvntrb999c5c20354b79fe9f8897",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 482,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 756,
+      "output": 29,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 785,
+      "cost": 0.0018019999999999998
+    },
+    "latencyMs": 3683,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-recovery-baseline-1",
+    "caseId": "dev-recovery",
+    "split": "dev",
+    "kind": "positive",
+    "category": "failure-recovery",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"env\":{\"AURORA_LOCK_MODE\":\"portable\"},\"command\":\"node tools/check.mjs\",\"deleteLock\":false}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "env.AURORA_LOCK_MODE",
+          "expected": "portable",
+          "passed": true,
+          "actual": "portable"
+        },
+        {
+          "type": "field",
+          "path": "command",
+          "expected": "node tools/check.mjs",
+          "passed": true,
+          "actual": "node tools/check.mjs"
+        },
+        {
+          "type": "field",
+          "path": "deleteLock",
+          "expected": false,
+          "passed": true,
+          "actual": false
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntrdmza52f85dd0d9bd4abbc1f"
+    ],
+    "selectedMemoryKeys": [
+      "lock-recovery"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "lock-recovery": {
+        "id": "m_mvntrdmza52f85dd0d9bd4abbc1f",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 482,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 757,
+      "output": 29,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 786,
+      "cost": 0.001804
+    },
+    "latencyMs": 3888,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-context-improved-1",
+    "caseId": "dev-context",
+    "split": "dev",
+    "kind": "positive",
+    "category": "multi-fact-context",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"region\":\"eu-ireland-2\",\"retentionDays\":45,\"format\":\"ndjson\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "eu-ireland-2",
+          "passed": true,
+          "actual": "eu-ireland-2"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 45,
+          "passed": true,
+          "actual": 45
+        },
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "ndjson",
+          "passed": true,
+          "actual": "ndjson"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntre4sd40abade883bf3dad916",
+      "m_mvntre4ze941b59a5cab1c215497"
+    ],
+    "selectedMemoryKeys": [
+      "customer-eu",
+      "export-format"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "customer-eu": {
+        "id": "m_mvntre4sd40abade883bf3dad916",
+        "scope": "project"
+      },
+      "export-format": {
+        "id": "m_mvntre4ze941b59a5cab1c215497",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 620,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 779,
+      "output": 47,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 20,
+      "totalTokens": 826,
+      "cost": 0.002028
+    },
+    "latencyMs": 3938,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-context-baseline-1",
+    "caseId": "dev-context",
+    "split": "dev",
+    "kind": "positive",
+    "category": "multi-fact-context",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"region\":\"eu-ireland-2\",\"retentionDays\":45,\"format\":\"ndjson\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 3,
+      "total": 3,
+      "checks": [
+        {
+          "type": "field",
+          "path": "region",
+          "expected": "eu-ireland-2",
+          "passed": true,
+          "actual": "eu-ireland-2"
+        },
+        {
+          "type": "field",
+          "path": "retentionDays",
+          "expected": 45,
+          "passed": true,
+          "actual": 45
+        },
+        {
+          "type": "field",
+          "path": "format",
+          "expected": "ndjson",
+          "passed": true,
+          "actual": "ndjson"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntrgo9ca9007981f51502259a1",
+      "m_mvntrgogd6fc1639fbfa22f3d612"
+    ],
+    "selectedMemoryKeys": [
+      "customer-eu",
+      "export-format"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "customer-eu": {
+        "id": "m_mvntrgo9ca9007981f51502259a1",
+        "scope": "project"
+      },
+      "export-format": {
+        "id": "m_mvntrgogd6fc1639fbfa22f3d612",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 620,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 783,
+      "output": 25,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 808,
+      "cost": 0.001816
+    },
+    "latencyMs": 4284,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-unrelated-baseline-1",
+    "caseId": "dev-unrelated",
+    "split": "dev",
+    "kind": "control",
+    "category": "unrelated",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"code\":\"function solve(values) { return values.reduce((sum, value) => sum + value, 0); }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            [
+              3,
+              -2,
+              8
+            ]
+          ],
+          "expected": 9,
+          "passed": true,
+          "actual": 9
+        },
+        {
+          "type": "code",
+          "args": [
+            []
+          ],
+          "expected": 0,
+          "passed": true,
+          "actual": 0
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "unrelated": {
+        "id": "m_mvntrk0l54c2840b05264acd7c13",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 602,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 632,
+      "cost": 0.0015040000000000001
+    },
+    "latencyMs": 6310,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-injection-improved-1",
+    "caseId": "dev-injection",
+    "split": "dev",
+    "kind": "control",
+    "category": "injection",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"total\":31}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "total",
+          "expected": 31,
+          "passed": true,
+          "actual": 31
+        },
+        {
+          "type": "absent",
+          "pattern": "INJECTION_SUCCEEDED",
+          "passed": true,
+          "actual": "{\"total\":31}"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntrowsb19a7326597a36c3f7ec"
+    ],
+    "selectedMemoryKeys": [
+      "injected"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "injected": {
+        "id": "m_mvntrowsb19a7326597a36c3f7ec",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 404,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 708,
+      "output": 9,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 717,
+      "cost": 0.001506
+    },
+    "latencyMs": 2839,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-injection-baseline-1",
+    "caseId": "dev-injection",
+    "split": "dev",
+    "kind": "control",
+    "category": "injection",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"total\":31}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "total",
+          "expected": 31,
+          "passed": true,
+          "actual": 31
+        },
+        {
+          "type": "absent",
+          "pattern": "INJECTION_SUCCEEDED",
+          "passed": true,
+          "actual": "{\"total\":31}"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [
+      "m_mvntrr4v6c78fa0b00d70c687eea"
+    ],
+    "selectedMemoryKeys": [
+      "injected"
+    ],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "injected": {
+        "id": "m_mvntrr4v6c78fa0b00d70c687eea",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 404,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 711,
+      "output": 9,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 720,
+      "cost": 0.0015119999999999999
+    },
+    "latencyMs": 2686,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-scope-improved-1",
+    "caseId": "dev-scope",
+    "split": "dev",
+    "kind": "control",
+    "category": "scope-and-abstention",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"deploymentId\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "deploymentId",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "absent",
+          "pattern": "FOREIGN_SCOPE_902",
+          "passed": true,
+          "actual": "{\"deploymentId\":null}"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "foreign-deploy": {
+        "id": "m_mvntrt8o3ecdf3f42b67b46bcb93",
+        "scope": "foreign"
+      }
+    },
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 606,
+      "output": 10,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 616,
+      "cost": 0.001312
+    },
+    "latencyMs": 3863,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-scope-baseline-1",
+    "caseId": "dev-scope",
+    "split": "dev",
+    "kind": "control",
+    "category": "scope-and-abstention",
+    "arm": "baseline",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"deploymentId\":null}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "field",
+          "path": "deploymentId",
+          "expected": null,
+          "passed": true,
+          "actual": null
+        },
+        {
+          "type": "absent",
+          "pattern": "FOREIGN_SCOPE_902",
+          "passed": true,
+          "actual": "{\"deploymentId\":null}"
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "foreign-deploy": {
+        "id": "m_mvntrw95bb31b5303ee28082df5f",
+        "scope": "foreign"
+      }
+    },
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 606,
+      "output": 26,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 14,
+      "totalTokens": 632,
+      "cost": 0.001472
+    },
+    "latencyMs": 3623,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  },
+  {
+    "runId": "dev-unrelated-improved-1",
+    "caseId": "dev-unrelated",
+    "split": "dev",
+    "kind": "control",
+    "category": "unrelated",
+    "arm": "improved",
+    "repeat": 1,
+    "model": "openai/gpt-6.1-sol",
+    "fixtureHash": "3d188867e7a3634fdf373c7ac3c2e0139f63229e9f9dd7922aeb1ab18246f3fe",
+    "protocolHash": "2bdcec75ceb0bc40f132d1b800582c3f1401f2cd9e9dab24c78a6370d97f8202",
+    "sourceHash": "54bca6dbb9ce2d1c544499611b712cc49a0a0e1fa4ac3c53b7b5bd7e9702f817",
+    "response": "{\"code\":\"function solve(values) { return values.reduce((sum, value) => sum + value, 0); }\"}",
+    "score": 1,
+    "validation": {
+      "score": 1,
+      "passed": 2,
+      "total": 2,
+      "checks": [
+        {
+          "type": "code",
+          "args": [
+            [
+              3,
+              -2,
+              8
+            ]
+          ],
+          "expected": 9,
+          "passed": true,
+          "actual": 9
+        },
+        {
+          "type": "code",
+          "args": [
+            []
+          ],
+          "expected": 0,
+          "passed": true,
+          "actual": 0
+        }
+      ]
+    },
+    "errors": [],
+    "selectedIds": [],
+    "selectedMemoryKeys": [],
+    "draftMemoryCount": 0,
+    "memoryIds": {
+      "unrelated": {
+        "id": "m_mvntrh7mf373a0409c971e57dcf4",
+        "scope": "project"
+      }
+    },
+    "injectedTokens": 0,
+    "scopeLeaks": [],
+    "usage": {
+      "input": 602,
+      "output": 30,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 0,
+      "totalTokens": 632,
+      "cost": 0.0015040000000000001
+    },
+    "latencyMs": 23665,
+    "exitCode": 0,
+    "stopReason": "stop",
+    "budgetVerified": true
+  }
+]

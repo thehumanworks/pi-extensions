@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "description": "Independent facts and queries written before inspecting score-gap results. Includes single-fact, compositional, and abstention requests.",
+  "facts": [
+    { "key": "cypress-recovery", "title": "Cypress recovery verification", "body": "After restoring Cypress backups, compare the signed manifest before starting readers.", "keywords": ["cypress", "backup", "recovery", "verification", "manifest"] },
+    { "key": "cypress-encryption", "title": "Cypress backup encryption", "body": "Encrypt Cypress backups using the managed vault key before upload. Reject an unencrypted archive.", "keywords": ["cypress", "backup", "encryption", "vault"] },
+    { "key": "invoice-amounts", "title": "Invoice import amount rounding", "body": "Round imported invoice amounts to two decimal places using decimal arithmetic, never binary floating point.", "keywords": ["invoice", "import", "amount", "decimal", "rounding"] },
+    { "key": "invoice-duplicates", "title": "Invoice import duplicate handling", "body": "Reject repeated document identifiers during invoice import. Do not sum duplicate records.", "keywords": ["invoice", "import", "duplicate", "document", "identifier"] },
+    { "key": "reader-focus", "title": "Screen reader focus after modal dismissal", "body": "Return keyboard focus to the original trigger after closing a modal so screen reader users can continue.", "keywords": ["screen", "reader", "focus", "modal", "closing", "accessible", "review"] },
+    { "key": "motion", "scope": "global", "type": "preference", "title": "Reduced motion transitions", "body": "Disable animated transitions when the user requests reduced motion.", "keywords": ["motion", "animated", "transition", "preference", "accessible"] }
+  ],
+  "queries": [
+    { "query": "Cypress backup recovery verification", "gold": ["cypress-recovery"] },
+    { "query": "Cypress backup encryption", "gold": ["cypress-encryption"] },
+    { "query": "Invoice import decimal amount rounding", "gold": ["invoice-amounts"] },
+    { "query": "Invoice import duplicate document identifiers", "gold": ["invoice-duplicates"] },
+    { "query": "Screen reader focus after modal dismissal", "gold": ["reader-focus"] },
+    { "query": "Animated transitions reduced motion preference", "gold": ["motion"] },
+    { "query": "Prepare an invoice import: handle decimal amounts and duplicate identifiers", "gold": ["invoice-amounts", "invoice-duplicates"] },
+    { "query": "After restoring Cypress backup verify recovery and confirm encryption", "gold": ["cypress-recovery", "cypress-encryption"] },
+    { "query": "Review accessible modal closing and motion transitions", "gold": ["reader-focus", "motion"] },
+    { "query": "How far away is Jupiter", "gold": [] }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "correction",
+  "prompt": "Correction for ingestion: default batch size is now 4 accepted records, replacing 2. The recovery procedure you verified is approved for this project. This is durable; diagnostic overrides are temporary. Reply only ACK.",
+  "exitCode": 0,
+  "timedOut": false,
+  "latencyMs": 3606,
+  "modelRequests": 1,
+  "usage": {
+    "input": 852,
+    "output": 5,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 857,
+    "cost": 0.001754
+  },
+  "finalText": "ACK"
+}

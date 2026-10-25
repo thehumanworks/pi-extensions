@@ -1,0 +1,9 @@
+{
+  "version": 3,
+  "name": "recovery-fixture",
+  "extra": "preserve",
+  "timeoutMs": 3000,
+  "features": [
+    "ready"
+  ]
+}

@@ -1,0 +1,191 @@
+{
+  "runId": "stress-composition-baseline-1",
+  "caseId": "stress-composition",
+  "split": "dev",
+  "kind": "positive",
+  "category": "four-fact-composition",
+  "arm": "baseline",
+  "repeat": 1,
+  "model": "openai/gpt-6.1-sol",
+  "fixtureHash": "abd9fbbcbd1e81f72fdf4a7e4466b0630cae6b4875386a8f22198ea975f6d39f",
+  "protocolHash": "e1ae30f1f1f85809a9daf04b674c4ed1dac08c61b9a87a9e6cd45507cdf70d38",
+  "sourceHash": "c06e201321a70f9df946cfe6f23760f7910cc8f91f4bccfaebd77a6ae8320c82",
+  "response": "{\"idColumn\":\"account_ref\",\"encoding\":\"utf-16le\",\"emptyValue\":\"NA_VALUE\",\"duplicatePolicy\":null}",
+  "score": 0.75,
+  "validation": {
+    "score": 0.75,
+    "passed": 3,
+    "total": 4,
+    "checks": [
+      {
+        "type": "field",
+        "path": "idColumn",
+        "expected": "account_ref",
+        "passed": true,
+        "actual": "account_ref"
+      },
+      {
+        "type": "field",
+        "path": "encoding",
+        "expected": "utf-16le",
+        "passed": true,
+        "actual": "utf-16le"
+      },
+      {
+        "type": "field",
+        "path": "emptyValue",
+        "expected": "NA_VALUE",
+        "passed": true,
+        "actual": "NA_VALUE"
+      },
+      {
+        "type": "field",
+        "path": "duplicatePolicy",
+        "expected": "keep-first",
+        "passed": false,
+        "actual": null
+      }
+    ]
+  },
+  "errors": [],
+  "selectedIds": [
+    "m_mvntl1z0ef361ddc29aef447613b",
+    "m_mvntl1yd39c283395bed1a3dba0b",
+    "m_mvntl1ypb556cf5837ddbc98409c"
+  ],
+  "selectedMemoryKeys": [
+    "empty",
+    "column",
+    "encoding"
+  ],
+  "draftMemoryCount": 0,
+  "memoryIds": {
+    "draft-0": {
+      "id": "m_mvntl1slcd02ccecade3ddc54a99",
+      "scope": "project"
+    },
+    "draft-1": {
+      "id": "m_mvntl1ssee013b039139537c6d09",
+      "scope": "project"
+    },
+    "draft-2": {
+      "id": "m_mvntl1sy859f15bbb4ba02bb34a3",
+      "scope": "project"
+    },
+    "draft-3": {
+      "id": "m_mvntl1t489fc8568efdbb7a1ad01",
+      "scope": "project"
+    },
+    "draft-4": {
+      "id": "m_mvntl1tbfa224f86e6d08ee84fcf",
+      "scope": "project"
+    },
+    "draft-5": {
+      "id": "m_mvntl1tj3aa045bfec7dc661313b",
+      "scope": "project"
+    },
+    "draft-6": {
+      "id": "m_mvntl1tp5fe9d09d3fdc654ff623",
+      "scope": "project"
+    },
+    "draft-7": {
+      "id": "m_mvntl1tx3902792f105c69948d52",
+      "scope": "project"
+    },
+    "draft-8": {
+      "id": "m_mvntl1u566b10b5ae18765f4be5c",
+      "scope": "project"
+    },
+    "draft-9": {
+      "id": "m_mvntl1ud57f7205af3f11445dc11",
+      "scope": "project"
+    },
+    "draft-10": {
+      "id": "m_mvntl1ulcb235aaaf51b53b69bf2",
+      "scope": "project"
+    },
+    "draft-11": {
+      "id": "m_mvntl1uu7e0e8bbbef0b46996ff2",
+      "scope": "project"
+    },
+    "draft-12": {
+      "id": "m_mvntl1v36eccc5bddf69e9db255c",
+      "scope": "project"
+    },
+    "draft-13": {
+      "id": "m_mvntl1vb1fe2fd5a4055391c471e",
+      "scope": "project"
+    },
+    "draft-14": {
+      "id": "m_mvntl1vk11ff77b44b72f05d02cc",
+      "scope": "project"
+    },
+    "draft-15": {
+      "id": "m_mvntl1vuc63367fd641b698cb111",
+      "scope": "project"
+    },
+    "draft-16": {
+      "id": "m_mvntl1w3688338a3add6d6623bfb",
+      "scope": "project"
+    },
+    "draft-17": {
+      "id": "m_mvntl1wd7fe9aaae36dd4d740231",
+      "scope": "project"
+    },
+    "draft-18": {
+      "id": "m_mvntl1wn96abc5b14ace78bb56b8",
+      "scope": "project"
+    },
+    "draft-19": {
+      "id": "m_mvntl1ww5722ab0884255a3dc886",
+      "scope": "project"
+    },
+    "draft-20": {
+      "id": "m_mvntl1x6d7f9fd92afb2f7aebd70",
+      "scope": "project"
+    },
+    "draft-21": {
+      "id": "m_mvntl1xgdbae4afb354135d7cb34",
+      "scope": "project"
+    },
+    "draft-22": {
+      "id": "m_mvntl1xr66310fc18df5a039640e",
+      "scope": "project"
+    },
+    "draft-23": {
+      "id": "m_mvntl1y298f27512a992ec996911",
+      "scope": "project"
+    },
+    "column": {
+      "id": "m_mvntl1yd39c283395bed1a3dba0b",
+      "scope": "project"
+    },
+    "encoding": {
+      "id": "m_mvntl1ypb556cf5837ddbc98409c",
+      "scope": "project"
+    },
+    "empty": {
+      "id": "m_mvntl1z0ef361ddc29aef447613b",
+      "scope": "project"
+    },
+    "duplicates": {
+      "id": "m_mvntl1zaa0270018c8a8f8e8091a",
+      "scope": "project"
+    }
+  },
+  "injectedTokens": 1082,
+  "scopeLeaks": [],
+  "usage": {
+    "input": 937,
+    "output": 29,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 0,
+    "totalTokens": 966,
+    "cost": 0.002164
+  },
+  "latencyMs": 3447,
+  "exitCode": 0,
+  "stopReason": "stop",
+  "budgetVerified": true
+}

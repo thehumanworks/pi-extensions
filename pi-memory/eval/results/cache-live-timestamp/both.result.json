@@ -1,0 +1,12 @@
+{
+  "mode": "both",
+  "model": "openai/gpt-6.1-sol",
+  "runtime": "installed pi",
+  "requests": 2,
+  "declaredTools": 6,
+  "priorMessages": 4,
+  "nextMessages": 7,
+  "prefixStable": true,
+  "toolsStable": true,
+  "systemStable": true
+}

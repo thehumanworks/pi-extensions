@@ -1,0 +1,3289 @@
+{
+  "created": "2026-10-25T13:17:18.422Z",
+  "asOf": "2026-10-25T13:17:10.313Z",
+  "node": "v26.11.1",
+  "machine": {
+    "platform": "darwin",
+    "release": "27.2.0",
+    "cpu": "Apple M3 Ultra",
+    "cores": 28
+  },
+  "fixtureHashes": {
+    "growth": "9c5aef27d939d78584294ae3eb7cab4950a40fa477a02a06a52075e52defa996",
+    "temporal": "9553172b8490b6cdf687498d0dfb3c2272f47bc4133b58a7d888ec8b9efb8660"
+  },
+  "sourceHashes": {
+    "store.ts": "b9427ae34a77ad72945c0273a4bf351264925b25e25824824e7410cce040b272",
+    "retrieve.ts": "7ab4350dc65add3cae4a72eb983d67a5b832e7471cb42c9a0d4c260741769e26",
+    "types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+    "project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+    "secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d"
+  },
+  "sourceSnapshot": "pi-memory/bench/results/store-growth-v5.sources",
+  "sourceStable": true,
+  "method": {
+    "repetitions": 10,
+    "queryCount": 7,
+    "warmup": "one search per query/method",
+    "budgetUpperBound": 1200,
+    "candidateCaps": [
+      40,
+      100,
+      200
+    ],
+    "paidModelCalls": 0
+  },
+  "identity": {
+    "sameWorktreeIdentity": true,
+    "sameRemoteIdentity": true,
+    "unrelatedRemoteIsolated": true
+  },
+  "temporal": {
+    "note": "Explicit retention/expiry metadata tests the lifetime contract. Selected evidence and canonical retirement are measured; model execution is not.",
+    "before": [
+      {
+        "query": "Release approval before publishing",
+        "relevant": [
+          "lasting-feedback"
+        ],
+        "expectedAction": "ask for explicit approval",
+        "selectedKeys": [
+          "lasting-feedback"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Response format concise",
+        "relevant": [
+          "lasting-preference"
+        ],
+        "expectedAction": "respond concisely",
+        "selectedKeys": [
+          "lasting-preference"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Current incident traffic routing cluster",
+        "relevant": [
+          "default-routing",
+          "current-override"
+        ],
+        "forbidden": [
+          "expired-override"
+        ],
+        "expectedAction": "use green during current override; retain blue default for later",
+        "selectedKeys": [
+          "current-override",
+          "default-routing"
+        ],
+        "forbiddenSelected": 0
+      }
+    ],
+    "consolidation": {
+      "archived": 1,
+      "duplicates": 0
+    },
+    "after": [
+      {
+        "query": "Release approval before publishing",
+        "relevant": [
+          "lasting-feedback"
+        ],
+        "expectedAction": "ask for explicit approval",
+        "selectedKeys": [
+          "lasting-feedback"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Response format concise",
+        "relevant": [
+          "lasting-preference"
+        ],
+        "expectedAction": "respond concisely",
+        "selectedKeys": [
+          "lasting-preference"
+        ],
+        "forbiddenSelected": 0
+      },
+      {
+        "query": "Current incident traffic routing cluster",
+        "relevant": [
+          "default-routing",
+          "current-override"
+        ],
+        "forbidden": [
+          "expired-override"
+        ],
+        "expectedAction": "use green during current override; retain blue default for later",
+        "selectedKeys": [
+          "current-override",
+          "default-routing"
+        ],
+        "forbiddenSelected": 0
+      }
+    ],
+    "statuses": {
+      "default-routing": "active",
+      "current-override": "active",
+      "lasting-feedback": "active",
+      "expired-override": "archived",
+      "lasting-preference": "active"
+    }
+  },
+  "rows": [
+    {
+      "size": 100,
+      "layout": "mixed-projects",
+      "scopeCount": 58,
+      "visibleActiveItems": 9,
+      "seedMs": 11.188,
+      "initialIndexMs": 7.755,
+      "reindex": {
+        "p50Ms": 2.741,
+        "p95Ms": 3.228,
+        "maxMs": 3.228,
+        "samples": 3
+      },
+      "injectedRunStorage": {
+        "p50Ms": 11.065,
+        "p95Ms": 11.234,
+        "maxMs": 11.234,
+        "samples": 3
+      },
+      "disk": {
+        "totalBytes": 346985,
+        "canonicalBytes": 113123,
+        "indexBytes": 233472,
+        "files": 102
+      },
+      "results": [
+        {
+          "method": "production",
+          "latency": {
+            "p50Ms": 0.07,
+            "p95Ms": 0.182,
+            "maxMs": 0.33,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.786,
+          "microRecall": 1,
+          "microPrecision": 0.667,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 641,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 361
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 364
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_a92abf218f9c36acdf71c3a99861"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 588
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_c107a809d56611034685de795573"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 641
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_c3e4fb7c2e0c3a563680aa9a4b98"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 590
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-40",
+          "latency": {
+            "p50Ms": 0.065,
+            "p95Ms": 0.144,
+            "maxMs": 0.2,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.786,
+          "microRecall": 1,
+          "microPrecision": 0.667,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 641,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 361
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 364
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_a92abf218f9c36acdf71c3a99861"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 588
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_c107a809d56611034685de795573"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 641
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_c3e4fb7c2e0c3a563680aa9a4b98"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 590
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-100",
+          "latency": {
+            "p50Ms": 0.066,
+            "p95Ms": 0.145,
+            "maxMs": 0.199,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.786,
+          "microRecall": 1,
+          "microPrecision": 0.667,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 641,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 361
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 364
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_a92abf218f9c36acdf71c3a99861"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 588
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_c107a809d56611034685de795573"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 641
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_c3e4fb7c2e0c3a563680aa9a4b98"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 590
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-200",
+          "latency": {
+            "p50Ms": 0.063,
+            "p95Ms": 0.147,
+            "maxMs": 0.163,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.786,
+          "microRecall": 1,
+          "microPrecision": 0.667,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 641,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 361
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 364
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_a92abf218f9c36acdf71c3a99861"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 588
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_c107a809d56611034685de795573"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 641
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_c3e4fb7c2e0c3a563680aa9a4b98"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.5,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 590
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "size": 100,
+      "layout": "concentrated",
+      "scopeCount": 10,
+      "visibleActiveItems": 68,
+      "seedMs": 4.832,
+      "initialIndexMs": 5.933,
+      "reindex": {
+        "p50Ms": 1.044,
+        "p95Ms": 1.237,
+        "maxMs": 1.237,
+        "samples": 3
+      },
+      "injectedRunStorage": {
+        "p50Ms": 8.002,
+        "p95Ms": 8.051,
+        "maxMs": 8.051,
+        "samples": 3
+      },
+      "disk": {
+        "totalBytes": 347290,
+        "canonicalBytes": 113428,
+        "indexBytes": 233472,
+        "files": 102
+      },
+      "results": [
+        {
+          "method": "production",
+          "latency": {
+            "p50Ms": 0.265,
+            "p95Ms": 0.761,
+            "maxMs": 0.948,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.583,
+          "microRecall": 1,
+          "microPrecision": 0.353,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1163,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 361
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_dd1a7c9464eeaec7c9069b571d2d",
+                "m_f91a08354421a56c408ced5b85a5"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.3333333333333333,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 886
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0a14e746fabb501fc9324732c078",
+                "m_1e1f39d937098e3fd61954bccaa2",
+                "m_1e3cbea5d6a6d89a7446a05360fe"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1094
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_07135a053e7a5048471f44b82f36",
+                "m_0f457f3cc4ead94990a4917c9893",
+                "m_1f6d518f670e2c7bc1d4d9dc3ba1"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1163
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_12af5384d8e9de62c4c94656f298",
+                "m_14f36eaf08bf5fff286aacf89492",
+                "m_19b816387386efc9b875cfd37093"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1100
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-40",
+          "latency": {
+            "p50Ms": 0.244,
+            "p95Ms": 0.418,
+            "maxMs": 0.583,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.583,
+          "microRecall": 1,
+          "microPrecision": 0.353,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1163,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 361
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_dd1a7c9464eeaec7c9069b571d2d",
+                "m_f91a08354421a56c408ced5b85a5"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.3333333333333333,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 886
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0a14e746fabb501fc9324732c078",
+                "m_1e1f39d937098e3fd61954bccaa2",
+                "m_1e3cbea5d6a6d89a7446a05360fe"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1094
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_07135a053e7a5048471f44b82f36",
+                "m_0f457f3cc4ead94990a4917c9893",
+                "m_1f6d518f670e2c7bc1d4d9dc3ba1"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1163
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_12af5384d8e9de62c4c94656f298",
+                "m_14f36eaf08bf5fff286aacf89492",
+                "m_19b816387386efc9b875cfd37093"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1100
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-100",
+          "latency": {
+            "p50Ms": 0.243,
+            "p95Ms": 0.648,
+            "maxMs": 0.785,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.583,
+          "microRecall": 1,
+          "microPrecision": 0.353,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1163,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 361
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_dd1a7c9464eeaec7c9069b571d2d",
+                "m_f91a08354421a56c408ced5b85a5"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.3333333333333333,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 886
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0a14e746fabb501fc9324732c078",
+                "m_1e1f39d937098e3fd61954bccaa2",
+                "m_1e3cbea5d6a6d89a7446a05360fe"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1094
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_07135a053e7a5048471f44b82f36",
+                "m_0f457f3cc4ead94990a4917c9893",
+                "m_1f6d518f670e2c7bc1d4d9dc3ba1"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1163
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_12af5384d8e9de62c4c94656f298",
+                "m_14f36eaf08bf5fff286aacf89492",
+                "m_19b816387386efc9b875cfd37093"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1100
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-200",
+          "latency": {
+            "p50Ms": 0.241,
+            "p95Ms": 0.62,
+            "maxMs": 0.807,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.583,
+          "microRecall": 1,
+          "microPrecision": 0.353,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1163,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 361
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_dd1a7c9464eeaec7c9069b571d2d",
+                "m_f91a08354421a56c408ced5b85a5"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.3333333333333333,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 886
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0a14e746fabb501fc9324732c078",
+                "m_1e1f39d937098e3fd61954bccaa2",
+                "m_1e3cbea5d6a6d89a7446a05360fe"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1094
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_07135a053e7a5048471f44b82f36",
+                "m_0f457f3cc4ead94990a4917c9893",
+                "m_1f6d518f670e2c7bc1d4d9dc3ba1"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1163
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_12af5384d8e9de62c4c94656f298",
+                "m_14f36eaf08bf5fff286aacf89492",
+                "m_19b816387386efc9b875cfd37093"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1100
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "size": 1000,
+      "layout": "mixed-projects",
+      "scopeCount": 60,
+      "visibleActiveItems": 54,
+      "seedMs": 41.643,
+      "initialIndexMs": 53.179,
+      "reindex": {
+        "p50Ms": 6.523,
+        "p95Ms": 6.734,
+        "maxMs": 6.734,
+        "samples": 3
+      },
+      "injectedRunStorage": {
+        "p50Ms": 33.99,
+        "p95Ms": 39.238,
+        "maxMs": 39.238,
+        "samples": 3
+      },
+      "disk": {
+        "totalBytes": 3204853,
+        "canonicalBytes": 1156166,
+        "indexBytes": 2048000,
+        "files": 1002
+      },
+      "results": [
+        {
+          "method": "production",
+          "latency": {
+            "p50Ms": 0.297,
+            "p95Ms": 1.328,
+            "maxMs": 1.407,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1171,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_2a017247899739a66c2cb4f05deb",
+                "m_69e8be2d8c72f390fd34e25ea021",
+                "m_7e465d7d296fc4ba79a09cd1fdea"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1126
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_2770457197164e1e49de01292fad",
+                "m_3d1acd6c996b4705b907af277bd4",
+                "m_93eea586c307b35138fc76971eb2"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1141
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_073c7a22a7001dbb65eca3693ac4",
+                "m_1de55897a116a7a7d9912a637dc7",
+                "m_5076d1291a33df653d705c560d94"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1102
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_1b917ebe4d8151ca00d309f60e23",
+                "m_254a397759fcdd90e79f6d2a5315",
+                "m_2c4deeeb9b4724fda2959d0e9ac6"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1171
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_3706642d291ddb1d8f39683bf69c",
+                "m_3bff4a7199a6c57f88dd89afb5f8",
+                "m_47d5b63123c0dc99c9a866b1a4f8"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1104
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-40",
+          "latency": {
+            "p50Ms": 0.312,
+            "p95Ms": 1.217,
+            "maxMs": 1.394,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1171,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_2a017247899739a66c2cb4f05deb",
+                "m_69e8be2d8c72f390fd34e25ea021",
+                "m_7e465d7d296fc4ba79a09cd1fdea"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1126
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_2770457197164e1e49de01292fad",
+                "m_3d1acd6c996b4705b907af277bd4",
+                "m_93eea586c307b35138fc76971eb2"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1141
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_073c7a22a7001dbb65eca3693ac4",
+                "m_1de55897a116a7a7d9912a637dc7",
+                "m_5076d1291a33df653d705c560d94"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1102
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_1b917ebe4d8151ca00d309f60e23",
+                "m_254a397759fcdd90e79f6d2a5315",
+                "m_2c4deeeb9b4724fda2959d0e9ac6"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1171
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_3706642d291ddb1d8f39683bf69c",
+                "m_3bff4a7199a6c57f88dd89afb5f8",
+                "m_47d5b63123c0dc99c9a866b1a4f8"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1104
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-100",
+          "latency": {
+            "p50Ms": 0.284,
+            "p95Ms": 1.136,
+            "maxMs": 1.417,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1171,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_2a017247899739a66c2cb4f05deb",
+                "m_69e8be2d8c72f390fd34e25ea021",
+                "m_7e465d7d296fc4ba79a09cd1fdea"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1126
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_2770457197164e1e49de01292fad",
+                "m_3d1acd6c996b4705b907af277bd4",
+                "m_93eea586c307b35138fc76971eb2"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1141
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_073c7a22a7001dbb65eca3693ac4",
+                "m_1de55897a116a7a7d9912a637dc7",
+                "m_5076d1291a33df653d705c560d94"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1102
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_1b917ebe4d8151ca00d309f60e23",
+                "m_254a397759fcdd90e79f6d2a5315",
+                "m_2c4deeeb9b4724fda2959d0e9ac6"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1171
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_3706642d291ddb1d8f39683bf69c",
+                "m_3bff4a7199a6c57f88dd89afb5f8",
+                "m_47d5b63123c0dc99c9a866b1a4f8"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1104
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-200",
+          "latency": {
+            "p50Ms": 0.287,
+            "p95Ms": 1.154,
+            "maxMs": 1.266,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1171,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_2a017247899739a66c2cb4f05deb",
+                "m_69e8be2d8c72f390fd34e25ea021",
+                "m_7e465d7d296fc4ba79a09cd1fdea"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1126
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_2770457197164e1e49de01292fad",
+                "m_3d1acd6c996b4705b907af277bd4",
+                "m_93eea586c307b35138fc76971eb2"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1141
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_073c7a22a7001dbb65eca3693ac4",
+                "m_1de55897a116a7a7d9912a637dc7",
+                "m_5076d1291a33df653d705c560d94"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1102
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_1b917ebe4d8151ca00d309f60e23",
+                "m_254a397759fcdd90e79f6d2a5315",
+                "m_2c4deeeb9b4724fda2959d0e9ac6"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1171
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_3706642d291ddb1d8f39683bf69c",
+                "m_3bff4a7199a6c57f88dd89afb5f8",
+                "m_47d5b63123c0dc99c9a866b1a4f8"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1104
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "size": 1000,
+      "layout": "concentrated",
+      "scopeCount": 10,
+      "visibleActiveItems": 968,
+      "seedMs": 31.666,
+      "initialIndexMs": 48.193,
+      "reindex": {
+        "p50Ms": 4.478,
+        "p95Ms": 4.669,
+        "maxMs": 4.669,
+        "samples": 3
+      },
+      "injectedRunStorage": {
+        "p50Ms": 31.043,
+        "p95Ms": 33.422,
+        "maxMs": 33.422,
+        "samples": 3
+      },
+      "disk": {
+        "totalBytes": 3213700,
+        "canonicalBytes": 1160917,
+        "indexBytes": 2052096,
+        "files": 1002
+      },
+      "results": [
+        {
+          "method": "production",
+          "latency": {
+            "p50Ms": 1.1,
+            "p95Ms": 2.219,
+            "maxMs": 2.364,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1173,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_03040fc8a6f72e77dec83cdf9b87",
+                "m_03ccd5c66fce4adaa726ce30d1b6",
+                "m_07da24a03e428af6e38f16d06715"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1158
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_00d6ee68aa61a908d7f6cdf4c797",
+                "m_0713fd04dda76cad2d084cacd728",
+                "m_0716037cf234bd9948b76a74eca4"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1169
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_009e89226b8a48cf9d5b54cff1e5",
+                "m_05db8877114a351ee0da54f62368"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_02a63fc5cebc7ee55b7e4240afec",
+                "m_06d2fc3cec1d21df3d276680d219",
+                "m_07135a053e7a5048471f44b82f36"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1173
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_0061c6157772c49b0220b7968757",
+                "m_03e569a0dbb34a713e522215e374"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-40",
+          "latency": {
+            "p50Ms": 0.598,
+            "p95Ms": 1.444,
+            "maxMs": 1.641,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1173,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_03040fc8a6f72e77dec83cdf9b87",
+                "m_03ccd5c66fce4adaa726ce30d1b6",
+                "m_07da24a03e428af6e38f16d06715"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1158
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_00d6ee68aa61a908d7f6cdf4c797",
+                "m_0713fd04dda76cad2d084cacd728",
+                "m_0716037cf234bd9948b76a74eca4"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1169
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_009e89226b8a48cf9d5b54cff1e5",
+                "m_05db8877114a351ee0da54f62368"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_02a63fc5cebc7ee55b7e4240afec",
+                "m_06d2fc3cec1d21df3d276680d219",
+                "m_07135a053e7a5048471f44b82f36"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1173
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_0061c6157772c49b0220b7968757",
+                "m_03e569a0dbb34a713e522215e374"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-100",
+          "latency": {
+            "p50Ms": 1.068,
+            "p95Ms": 1.901,
+            "maxMs": 2.074,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1173,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_03040fc8a6f72e77dec83cdf9b87",
+                "m_03ccd5c66fce4adaa726ce30d1b6",
+                "m_07da24a03e428af6e38f16d06715"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1158
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_00d6ee68aa61a908d7f6cdf4c797",
+                "m_0713fd04dda76cad2d084cacd728",
+                "m_0716037cf234bd9948b76a74eca4"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1169
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_009e89226b8a48cf9d5b54cff1e5",
+                "m_05db8877114a351ee0da54f62368"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_02a63fc5cebc7ee55b7e4240afec",
+                "m_06d2fc3cec1d21df3d276680d219",
+                "m_07135a053e7a5048471f44b82f36"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1173
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_0061c6157772c49b0220b7968757",
+                "m_03e569a0dbb34a713e522215e374"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-200",
+          "latency": {
+            "p50Ms": 1.743,
+            "p95Ms": 2.631,
+            "maxMs": 3.006,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1173,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_03040fc8a6f72e77dec83cdf9b87",
+                "m_03ccd5c66fce4adaa726ce30d1b6",
+                "m_07da24a03e428af6e38f16d06715"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1158
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_00d6ee68aa61a908d7f6cdf4c797",
+                "m_0713fd04dda76cad2d084cacd728",
+                "m_0716037cf234bd9948b76a74eca4"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1169
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_009e89226b8a48cf9d5b54cff1e5",
+                "m_05db8877114a351ee0da54f62368"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_02a63fc5cebc7ee55b7e4240afec",
+                "m_06d2fc3cec1d21df3d276680d219",
+                "m_07135a053e7a5048471f44b82f36"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1173
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_0061c6157772c49b0220b7968757",
+                "m_03e569a0dbb34a713e522215e374"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "size": 10000,
+      "layout": "mixed-projects",
+      "scopeCount": 60,
+      "visibleActiveItems": 504,
+      "seedMs": 327.736,
+      "initialIndexMs": 519.803,
+      "reindex": {
+        "p50Ms": 41.26,
+        "p95Ms": 46.868,
+        "maxMs": 46.868,
+        "samples": 3
+      },
+      "injectedRunStorage": {
+        "p50Ms": 115.887,
+        "p95Ms": 116,
+        "maxMs": 116,
+        "samples": 3
+      },
+      "disk": {
+        "totalBytes": 31882161,
+        "canonicalBytes": 11675906,
+        "indexBytes": 20205568,
+        "files": 10002
+      },
+      "results": [
+        {
+          "method": "production",
+          "latency": {
+            "p50Ms": 3.617,
+            "p95Ms": 11.838,
+            "maxMs": 12.234,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1183,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_0363402d315f7d36d5bd55603b19",
+                "m_03e24fbc2e534b14cf9bfde188ea",
+                "m_047f9c62178f32f68335f37ab462"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1138
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_01e2f79c8d3ae372ed3919d65948",
+                "m_03ac17eb2454219796013f46c025"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1153
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_01848e708ee1d037350fa4a8c944",
+                "m_0474f6c071f897dc16e313517402"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0611e36d8485fa965078c29463e4",
+                "m_0991e7c9d3f18b12cb98f7191db8",
+                "m_0ec5b8114994d10e93e604fed8cc"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1183
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_004dab45b24c378937566749b81d",
+                "m_03dc552058dbd9f910e51cea15d6",
+                "m_05957e3d77d7c87a639b0ef69091"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1116
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-40",
+          "latency": {
+            "p50Ms": 3.089,
+            "p95Ms": 11.23,
+            "maxMs": 11.461,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1183,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_0363402d315f7d36d5bd55603b19",
+                "m_03e24fbc2e534b14cf9bfde188ea",
+                "m_047f9c62178f32f68335f37ab462"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1138
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_01e2f79c8d3ae372ed3919d65948",
+                "m_03ac17eb2454219796013f46c025"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1153
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_01848e708ee1d037350fa4a8c944",
+                "m_0474f6c071f897dc16e313517402"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0611e36d8485fa965078c29463e4",
+                "m_0991e7c9d3f18b12cb98f7191db8",
+                "m_0ec5b8114994d10e93e604fed8cc"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1183
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_004dab45b24c378937566749b81d",
+                "m_03dc552058dbd9f910e51cea15d6",
+                "m_05957e3d77d7c87a639b0ef69091"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1116
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-100",
+          "latency": {
+            "p50Ms": 3.596,
+            "p95Ms": 12.007,
+            "maxMs": 13.785,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1183,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_0363402d315f7d36d5bd55603b19",
+                "m_03e24fbc2e534b14cf9bfde188ea",
+                "m_047f9c62178f32f68335f37ab462"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1138
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_01e2f79c8d3ae372ed3919d65948",
+                "m_03ac17eb2454219796013f46c025"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1153
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_01848e708ee1d037350fa4a8c944",
+                "m_0474f6c071f897dc16e313517402"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0611e36d8485fa965078c29463e4",
+                "m_0991e7c9d3f18b12cb98f7191db8",
+                "m_0ec5b8114994d10e93e604fed8cc"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1183
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_004dab45b24c378937566749b81d",
+                "m_03dc552058dbd9f910e51cea15d6",
+                "m_05957e3d77d7c87a639b0ef69091"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1116
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-200",
+          "latency": {
+            "p50Ms": 3.491,
+            "p95Ms": 12.419,
+            "maxMs": 12.605,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1183,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_0363402d315f7d36d5bd55603b19",
+                "m_03e24fbc2e534b14cf9bfde188ea",
+                "m_047f9c62178f32f68335f37ab462"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1138
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_01e2f79c8d3ae372ed3919d65948",
+                "m_03ac17eb2454219796013f46c025"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1153
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_01848e708ee1d037350fa4a8c944",
+                "m_0474f6c071f897dc16e313517402"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1114
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0611e36d8485fa965078c29463e4",
+                "m_0991e7c9d3f18b12cb98f7191db8",
+                "m_0ec5b8114994d10e93e604fed8cc"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1183
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_004dab45b24c378937566749b81d",
+                "m_03dc552058dbd9f910e51cea15d6",
+                "m_05957e3d77d7c87a639b0ef69091"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1116
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "size": 10000,
+      "layout": "concentrated",
+      "scopeCount": 10,
+      "visibleActiveItems": 9968,
+      "seedMs": 329.979,
+      "initialIndexMs": 532.116,
+      "reindex": {
+        "p50Ms": 41.063,
+        "p95Ms": 47.142,
+        "maxMs": 47.142,
+        "samples": 3
+      },
+      "injectedRunStorage": {
+        "p50Ms": 117.661,
+        "p95Ms": 118.237,
+        "maxMs": 118.237,
+        "samples": 3
+      },
+      "disk": {
+        "totalBytes": 31931372,
+        "canonicalBytes": 11725117,
+        "indexBytes": 20205568,
+        "files": 10002
+      },
+      "results": [
+        {
+          "method": "production",
+          "latency": {
+            "p50Ms": 5.126,
+            "p95Ms": 15.542,
+            "maxMs": 15.78,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1183,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_001539f68e390cd4a4c8e9063705",
+                "m_003b8e0474a2dec3534074f3a742",
+                "m_005dba22fb85aa2f0836401768b6"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1164
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_00191aa36f70852dbf9d4f821fba",
+                "m_001a91448363e817f5417f7b62b0"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1161
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_001ecec9e8ab98fe66701b681fd6"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0009b84b91a921faf406a73fa498",
+                "m_003e28d2c48902bbe87c4ad39fc5",
+                "m_004298a3a9a068acf0453200f7c1"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1183
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_00383dc3cb1887e05d5770844192",
+                "m_004dab45b24c378937566749b81d"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1120
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-40",
+          "latency": {
+            "p50Ms": 4.575,
+            "p95Ms": 14.936,
+            "maxMs": 15.185,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1183,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_001539f68e390cd4a4c8e9063705",
+                "m_003b8e0474a2dec3534074f3a742",
+                "m_005dba22fb85aa2f0836401768b6"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1164
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_00191aa36f70852dbf9d4f821fba",
+                "m_001a91448363e817f5417f7b62b0"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1161
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_001ecec9e8ab98fe66701b681fd6"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0009b84b91a921faf406a73fa498",
+                "m_003e28d2c48902bbe87c4ad39fc5",
+                "m_004298a3a9a068acf0453200f7c1"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1183
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_00383dc3cb1887e05d5770844192",
+                "m_004dab45b24c378937566749b81d"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1120
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-100",
+          "latency": {
+            "p50Ms": 5.071,
+            "p95Ms": 15.343,
+            "maxMs": 17.668,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1183,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_001539f68e390cd4a4c8e9063705",
+                "m_003b8e0474a2dec3534074f3a742",
+                "m_005dba22fb85aa2f0836401768b6"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1164
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_00191aa36f70852dbf9d4f821fba",
+                "m_001a91448363e817f5417f7b62b0"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1161
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_001ecec9e8ab98fe66701b681fd6"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0009b84b91a921faf406a73fa498",
+                "m_003e28d2c48902bbe87c4ad39fc5",
+                "m_004298a3a9a068acf0453200f7c1"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1183
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_00383dc3cb1887e05d5770844192",
+                "m_004dab45b24c378937566749b81d"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1120
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        },
+        {
+          "method": "prototype-scope-sql-cap-200",
+          "latency": {
+            "p50Ms": 5.568,
+            "p95Ms": 15.501,
+            "maxMs": 16.765,
+            "samples": 70
+          },
+          "meanRecall": 1,
+          "meanPrecision": 0.464,
+          "microRecall": 1,
+          "microPrecision": 0.286,
+          "abstentionSuccess": true,
+          "foreignLeaks": 0,
+          "maxTokenUpperBound": 1183,
+          "perQuery": [
+            {
+              "query": "Juniper worker verification before restart",
+              "selected": [
+                "m_4183b7793fd28ba47ea9e79e7697",
+                "m_001539f68e390cd4a4c8e9063705",
+                "m_003b8e0474a2dec3534074f3a742",
+                "m_005dba22fb85aa2f0836401768b6"
+              ],
+              "relevant": [
+                "m_4183b7793fd28ba47ea9e79e7697"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1164
+            },
+            {
+              "query": "Snapshot recovery restore manifest order",
+              "selected": [
+                "m_f329e3a317eee6a8a1a7357f69bc",
+                "m_000106d1af4aede5959ff93bbbb3",
+                "m_00191aa36f70852dbf9d4f821fba",
+                "m_001a91448363e817f5417f7b62b0"
+              ],
+              "relevant": [
+                "m_f329e3a317eee6a8a1a7357f69bc"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1161
+            },
+            {
+              "query": "CSV import encoding decode",
+              "selected": [
+                "m_e8424ea5339b85a750ab5f4c63bd",
+                "m_0000afac9a34560905c9939cce9f",
+                "m_000e0e46e43b23f8a41970f3dbcf",
+                "m_001ecec9e8ab98fe66701b681fd6"
+              ],
+              "relevant": [
+                "m_e8424ea5339b85a750ab5f4c63bd"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1118
+            },
+            {
+              "query": "Production deployment approval after preview",
+              "selected": [
+                "m_9deb65b8788f41ff94a217842017",
+                "m_0009b84b91a921faf406a73fa498",
+                "m_003e28d2c48902bbe87c4ad39fc5",
+                "m_004298a3a9a068acf0453200f7c1"
+              ],
+              "relevant": [
+                "m_9deb65b8788f41ff94a217842017"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1183
+            },
+            {
+              "query": "Review communication format concise summaries",
+              "selected": [
+                "m_d4e16994df9002e53294f899714d",
+                "m_0002f565ca463ae2bb5fb3e3891c",
+                "m_00383dc3cb1887e05d5770844192",
+                "m_004dab45b24c378937566749b81d"
+              ],
+              "relevant": [
+                "m_d4e16994df9002e53294f899714d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 0.25,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 1120
+            },
+            {
+              "query": "Diagram accessibility color explanation",
+              "selected": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "relevant": [
+                "m_714db89df42bdb7ce4beb63d373d"
+              ],
+              "hits": 1,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 346
+            },
+            {
+              "query": "Lunar astronomy orbital eccentricity measurement",
+              "selected": [],
+              "relevant": [],
+              "hits": 0,
+              "recall": 1,
+              "precision": 1,
+              "foreignLeaks": 0,
+              "tokenUpperBound": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

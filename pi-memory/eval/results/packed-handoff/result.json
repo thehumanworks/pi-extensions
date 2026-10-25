@@ -1,0 +1,29 @@
+{
+  "package": "@nothumanwork/pi-memory",
+  "version": "0.1.0",
+  "shasum": "0770ec50504b65553fcbe877233fe00198adf8dc",
+  "integrity": "sha512-gKhHw/NONaKwxJ6sw+1dbpJKsQ+UbrOduLUJq+VyHOmdHYPwiCrUVim2IwlPtpBLYv+lXgsIHXUkOLEx4Z56nA==",
+  "files": [
+    "README.md",
+    "index.ts",
+    "package.json",
+    "prompts/memory-agent.preset.md",
+    "src/capture.ts",
+    "src/config.ts",
+    "src/dream.ts",
+    "src/maintenance.ts",
+    "src/project.ts",
+    "src/retrieve.ts",
+    "src/scheduler.ts",
+    "src/secrets.ts",
+    "src/selector.ts",
+    "src/settings.ts",
+    "src/store.ts",
+    "src/tools.ts",
+    "src/types.ts",
+    "src/ui.ts"
+  ],
+  "code": 0,
+  "stdout": "pnpm larch:verify\n",
+  "stderr": "Warning: No models match pattern \"claude-bridge/claude-opus-5-5\"\nWarning: No models match pattern \"claude-bridge/claude-fable-5-1\"\n"
+}

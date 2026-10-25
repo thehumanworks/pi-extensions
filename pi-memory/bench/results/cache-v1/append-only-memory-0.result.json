@@ -1,0 +1,119 @@
+{
+  "id": "append-only-memory-0",
+  "arm": "append-only-memory",
+  "repeat": 0,
+  "model": "openai/gpt-6.1-sol",
+  "elapsedMs": 13929,
+  "errors": [],
+  "prefixChecks": [
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "turns": [
+    {
+      "turn": 1,
+      "input": 6645,
+      "uncachedInput": 6645,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 5,
+      "latencyMs": 2175,
+      "firstTextMs": 2048,
+      "sdkCostEstimate": {
+        "input": 0.01329,
+        "output": 0.00005,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01334
+      }
+    },
+    {
+      "turn": 2,
+      "input": 6680,
+      "uncachedInput": 6680,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 5,
+      "latencyMs": 2077,
+      "firstTextMs": 1966,
+      "sdkCostEstimate": {
+        "input": 0.013359999999999999,
+        "output": 0.00005,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.013409999999999998
+      }
+    },
+    {
+      "turn": 3,
+      "input": 6715,
+      "uncachedInput": 187,
+      "cacheRead": 6528,
+      "cacheWrite": 0,
+      "output": 5,
+      "latencyMs": 1904,
+      "firstTextMs": 1651,
+      "sdkCostEstimate": {
+        "input": 0.000374,
+        "output": 0.00005,
+        "cacheRead": 0.0006528,
+        "cacheWrite": 0,
+        "total": 0.0010768000000000002
+      }
+    },
+    {
+      "turn": 4,
+      "input": 6750,
+      "uncachedInput": 222,
+      "cacheRead": 6528,
+      "cacheWrite": 0,
+      "output": 5,
+      "latencyMs": 3726,
+      "firstTextMs": 3571,
+      "sdkCostEstimate": {
+        "input": 0.000444,
+        "output": 0.00005,
+        "cacheRead": 0.0006528,
+        "cacheWrite": 0,
+        "total": 0.0011468
+      }
+    },
+    {
+      "turn": 5,
+      "input": 6785,
+      "uncachedInput": 257,
+      "cacheRead": 6528,
+      "cacheWrite": 0,
+      "output": 5,
+      "latencyMs": 1743,
+      "firstTextMs": 1635,
+      "sdkCostEstimate": {
+        "input": 0.000514,
+        "output": 0.00005,
+        "cacheRead": 0.0006528,
+        "cacheWrite": 0,
+        "total": 0.0012168
+      }
+    },
+    {
+      "turn": 6,
+      "input": 6820,
+      "uncachedInput": 164,
+      "cacheRead": 6656,
+      "cacheWrite": 0,
+      "output": 5,
+      "latencyMs": 1821,
+      "firstTextMs": 1627,
+      "sdkCostEstimate": {
+        "input": 0.000328,
+        "output": 0.00005,
+        "cacheRead": 0.0006656,
+        "cacheWrite": 0,
+        "total": 0.0010436
+      }
+    }
+  ]
+}

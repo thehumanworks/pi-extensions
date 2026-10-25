@@ -1,0 +1,200 @@
+[
+  {
+    "id": "m_mvnwd9nu5c795893c31ceb2dd53a",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "insight",
+    "title": "Condensed: Beacon staging timeout",
+    "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+    "keywords": [
+      "beacon",
+      "staging",
+      "verification"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+      "entries": [
+        "m_mvnwcxa65d19662ce836393305a6",
+        "m_mvnwcxaf0d9ff8fc45297ff74894",
+        "m_mvnwcxakef9706eed34e49ecae2c"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+        "entries": [
+          "m_mvnwcxa65d19662ce836393305a6",
+          "m_mvnwcxaf0d9ff8fc45297ff74894",
+          "m_mvnwcxakef9706eed34e49ecae2c"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [
+      "m_mvnwcxa65d19662ce836393305a6",
+      "m_mvnwcxaf0d9ff8fc45297ff74894",
+      "m_mvnwcxakef9706eed34e49ecae2c"
+    ],
+    "status": "active",
+    "created": "2026-10-25T14:02:31.338Z",
+    "updated": "2026-10-25T14:02:31.338Z",
+    "last_used": "2026-10-25T14:02:31.338Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "derivedFrom": [
+      {
+        "id": "m_mvnwcxa65d19662ce836393305a6",
+        "hash": "c729508d60b803ad26b1348d9484646a66333889828b239c3aa6cc810022419f"
+      },
+      {
+        "id": "m_mvnwcxaf0d9ff8fc45297ff74894",
+        "hash": "e21a0a2ac658a89d5136c99cabbe306e6703c22cff9399930e85dbb4adfcf98c"
+      },
+      {
+        "id": "m_mvnwcxakef9706eed34e49ecae2c",
+        "hash": "4bec5bd48defe83d0c5522ff39ead6b85fe07971f76dbdd3e61a77ff2f7eee06"
+      }
+    ],
+    "body": "Shared statements (apply only to contexts referencing them):\nF1: For Beacon staging verification, run `pnpm beacon:smoke-v2` only after all staging migrations have passed.\nF2: Never use the Beacon staging verification command against production.\n\nContext: Beacon staging timeout\n[F1] [F2] Beacon staging verification has a 45 second timeout.\n\nContext: Beacon staging retries\n[F1] [F2] Beacon staging verification permits 2 retries.\n\nContext: Beacon staging workers\n[F1] [F2] Beacon staging verification uses 3 workers."
+  },
+  {
+    "id": "m_mvnwd9nx5acaf75214c163832de9",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "insight",
+    "title": "Condensed: Zephyr staging deployment",
+    "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+    "keywords": [
+      "zephyr",
+      "deployment",
+      "preflight"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+      "entries": [
+        "m_mvnwcxar7ddcd5ad924a001c3cfc",
+        "m_mvnwcxax5ada592896dbcfae5ea9"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+        "entries": [
+          "m_mvnwcxar7ddcd5ad924a001c3cfc",
+          "m_mvnwcxax5ada592896dbcfae5ea9"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [
+      "m_mvnwcxar7ddcd5ad924a001c3cfc",
+      "m_mvnwcxax5ada592896dbcfae5ea9"
+    ],
+    "status": "active",
+    "created": "2026-10-25T14:02:31.341Z",
+    "updated": "2026-10-25T14:02:31.341Z",
+    "last_used": "2026-10-25T14:02:31.341Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "long",
+    "derivedFrom": [
+      {
+        "id": "m_mvnwcxar7ddcd5ad924a001c3cfc",
+        "hash": "c2d02ea2561df58a7ba61476635c49821d52eea6d8637a75a81e2830ddc89515"
+      },
+      {
+        "id": "m_mvnwcxax5ada592896dbcfae5ea9",
+        "hash": "7722fdd0611a1d3b655c793d018eeb4761dab308e6d3947f4c3cc139240043c4"
+      }
+    ],
+    "body": "Shared statements (apply only to contexts referencing them):\nF1: Zephyr deployments require a passing preflight before any apply operation.\nF2: Use only the command and limits specified for the named deployment environment.\n\nContext: Zephyr staging deployment\n[F1] [F2] For Zephyr staging, use `zx stage-apply` with 3 workers, 2 retries and a 30 second timeout.\n\nContext: Zephyr production deployment\n[F1] [F2] For Zephyr production, use `zx prod-apply` with 1 worker, 0 retries and a 90 second timeout."
+  },
+  {
+    "id": "m_mvnwd9o0cab5b412efe68c399121",
+    "scope": "project:0ea1594eb85399988f1b5de3",
+    "type": "insight",
+    "title": "Condensed: Mercator export standard limits",
+    "summary": "Lossless related evidence; retain each original context and conditional boundary.",
+    "keywords": [
+      "mercator",
+      "export",
+      "limits"
+    ],
+    "triggers": [],
+    "paths": [],
+    "importance": 8,
+    "confidence": 0.85,
+    "source": {
+      "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+      "entries": [
+        "m_mvnwcxb7ce6361085e3975bde698",
+        "m_mvnwcxbdb44cae3cb0fcf19f8157",
+        "m_mvnwcxbm19b0395b020016aed59c"
+      ],
+      "origin": "consolidation"
+    },
+    "sources": [
+      {
+        "session": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-dream-live-vgtKhN/corpus/dream/runs/683c15337e45756437117b42022abfad1275f7c39ae38050aaf3a1bf67ae1051.json",
+        "entries": [
+          "m_mvnwcxb7ce6361085e3975bde698",
+          "m_mvnwcxbdb44cae3cb0fcf19f8157",
+          "m_mvnwcxbm19b0395b020016aed59c"
+        ],
+        "origin": "consolidation"
+      }
+    ],
+    "supersedes": [],
+    "links": [
+      "m_mvnwcxb7ce6361085e3975bde698",
+      "m_mvnwcxbdb44cae3cb0fcf19f8157",
+      "m_mvnwcxbm19b0395b020016aed59c"
+    ],
+    "status": "active",
+    "created": "2026-10-25T14:02:31.344Z",
+    "updated": "2026-10-25T14:02:31.344Z",
+    "last_used": "2026-10-25T14:02:31.344Z",
+    "stats": {
+      "injected": 0,
+      "used": 0,
+      "helpful": 0,
+      "harmful": 0
+    },
+    "retention": "short",
+    "expiresAt": "2026-10-25T15:02:15.097Z",
+    "derivedFrom": [
+      {
+        "id": "m_mvnwcxb7ce6361085e3975bde698",
+        "hash": "dbb96f5d0f5c89a9d8bdaefb83c8296a0f5ce3cd8629331a784d2cf98c7a83cb"
+      },
+      {
+        "id": "m_mvnwcxbdb44cae3cb0fcf19f8157",
+        "hash": "66fe9e31738d3415068c15110fdcd961924d4f2890791dd07079fb9b91abc0e0"
+      },
+      {
+        "id": "m_mvnwcxbm19b0395b020016aed59c",
+        "hash": "46dc93c92ca5dcd2918295122e336955320f8ec6190c76d05013190b752fb95b"
+      }
+    ],
+    "body": "Shared statements (apply only to contexts referencing them):\nF1: Mercator exports run `mc export --batch` only after the export preflight passes.\nF2: A dated incident restriction overrides the standard limits only within the stated period and export type.\n\nContext: Mercator export standard limits\n[F1] [F2] Standard Mercator exports use 4 workers and a 60 second timeout.\n\nContext: Mercator export standard retries\n[F1] [F2] Standard Mercator exports permit 2 retries.\n\nContext: Mercator export incident limits\n[F1] [F2] Until 2026-10-25T15:02:15.097Z, invoice exports alone must use 1 worker and 0 retries; the timeout stays 60 seconds. Other export types keep the standard limits."
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "project": "ingestion",
+  "stage": 1,
+  "checks": [
+    {
+      "name": "explicit batch limit and checkpoint",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "resume appends without repeating prior records",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "duplicates within tenant are suppressed",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "small batch does not materialize a 48 MiB input",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "current default batch is four",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "identity includes tenant",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "malformed line is quarantined and processing continues",
+      "category": "memory",
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-ZbdVja/ingestion-short-1/project/.acceptance-k7x6Tl/rejected.ndjson'"
+    },
+    {
+      "name": "no other-project policy artifacts",
+      "category": "control",
+      "passed": true
+    }
+  ],
+  "categoryScores": {
+    "intrinsic": 1,
+    "memory": 0.6666666666666666,
+    "action": null,
+    "control": 1
+  },
+  "complete": false,
+  "passed": 7,
+  "total": 8
+}

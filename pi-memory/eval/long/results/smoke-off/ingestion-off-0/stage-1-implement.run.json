@@ -1,0 +1,18 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Work only in this synthetic repository. Implement working files, not a proposed solution. Use read, write and edit for files; bash is restricted to node --test or node <relative-script.mjs> commands, optionally prefixed by INGEST_ORDER=tenant-first or MIGRATION_LOCK_MODE=copy. No shell chains, redirects or network. Run the visible tests and the CLI. Keep existing data. Prior project decisions may be available as remembered evidence; apply current temporary overrides only for their stated lifetime. Do not write a separate policy/instructions document. Finish with a concise factual result.\n\nImplement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+  "exitCode": 0,
+  "timedOut": false,
+  "latencyMs": 110063,
+  "modelRequests": 14,
+  "usage": {
+    "input": 10603,
+    "output": 2042,
+    "cacheRead": 42368,
+    "cacheWrite": 0,
+    "reasoning": 55,
+    "totalTokens": 55013,
+    "cost": 0.045862799999999995
+  },
+  "finalText": "Implemented `src/ingest.mjs` and `bin/ingest.mjs` with incremental NDJSON reading, original-record appends, output-based deduplication, atomic checkpoint replacement, resumable batches, and JSON CLI reports.\n\nNo prior agreement was available in the repository; implementation uses a 1,000-line default, `(tenant, seq)` identity, and rejects malformed lines while advancing the checkpoint.\n\nValidation:\n- Visible test passed with `node --test --test-isolation=none`; standard test isolation was blocked by sandbox permissions.\n- CLI demonstration using `fixtures/events.ndjson` and `work/demo-*` paths accepted 3 records, resumed to accept 4, then accepted 0 at EOF (`nextLine: 7`).\n- Existing fixture data was preserved."
+}

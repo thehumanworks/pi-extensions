@@ -1,0 +1,64 @@
+{
+  "completed": "2026-10-25T14:48:42.104Z",
+  "model": "openai/gpt-6.1-sol",
+  "executable": "pi",
+  "piVersion": "1.4.0",
+  "passed": true,
+  "sessions": 7,
+  "passedSessions": 7,
+  "sourceStable": true,
+  "limitations": [
+    "Synthetic single-project fixture per scenario; no broad memory quality estimate"
+  ],
+  "results": [
+    {
+      "id": "learning-capture",
+      "score": 1,
+      "response": "ACK",
+      "errors": [],
+      "latencyMs": 14873
+    },
+    {
+      "id": "learning-recall",
+      "score": 1,
+      "response": "pnpm beacon:verify",
+      "errors": [],
+      "latencyMs": 3794
+    },
+    {
+      "id": "learning-correction",
+      "score": 1,
+      "response": "ACK",
+      "errors": [],
+      "latencyMs": 67562
+    },
+    {
+      "id": "learning-recall-correction",
+      "score": 1,
+      "response": "pnpm beacon:smoke-v2",
+      "errors": [],
+      "latencyMs": 7179
+    },
+    {
+      "id": "retry-retained",
+      "score": 1,
+      "response": "ACK",
+      "errors": [],
+      "latencyMs": 3248
+    },
+    {
+      "id": "retry-repaired",
+      "score": 1,
+      "response": "ACK",
+      "errors": [],
+      "latencyMs": 14617
+    },
+    {
+      "id": "retry-recall",
+      "score": 1,
+      "response": "ORCHID-47",
+      "errors": [],
+      "latencyMs": 4925
+    }
+  ]
+}
