@@ -1,15 +1,37 @@
 {
-  "name": "pi-remote",
+  "name": "@nothumanwork/pi-remote",
   "version": "0.1.0",
   "type": "module",
-  "private": true,
+  "description": "Run Pi's read, write, edit, bash, ls, find, and grep tools on remote hosts over SSH",
   "keywords": [
     "pi-package"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-remote"
+  },
+  "files": [
+    "index.ts",
+    "hosts.ts",
+    "operations.ts",
+    "session.ts",
+    "README.md"
   ],
   "pi": {
     "extensions": [
       "./index.ts"
     ]
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test"
   },
   "peerDependencies": {
     "@earendil-works/pi-agent-core": "*",
@@ -19,12 +41,14 @@
     "typebox": "*"
   },
   "dependencies": {
-    "@earendil-works/chord": "^1.2.0",
-    "@earendil-works/pi-durable": "^1.2.0",
-    "@earendil-works/pi-env": "^1.2.0"
+    "@earendil-works/chord": "^1.4.0",
+    "@earendil-works/pi-durable": "^1.4.0",
+    "@earendil-works/pi-env": "^1.4.0"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "5.9.3"
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/bun": "^1.4.4",
+    "typescript": "^5.9.3"
   }
 }

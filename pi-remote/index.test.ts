@@ -8,6 +8,8 @@ import { afterEach, expect, test } from "bun:test";
 import { hostId, parseRemoteTarget } from "./hosts.ts";
 import { RemoteSession } from "./session.ts";
 
+// Loopback by default; set PI_REMOTE_TEST_ADDRESS to bind the disposable sshd elsewhere.
+const address = process.env.PI_REMOTE_TEST_ADDRESS ?? "127.0.0.1";
 const roots: string[] = [];
 afterEach(() => {
 	for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
@@ -40,7 +42,6 @@ test("connects to disposable SSH hosts and switches execution between them", asy
 	const secondHome = join(root, "two");
 	const first = await sshServer(root, "one", firstHome, sshd);
 	const second = await sshServer(root, "two", secondHome, sshd);
-	const address = "10.255.255.254";
 	const session = new RemoteSession({
 		cwd: root,
 		hostList: `${userInfo().username}@${address}:${first.port}${firstHome}/srv/one,${userInfo().username}@${address}:${second.port}${secondHome}/srv/two`,
@@ -81,7 +82,7 @@ async function sshServer(root: string, name: string, home: string, sshd: string)
 	const port = await freePort();
 	writeFileSync(join(root, `${name}_sshd_config`), [
 		`Port ${port}`,
-		"ListenAddress 10.255.255.254",
+		`ListenAddress ${address}`,
 		`HostKey ${join(root, `${name}_host`)}`,
 		`AuthorizedKeysFile ${join(root, `${name}_authorized`)}`,
 		`PidFile ${join(root, `${name}_sshd.pid`)}`,
@@ -100,7 +101,7 @@ function freePort(): Promise<number> {
 	return new Promise((resolve, reject) => {
 		const server = createServer();
 		server.once("error", reject);
-		server.listen(0, "10.255.255.254", () => {
+		server.listen(0, address, () => {
 			const address = server.address();
 			if (!address || typeof address === "string") return reject(new Error("no port"));
 			server.close(() => resolve(address.port));
@@ -112,7 +113,7 @@ async function waitForPort(port: number): Promise<void> {
 	for (let attempt = 0; attempt < 100; attempt++) {
 		try {
 			await new Promise<void>((resolve, reject) => {
-				const socket = createServer().listen(port, "10.255.255.254");
+				const socket = createServer().listen(port, address);
 				socket.once("listening", () => socket.close(() => reject(new Error("closed"))));
 				socket.once("error", () => resolve());
 			});
