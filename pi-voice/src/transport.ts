@@ -37,6 +37,14 @@ const defaults: TransportDependencies = {
   }),
 };
 
+export const MEDIA_BLOCKED = "ChatGPT voice media could not connect. Realtime voice needs outbound UDP to OpenAI " +
+  "(port 3478); a firewall, VPN or secure web gateway (e.g. Zscaler) is probably blocking it.";
+
+/** Signaling worked but WebRTC media did not: the network, not the account, is the problem. */
+export class MediaUnavailableError extends Error {
+  constructor() { super(MEDIA_BLOCKED); this.name = "MediaUnavailableError"; }
+}
+
 export function abortable<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise((resolve, reject) => {
     const onAbort = () => reject(new Error("Voice connection cancelled."));
@@ -56,6 +64,7 @@ export class ChatGPTVoiceTransport implements VoiceTransport {
   private connectPromise?: Promise<void>;
   private closePromise?: Promise<void>;
   private connected = false;
+  private mediaOpen = false;
   private closed = false;
   private failed = false;
   private muted = false;
@@ -82,7 +91,8 @@ export class ChatGPTVoiceTransport implements VoiceTransport {
         if (error) this.fail(new Error("Voice speaker playback failed."));
         else if (this.connected && !this.closed) this.options.onOutputLevel(level);
       },
-      () => this.fail(new Error("Voice media connection failed. Try /voice off then /voice on.")),
+      // Before the data channel opens, waitForOpen reports the same failure.
+      () => { if (this.mediaOpen) this.fail(new Error("Voice media connection failed. Try /voice off then /voice on.")); },
     );
     this.peer = peer;
     if (this.closed || signal.aborted) { await peer.close(); throw new Error("Voice connection cancelled."); }
@@ -117,7 +127,13 @@ export class ChatGPTVoiceTransport implements VoiceTransport {
     if (!answer.trim() || answer.length > 1024 * 1024) throw new Error("Invalid SDP answer from ChatGPT voice.");
     await abortable(peer.acceptAnswer(answer), signal);
     peer.setMuted(this.muted);
-    await abortable(peer.waitForOpen(20_000), signal);
+    await abortable(peer.waitForOpen(20_000), signal).catch(() => {
+      signal.throwIfAborted();
+      // The native peer only supports direct UDP ICE (OpenAI media uses UDP 3478),
+      // so a timeout or ICE/DTLS failure here means the media path is blocked.
+      throw new MediaUnavailableError();
+    });
+    this.mediaOpen = true;
     // Calls can take a moment to become available on the sideband endpoint.
     for (let attempt = 0; ; attempt++) {
       try { await this.openSideband(callId, headers, signal); break; }

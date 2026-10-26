@@ -6,7 +6,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import type { NativeAudio } from "../src/native.ts";
 import type { ServerEvent } from "../src/protocol.ts";
 import { SIGNALING_URL } from "../src/protocol.ts";
-import { abortable, ChatGPTVoiceTransport, type TransportOptions } from "../src/transport.ts";
+import { abortable, ChatGPTVoiceTransport, MediaUnavailableError, type TransportOptions } from "../src/transport.ts";
 
 function nativeFixture() {
   let events!: (error: Error | null, value: string) => void;
@@ -110,6 +110,24 @@ test("HTTP authorization errors are actionable and never leak raw server bodies"
     });
     assert.equal(n.counts().closes, 1);
   }
+});
+
+test("blocked WebRTC media explains the network cause instead of a native timeout", async () => {
+  const n = nativeFixture();
+  (n.native.LiveWebRtcPeer.prototype as { waitForOpen(): Promise<void> }).waitForOpen = async () => {
+    throw new Error("Timed out waiting for the live data channel to open");
+  };
+  const transport = new ChatGPTVoiceTransport(options([], []), {
+    native: () => n.native,
+    fetch: async () => new Response("test-sdp-answer", { headers: { location: "/v1/live/rtc_test" } }),
+    socket: () => { throw new Error("should not open"); },
+  });
+  await assert.rejects(transport.connect(), error => {
+    assert.ok(error instanceof MediaUnavailableError);
+    assert.match(error.message, /UDP/);
+    return true;
+  });
+  assert.equal(n.counts().closes, 1);
 });
 
 test("401 re-reads the Pi credential and retries once only when the token changed", async () => {

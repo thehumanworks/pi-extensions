@@ -5,8 +5,10 @@ import { join } from "node:path";
 import { test } from "node:test";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { registerVoice } from "../index.ts";
+import type { DictationOptions, DictationSession } from "../src/dictation.ts";
 import { VoiceSession } from "../src/session.ts";
 import type { SessionOptions } from "../src/session.ts";
+import { MediaUnavailableError } from "../src/transport.ts";
 
 async function fixture() {
   const directory = await mkdtemp(join(tmpdir(), "pi-voice-extension-"));
@@ -16,19 +18,30 @@ async function fixture() {
   const notifications: string[] = [], entries: { type: string; customType: string; data: unknown }[] = [];
   const messages: any[] = [];
   let sessionOptions!: SessionOptions;
-  let starts = 0, stops = 0, mutes = 0, widget = false;
+  let dictationOptions: DictationOptions | undefined;
+  let starts = 0, stops = 0, mutes = 0, widget = false, toggles = 0, dictationStops = 0, status: string | undefined;
+  let startError: Error | undefined;
+  let editor = "";
   const fakeSession = {
     state: { phase: "listening" },
-    async start() { starts++; },
+    async start() { starts++; if (startError) throw startError; },
     async stop() { stops++; },
     toggleMute() { mutes++; },
     backendDelegationStarted() {}, backendMessage() {}, backendSettled() {},
   } as unknown as VoiceSession;
+  const fakeDictation = {
+    state: { phase: "ready" },
+    toggle() { toggles++; },
+    async stop() { dictationStops++; },
+  } as unknown as DictationSession;
   const ctx = {
     mode: "tui", ui: {
       notify: (text: string) => notifications.push(text),
       setWidget: (_key: string, content: unknown) => { widget = content !== undefined; },
-      setStatus() {},
+      setStatus: (_key: string, text: string | undefined) => { status = text; },
+      getEditorText: () => editor,
+      setEditorText: (text: string) => { editor = text; },
+      pasteToEditor: (text: string) => { editor += text; },
       onTerminalInput: (callback: typeof terminal) => { terminal = callback; return () => { terminal = undefined; }; },
     },
     sessionManager: { getSessionId: () => "test", getBranch: () => entries },
@@ -44,11 +57,15 @@ async function fixture() {
   registerVoice(pi, {
     settingsPath: join(directory, "voice.json"),
     session: options => { sessionOptions = options; return fakeSession; },
+    dictation: options => { dictationOptions = options; return fakeDictation; },
   });
   return {
     command: (args: string) => command(args, ctx), ctx, handlers, entries, messages, notifications,
     get callbacks() { return sessionOptions; }, key: (data: string) => terminal?.(data),
     counts: () => ({ starts, stops, mutes, widget }),
+    dictation: () => ({ options: dictationOptions, toggles, stops: dictationStops, status }),
+    failStart: (error: Error) => { startError = error; },
+    get editor() { return editor; }, set editor(value: string) { editor = value; },
     cleanup: () => rm(directory, { recursive: true }),
   };
 }
@@ -105,5 +122,54 @@ test("off also cancels on during asynchronous config loading; non-TUI cannot sta
     await f.command("on");
     assert.equal(f.counts().starts, 0);
     assert.match(f.notifications.at(-1)!, /interactive/);
+  } finally { await f.command("off"); await f.cleanup(); }
+});
+
+test("blocked realtime media falls back to dictation; the key records instead of muting", async () => {
+  const f = await fixture();
+  try {
+    f.failStart(new MediaUnavailableError());
+    await f.command("on");
+    assert.equal(f.counts().stops, 1);
+    assert.equal(f.dictation().status, "dictation ●");
+    assert.match(f.notifications.at(-1)!, /UDP.*Switched to dictation/s);
+    assert.deepEqual(f.key("\x18"), { consume: true });
+    assert.equal(f.counts().mutes, 0);
+    assert.equal(f.dictation().toggles, 1);
+    // Delegation hooks are realtime-only.
+    await f.handlers.get("agent_settled")!({ aborted: false });
+    await f.command("off");
+    assert.equal(f.dictation().stops, 1);
+    assert.equal(f.key("\x18"), undefined);
+  } finally { await f.command("off"); await f.cleanup(); }
+});
+
+test("other realtime failures do not fall back to dictation", async () => {
+  const f = await fixture();
+  try {
+    f.failStart(new Error("ChatGPT voice signaling failed (HTTP 403)."));
+    await f.command("on");
+    assert.equal(f.dictation().options, undefined);
+    assert.match(f.notifications.at(-1)!, /HTTP 403/);
+  } finally { await f.command("off"); await f.cleanup(); }
+});
+
+test("/voice dictate skips realtime and inserts transcripts into the editor", async () => {
+  const f = await fixture();
+  try {
+    await f.command("dictate");
+    assert.equal(f.counts().starts, 0);
+    const options = f.dictation().options!;
+    const editor = (): string => f.editor;
+    options.onText("Fix the build.");
+    assert.equal(editor(), "Fix the build.");
+    options.onText("Then run tests.");
+    assert.equal(editor(), "Fix the build. Then run tests.");
+    const long = "x".repeat(1200);
+    options.onText(long);
+    assert.equal(editor(), `Fix the build. Then run tests. ${long}`);
+    await f.command("off");
+    options.onText("late");
+    assert.ok(!editor().endsWith("late"));
   } finally { await f.command("off"); await f.cleanup(); }
 });

@@ -1,5 +1,6 @@
 import type { Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth, wrapTextWithAnsi, type Component, type TUI } from "@earendil-works/pi-tui";
+import type { DictationSession } from "./dictation.ts";
 import type { VoiceSession } from "./session.ts";
 import type { VoiceSettings } from "./settings.ts";
 import type { Transcript } from "./transcripts.ts";
@@ -27,6 +28,11 @@ export class AnimatedText {
   }
 }
 
+function clock(ms: number): string {
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
 export function meter(history: readonly number[]): string {
   return history.map(sample => BARS[Math.round(Math.sqrt(level(sample)) * 7)]).join("");
 }
@@ -41,7 +47,7 @@ export class VoiceWidget implements Component {
   private readonly getTheme: () => Theme;
 
   constructor(
-    private readonly session: VoiceSession, private readonly settings: VoiceSettings,
+    private readonly session: Pick<VoiceSession | DictationSession, "state" | "tick">, private readonly settings: VoiceSettings,
     private readonly tui: Pick<TUI, "requestRender">, theme: Theme | (() => Theme),
   ) {
     this.getTheme = typeof theme === "function" ? theme : () => theme;
@@ -70,14 +76,20 @@ export class VoiceWidget implements Component {
     if (width <= 0) return [];
     const theme = this.getTheme(), state = this.session.state;
     const inner = Math.max(1, width - 2);
-    const heading = theme.fg("muted", "voice ") +
-      theme.fg(state.muted ? "dim" : "error", "●") + " " + theme.fg("text", state.phase);
-    const help = theme.fg("dim", `${this.settings.muteKey} ${state.muted ? "unmute" : "mute"}   /voice off`);
+    const dictation = state.phase === "ready" || state.phase === "recording" || state.phase === "transcribing";
+    const recording = state.phase === "recording";
+    const started = "startedAt" in state ? state.startedAt : undefined;
+    const elapsed = recording && started !== undefined ? ` ${clock(Date.now() - started)}` : "";
+    const heading = theme.fg("muted", dictation ? "dictation " : "voice ") +
+      theme.fg(state.muted || (dictation && !recording) ? "dim" : "error", "●") + " " + theme.fg("text", state.phase + elapsed);
+    const action = !dictation ? (state.muted ? "unmute" : "mute") : recording ? "stop & transcribe"
+      : state.phase === "ready" ? "record" : undefined;
+    const help = theme.fg("dim", `${action ? `${this.settings.muteKey} ${action}   ` : ""}/voice off`);
     const gap = inner - visibleWidth(heading) - visibleWidth(help);
     const lines = [gap >= 2 ? heading + " ".repeat(gap) + help : heading];
     lines.push(
-      theme.fg("muted", "  mic ") + theme.fg(state.muted ? "dim" : "accent", meter(this.input)) +
-      theme.fg("muted", "   pi ") + theme.fg("mdHeading", meter(this.output)),
+      theme.fg("muted", "  mic ") + theme.fg(state.muted || (dictation && !recording) ? "dim" : "accent", meter(this.input)) +
+      (dictation ? "" : theme.fg("muted", "   pi ") + theme.fg("mdHeading", meter(this.output))),
     );
     const now = Date.now();
     for (const role of ["user", "assistant"] as const) {

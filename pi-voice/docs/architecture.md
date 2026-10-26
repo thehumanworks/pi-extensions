@@ -19,6 +19,11 @@ pi-voice follows that division:
   under Node without editing dependencies.
 - `src/transport.ts`: HTTP SDP signaling and authenticated control WebSocket.
 - `src/protocol.ts`: strict parsing, call-ID validation, UTF-8 context chunking.
+- `src/dictation.ts`: push-to-talk fallback when WebRTC media is blocked. Buffers
+  16 kHz PCM only while recording, uploads one WAV to ChatGPT's
+  `backend-api/transcribe` with the Codex ChatGPT login, and returns the text
+  for the editor. Modeled on oh-my-pi's buffered cloud STT capture
+  (`packages/coding-agent/src/stt`), which uses the public API with an API key.
 - `src/session.ts`: capture, mute, echo gate, transcript turns and delegation
   lifecycle. A delegation must be consumed by Pi before a settlement can finish
   it; a pending request cannot accidentally consume an older run's final.
@@ -98,6 +103,7 @@ Inspected revisions (not floating assumptions about today's public Realtime API)
 - [Conversation/coding controller](https://github.com/can1357/oh-my-pi/blob/4a05cbf9f80313e61af17ec98e1bfb97d6fb093d/packages/coding-agent/src/live/controller.ts)
 - [Native WebRTC implementation](https://github.com/can1357/oh-my-pi/blob/4a05cbf9f80313e61af17ec98e1bfb97d6fb093d/crates/pi-voice/src/live.rs)
 - [Live UI](https://github.com/can1357/oh-my-pi/blob/4a05cbf9f80313e61af17ec98e1bfb97d6fb093d/packages/tui/src/apps/live-visualizer.ts)
+- [STT controller](https://github.com/can1357/oh-my-pi/blob/0e100b52b6a9eea30353666e085adae0407c8e1e/packages/coding-agent/src/stt/stt-controller.ts) (at 0e100b5)
 
 Differences from upstream are deliberate: Pi's public extension APIs instead of
 internal AgentSession hooks, Ctrl+X rather than F9/Space, the original editor is

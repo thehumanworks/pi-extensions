@@ -2,6 +2,8 @@
 
 Experimental realtime, speech-to-speech voice mode for [Pi](https://pi.dev), using
 ChatGPT's Codex voice service. This is **not** dictation followed by text-to-speech.
+Where the network blocks realtime media, it falls back to
+[dictation](#dictation-fallback) into the editor, using the same ChatGPT login.
 
 ```text
  voice ● listening                         ctrl+x mute   /voice off
@@ -68,11 +70,12 @@ voice conversation; the selected Pi coding model still does repository work.
 
 | Command | Action |
 |---|---|
-| `/voice on` | Connect; start microphone transmission only after the call is ready |
+| `/voice on` | Connect; start microphone transmission only after the call is ready. Falls back to dictation if realtime media is blocked |
+| `/voice dictate` | Push-to-talk dictation into the editor, without trying realtime |
 | `/voice off` | Stop capture, playback and signaling; restore normal key behavior |
 | `/voice mute` | Toggle microphone mute without stopping playback |
 | `/voice status` or `/voice` | Show state, voice and mute key |
-| `/voice key f9` | Persist a different mute shortcut; applies immediately |
+| `/voice key f9` | Persist a different voice key (mute, or record in dictation); applies immediately |
 | `/voice voice cove` | Persist a voice; applies on the next connection |
 
 Voices: `arbor`, `breeze`, `cove`, `ember`, `juniper`, `maple`, `sol`
@@ -126,6 +129,28 @@ coding responses remain in chat as well as the spoken paraphrase.
 
 See [architecture and source references](docs/architecture.md).
 
+## Dictation fallback
+
+Realtime voice needs outbound UDP to OpenAI's media servers (port 3478). Corporate
+firewalls, VPNs and secure web gateways such as Zscaler often block it, and the
+native WebRTC peer has no TCP/TURN fallback. When signaling succeeds but media
+cannot connect, `/voice on` switches to dictation instead of failing.
+`/voice dictate` starts dictation directly.
+
+```text
+ dictation ● recording 0:04          ctrl+x stop & transcribe   /voice off
+   mic ▁▂▄▆▃▂▁▁▁▁
+```
+
+- Press the voice key (**Ctrl+X**) to record and again to transcribe. The
+  microphone is open **only while recording** (up to 5 minutes per recording).
+- Audio goes over HTTPS to ChatGPT's dictation endpoint
+  (`chatgpt.com/backend-api/transcribe`) with the same `openai-codex` ChatGPT
+  login, never an API key. The service reports that it keeps the recording as a
+  ChatGPT file asset for 30 days, like ChatGPT's own dictation.
+- The text is inserted at the editor cursor for review. It is not submitted;
+  press Enter as usual. Spoken replies and delegation are realtime-only.
+
 ## Audio, privacy and limitations
 
 - Media uses the native WebRTC/audio implementation from
@@ -140,6 +165,11 @@ See [architecture and source references](docs/architecture.md).
 - macOS (arm64/x64), Linux (arm64/x64), and Windows (arm64/x64) have upstream
   binaries. Only binary loading on macOS arm64 has been smoke-tested here.
   Linux also needs a functioning system audio server/device backend.
+- Realtime media needs **outbound UDP to OpenAI on port 3478**. The native peer
+  has no ICE-TCP or TURN fallback, so networks that block it (corporate
+  firewalls, VPNs, secure web gateways such as Zscaler, which also resets
+  non-TLS TCP 443) fall back to dictation after a ~20 second attempt. WSL uses
+  the Windows host's network stack and agents.
 - Audio is transmitted to OpenAI while the microphone is unmuted. Muting stops
   transmission and discards partial native input, but keeps the local capture
   device open for quick unmute. `/voice off` releases it.
@@ -170,6 +200,7 @@ npm pack --dry-run
 Tests use fake audio and a local WebSocket server: authentication gating,
 protocol payloads/UTF-8 limits, finalization, delegation/steering, stale-settlement
 races, mute/Kitty events, startup cancellation, shutdown, Unicode/narrow rendering,
+dictation fallback, WAV encoding and transcription requests,
 and persisted configuration. They do not access credentials or audio hardware.
 
 For live acceptance testing, use an account that can access the backend and
