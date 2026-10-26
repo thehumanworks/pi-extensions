@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-revoke",
+  "prompt": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 14025,
+  "modelRequests": 4,
+  "usage": {
+    "input": 8,
+    "output": 1107,
+    "cacheRead": 50263,
+    "cacheWrite": 9733,
+    "reasoning": 415,
+    "totalTokens": 61111,
+    "cost": 0
+  },
+  "finalText": "The normal migration ran with no override, and the default region is back to `eu-north-7`.\n\n- `work/normal.json`: the migrated config from `node bin/migrate.mjs fixtures/config.json work/normal.json`.\n- `work/normal-report.json`: a copy of that config. I wrote it with the file tools, since bash only allows `node` commands. I put it in `work/` to match `temporary-report.json`.\n\nThe config has `region: \"eu-north-7\"`, retry `{maxAttempts: 5, backoffMs: 125}`, `timeoutMs: 2000`, `features: [\"a\", \"z\"]`, and `customField` preserved under `legacy`.\n\nI left the diagnostic artifacts (`work/temporary.json`, `work/temporary-report.json`, `work/out*.json`) and `fixtures/config.json` untouched. I also didn't rename the Rex session, since that needs a `rex` command and bash is limited to `node` here."
+}

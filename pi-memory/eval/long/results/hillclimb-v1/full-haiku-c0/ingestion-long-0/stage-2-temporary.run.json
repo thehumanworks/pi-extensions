@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 11613,
+  "modelRequests": 3,
+  "usage": {
+    "input": 6,
+    "output": 1184,
+    "cacheRead": 42712,
+    "cacheWrite": 13998,
+    "reasoning": 491,
+    "totalTokens": 57900,
+    "cost": 0
+  },
+  "finalText": "The diagnostic run used batch size 1 and produced one accepted record (`alpha` seq 0). The permanent default is still 4.\n\n- **CLI command:** `node bin/ingest.mjs fixtures/events.ndjson work/temporary.ndjson work/temporary-checkpoint.json 1`\n- **Report:** `{\"accepted\":1,\"rejected\":0,\"duplicates\":0,\"nextLine\":1}`\n- **Checkpoint:** `work/temporary-checkpoint.json` contains `{\"nextLine\":1}`.\n- **Report file:** `temporary-report.json` in the repo root. The bash tool blocks shell redirects, so I wrote it with the write tool from the CLI's exact stdout. The CLI itself has no output-file option.\n\nI did not rename the Rex session, because the bash tool only allows `node` commands. I did not apply the ingestion-only auxiliary config from memory (region `us-west-9`, retry settings), since this task doesn't use it."
+}

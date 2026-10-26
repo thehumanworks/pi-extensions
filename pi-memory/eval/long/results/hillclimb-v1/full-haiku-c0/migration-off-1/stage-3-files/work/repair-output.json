@@ -1,0 +1,10 @@
+{
+  "name": "recovery-fixture",
+  "extra": "preserve",
+  "version": 3,
+  "timeoutMs": 3000,
+  "features": [
+    "ready"
+  ],
+  "region": "default"
+}

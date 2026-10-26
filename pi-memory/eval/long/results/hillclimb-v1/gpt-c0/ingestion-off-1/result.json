@@ -1,0 +1,173 @@
+{
+  "id": "ingestion-off-1",
+  "project": "ingestion",
+  "arm": "off",
+  "repeat": 1,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "openai/gpt-6.1-sol",
+  "memoryEnv": {},
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-TSy0D7/ingestion-off-1/project",
+  "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+  "calls": [
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 58434,
+      "modelRequests": 10,
+      "usage": {
+        "input": 5065,
+        "output": 1447,
+        "cacheRead": 32128,
+        "cacheWrite": 0,
+        "reasoning": 54,
+        "totalTokens": 38640,
+        "cost": 0.027812800000000002
+      },
+      "finalText": "Implemented recovery in `src/ingest.mjs`: corrupt checkpoints are preserved as unique `.corrupt` files, then ingestion replays from line zero using existing output identities to avoid duplicates.\n\nRan the requested CLI:\n- Accepted: **2**\n- Duplicates skipped: **1**\n- Checkpoint advanced to line **3**\n- Existing `work/repair-output.ndjson` was not deleted or truncated.\n\nCorrupt checkpoint preserved at:\n`work/repair-checkpoint.json.b4ff3414-c0aa-42c7-8b1f-9fc7e5fc8b58.corrupt`\n\nAdded recovery regression tests. Ran `node --test`: **4 passed, 0 failed**."
+    }
+  ],
+  "scores": [
+    {
+      "project": "ingestion",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-TSy0D7/ingestion-off-1/project/.acceptance-NWuG3I/rejected.ndjson'"
+        },
+        {
+          "name": "temporary override was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired override does not affect later action",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "new corrupt checkpoint preserves output and replays safely",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "recovery keeps corrupt checkpoint at agreed location",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-TSy0D7/ingestion-off-1/project/.acceptance-5Vgl6V/recovery/checkpoint.bad.json'"
+        },
+        {
+          "name": "actual repair run preserved all three events",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0.6,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 11,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 10,
+  "wallMs": 58744,
+  "usage": {
+    "input": 5065,
+    "output": 1447,
+    "cacheRead": 32128,
+    "cacheWrite": 0,
+    "reasoning": 54,
+    "totalTokens": 38640,
+    "cost": 0.027812800000000002
+  },
+  "toolCalls": 16,
+  "actualCliRuns": 1,
+  "cliRunsByPhase": {
+    "stage-1-implement": 0,
+    "stage-2-temporary": 0,
+    "stage-2-revoke": 0,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [],
+  "recalls": [],
+  "beforeDreamMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "beforeMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "afterMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  }
+}

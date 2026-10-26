@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 27417,
+  "modelRequests": 7,
+  "usage": {
+    "input": 14,
+    "output": 2670,
+    "cacheRead": 68784,
+    "cacheWrite": 8139,
+    "reasoning": 1157,
+    "totalTokens": 79607,
+    "cost": 0
+  },
+  "finalText": "The truncated source is repaired and migrated to `work/repair-output.json`, and the visible test passes. I didn't need to change any code: `src/migrate.mjs` already had the recovery path.\n\n- **Migration:** `node bin/migrate.mjs work/repair-source.json work/repair-output.json` succeeded. The output is version 3, region `eu-north-7`, `timeoutMs` 3000, `retry.maxAttempts` 5 with `backoffMs` 125, features `[\"ready\"]`, and `legacy.extra` = `\"preserve\"`.\n- **Corrupt source preserved:** it was moved to `work/recovery/source.bad.json` and still holds the truncated `{\"version\":`.\n- **Backup unchanged:** `work/backups/source.json` is intact, with the original `extra` field.\n- **Tests:** `node --test` passed 1/1.\n\nI used the durable decisions: `maxAttempts` 5, the default region `eu-north-7` (no region override passed), and the 125 ms backoff. The temporary overrides in `work/temporary.json` were not used.\n\nI could not rename the Rex session. The bash tool only allows `node` commands, so the `rex` CLI was unavailable."
+}

@@ -54,8 +54,8 @@ Add a `memory` object to Pi's `settings.json`:
     "enabled": true,
     "mode": "inject",
     "capture": { "enabled": true, "model": "openai/gpt-6.1-sol", "onCompact": true },
-    "retrieval": { "maxItems": 8, "budgetTokens": 1200, "timeoutMs": 2500 },
-    "digest": { "budgetTokens": 1200 },
+    "retrieval": { "maxItems": 8, "budgetTokens": 1200, "sessionBudgetTokens": 0, "timeoutMs": 2500 },
+    "digest": { "budgetTokens": 1200, "scope": "decisions" },
     "consolidation": { "everyCaptures": 20 },
     "dream": { "enabled": true, "maxSourceItems": 12, "softActiveBytes": 1000000, "idleDelayMs": 30000, "backoffMs": 300000 }
   }
@@ -73,6 +73,10 @@ The tools are `memory_search`, `memory_get`, `memory_save`, `memory_feedback`, `
 `capture.model` and `dream.model` are required for capture and dreaming respectively; without an explicit `provider/modelId` that job stays off and `/memory capture`, `/memory backfill`, and `/memory dream` report why. `dream.model` falls back to `consolidation.model`. `/memory model` prints the three current selectors; `/memory model capture|dream|retrieval <provider/modelId|off>` validates the selector against the configured model registry, saves it to user settings, and applies after `/reload`. Set `retrieval.model` to a configured `provider/modelId` for optional model selection; invalid/unavailable selectors and timeouts fall back to lexical ranking. No retrieval model is used by default. The budget is enforced with a conservative UTF-8 byte upper bound, so actual tokenizer counts are lower; a memory is omitted whole instead of truncating its conditions.
 
 Overrides: `--no-memory`, `PI_MEMORY_DISABLED=1`, `--memory-dir`, `PI_MEMORY_DIR`, `--memory-mode`, `PI_MEMORY_MODE`, `--memory-model`, and `PI_MEMORY_MODEL`. `PI_MEMORY_CAPTURE=0` disables automatic capture; `PI_MEMORY_DREAM=0` disables automatic dreaming. A configured project `memory.enabled: false` disables memory. `/memory off` disables it immediately and saves the preference; `/memory on`, `/memory mode inject|agent|both`, and `/memory model ...` take effect after `/reload`, preserving stable tool declarations.
+
+`digest.scope` selects what the always-on system-prompt block holds. `decisions` (default) includes standing feedback and preference rules plus durable user-stated project decisions with importance 8 or higher and confidence 0.9 or higher, selected live from canonical sources at session start, so the block exists before the first consolidation. `rules` reads only the digest compiled at consolidation, which holds standing feedback and preference rules. The default was chosen on measured fresh-session repair results in [the coding hillclimb](docs/HILLCLIMB-CODING.md). It is a fixed per-session reading budget in the spirit of OptMem's `wake`, bounded by `digest.budgetTokens`, and it is byte-stable for the whole session. Items in the block are excluded from per-turn recall, so recall spends its budget on other evidence.
+
+`retrieval.sessionBudgetTokens` is a cumulative ceiling on recall tokens injected into one session branch (0 disables it). Once reached, no new evidence is recalled; invalidation notices still appear because they are correctness, not retrieval. The spent amount is restored from persisted recall messages after a restart and resets at compaction. Environment overrides are `PI_MEMORY_DIGEST_SCOPE` and `PI_MEMORY_SESSION_BUDGET`.
 
 Reproducible evaluation can also set `PI_MEMORY_TOKEN_BUDGET=1200`, `PI_MEMORY_DIGEST_BUDGET=0`, `PI_MEMORY_RETRIEVAL_MODEL=off`, and `PI_MEMORY_STRATEGY=baseline|improved`. The shipped default is `improved`. `PI_MEMORY_TRACE=/absolute/file.jsonl` records recall, capture and dream diagnostics; choose a private path because traces contain memory context.
 

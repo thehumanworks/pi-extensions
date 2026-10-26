@@ -1,0 +1,16 @@
+{
+  "version": 3,
+  "name": "recovery-fixture",
+  "timeoutMs": 3000,
+  "features": [
+    "ready"
+  ],
+  "region": "eu-north-7",
+  "retry": {
+    "maxAttempts": 5,
+    "backoffMs": 125
+  },
+  "legacy": {
+    "extra": "preserve"
+  }
+}

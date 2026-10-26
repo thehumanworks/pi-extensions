@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 12075,
+  "modelRequests": 3,
+  "usage": {
+    "input": 6,
+    "output": 1040,
+    "cacheRead": 30620,
+    "cacheWrite": 8484,
+    "reasoning": 372,
+    "totalTokens": 40150,
+    "cost": 0
+  },
+  "finalText": "The diagnostic run is done with the `test-local` region override. The source config is unchanged.\n\n- **CLI run:** `node bin/migrate.mjs fixtures/config.json work/temporary.json test-local` wrote `work/temporary.json` and printed the config with `\"region\": \"test-local\"`.\n- **Report:** `work/temporary-report.json` holds the same resulting config. I wrote it with the file-write tool, because the shell only allows `node` commands and no redirects.\n- **Source:** `fixtures/config.json` is unchanged (I re-read it to confirm it is still v1).\n- **Defaults:** the code's defaults are unchanged. The override only applies to this invocation.\n\nThe resulting config is `name: \"demo\"`, `customField: {keep: true}`, `version: 3`, `timeoutMs: 2000`, `features: [\"a\", \"z\"]`, `region: \"test-local\"`.\n\nI did not run the Rex session rename. The shell is restricted to `node` commands, so I can't call `rex`."
+}

@@ -1,0 +1,5 @@
+{
+  "tx-0.8": { "request": "transcript" },
+  "tx-0.6": { "request": "transcript", "trigger": 0.6 },
+  "ser16k-0.6": { "request": "serialized", "trigger": 0.6 }
+}

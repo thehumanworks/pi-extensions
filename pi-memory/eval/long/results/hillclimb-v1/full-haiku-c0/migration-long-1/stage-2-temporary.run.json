@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 10938,
+  "modelRequests": 4,
+  "usage": {
+    "input": 8,
+    "output": 833,
+    "cacheRead": 47094,
+    "cacheWrite": 9106,
+    "reasoning": 322,
+    "totalTokens": 57041,
+    "cost": 0
+  },
+  "finalText": "I ran the CLI on `fixtures/config.json` with the region override `test-local`. The output is in `work/temporary.json`, and I wrote the same config to `work/temporary-report.json`.\n\nThe resulting region is `test-local`. The retry settings (`maxAttempts` 5, `backoffMs` 125) and everything else match the normal run. The source config and the permanent defaults are unchanged."
+}

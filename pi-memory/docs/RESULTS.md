@@ -16,6 +16,18 @@ Two synthetic repositories required multi-file implementation, actual CLI execut
 
 All arms passed the measured generic coding, CLI-action, and wrong-project artifact checks. All 54 required CLI invocations used the expected arguments and returned successful JSON; 36 reports matched stdout and 18 repair artifacts passed their checks. No selected memory ID crossed project boundaries or lacked provenance. One no-memory invocation exhausted its request budget and remains included. These are two tasks with repetitions, not eighteen independent real-world projects. [Full protocol, per-project scores, artifacts and integrity audit](LONG-RUN-EVALUATION.md).
 
+## Coding hillclimb on cheap models
+
+The remaining coding failure was fresh-session repair, where a narrow prompt recalled control records instead of the project policy. An always-on "wake" block of durable user-stated project decisions (`digest.scope=decisions`, now the default) fixed it without regressing the full matrix.
+
+| Fresh-session repair, 4 jobs per cell | gpt-6.1-sol | claude-bridge haiku-5-5 |
+| --- | ---: | ---: |
+| No memory | 35% | 30% |
+| Captured memory, baseline | 50% | 45% |
+| Captured memory, wake block | 90% | 75% to 80% |
+
+The migration cell has a hard 80% floor from an inherited stage-2 report. On the full three-stage matrix both models kept their baseline scores with the wake block, and GPT completed 4 of 4 jobs versus 3 of 4. A per-session recall ceiling in the spirit of OptMem is shipped opt-in; it never engaged on these tasks. [Protocol, tables and limits](HILLCLIMB-CODING.md).
+
 ## Costs and caching
 
 Long memory averaged 28.25 model requests per job versus 30.75 without memory. It used more total input (130,293 versus 119,452.5 tokens) and slightly less uncached input (16,309 versus 16,796.5); cache-hit variance reversed the early comparison. History capture and dream generation incur additional costs. These measurements do not support a reliable cost- or latency-saving claim.

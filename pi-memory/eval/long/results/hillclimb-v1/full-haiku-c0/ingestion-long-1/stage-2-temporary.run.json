@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 11641,
+  "modelRequests": 3,
+  "usage": {
+    "input": 6,
+    "output": 643,
+    "cacheRead": 41265,
+    "cacheWrite": 12945,
+    "reasoning": 246,
+    "totalTokens": 54859,
+    "cost": 0
+  },
+  "finalText": "I ran the CLI once with batch size 1 against `fixtures/events.ndjson`, writing to `work/temporary.ndjson` and `work/temporary-checkpoint.json`. It reported `accepted 1, rejected 0, duplicates 0, nextLine 1`.\n\nI saved that report to `temporary-report.json` in the project root. The write tool did the saving, since bash can't redirect output. The permanent default is still 4."
+}

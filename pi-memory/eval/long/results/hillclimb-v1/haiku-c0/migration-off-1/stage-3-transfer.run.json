@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 40062,
+  "modelRequests": 11,
+  "usage": {
+    "input": 22,
+    "output": 4516,
+    "cacheRead": 115622,
+    "cacheWrite": 13021,
+    "reasoning": 2128,
+    "totalTokens": 133181,
+    "cost": 0
+  },
+  "finalText": "The repaired source migrated to `work/repair-output.json`, and the visible test passes. I did not change any code.\n\n- **Evidence:** the truncated source (`{\"version\":`) is preserved at `work/evidence/repair-source.corrupt.json`.\n- **Repair:** `work/repair-source.json` was restored from the valid pre-migration backup at `work/backups/source.json`. That backup is still in place.\n- **Migration:** I ran `node bin/migrate.mjs work/repair-source.json work/repair-output.json` with no region argument. The expired `test-local` override was not used, so `region` is `us-east-1` from the durable default. The output has `version` 3, `timeoutMs` 3000, `features` `[\"ready\"]`, and keeps `extra: \"preserve\"`.\n- **Tests:** `node --test` passes, 1 of 1.\n\nTwo things you should know:\n- **Backup location:** `repair-output.json` did not exist before this run, so the code's `.bak` convention created nothing. The only valid backup is `work/backups/source.json`, which I used as the restore point. If the agreed location was meant to be `work/repair-output.json.bak`, that file does not exist.\n- **Session rename:** I could not run `rex session rename`, since bash is limited to `node` commands. I also could not read the memory directory outside the project, so I took the durable defaults from the code and did not confirm them against stored decisions."
+}

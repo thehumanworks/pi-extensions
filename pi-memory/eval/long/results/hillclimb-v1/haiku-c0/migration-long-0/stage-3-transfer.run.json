@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 27180,
+  "modelRequests": 7,
+  "usage": {
+    "input": 14,
+    "output": 3308,
+    "cacheRead": 64218,
+    "cacheWrite": 10542,
+    "reasoning": 1809,
+    "totalTokens": 78082,
+    "cost": 0
+  },
+  "finalText": "The repaired migration is written to `work/repair-output.json`, and the visible test passes.\n\n- **Output:** Migrated from the valid backup `work/backups/source.json`. The result is version 3 with `timeoutMs` 3000, features `[\"ready\"]`, `extra: \"preserve\"`, region `us-east-1` (the default, since the backup has none), and `retry` with `backoffMs` 1000 and `maxAttempts` 5.\n- **Tests:** `node --test` passed 1 of 1.\n- **Backup:** `work/backups/source.json` is unchanged.\n- **Corrupt evidence:** Copied to `work/recovery/source.bad.json`, which holds `{\"version\":`. I copied rather than moved it, so the original `work/repair-source.json` is still in place. I didn't delete it.\n- **Code:** No source change was needed. `src/migrate.mjs` already uses `maxAttempts: 5` and the earlier region and backoff defaults.\n\nI did not use any temporary diagnostic override. I also could not run the `rex session rename` step, because bash is limited to `node --test` and `node <script>` commands here."
+}

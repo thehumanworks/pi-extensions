@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 52916,
+  "modelRequests": 9,
+  "usage": {
+    "input": 18,
+    "output": 8758,
+    "cacheRead": 111350,
+    "cacheWrite": 15633,
+    "reasoning": 5122,
+    "totalTokens": 135759,
+    "cost": 0
+  },
+  "finalText": "I implemented `src/migrate.mjs` and `bin/migrate.mjs`. The visible test passes, and the CLI runs on the fixture and on a truncated-input recovery case.\n\n**Results**\n- `node --test`: 1/1 passing (it failed before with the stub).\n- `node bin/migrate.mjs fixtures/config.json work/output.json` printed:\n  `version: 3`, `name: \"demo\"`, `region: \"eu-north-7\"`, `retry: {maxAttempts: 5, backoffMs: 125}`, `features: [\"a\",\"z\"]`, `timeoutMs: 2000`, `legacy: {customField: {keep: true}}`.\n- Backup: `work/backups/source.json` is byte-identical to the fixture.\n- Recovery: I wrote a truncated `work/truncated.json` and migrated it to `work/recovered.json`. The corrupt file moved to `work/recovery/source.bad.json`, the output was built from the backup, and `work/backups/source.json` was unchanged.\n\n**Choices I made**\n- **Region:** v1 input uses its own `region` if present, otherwise `eu-north-7`. `options.region` overrides either. The override is per call and is not stored.\n- **Retry:** `maxAttempts` is always 5 for v1 conversions, replacing 3. `backoffMs` keeps the input value or defaults to 125. Other `retry` keys are kept.\n- **v3 input:** returned unchanged, except that an explicit region override replaces `region`.\n- **Unknown v1 fields:** moved under `legacy`. Only `version`, `name`, `timeoutSeconds`, `flags`, `region`, and `retry` are treated as known.\n- **Backup:** `<output dir>/backups/source.json` is written from the exact raw bytes, but only if it doesn't already exist. An existing backup is never overwritten.\n- **Recovery:** if the input is not valid JSON, the backup is parsed first. Only then is the corrupt input moved to `<output dir>/recovery/source.bad.json`. If that path already exists, the function throws instead of overwriting it.\n- **Atomic write:** output goes to a temp file in the same directory, then is renamed into place.\n- **Flags:** only values that are exactly `true` become features. Non-boolean flag values are dropped and are not preserved under `legacy`. Say if you want them kept.\n\nI did not rename the Rex session because `rex` commands are outside the allowed bash commands. Everything I wrote is in `work/`, which is disposable."
+}

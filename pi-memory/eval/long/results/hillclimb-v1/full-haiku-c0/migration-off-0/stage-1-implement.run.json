@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 42610,
+  "modelRequests": 11,
+  "usage": {
+    "input": 22,
+    "output": 5251,
+    "cacheRead": 110840,
+    "cacheWrite": 11763,
+    "reasoning": 1827,
+    "totalTokens": 127876,
+    "cost": 0
+  },
+  "finalText": "`src/migrate.mjs` and `bin/migrate.mjs` are implemented. The visible test passes (`node --test`: 1/1), and the CLI runs on `fixtures/config.json`.\n\n**Policies I chose (none were written in the repo, and the memory notes are outside the allowed paths, so please confirm these):**\n- **Region:** `options.region` / the CLI's third argument overrides `region`. Without an override, no region is added for v1 input.\n- **Retry:** no retry field is mapped. Any unrecognized field, including `retry`, is carried through unchanged.\n- **Unknown fields:** every top-level field other than `version`, `name`, `timeoutSeconds`, and `flags` is preserved verbatim, so `customField` survives.\n- **Backup:** if the output file already exists, it is copied to `<output>.bak-<epoch-ms>` before being replaced. Nothing is overwritten.\n- **Writes:** output goes to a temp file in the same directory, then `rename`s into place.\n- **Validation:** non-object input, unknown versions, and v1 without a non-negative numeric `timeoutSeconds` throw errors.\n\n**Demo results (in `work/`, which I created as a disposable directory):**\n- `node bin/migrate.mjs fixtures/config.json work/config.out.json eu-west-1` produced v3 with `timeoutMs: 2000`, `features: [\"a\",\"z\"]`, `region: \"eu-west-1\"`, and `customField` intact.\n- Re-migrating that v3 output with no override left it semantically unchanged.\n- Running the CLI again on the same output created a `.bak-…` backup of the previous file.\n\nI could not rename the Rex session. The bash tool only allows `node` commands, so the `rex` call was not possible."
+}

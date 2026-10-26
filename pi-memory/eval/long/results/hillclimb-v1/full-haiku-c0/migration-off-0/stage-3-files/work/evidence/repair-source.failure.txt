@@ -1,0 +1,5 @@
+Command: node bin/migrate.mjs work/repair-source.json work/repair-output.json
+Exit code: 1
+stderr: migration failed: Unexpected end of JSON input
+Corrupt source preserved byte-for-byte as: work/evidence/repair-source.corrupt.json
+Recovery: migrated from valid pre-migration backup work/backups/source.json

@@ -1,0 +1,12 @@
+// Usage: node bin/ingest.mjs INPUT OUTPUT CHECKPOINT [BATCH_SIZE]
+import {processBatch} from '../src/ingest.mjs';
+
+const [inputPath, outputPath, checkpointPath, batchArg] = process.argv.slice(2);
+if (!inputPath || !outputPath || !checkpointPath) {
+  console.error('usage: node bin/ingest.mjs INPUT OUTPUT CHECKPOINT [BATCH_SIZE]');
+  process.exit(2);
+}
+
+const batchSize = batchArg === undefined ? undefined : Number(batchArg);
+const report = await processBatch({inputPath, outputPath, checkpointPath, batchSize});
+console.log(JSON.stringify(report, null, 2));

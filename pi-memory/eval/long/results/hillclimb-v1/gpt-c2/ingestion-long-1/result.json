@@ -1,0 +1,195 @@
+{
+  "id": "ingestion-long-1",
+  "project": "ingestion",
+  "arm": "long",
+  "repeat": 1,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "openai/gpt-6.1-sol",
+  "memoryEnv": {
+    "PI_MEMORY_DIGEST_SCOPE": "decisions",
+    "PI_MEMORY_DIGEST_BUDGET": "2400",
+    "PI_MEMORY_SESSION_BUDGET": "1200"
+  },
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-VuVDq3/ingestion-long-1/project",
+  "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+  "calls": [
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 63231,
+      "modelRequests": 10,
+      "usage": {
+        "input": 11803,
+        "output": 1975,
+        "cacheRead": 33024,
+        "cacheWrite": 0,
+        "reasoning": 87,
+        "totalTokens": 46802,
+        "cost": 0.0466584
+      },
+      "finalText": "Implemented recovery in `src/ingest.mjs` and added regression tests in `test/recovery.test.mjs`.\n\n- Preserved the corrupt checkpoint at `work/recovery/checkpoint.bad.json`.\n- Kept the existing record in `work/repair-output.ndjson` and appended the two missing records—no deletion or truncation.\n- Rebuilt `work/repair-checkpoint.json` as `{\"nextLine\":3}`.\n- Retained the default batch size of **4 accepted records**, `(tenant, seq)` deduplication, and malformed-line quarantine.\n\nRan the requested CLI: **2 accepted, 1 duplicate, 0 rejected**. Then ran `node --test`: **all 5 tests passed**."
+    }
+  ],
+  "scores": [
+    {
+      "project": "ingestion",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "temporary override was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired override does not affect later action",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "new corrupt checkpoint preserves output and replays safely",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "recovery keeps corrupt checkpoint at agreed location",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "actual repair run preserved all three events",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 1,
+        "action": 1,
+        "control": 1
+      },
+      "complete": true,
+      "passed": 13,
+      "total": 13
+    }
+  ],
+  "complete": true,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 10,
+  "wallMs": 63363,
+  "usage": {
+    "input": 11803,
+    "output": 1975,
+    "cacheRead": 33024,
+    "cacheWrite": 0,
+    "reasoning": 87,
+    "totalTokens": 46802,
+    "cost": 0.0466584
+  },
+  "toolCalls": 16,
+  "actualCliRuns": 1,
+  "cliRunsByPhase": {
+    "stage-1-implement": 0,
+    "stage-2-temporary": 0,
+    "stage-2-revoke": 0,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [],
+  "recalls": [
+    {
+      "event": "recall",
+      "query": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "ids": [
+        "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+      ],
+      "retiredIds": [],
+      "tokens": 706,
+      "tokenUpperBound": 706,
+      "digestTokenUpperBound": 946,
+      "digestIds": [
+        "m_mvnwa7bgf4bd5b83ba747b5999a1",
+        "m_mvnwc81254015609d066a4f43a35"
+      ],
+      "sessionBudgetTokens": 1200,
+      "sessionTokensBefore": 0,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+    }
+  ],
+  "beforeDreamMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "beforeMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "afterMemory": {
+    "bytes": 140608,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  }
+}

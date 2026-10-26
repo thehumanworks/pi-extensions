@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 42511,
+  "modelRequests": 10,
+  "usage": {
+    "input": 20,
+    "output": 6876,
+    "cacheRead": 126277,
+    "cacheWrite": 15149,
+    "reasoning": 2835,
+    "totalTokens": 148322,
+    "cost": 0
+  },
+  "finalText": "The repair is done. `work/repair-output.json` is migrated from the valid backup, and both tests pass.\n\n- **Recovery:** `src/migrate.mjs` now detects truncated JSON input. It loads `backups/source.json` beside the output and moves the corrupt source to `work/recovery/source.bad.json`. The corrupt bytes are preserved there as `{\"version\":`.\n- **Backup:** `work/backups/source.json` is unchanged. The recovered output keeps `extra: \"preserve\"`.\n- **Decisions kept:** region defaults to `us-east-1` and `retry.maxAttempts` is 5. `backoffMs` is 1000.\n- **Overrides:** I did not apply the expired diagnostic overrides from `work/temporary.json` or `temporary-report.json`.\n- **Tests:** `node --test` passes 2 of 2. The new test covers the truncated-input recovery, and it checks that the backup is unchanged and the corrupt file is preserved.\n\nTwo choices I made on the convention:\n- I validate the backup before moving the corrupt file. If the backup is missing or invalid, the input stays where it is.\n- The recovery refuses to run if `recovery/source.bad.json` already exists, so earlier evidence is never overwritten.\n\nI could not rename the Rex session because the bash tool only allows `node` commands."
+}

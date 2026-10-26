@@ -1,0 +1,58 @@
+{
+  "name": "ledger-extension-2",
+  "scenario": "ledger",
+  "arm": "extension",
+  "threshold": 40000,
+  "keep": 8000,
+  "config": {},
+  "wallMs": 393260,
+  "compactions": [
+    {
+      "reason": "threshold",
+      "ms": 3,
+      "turn": 6,
+      "summaryTokens": 1331
+    },
+    {
+      "reason": "threshold",
+      "ms": 1,
+      "turn": 12,
+      "summaryTokens": 2008
+    }
+  ],
+  "blockedMs": 4,
+  "probeScore": 0.9473684210526315,
+  "taskScore": 0.8333333333333334,
+  "probes": {
+    "env-var": true,
+    "error-prefix": true,
+    "frozen-dir": true,
+    "banned-lib": true,
+    "money": true,
+    "map-why": true,
+    "crash-cause": true,
+    "crash-row": true,
+    "crash-count": true,
+    "top-categories": true,
+    "top-totals": true,
+    "delimiters": false,
+    "spec-memo": true,
+    "spec-future": true,
+    "spec-duplicates": true,
+    "spec-exit": true,
+    "spec-rounding": true,
+    "spec-order": true,
+    "first-function": true
+  },
+  "task": {
+    "memo-default": true,
+    "future-skip": true,
+    "dedupe-key": false,
+    "counts": true,
+    "error-prefix": true,
+    "no-floats": true
+  },
+  "probeText": "1. `LEDGER_HOME`; default: `~/.ledger`.\n2. `ledger: ` (including the trailing space).\n3. `legacy/`.\n4. lodash.\n5. Integer cents, never floating-point money amounts.\n6. A category named `__proto__` previously broke plain-object storage; a Map safely supports such keys.\n7. `TypeError: Cannot read properties of undefined (reading 'currency')` in `normalizeRow`, caused by dereferencing missing metadata before applying the fallback.\n8. Row 637 in `bank-export-oct.csv`.\n9. 636 rows; nothing was committed.\n10. rent, travel, groceries.\n11. rent: 5,023,578 cents; travel: 608,129 cents; groceries: 293,283 cents.\n12. Export uses `,`; import must accept both `,` and `;`.\n13. The memo falls back to the payee.\n14. Warn and skip them nonfatally.\n15. By matching date, amount, and payee.\n16. User error: 1; data error: 2.\n17. Half-even rounding.\n18. Descending spend, with alphabetical ordering for ties.\n19. `parseAmount(text)` in `src/ledger.js`.",
+  "taskText": "```js\n/**\n * Apply import rules to already-parsed rows.\n *\n * row.amount must be a safe integer number of cents, not a decimal string.\n * today must be a valid YYYY-MM-DD string.\n *\n * Deduplication is scoped to this batch: existing stored transactions are not\n * supplied to this function. The first occurrence of a duplicate is retained.\n *\n * Returns:\n *   { rows, imported, skipped, deduplicated }\n *\n * Future-dated rows produce warnings and count as skipped. Duplicates count\n * separately as deduplicated.\n */\nexport function importRows(rows, today) {\n\tfunction isValidDate(value) {\n\t\tif (\n\t\t\ttypeof value !== \"string\" ||\n\t\t\t!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) ||\n\t\t\tvalue.length !== 10\n\t\t) {\n\t\t\treturn false;\n\t\t}\n\n\t\tconst date = new Date(`${value}T00:00:00.000Z`);\n\t\treturn (\n\t\t\tNumber.isFinite(date.getTime()) &&\n\t\t\tdate.toISOString().slice(0, 10) === value\n\t\t);\n\t}\n\n\tif (!Array.isArray(rows)) {\n\t\tthrow new Error(\"ledger: import rows must be an array\");\n\t}\n\tif (!isValidDate(today)) {\n\t\tthrow new Error(\"ledger: today must be a valid YYYY-MM-DD date\");\n\t}\n\n\t// Validate the entire batch before emitting warnings or preparing results.\n\tfor (const [index, row] of rows.entries()) {\n\t\tconst label = `ledger: import row ${index + 1}`;\n\n\t\tif (row === null || typeof row !== \"object\" || Array.isArray(row)) {\n\t\t\tthrow new Error(`${label} must be an object`);\n\t\t}\n\t\tif (!isValidDate(row.date)) {\n\t\t\tthrow new Error(`${label} has an invalid date; expected YYYY-MM-DD`);\n\t\t}\n\t\tif (typeof row.payee !== \"string\" || !row.payee.trim()) {\n\t\t\tthrow new Error(`${label} must have a nonempty payee`);\n\t\t}\n\t\tif (!Number.isSafeInteger(row.amount)) {\n\t\t\tthrow new Error(`${label} amount must be a safe integer number of cents`);\n\t\t}\n\t\tif (row.memo != null && typeof row.memo !== \"string\") {\n\t\t\tthrow new Error(`${label} memo must be a string when supplied`);\n\t\t}\n\t}\n\n\tconst importedRows = [];\n\tconst seen = new Map();\n\tlet skipped = 0;\n\tlet deduplicated = 0;\n\n\tfor (const [index, row] of rows.entries()) {\n\t\tif (row.date > today) {\n\t\t\tconsole.warn(\n\t\t\t\t`ledger: skipping future-dated import row ${index + 1}: ${row.date}`,\n\t\t\t);\n\t\t\tskipped++;\n\t\t\tcontinue;\n\t\t}\n\n\t\tlet amounts = seen.get(row.date);\n\t\tif (!amounts) {\n\t\t\tamounts = new Map();\n\t\t\tseen.set(row.date, amounts);\n\t\t}\n\n\t\tlet payees = amounts.get(row.amount);\n\t\tif (!payees) {\n\t\t\tpayees = new Set();\n\t\t\tamounts.set(row.amount, payees);\n\t\t}\n\n\t\tif (payees.has(row.payee)) {\n\t\t\tdeduplicated++;\n\t\t\tcontinue;\n\t\t}\n\t\tpayees.add(row.payee);\n\n\t\timportedRows.push({\n\t\t\t...row,\n\t\t\tamount: row.amount === 0 ? 0 : row.amount,\n\t\t\tmemo: row.memo == null || row.memo.trim() === \"\" ? row.payee : row.memo,\n\t\t});\n\t}\n\n\treturn {\n\t\trows: importedRows,\n\t\timported: importedRows.length,\n\t\tskipped,\n\t\tdeduplicated,\n\t};\n}\n```",
+  "cwd": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/live-ledger-extension-2-ja8hD7"
+}

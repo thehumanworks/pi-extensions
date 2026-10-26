@@ -17,10 +17,13 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | --- | --- |
 | `@nothumanwork/pi-advisor` | [pi-advisor](pi-advisor/README.md) |
 | `@nothumanwork/pi-atlassian` | [pi-atlassian](pi-atlassian/README.md) |
+| `@nothumanwork/pi-background-compaction` | [pi-background-compaction](pi-background-compaction/README.md) |
+| `@nothumanwork/pi-bot` | [pi-bot](pi-bot/README.md) |
 | `@nothumanwork/pi-canary` | [pi-canary](pi-canary/README.md) |
 | `@nothumanwork/pi-fast` | [pi-fast](pi-fast/README.md) |
 | `@nothumanwork/pi-loop` | [pi-loop](pi-loop/README.md) |
 | `@nothumanwork/pi-memory` | [pi-memory](pi-memory/README.md) |
+| `@nothumanwork/pi-remote` | [pi-remote](pi-remote/README.md) |
 | `@nothumanwork/pi-tps` | [pi-tps](pi-tps/README.md) |
 | `@nothumanwork/pi-voice` | [pi-voice](pi-voice/README.md) |
 | `@nothumanwork/pi-xai` | [pi-xai](pi-xai/README.md) |
@@ -37,7 +40,7 @@ Local installs reference the checkout rather than copying it. If you previously 
 
 ## Develop
 
-Requires Node.js 22.19+ and npm; Bun is also required for the advisor, canary, and fast tests. Run dependency installation from the repository root. `.npmrc` suppresses automatic peer installation because Pi provides the host SDK at runtime; explicit development dependencies provide the SDK for tests. All workspaces test against Pi 1.4.0. Pi Loop intentionally retains its separate, pinned worker runtime.
+Requires Node.js 22.19+ and npm; Bun is also required for the advisor, canary, fast, and remote tests. Run dependency installation from the repository root. `.npmrc` suppresses automatic peer installation because Pi provides the host SDK at runtime; explicit development dependencies provide the SDK for tests. All workspaces test against Pi 1.4.0. Pi Loop intentionally retains its separate, pinned worker runtime.
 
 ```sh
 npm ci --ignore-scripts

@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 43721,
+  "modelRequests": 11,
+  "usage": {
+    "input": 22,
+    "output": 7324,
+    "cacheRead": 129176,
+    "cacheWrite": 13929,
+    "reasoning": 2227,
+    "totalTokens": 150451,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint now recovers. The CLI run on the repair paths and both tests pass.\n\n**What happened**\n- `work/repair-checkpoint.json` was truncated (`{\"nextLine\":`), so the old code threw on it.\n- `src/ingest.mjs` now treats an unparseable or invalid checkpoint as corrupt. It renames the file to `work/repair-checkpoint.json.corrupt` (the first free `.corrupt-N` name if that exists, so nothing is overwritten) and restarts from line 0. The existing key-set dedupe stops records already in the output from being appended again.\n- The CLI run on `fixtures/repair-events.ndjson` → `work/repair-output.ndjson` → `work/repair-checkpoint.json` reported `accepted: 2, rejected: 0, duplicates: 1, nextLine: 3, quarantinedTo: \"work/repair-checkpoint.json.corrupt\"`.\n- `work/repair-output.ndjson` still holds its original line plus the two new records, with no duplicates. The checkpoint is now `{\"nextLine\":3}`.\n- The corrupt bytes are preserved in `work/repair-checkpoint.json.corrupt`.\n- I added `test/recovery.test.mjs`, which covers a truncated checkpoint. `node --test` passes 2/2.\n\n**Caveats**\n- I could not read the memory directory, which the sandbox blocks. So I could not confirm the \"previously verified procedure\" or the agreed evidence convention. The `.corrupt` naming and restart-from-zero behaviour are my choices, based on the existing dedupe. If the agreed procedure differs, tell me and I'll adjust.\n- I did not run `rex session rename`. The shell only allows `node` commands, so I could not run the rex CLI."
+}

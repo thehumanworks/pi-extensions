@@ -1,0 +1,197 @@
+{
+  "id": "migration-long-0",
+  "project": "migration",
+  "arm": "long",
+  "repeat": 0,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "claude-bridge/claude-haiku-5-5",
+  "memoryEnv": {
+    "PI_MEMORY_DIGEST_SCOPE": "decisions",
+    "PI_MEMORY_DIGEST_BUDGET": "2400"
+  },
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/migration-long-0/project",
+  "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+  "calls": [
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 51935,
+      "modelRequests": 6,
+      "usage": {
+        "input": 12,
+        "output": 9422,
+        "cacheRead": 64401,
+        "cacheWrite": 16488,
+        "reasoning": 6271,
+        "totalTokens": 90323,
+        "cost": 0
+      },
+      "finalText": "The migration is repaired and written to `work/repair-output.json`. The visible test passes and the CLI run succeeded.\n\n**Result**\n- `node --test test/basic.test.mjs`: 1 pass, 0 fail.\n- `node bin/migrate.mjs work/repair-source.json work/repair-output.json` produced:\n  - `version` 3, `name` `recovery-fixture`, `timeoutMs` 3000, `features` `[\"ready\"]`\n  - `region` `eu-north-7`, `retry` `{backoffMs: 125, maxAttempts: 5}`\n  - `legacy: {extra: \"preserve\"}`\n- The truncated source (`{\"version\":`) was moved to `work/recovery/source.bad.json`. It is no longer at `work/repair-source.json`.\n- `work/backups/source.json` is unchanged.\n\n**Changes in `src/migrate.mjs`**\n- **Truncated input recovery:** if the source fails to parse, the code first reads and parses `backups/source.json` beside the output. It then copies the corrupt file to `recovery/source.bad.json` with `COPYFILE_EXCL`, so earlier evidence is never overwritten, and removes the original. A missing or invalid backup stops the run before anything is moved.\n- **Defaults from the project decisions:** region defaults to `eu-north-7` and `backoffMs` to `125`. `maxAttempts` is always 5.\n- **Source values win:** an explicit region or backoff in the source is kept. Defaults only fill gaps.\n- **Unknown fields:** any source field that is not part of the v3 schema is kept under `legacy`.\n- **Feature names:** sorted for both v1 and v3 inputs.\n\n**Not done**\n- I did not rename the session with `rex`. The bash tool only allows `node` commands, so I could not run it."
+    }
+  ],
+  "scores": [
+    {
+      "project": "migration",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "version, units and sorted feature conversion",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "source remains byte-identical",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "already-v3 is semantically idempotent",
+          "category": "intrinsic",
+          "passed": false,
+          "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    features: [\n      'ok'\n    ],\n    legacy: {\n+     legacy: {\n+       x: 1\n+     }\n-     x: 1\n    },\n    name: 'done',\n    region: 'custom',\n    retry: {\n      backoffMs: 42,\n+     maxAttempts: 5\n-     maxAttempts: 9\n    },\n    timeoutMs: 800,\n    version: 3\n  }\n"
+        },
+        {
+          "name": "region and corrected retry policy",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "unknown customer fields retained under legacy",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "exact backup at agreed location",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/migration-long-0/project/.acceptance-ee2VGf/backups/source.json'"
+        },
+        {
+          "name": "invocation override is honored",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "temporary region was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired region override does not affect later action",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+        },
+        {
+          "name": "corrupt new source recovers from preserved backup",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "corrupt source preserved at agreed recovery location",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "actual fresh-session repair produced converted output",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 0.8,
+        "memory": 0.6,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 10,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 6,
+  "wallMs": 52042,
+  "usage": {
+    "input": 12,
+    "output": 9422,
+    "cacheRead": 64401,
+    "cacheWrite": 16488,
+    "reasoning": 6271,
+    "totalTokens": 90323,
+    "cost": 0
+  },
+  "toolCalls": 14,
+  "actualCliRuns": 1,
+  "cliRunsByPhase": {
+    "stage-1-implement": 0,
+    "stage-2-temporary": 0,
+    "stage-2-revoke": 0,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [],
+  "recalls": [
+    {
+      "event": "recall",
+      "query": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+      "ids": [
+        "m_mvnweed283d48d1dbe1d530012c5"
+      ],
+      "retiredIds": [],
+      "tokens": 618,
+      "tokenUpperBound": 618,
+      "digestTokenUpperBound": 898,
+      "digestIds": [
+        "m_mvnwcmv07077373e5c084044da76",
+        "m_mvnweogsee3a69da9a838ec8f6be"
+      ],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 0,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n</memory_recall>"
+    }
+  ],
+  "beforeDreamMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "beforeMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "afterMemory": {
+    "bytes": 140608,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  }
+}

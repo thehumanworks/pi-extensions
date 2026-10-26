@@ -1,0 +1,193 @@
+{
+  "id": "migration-off-0",
+  "project": "migration",
+  "arm": "off",
+  "repeat": 0,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "claude-bridge/claude-haiku-5-5",
+  "memoryEnv": {},
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/migration-off-0/project",
+  "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+  "calls": [
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 50468,
+      "modelRequests": 9,
+      "usage": {
+        "input": 18,
+        "output": 7136,
+        "cacheRead": 95992,
+        "cacheWrite": 14432,
+        "reasoning": 4024,
+        "totalTokens": 117578,
+        "cost": 0
+      },
+      "finalText": "The repaired output is in place: `work/repair-output.json` was migrated from the valid backup, and the tests pass.\n\n- **Migration:** I ran `node bin/migrate.mjs work/backups/source.json work/repair-output.json` with no region override. The output is version 3 with `timeoutMs: 3000`, `features: [\"ready\"]`, `extra` preserved, and region `us-east-1`.\n- **Tests:** `node --test` passes 1/1.\n- **Corrupt source:** `work/repair-source.json` is unchanged. It's 11 bytes (`{\"version\":`), and I copied it byte-for-byte to `work/evidence/repair-source.corrupt.json` without overwriting. Running the migrator on the corrupt source fails with \"Unexpected end of JSON input\" and writes nothing.\n- **Region:** I didn't use the expired `test-local` override from `work/temporary.json` or `temporary-report.json`. The output uses the `us-east-1` default, which matches `work/normal.json`.\n\nChoices and limits:\n\n- **No change to `src/migrate.mjs`:** Its existing exclusive `.bak` handling already follows the recovery convention, so I left the implementation alone. The `.bak` copy never fired because no prior output existed.\n- **Backup location:** The valid pre-migration backup is `work/backups/source.json`, and I read from it directly. I took \"beside work/repair-output.json\" to mean the `work/backups/` directory.\n- **Memory not checked:** I couldn't read the memory directory because file access is limited to the project. The durable-decision check rests on the `us-east-1` default in the code and `normal.json`, not on the memory notes.\n- **Rex session:** I didn't run the session rename from the startup hook, because the shell is restricted to `node` commands.\n- **Helper script:** I added `tools/preserve-evidence.mjs` for the byte-exact evidence copy with a SHA-256 check."
+    }
+  ],
+  "scores": [
+    {
+      "project": "migration",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "version, units and sorted feature conversion",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "source remains byte-identical",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "already-v3 is semantically idempotent",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "region and corrected retry policy",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+        },
+        {
+          "name": "unknown customer fields retained under legacy",
+          "category": "memory",
+          "passed": false,
+          "error": "Cannot read properties of undefined (reading 'custom')"
+        },
+        {
+          "name": "exact backup at agreed location",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/migration-off-0/project/.acceptance-RzREmg/backups/source.json'"
+        },
+        {
+          "name": "invocation override is honored",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "temporary region was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired region override does not affect later action",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+        },
+        {
+          "name": "corrupt new source recovers from preserved backup",
+          "category": "intrinsic",
+          "passed": false,
+          "error": "Unexpected end of JSON input"
+        },
+        {
+          "name": "corrupt source preserved at agreed recovery location",
+          "category": "memory",
+          "passed": false,
+          "error": "Unexpected end of JSON input"
+        },
+        {
+          "name": "actual fresh-session repair produced converted output",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 0.8,
+        "memory": 0,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 7,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 9,
+  "wallMs": 50560,
+  "usage": {
+    "input": 18,
+    "output": 7136,
+    "cacheRead": 95992,
+    "cacheWrite": 14432,
+    "reasoning": 4024,
+    "totalTokens": 117578,
+    "cost": 0
+  },
+  "toolCalls": 23,
+  "actualCliRuns": 2,
+  "cliRunsByPhase": {
+    "stage-1-implement": 0,
+    "stage-2-temporary": 0,
+    "stage-2-revoke": 0,
+    "stage-3-transfer": 2
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+      "matched": false
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [
+    {
+      "at": "2026-10-25T19:39:35.803Z",
+      "phase": "stage-3-transfer",
+      "event": "blocked_command",
+      "command": "ls -la work work/backups"
+    },
+    {
+      "at": "2026-10-25T19:39:35.804Z",
+      "phase": "stage-3-transfer",
+      "event": "blocked_path",
+      "tool": "read",
+      "input": {
+        "path": "/Users/tomas/.claude/projects/-private-var-folders-dg-1s1vxvps60g694qr551l0l4c0000gn-T-pi-memory-long-2kJ7pl-migration-off-0-project/memory/MEMORY.md"
+      }
+    }
+  ],
+  "recalls": [],
+  "beforeDreamMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "beforeMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "afterMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  }
+}

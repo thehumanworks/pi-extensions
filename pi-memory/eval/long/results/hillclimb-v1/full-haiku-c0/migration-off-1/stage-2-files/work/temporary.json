@@ -1,0 +1,13 @@
+{
+  "name": "demo",
+  "customField": {
+    "keep": true
+  },
+  "version": 3,
+  "timeoutMs": 2000,
+  "features": [
+    "a",
+    "z"
+  ],
+  "region": "test-local"
+}

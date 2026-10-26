@@ -1,0 +1,83 @@
+{
+  "project": "migration",
+  "stage": 3,
+  "checks": [
+    {
+      "name": "version, units and sorted feature conversion",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "source remains byte-identical",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "already-v3 is semantically idempotent",
+      "category": "intrinsic",
+      "passed": false,
+      "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    features: [\n      'ok'\n    ],\n    legacy: {\n+     legacy: {\n+       x: 1\n+     }\n-     x: 1\n    },\n    name: 'done',\n    region: 'custom',\n    retry: {\n      backoffMs: 42,\n+     maxAttempts: 5\n-     maxAttempts: 9\n    },\n    timeoutMs: 800,\n    version: 3\n  }\n"
+    },
+    {
+      "name": "region and corrected retry policy",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "unknown customer fields retained under legacy",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "exact backup at agreed location",
+      "category": "memory",
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/migration-long-0/project/.acceptance-ee2VGf/backups/source.json'"
+    },
+    {
+      "name": "invocation override is honored",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "temporary region was actually reported",
+      "category": "action",
+      "passed": true
+    },
+    {
+      "name": "expired region override does not affect later action",
+      "category": "memory",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+    },
+    {
+      "name": "corrupt new source recovers from preserved backup",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "corrupt source preserved at agreed recovery location",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "actual fresh-session repair produced converted output",
+      "category": "action",
+      "passed": true
+    },
+    {
+      "name": "no other-project policy artifacts",
+      "category": "control",
+      "passed": true
+    }
+  ],
+  "categoryScores": {
+    "intrinsic": 0.8,
+    "memory": 0.6,
+    "action": 1,
+    "control": 1
+  },
+  "complete": false,
+  "passed": 10,
+  "total": 13
+}

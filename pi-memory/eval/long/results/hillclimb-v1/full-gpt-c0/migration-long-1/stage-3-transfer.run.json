@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 86,
+  "timedOut": false,
+  "budgetExhausted": true,
+  "latencyMs": 88460,
+  "modelRequests": 16,
+  "usage": {
+    "input": 6524,
+    "output": 1640,
+    "cacheRead": 58752,
+    "cacheWrite": 0,
+    "reasoning": 114,
+    "totalTokens": 66916,
+    "cost": 0.0353232
+  },
+  "finalText": ""
+}

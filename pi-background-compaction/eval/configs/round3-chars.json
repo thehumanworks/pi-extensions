@@ -1,0 +1,5 @@
+{
+  "ser-tr4k": { "request": "serialized", "toolResultChars": 4000 },
+  "ser-tr8k": { "request": "serialized", "toolResultChars": 8000 },
+  "ser-tr32k": { "request": "serialized", "toolResultChars": 32000 }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 24744,
+  "modelRequests": 6,
+  "usage": {
+    "input": 12,
+    "output": 2542,
+    "cacheRead": 52782,
+    "cacheWrite": 7959,
+    "reasoning": 998,
+    "totalTokens": 63295,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint recovers without losing output. The CLI run and the visible test both pass.\n\n**Result**\n- `src/ingest.mjs` already contained the recovery path, so I made no code changes. It matches the agreed convention: a corrupt checkpoint is moved, not deleted, to `work/recovery/checkpoint.bad.json`; existing output is kept; replay appends only unseen `(tenant, seq)` identities; and the checkpoint is rewritten after replay.\n- `DEFAULT_BATCH_SIZE` is 4, per the durable correction. I did not use the ingestion-only auxiliary config from memory, since it does not apply to this task.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json`\n```\n{\"accepted\": 2, \"rejected\": 0, \"duplicates\": 1, \"nextLine\": 3}\n```\n\n**Files after the run**\n- `work/repair-output.ndjson` keeps the original `transfer/seq 0` line and gains `seq 1` and `seq 2`. All three events are present.\n- `work/repair-checkpoint.json` now contains `{\"nextLine\":3}`.\n- `work/recovery/checkpoint.bad.json` holds the preserved corrupt content `{\"nextLine\":`.\n\n**Tests:** `node --test` ran 1 test, which passed.\n\nI did not rename the Rex session. The bash tool only permits `node` commands here, so the `rex` command was unavailable."
+}

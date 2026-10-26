@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 50468,
+  "modelRequests": 9,
+  "usage": {
+    "input": 18,
+    "output": 7136,
+    "cacheRead": 95992,
+    "cacheWrite": 14432,
+    "reasoning": 4024,
+    "totalTokens": 117578,
+    "cost": 0
+  },
+  "finalText": "The repaired output is in place: `work/repair-output.json` was migrated from the valid backup, and the tests pass.\n\n- **Migration:** I ran `node bin/migrate.mjs work/backups/source.json work/repair-output.json` with no region override. The output is version 3 with `timeoutMs: 3000`, `features: [\"ready\"]`, `extra` preserved, and region `us-east-1`.\n- **Tests:** `node --test` passes 1/1.\n- **Corrupt source:** `work/repair-source.json` is unchanged. It's 11 bytes (`{\"version\":`), and I copied it byte-for-byte to `work/evidence/repair-source.corrupt.json` without overwriting. Running the migrator on the corrupt source fails with \"Unexpected end of JSON input\" and writes nothing.\n- **Region:** I didn't use the expired `test-local` override from `work/temporary.json` or `temporary-report.json`. The output uses the `us-east-1` default, which matches `work/normal.json`.\n\nChoices and limits:\n\n- **No change to `src/migrate.mjs`:** Its existing exclusive `.bak` handling already follows the recovery convention, so I left the implementation alone. The `.bak` copy never fired because no prior output existed.\n- **Backup location:** The valid pre-migration backup is `work/backups/source.json`, and I read from it directly. I took \"beside work/repair-output.json\" to mean the `work/backups/` directory.\n- **Memory not checked:** I couldn't read the memory directory because file access is limited to the project. The durable-decision check rests on the `us-east-1` default in the code and `normal.json`, not on the memory notes.\n- **Rex session:** I didn't run the session rename from the startup hook, because the shell is restricted to `node` commands.\n- **Helper script:** I added `tools/preserve-evidence.mjs` for the byte-exact evidence copy with a SHA-256 check."
+}

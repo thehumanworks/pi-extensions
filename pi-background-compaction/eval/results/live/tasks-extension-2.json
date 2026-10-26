@@ -1,0 +1,52 @@
+{
+  "name": "tasks-extension-2",
+  "scenario": "tasks",
+  "arm": "extension",
+  "threshold": 36000,
+  "keep": 8000,
+  "config": {},
+  "wallMs": 403641,
+  "compactions": [
+    {
+      "reason": "threshold",
+      "ms": 3,
+      "turn": 6,
+      "summaryTokens": 1109
+    }
+  ],
+  "blockedMs": 3,
+  "probeScore": 1,
+  "taskScore": 0.8333333333333334,
+  "probes": {
+    "no-body-logs": true,
+    "timestamps": true,
+    "fn-length": true,
+    "ci-test": true,
+    "ci-cause": true,
+    "ci-totals": true,
+    "ci-flaky": true,
+    "hot-functions": true,
+    "hot-percent": true,
+    "lru": true,
+    "lru-why": true,
+    "page-max": true,
+    "page-default": true,
+    "pagination": true,
+    "envelope": true,
+    "bad-limit": true,
+    "ids": true,
+    "rate-limit": true,
+    "restore": true
+  },
+  "task": {
+    "max-50": true,
+    "default-25": true,
+    "cursor": false,
+    "envelope": true,
+    "status-400": true,
+    "hides-deleted": true
+  },
+  "probeText": "1. Request bodies must never be logged because they contain personal data.\n2. RFC 3339 in UTC, with a trailing `Z` and no milliseconds; stored and returned timestamps must remain byte-identical across reads.\n3. Every function must be under 40 lines.\n4. Test 37 — `PATCH /tasks/:id preserves created_at`.\n5. Serialization added milliseconds: expected `'2026-03-01T10:00:00Z'`, actual `'2026-03-01T10:00:00.000Z'`.\n6. 212 tests: 211 passed, 1 failed.\n7. Yes: `store snapshot round-trips #120` took 2.4 seconds, exceeding the 2-second flaky threshold.\n8. `serializeTask`, `validateQuery`, `ulid`.\n9. 41.2%.\n10. An LRU cache with at most 500 entries, keyed by the combination of `id` and `updated_at`.\n11. Caching by `id` alone was rejected because it served stale tasks after a PATCH.\n12. The maximum is now 50; the design originally specified 100.\n13. 25.\n14. Opaque cursor pagination using the `cursor` query parameter; the next-page response field is `next_cursor`.\n15. `{\"error\":{\"code\":\"...\",\"message\":\"...\"}}`, with a stable snake_case code and a human-readable message.\n16. Return HTTP 400 with the error envelope; never silently clamp it.\n17. Server-generated ULIDs; clients do not choose IDs.\n18. 120 requests per minute per API token; excess requests receive HTTP 429 with the error envelope and a `Retry-After` header in whole seconds.\n19. Yes, a deleted task can be restored within 30 days.",
+  "taskText": "```js\nfunction listPage(tasks, query) {\n\tconst fail = (code, message) => ({ status: 400, body: { error: { code, message } } });\n\tconst rawLimit = query.get(\"limit\");\n\tconst limit = rawLimit === null ? 25 : Number(rawLimit);\n\tif ((rawLimit !== null && !/^\\d+$/.test(rawLimit)) || !Number.isInteger(limit) || limit < 1 || limit > 50) {\n\t\treturn fail(\"invalid_limit\", \"limit must be an integer between 1 and 50\");\n\t}\n\tconst status = query.get(\"status\");\n\tif (status !== null && status !== \"open\" && status !== \"done\") {\n\t\treturn fail(\"invalid_status\", \"status must be open or done\");\n\t}\n\tif (query.has(\"offset\")) return fail(\"invalid_offset\", \"offset pagination is not supported\");\n\tlet after = null;\n\tconst cursor = query.get(\"cursor\");\n\tif (cursor !== null) {\n\t\ttry {\n\t\t\tif (!/^[A-Za-z0-9_-]+$/.test(cursor)) throw new Error();\n\t\t\tconst bytes = Buffer.from(cursor, \"base64url\");\n\t\t\tif (bytes.toString(\"base64url\") !== cursor) throw new Error();\n\t\t\tconst token = JSON.parse(bytes.toString(\"utf8\"));\n\t\t\tif (!Array.isArray(token) || token.length !== 3 || token[0] !== 1 ||\n\t\t\t\ttypeof token[1] !== \"string\" || !/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/.test(token[1]) ||\n\t\t\t\ttoken[2] !== status) throw new Error();\n\t\t\tafter = token[1];\n\t\t} catch {\n\t\t\treturn fail(\"invalid_cursor\", \"cursor is invalid or does not match the status filter\");\n\t\t}\n\t}\n\tconst matching = Array.from(tasks).filter((task) => !task.deleted_at &&\n\t\t(status === null || task.status === status) && (after === null || task.id > after));\n\tmatching.sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);\n\tconst page = matching.slice(0, limit);\n\tconst next_cursor = matching.length > limit\n\t\t? Buffer.from(JSON.stringify([1, page[page.length - 1].id, status])).toString(\"base64url\")\n\t\t: null;\n\treturn { status: 200, body: { items: page.map((task) => ({ ...task })), next_cursor } };\n}\n```",
+  "cwd": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/live-tasks-extension-2-lkVpRw"
+}

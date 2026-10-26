@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 41632,
+  "modelRequests": 10,
+  "usage": {
+    "input": 20,
+    "output": 5497,
+    "cacheRead": 110232,
+    "cacheWrite": 13343,
+    "reasoning": 1274,
+    "totalTokens": 129092,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint is repaired, the CLI run on your paths succeeded, and the tests pass (2/2).\n\n- **Fix (`src/ingest.mjs`):** A corrupt checkpoint (unparseable JSON or an invalid `nextLine`) is now renamed to a sidecar `<checkpoint>.corrupt-<uuid>` and processing restarts from line 0. Missing checkpoints still start at 0, and other errors still throw. Output is never rewritten or truncated, and output identities skip anything already written.\n- **Test (`test/basic.test.mjs`):** Added a regression test that covers a truncated checkpoint, checks the duplicate is skipped, and confirms the corrupt bytes are kept.\n- **CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` returned `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`.\n- **Output:** `work/repair-output.ndjson` now has the original `repair-0` plus `repair-1` and `repair-2`.\n- **Evidence:** The truncated bytes `{\"nextLine\":` are preserved at `work/repair-checkpoint.json.corrupt-a8ade91f-097e-4d68-a5cc-76394d17d16c`. The new checkpoint is `{\"nextLine\":3}`.\n\nCaveats:\n- I could not read the memory directory, since file access is limited to the project. I therefore could not confirm the \"previously verified procedure\" or the \"agreed recovery convention\" directly. I used the sidecar-rename-and-restart approach, which matches the existing output-based dedupe design. If the convention differs (for example, a different sidecar name or location), that needs adjusting.\n- I did not rename the Rex session. Shell access is limited to `node` commands, so the `rex` command was not run."
+}

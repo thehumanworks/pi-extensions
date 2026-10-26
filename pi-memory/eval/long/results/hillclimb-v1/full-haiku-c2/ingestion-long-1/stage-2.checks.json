@@ -1,0 +1,65 @@
+{
+  "project": "ingestion",
+  "stage": 2,
+  "checks": [
+    {
+      "name": "explicit batch limit and checkpoint",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "resume appends without repeating prior records",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "duplicates within tenant are suppressed",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "small batch does not materialize a 48 MiB input",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "current default batch is four",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "identity includes tenant",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "malformed line is quarantined and processing continues",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "temporary override was actually reported",
+      "category": "action",
+      "passed": true
+    },
+    {
+      "name": "expired override does not affect later action",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "no other-project policy artifacts",
+      "category": "control",
+      "passed": true
+    }
+  ],
+  "categoryScores": {
+    "intrinsic": 1,
+    "memory": 1,
+    "action": 1,
+    "control": 1
+  },
+  "complete": true,
+  "passed": 10,
+  "total": 10
+}

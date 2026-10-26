@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 61121,
+  "modelRequests": 9,
+  "usage": {
+    "input": 18,
+    "output": 12108,
+    "cacheRead": 132377,
+    "cacheWrite": 20012,
+    "reasoning": 7397,
+    "totalTokens": 164515,
+    "cost": 0
+  },
+  "finalText": "The repair migration is done. `work/repair-output.json` is written, the corrupt source is preserved, and the backup is unchanged. `node --test` passes 2 of 2.\n\n**Result**\n- `work/repair-output.json` has `version` 3, `timeoutMs` 3000, `features` `[\"ready\"]`, `region` `eu-north-7`, and `retry` `{backoffMs: 125, maxAttempts: 5}`. The source's unknown `extra` field is under `legacy`.\n- The truncated `{\"version\":` source is at `work/recovery/source.bad.json`. It was moved there, so `work/repair-source.json` no longer exists.\n- `work/backups/source.json` is byte-identical to its original contents.\n\n**Changes to `src/migrate.mjs`**\n- Defaults now follow the durable decisions: region `eu-north-7` and backoff 125. `maxAttempts` stays 5.\n- Unknown v1 fields go under `legacy` and are removed from the top level.\n- A truncated source is moved to `recovery/source.bad.json` beside the output, and the output is built from `backups/source.json`. The backup is validated before the source is moved, and an existing evidence file is never overwritten.\n- The pre-migration backup is now `backups/source.json` with exclusive creation, replacing the old `<output>.bak` copy.\n\n**Test change**\n- I added one test to `test/basic.test.mjs` covering the recovery path. It checks the evidence file, the unchanged backup, `legacy`, and the defaults.\n\n**Choices I made**\n- `legacy` applies to v1 inputs only. v3 inputs pass through unchanged.\n- I did not run the Rex session rename. The bash tool only allows `node` commands, so I couldn't call `rex`.\n- The expired `temporary.json` override was not used."
+}

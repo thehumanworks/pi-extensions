@@ -1,0 +1,52 @@
+{
+  "name": "ledger-pi-2",
+  "scenario": "ledger",
+  "arm": "pi",
+  "threshold": 40000,
+  "keep": 8000,
+  "config": {},
+  "wallMs": 432196,
+  "compactions": [
+    {
+      "reason": "threshold",
+      "ms": 31301,
+      "turn": 6,
+      "summaryTokens": 1314
+    }
+  ],
+  "blockedMs": 31301,
+  "probeScore": 0.8947368421052632,
+  "taskScore": 1,
+  "probes": {
+    "env-var": true,
+    "error-prefix": true,
+    "frozen-dir": true,
+    "banned-lib": true,
+    "money": true,
+    "map-why": true,
+    "crash-cause": true,
+    "crash-row": false,
+    "crash-count": true,
+    "top-categories": true,
+    "top-totals": true,
+    "delimiters": false,
+    "spec-memo": true,
+    "spec-future": true,
+    "spec-duplicates": true,
+    "spec-exit": true,
+    "spec-rounding": true,
+    "spec-order": true,
+    "first-function": true
+  },
+  "task": {
+    "memo-default": true,
+    "future-skip": true,
+    "dedupe-key": true,
+    "counts": true,
+    "error-prefix": true,
+    "no-floats": true
+  },
+  "probeText": "1. `LEDGER_HOME`; default: `~/.ledger`.\n2. `ledger: `\n3. `legacy/`.\n4. lodash.\n5. Integer cents, never floating-point money values.\n6. A category named `__proto__` broke plain-object storage; a Map safely supports it, with lowercase slug keys for case-insensitive names.\n7. A TypeError from accessing `.currency` on undefined metadata in `normalizeRow()`.\n8. Row 637; the triggering input filename is unknown.\n9. 636 rows had been processed; nothing was committed.\n10. rent, travel, groceries.\n11. rent: 5,023,578 cents; travel: 608,129 cents; groceries: 293,283 cents.\n12. Export uses `,`; import must accept both `;` and `,`.\n13. Blank memos must fall back to the payee name.\n14. Warn and skip them nonfatally.\n15. By date, amount, and payee.\n16. User error: 1; data error: 2.\n17. Half-even rounding (banker’s rounding).\n18. Descending total spend, with ties broken alphabetically.\n19. `parseAmount(text)` in `src/ledger.js`.",
+  "taskText": "```js\n/**\n * Apply import rules to already-parsed rows.\n * `amount` must be integer cents; `today` must be YYYY-MM-DD.\n * Duplicate identity is the exact date, amount, and payee tuple.\n *\n * @returns {{ rows: object[], imported: number, skipped: number, deduplicated: number }}\n */\nexport function importRows(rows, today) {\n\tfunction isValidDate(value) {\n\t\tif (typeof value !== \"string\" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) {\n\t\t\treturn false;\n\t\t}\n\t\tconst date = new Date(`${value}T00:00:00Z`);\n\t\treturn Number.isFinite(date.getTime())\n\t\t\t&& date.toISOString().slice(0, 10) === value;\n\t}\n\n\tif (!Array.isArray(rows)) {\n\t\tthrow new Error(\"ledger: import rows must be an array\");\n\t}\n\tif (!isValidDate(today)) {\n\t\tthrow new Error(\"ledger: invalid today date; expected YYYY-MM-DD\");\n\t}\n\n\t// Validate before processing so bad input cannot produce partial warnings.\n\tfor (const [index, row] of rows.entries()) {\n\t\tif (!row || typeof row !== \"object\"\n\t\t\t|| !isValidDate(row.date)\n\t\t\t|| typeof row.payee !== \"string\"\n\t\t\t|| !Number.isSafeInteger(row.amount)\n\t\t\t|| (row.memo != null && typeof row.memo !== \"string\")) {\n\t\t\tthrow new Error(`ledger: invalid import row ${index + 1}`);\n\t\t}\n\t}\n\n\tconst rowsToImport = [];\n\tconst seen = new Map();\n\tlet skipped = 0;\n\tlet deduplicated = 0;\n\n\tfor (const [index, row] of rows.entries()) {\n\t\t// Future rows are skipped, not counted as duplicates or imported.\n\t\tif (row.date > today) {\n\t\t\tconsole.warn(\n\t\t\t\t`ledger: skipping future-dated row ${index + 1}: ${row.date}`,\n\t\t\t);\n\t\t\tskipped++;\n\t\t\tcontinue;\n\t\t}\n\n\t\tconst key = JSON.stringify([row.date, row.amount, row.payee]);\n\t\tif (seen.has(key)) {\n\t\t\tdeduplicated++;\n\t\t\tcontinue;\n\t\t}\n\t\tseen.set(key, true);\n\n\t\trowsToImport.push({\n\t\t\t...row,\n\t\t\tmemo: row.memo == null || row.memo.trim() === \"\"\n\t\t\t\t? row.payee\n\t\t\t\t: row.memo,\n\t\t});\n\t}\n\n\treturn {\n\t\trows: rowsToImport,\n\t\timported: rowsToImport.length,\n\t\tskipped,\n\t\tdeduplicated,\n\t};\n}\n```",
+  "cwd": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/live-ledger-pi-2-r51O21"
+}

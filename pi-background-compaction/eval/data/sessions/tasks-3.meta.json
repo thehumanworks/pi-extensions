@@ -1,0 +1,80 @@
+{
+  "name": "tasks-3",
+  "scenario": "tasks",
+  "model": "openai/gpt-6.1-sol",
+  "cwd": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/ledger-tasks-3-LktNou",
+  "turns": [
+    {
+      "turn": 1,
+      "ms": 9497,
+      "tokens": 4154,
+      "requests": 2
+    },
+    {
+      "turn": 2,
+      "ms": 10993,
+      "tokens": 24995,
+      "requests": 2
+    },
+    {
+      "turn": 3,
+      "ms": 50739,
+      "tokens": 26590,
+      "requests": 9
+    },
+    {
+      "turn": 4,
+      "ms": 7569,
+      "tokens": 32495,
+      "requests": 2
+    },
+    {
+      "turn": 5,
+      "ms": 34806,
+      "tokens": 34058,
+      "requests": 4
+    },
+    {
+      "turn": 6,
+      "ms": 64991,
+      "tokens": 37850,
+      "requests": 8
+    },
+    {
+      "turn": 7,
+      "ms": 28958,
+      "tokens": 39230,
+      "requests": 5
+    },
+    {
+      "turn": 8,
+      "ms": 27562,
+      "tokens": 40867,
+      "requests": 4
+    },
+    {
+      "turn": 9,
+      "ms": 42436,
+      "tokens": 43014,
+      "requests": 6
+    },
+    {
+      "turn": 10,
+      "ms": 24958,
+      "tokens": 44817,
+      "requests": 3
+    },
+    {
+      "turn": 11,
+      "ms": 58714,
+      "tokens": 47453,
+      "requests": 7
+    },
+    {
+      "turn": 12,
+      "ms": 15198,
+      "tokens": 48869,
+      "requests": 2
+    }
+  ]
+}

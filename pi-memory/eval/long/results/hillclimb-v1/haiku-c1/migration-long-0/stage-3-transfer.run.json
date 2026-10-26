@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 51935,
+  "modelRequests": 6,
+  "usage": {
+    "input": 12,
+    "output": 9422,
+    "cacheRead": 64401,
+    "cacheWrite": 16488,
+    "reasoning": 6271,
+    "totalTokens": 90323,
+    "cost": 0
+  },
+  "finalText": "The migration is repaired and written to `work/repair-output.json`. The visible test passes and the CLI run succeeded.\n\n**Result**\n- `node --test test/basic.test.mjs`: 1 pass, 0 fail.\n- `node bin/migrate.mjs work/repair-source.json work/repair-output.json` produced:\n  - `version` 3, `name` `recovery-fixture`, `timeoutMs` 3000, `features` `[\"ready\"]`\n  - `region` `eu-north-7`, `retry` `{backoffMs: 125, maxAttempts: 5}`\n  - `legacy: {extra: \"preserve\"}`\n- The truncated source (`{\"version\":`) was moved to `work/recovery/source.bad.json`. It is no longer at `work/repair-source.json`.\n- `work/backups/source.json` is unchanged.\n\n**Changes in `src/migrate.mjs`**\n- **Truncated input recovery:** if the source fails to parse, the code first reads and parses `backups/source.json` beside the output. It then copies the corrupt file to `recovery/source.bad.json` with `COPYFILE_EXCL`, so earlier evidence is never overwritten, and removes the original. A missing or invalid backup stops the run before anything is moved.\n- **Defaults from the project decisions:** region defaults to `eu-north-7` and `backoffMs` to `125`. `maxAttempts` is always 5.\n- **Source values win:** an explicit region or backoff in the source is kept. Defaults only fill gaps.\n- **Unknown fields:** any source field that is not part of the v3 schema is kept under `legacy`.\n- **Feature names:** sorted for both v1 and v3 inputs.\n\n**Not done**\n- I did not rename the session with `rex`. The bash tool only allows `node` commands, so I could not run it."
+}

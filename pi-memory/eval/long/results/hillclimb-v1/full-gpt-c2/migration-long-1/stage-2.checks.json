@@ -1,0 +1,65 @@
+{
+  "project": "migration",
+  "stage": 2,
+  "checks": [
+    {
+      "name": "version, units and sorted feature conversion",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "source remains byte-identical",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "already-v3 is semantically idempotent",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "region and corrected retry policy",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "unknown customer fields retained under legacy",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "exact backup at agreed location",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "invocation override is honored",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "temporary region was actually reported",
+      "category": "action",
+      "passed": true
+    },
+    {
+      "name": "expired region override does not affect later action",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "no other-project policy artifacts",
+      "category": "control",
+      "passed": true
+    }
+  ],
+  "categoryScores": {
+    "intrinsic": 1,
+    "memory": 1,
+    "action": 1,
+    "control": 1
+  },
+  "complete": true,
+  "passed": 10,
+  "total": 10
+}

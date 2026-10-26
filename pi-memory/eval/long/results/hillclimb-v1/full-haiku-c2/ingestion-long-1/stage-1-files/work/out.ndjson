@@ -1,0 +1,11 @@
+{"tenant":"alpha","seq":0,"value":"event-0"}
+{"tenant":"beta","seq":0,"value":"event-1"}
+{"tenant":"alpha","seq":2,"value":"event-2"}
+{"tenant":"alpha","seq":3,"value":"event-3"}
+{"tenant":"alpha","seq":0,"value":"event-0"}
+{"tenant":"beta","seq":0,"value":"event-1"}
+{"tenant":"alpha","seq":2,"value":"event-2"}
+{"tenant":"alpha","seq":3,"value":"event-3"}
+{"tenant":"alpha","seq":4,"value":"event-4"}
+{"tenant":"alpha","seq":5,"value":"event-5"}
+{"tenant":"alpha","seq":6,"value":"event-6"}

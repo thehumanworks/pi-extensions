@@ -1,0 +1,8 @@
+{"tenant":"alpha","seq":1,"value":"a1"}
+not json
+{"tenant":"beta","seq":1,"value":"b1"}
+{"tenant":"alpha","seq":1,"value":"a1-dup"}
+{"tenant":"alpha","seq":2,"value":"a2"}
+{"seq":3,"value":"no tenant"}
+{"tenant":"beta","seq":2,"value":"b2"}
+{"tenant":"alpha","seq":3,"value":"a3"}

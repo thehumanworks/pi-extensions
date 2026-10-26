@@ -1,0 +1,442 @@
+{
+  "id": "migration-long-0",
+  "project": "migration",
+  "arm": "long",
+  "repeat": 0,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "claude-bridge/claude-haiku-5-5",
+  "memoryEnv": {},
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-50ku5E/migration-long-0/project",
+  "repairOnlyFrom": "",
+  "calls": [
+    {
+      "name": "stage-1-implement",
+      "prompt": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 51885,
+      "modelRequests": 10,
+      "usage": {
+        "input": 20,
+        "output": 9204,
+        "cacheRead": 122157,
+        "cacheWrite": 16229,
+        "reasoning": 4481,
+        "totalTokens": 147610,
+        "cost": 0
+      },
+      "finalText": "`src/migrate.mjs` and `bin/migrate.mjs` are implemented. The visible test passes (1/1), and the CLI demo writes the expected v3 output to `work/`.\n\n**What the code does**\n- **v1 → v3:** `timeoutSeconds` becomes `timeoutMs` (×1000). Flags with value `true` become a sorted `features` array. `name` is kept. Unknown top-level fields go under `legacy`.\n- **Defaults:** `region` is `eu-north-7` and `retry` is `{maxAttempts: 5, backoffMs: 125}`.\n- **v3 input:** passed through unchanged, except that an explicit region override replaces `region`.\n- **Region override:** `options.region` (CLI third argument) is used for that call only and is not stored.\n- **Backup:** the exact source bytes go to `backups/source.json` beside the output. An existing backup is never overwritten.\n- **Recovery:** if the input is invalid JSON and a valid backup exists, the corrupt input is moved to `recovery/source.bad.json`, the backup is loaded, and the output is written. The backup is left unchanged. This follows the procedure recalled from memory; I implemented it but did not test it.\n- **Output:** written atomically (temp file, then rename). The CLI prints the resulting JSON to stdout.\n\n**Choices I made where the spec was silent**\n- `false` flags are dropped rather than preserved.\n- Unknown v1 fields go under `legacy` only when there are any.\n- Non-finite `timeoutSeconds`, non-object `flags`, unsupported versions, and non-object configs throw an error.\n\n**Demo**\n- `node bin/migrate.mjs fixtures/config.json work/out/config.json` writes the v3 config with region `eu-north-7`. `work/out/backups/source.json` matches the fixture byte for byte.\n- `node bin/migrate.mjs fixtures/config.json work/out-region/config.json us-east-1` writes the same config with region `us-east-1`.\n\nI did not run the truncated-JSON recovery path or the v3 pass-through path, so both are verified by reading only. The Rex session rename from the startup hook was not done, because bash is restricted to `node` commands here."
+    },
+    {
+      "name": "stage-2-temporary",
+      "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 12210,
+      "modelRequests": 3,
+      "usage": {
+        "input": 6,
+        "output": 1460,
+        "cacheRead": 36664,
+        "cacheWrite": 11462,
+        "reasoning": 674,
+        "totalTokens": 49592,
+        "cost": 0
+      },
+      "finalText": "The diagnostic run with `test-local` is done. The CLI wrote `work/temporary.json`, and I wrote the same config to `work/temporary-report.json`.\n\n- **Region:** `test-local` is applied only to this run. The default `eu-north-7` is unchanged.\n- **Source:** `fixtures/config.json` is unchanged.\n- **Output:** `work/temporary.json` matches what the CLI printed. It has version 3, name `demo`, `timeoutMs` 2000, retry 5 attempts with 125 ms backoff, features `[\"a\",\"z\"]`, and `legacy.customField` preserved.\n\nThe CLI cannot redirect its output, so I wrote `temporary-report.json` directly. Its contents match the CLI output, but I did not generate it from the CLI. The session-rename step from the Rex hook was not done, because `rex` commands are outside the allowed bash commands."
+    },
+    {
+      "name": "stage-2-revoke",
+      "prompt": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 10975,
+      "modelRequests": 3,
+      "usage": {
+        "input": 6,
+        "output": 1051,
+        "cacheRead": 39004,
+        "cacheWrite": 12363,
+        "reasoning": 312,
+        "totalTokens": 52424,
+        "cost": 0
+      },
+      "finalText": "The normal migration ran with no region override, and the agreed default `eu-north-7` was applied.\n\n- **Output:** `work/normal.json` is written by the CLI. Its contents are version 3, name `demo`, region `eu-north-7`, `timeoutMs` 2000, retry 5 attempts with 125 ms backoff, features `[\"a\",\"z\"]`, and `legacy.customField` preserved.\n- **Report:** `work/normal-report.json` contains the same config. I wrote it from the CLI output, the same way I handled the earlier report.\n- **Untouched:** `fixtures/config.json`, `work/temporary.json`, `work/temporary-report.json`, and the earlier `work/out` and `work/out-region` artifacts were not modified.\n\nThe Rex hook asked me to rename the session with `rex session rename`. I did not run it, because bash is limited to `node` commands here. The rename is still outstanding if you want it."
+    },
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 27417,
+      "modelRequests": 7,
+      "usage": {
+        "input": 14,
+        "output": 2670,
+        "cacheRead": 68784,
+        "cacheWrite": 8139,
+        "reasoning": 1157,
+        "totalTokens": 79607,
+        "cost": 0
+      },
+      "finalText": "The truncated source is repaired and migrated to `work/repair-output.json`, and the visible test passes. I didn't need to change any code: `src/migrate.mjs` already had the recovery path.\n\n- **Migration:** `node bin/migrate.mjs work/repair-source.json work/repair-output.json` succeeded. The output is version 3, region `eu-north-7`, `timeoutMs` 3000, `retry.maxAttempts` 5 with `backoffMs` 125, features `[\"ready\"]`, and `legacy.extra` = `\"preserve\"`.\n- **Corrupt source preserved:** it was moved to `work/recovery/source.bad.json` and still holds the truncated `{\"version\":`.\n- **Backup unchanged:** `work/backups/source.json` is intact, with the original `extra` field.\n- **Tests:** `node --test` passed 1/1.\n\nI used the durable decisions: `maxAttempts` 5, the default region `eu-north-7` (no region override passed), and the 125 ms backoff. The temporary overrides in `work/temporary.json` were not used.\n\nI could not rename the Rex session. The bash tool only allows `node` commands, so the `rex` CLI was unavailable."
+    }
+  ],
+  "scores": [
+    {
+      "project": "migration",
+      "stage": 1,
+      "checks": [
+        {
+          "name": "version, units and sorted feature conversion",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "source remains byte-identical",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "already-v3 is semantically idempotent",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "region and corrected retry policy",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "unknown customer fields retained under legacy",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "exact backup at agreed location",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "invocation override is honored",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 1,
+        "action": null,
+        "control": 1
+      },
+      "complete": true,
+      "passed": 8,
+      "total": 8
+    },
+    {
+      "project": "migration",
+      "stage": 2,
+      "checks": [
+        {
+          "name": "version, units and sorted feature conversion",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "source remains byte-identical",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "already-v3 is semantically idempotent",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "region and corrected retry policy",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "unknown customer fields retained under legacy",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "exact backup at agreed location",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "invocation override is honored",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "temporary region was actually reported",
+          "category": "action",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-50ku5E/migration-long-0/project/temporary-report.json'"
+        },
+        {
+          "name": "expired region override does not affect later action",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-50ku5E/migration-long-0/project/normal-report.json'"
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0.75,
+        "action": 0,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 8,
+      "total": 10
+    },
+    {
+      "project": "migration",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "version, units and sorted feature conversion",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "source remains byte-identical",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "already-v3 is semantically idempotent",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "region and corrected retry policy",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "unknown customer fields retained under legacy",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "exact backup at agreed location",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "invocation override is honored",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "temporary region was actually reported",
+          "category": "action",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-50ku5E/migration-long-0/project/temporary-report.json'"
+        },
+        {
+          "name": "expired region override does not affect later action",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-50ku5E/migration-long-0/project/normal-report.json'"
+        },
+        {
+          "name": "corrupt new source recovers from preserved backup",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "corrupt source preserved at agreed recovery location",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "actual fresh-session repair produced converted output",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0.8,
+        "action": 0.5,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 11,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 23,
+  "wallMs": 102748,
+  "usage": {
+    "input": 46,
+    "output": 14385,
+    "cacheRead": 266609,
+    "cacheWrite": 48193,
+    "reasoning": 6624,
+    "totalTokens": 329233,
+    "cost": 0
+  },
+  "toolCalls": 39,
+  "actualCliRuns": 5,
+  "cliRunsByPhase": {
+    "stage-1-implement": 2,
+    "stage-2-temporary": 1,
+    "stage-2-revoke": 1,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-2-temporary",
+      "expectedArguments": "bin/migrate.mjs fixtures/config.json work/temporary.json test-local",
+      "matched": false,
+      "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-50ku5E/migration-long-0/project/temporary-report.json'"
+    },
+    {
+      "phase": "stage-2-revoke",
+      "expectedArguments": "bin/migrate.mjs fixtures/config.json work/normal.json",
+      "matched": false,
+      "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-50ku5E/migration-long-0/project/normal-report.json'"
+    },
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [
+    {
+      "at": "2026-10-25T19:52:02.440Z",
+      "phase": "stage-1-implement",
+      "event": "blocked_command",
+      "command": "find . -not -path './.git*' -type f | sort"
+    },
+    {
+      "at": "2026-10-25T19:53:23.900Z",
+      "phase": "stage-3-transfer",
+      "event": "blocked_command",
+      "command": "git log --oneline -n 10"
+    }
+  ],
+  "recalls": [
+    {
+      "event": "recall",
+      "query": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+      "ids": [
+        "m_mvnweogsee3a69da9a838ec8f6be",
+        "m_mvnweed283d48d1dbe1d530012c5"
+      ],
+      "retiredIds": [],
+      "tokens": 1059,
+      "tokenUpperBound": 1059,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 0,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n\n[m_mvnweogsee3a69da9a838ec8f6be] Migration v3 customer defaults and preservation requirements (project; user_statement; confidence 1.00; 2026-10-25)\nFor the migration project, use version 3 defaults: region `eu-north-7`, `retry.maxAttempts` 5, and `retry.backoffMs` 125. Sort enabled feature names. Preserve unknown source fields under `legacy`. Before migration, preserve an exact source backup at `backups/source.json` beside the output.\n</memory_recall>"
+    },
+    {
+      "event": "recall",
+      "query": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+      "ids": [],
+      "retiredIds": [],
+      "tokens": 0,
+      "tokenUpperBound": 0,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 1516,
+      "ceilingReached": false,
+      "content": ""
+    },
+    {
+      "event": "recall",
+      "query": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+      "ids": [
+        "m_mvnwcmv07077373e5c084044da76"
+      ],
+      "retiredIds": [],
+      "tokens": 457,
+      "tokenUpperBound": 457,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 1059,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwcmv07077373e5c084044da76] Keep auxiliary import conventions exclusive to migration (project; user_statement; confidence 1.00; 2026-10-25)\nFor migration-only auxiliary import jobs, use batch size 9, use `seq` alone as identity, and abort on malformed lines. Never apply these conventions to the ingestion project.\n</memory_recall>"
+    },
+    {
+      "event": "recall",
+      "query": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+      "ids": [
+        "m_mvnwcmv07077373e5c084044da76",
+        "m_mvnweed283d48d1dbe1d530012c5"
+      ],
+      "retiredIds": [],
+      "tokens": 939,
+      "tokenUpperBound": 939,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 0,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwcmv07077373e5c084044da76] Keep auxiliary import conventions exclusive to migration (project; user_statement; confidence 1.00; 2026-10-25)\nFor migration-only auxiliary import jobs, use batch size 9, use `seq` alone as identity, and abort on malformed lines. Never apply these conventions to the ingestion project.\n\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n</memory_recall>"
+    }
+  ],
+  "beforeDreamMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "beforeMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "afterMemory": {
+    "bytes": 140958,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  }
+}

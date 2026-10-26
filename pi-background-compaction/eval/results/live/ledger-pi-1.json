@@ -1,0 +1,52 @@
+{
+  "name": "ledger-pi-1",
+  "scenario": "ledger",
+  "arm": "pi",
+  "threshold": 40000,
+  "keep": 8000,
+  "config": {},
+  "wallMs": 412904,
+  "compactions": [
+    {
+      "reason": "threshold",
+      "ms": 28011,
+      "turn": 6,
+      "summaryTokens": 1366
+    }
+  ],
+  "blockedMs": 28011,
+  "probeScore": 0.9473684210526315,
+  "taskScore": 1,
+  "probes": {
+    "env-var": true,
+    "error-prefix": true,
+    "frozen-dir": true,
+    "banned-lib": true,
+    "money": true,
+    "map-why": true,
+    "crash-cause": true,
+    "crash-row": true,
+    "crash-count": true,
+    "top-categories": true,
+    "top-totals": true,
+    "delimiters": false,
+    "spec-memo": true,
+    "spec-future": true,
+    "spec-duplicates": true,
+    "spec-exit": true,
+    "spec-rounding": true,
+    "spec-order": true,
+    "first-function": true
+  },
+  "task": {
+    "memo-default": true,
+    "future-skip": true,
+    "dedupe-key": true,
+    "counts": true,
+    "error-prefix": true,
+    "no-floats": true
+  },
+  "probeText": "1. `LEDGER_HOME`; defaults to `~/.ledger`.\n2. `ledger: ` (including the trailing space).\n3. `legacy/`.\n4. lodash.\n5. As integer cents, never floating-point money values.\n6. To safely support keys such as `__proto__` without prototype collisions; category keys are lowercase slugs.\n7. A `TypeError: Cannot read properties of undefined (reading 'currency')` in `normalizeRow()`, caused by accessing `record.meta.currency` when optional metadata was missing.\n8. Row 637 of `bank-export-oct.csv`.\n9. 636 rows had been processed; nothing was committed.\n10. rent, travel, groceries.\n11. rent: 5,023,578 cents; travel: 608,129 cents; groceries: 293,283 cents.\n12. Export uses `,`; import must accept both `;` and `,`.\n13. The memo must fall back to the payee name.\n14. Warn and skip them; they are not fatal.\n15. By date, amount, and payee; import each duplicate only once.\n16. User error: 1; data error: 2.\n17. Half-even rounding (banker’s rounding).\n18. Descending total spend, with ties broken alphabetically.\n19. `parseAmount(text)` in `src/ledger.js`.",
+  "taskText": "```js\n/**\n * Apply import rules to already-parsed rows.\n * `amount` must be a safe integer number of cents.\n * `today` must be a YYYY-MM-DD calendar date.\n *\n * Counts describe this batch; detecting duplicates against persisted\n * transactions requires the caller to supply that existing state separately.\n */\nexport function importRows(rows, today) {\n\tfunction isValidDate(value) {\n\t\tif (typeof value !== \"string\" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) {\n\t\t\treturn false;\n\t\t}\n\t\tconst date = new Date(`${value}T00:00:00Z`);\n\t\treturn Number.isFinite(date.getTime()) &&\n\t\t\tdate.toISOString().slice(0, 10) === value;\n\t}\n\n\tif (!Array.isArray(rows)) {\n\t\tthrow new Error(\"ledger: import rows must be an array\");\n\t}\n\tif (!isValidDate(today)) {\n\t\tthrow new Error(\"ledger: invalid today date; expected YYYY-MM-DD\");\n\t}\n\n\tconst rowsToImport = [];\n\tconst seen = new Set();\n\tconst warnings = [];\n\tlet skipped = 0;\n\tlet deduplicated = 0;\n\n\tfor (const [index, row] of rows.entries()) {\n\t\tconst label = `ledger: import row ${index + 1}`;\n\n\t\tif (!row || typeof row !== \"object\" || Array.isArray(row)) {\n\t\t\tthrow new Error(`${label}: expected a transaction`);\n\t\t}\n\t\tif (!isValidDate(row.date)) {\n\t\t\tthrow new Error(`${label}: invalid date; expected YYYY-MM-DD`);\n\t\t}\n\t\tif (typeof row.payee !== \"string\") {\n\t\t\tthrow new Error(`${label}: payee must be a string`);\n\t\t}\n\t\tif (!Number.isSafeInteger(row.amount)) {\n\t\t\tthrow new Error(`${label}: amount must be safe integer cents`);\n\t\t}\n\t\tif (row.memo != null && typeof row.memo !== \"string\") {\n\t\t\tthrow new Error(`${label}: memo must be a string`);\n\t\t}\n\n\t\tif (row.date > today) {\n\t\t\tskipped++;\n\t\t\twarnings.push(`${label}: future-dated transaction (${row.date}) skipped`);\n\t\t\tcontinue;\n\t\t}\n\n\t\tconst key = JSON.stringify([row.date, row.amount, row.payee]);\n\t\tif (seen.has(key)) {\n\t\t\tdeduplicated++;\n\t\t\tcontinue;\n\t\t}\n\t\tseen.add(key);\n\n\t\trowsToImport.push({\n\t\t\t...row,\n\t\t\tmemo: row.memo == null || row.memo.trim() === \"\" ? row.payee : row.memo,\n\t\t});\n\t}\n\n\treturn {\n\t\trows: rowsToImport,\n\t\timported: rowsToImport.length,\n\t\tskipped,\n\t\tdeduplicated,\n\t\twarnings,\n\t};\n}\n```",
+  "cwd": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/live-ledger-pi-1-ozqpck"
+}

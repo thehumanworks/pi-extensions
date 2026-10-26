@@ -248,6 +248,30 @@ test("fixed session digest receives append-only correction when its source chang
   assert.equal(await h.events.get("before_agent_start")!(request(), h.ctx), undefined);
 });
 
+test("session recall ceiling stops new evidence once the branch has used its budget, across restarts", async t => {
+  process.env.PI_MEMORY_SESSION_BUDGET = "450";
+  t.after(() => { delete process.env.PI_MEMORY_SESSION_BUDGET; });
+  const h = await harness(t);
+  const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize(); t.after(() => store.close());
+  await store.save({ title: "Aurora staging policy", body: "Aurora staging requires owner approval before deploys.", keywords: ["aurora"], source: { session: "prior", entries: ["u1"], origin: "user_statement" } });
+  await store.save({ title: "Cobalt routing policy", body: "Cobalt routing uses the rehearsal queue.", keywords: ["cobalt"], source: { session: "prior", entries: ["u2"], origin: "user_statement" } });
+  const request = (prompt: string) => ({ messageType: "user", prompt, systemPromptOptions: { sections: {} } });
+  const first = await h.events.get("before_agent_start")!(request("Aurora staging deploy"), h.ctx);
+  assert.equal(first.message.details.ids.length, 1);
+  const used = Buffer.byteLength(first.message.content);
+  assert.ok(used > 250 && used <= 450, `first recall used ${used}`);
+  // The remaining budget cannot fit a whole second item, so nothing new is injected.
+  assert.equal(await h.events.get("before_agent_start")!(request("Cobalt routing change"), h.ctx), undefined);
+  // A fresh process restores the spent budget from persisted recall messages on the branch.
+  h.branch([{ type: "custom_message", customType: "pi-memory/recall", content: "x".repeat(450), details: { ids: [] } }]);
+  await h.events.get("session_tree")!({}, h.ctx);
+  assert.equal(await h.events.get("before_agent_start")!(request("Cobalt routing change"), h.ctx), undefined);
+  // Compaction or an empty branch frees the ceiling again.
+  h.branch([]);
+  await h.events.get("session_tree")!({}, h.ctx);
+  assert.equal((await h.events.get("before_agent_start")!(request("Cobalt routing change"), h.ctx)).message.details.ids.length, 1);
+});
+
 test("legacy recall records without fingerprints are invalidated conservatively", async t => {
   const h = await harness(t);
   const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize(); t.after(() => store.close());

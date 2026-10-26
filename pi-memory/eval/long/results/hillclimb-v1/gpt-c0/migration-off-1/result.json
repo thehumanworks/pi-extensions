@@ -1,0 +1,176 @@
+{
+  "id": "migration-off-1",
+  "project": "migration",
+  "arm": "off",
+  "repeat": 1,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "openai/gpt-6.1-sol",
+  "memoryEnv": {},
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-TSy0D7/migration-off-1/project",
+  "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+  "calls": [
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 60196,
+      "modelRequests": 11,
+      "usage": {
+        "input": 5390,
+        "output": 1655,
+        "cacheRead": 36352,
+        "cacheWrite": 0,
+        "reasoning": 53,
+        "totalTokens": 43397,
+        "cost": 0.030965200000000002
+      },
+      "finalText": "Implemented recovery in `src/migrate.mjs`: malformed source JSON falls back to `backups/source.json` beside the destination, then undergoes normal validation and migration.\n\n- Created `work/repair-output.json` successfully using the CLI.\n- Used the durable `us-east-1` default, not the expired `test-local` override.\n- Preserved `work/backups/source.json` unchanged.\n- Preserved the truncated `work/repair-source.json` unchanged as evidence.\n- Added recovery regression tests; `node --test` passed all 3 tests."
+    }
+  ],
+  "scores": [
+    {
+      "project": "migration",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "version, units and sorted feature conversion",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "source remains byte-identical",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "already-v3 is semantically idempotent",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "region and corrected retry policy",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+        },
+        {
+          "name": "unknown customer fields retained under legacy",
+          "category": "memory",
+          "passed": false,
+          "error": "Cannot read properties of undefined (reading 'custom')"
+        },
+        {
+          "name": "exact backup at agreed location",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-TSy0D7/migration-off-1/project/.acceptance-3LYAOU/backups/source.json'"
+        },
+        {
+          "name": "invocation override is honored",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "temporary region was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired region override does not affect later action",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+        },
+        {
+          "name": "corrupt new source recovers from preserved backup",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "corrupt source preserved at agreed recovery location",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-TSy0D7/migration-off-1/project/.acceptance-TyrPSr/recovery/source.bad.json'"
+        },
+        {
+          "name": "actual fresh-session repair produced converted output",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 8,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 11,
+  "wallMs": 60300,
+  "usage": {
+    "input": 5390,
+    "output": 1655,
+    "cacheRead": 36352,
+    "cacheWrite": 0,
+    "reasoning": 53,
+    "totalTokens": 43397,
+    "cost": 0.030965200000000002
+  },
+  "toolCalls": 21,
+  "actualCliRuns": 1,
+  "cliRunsByPhase": {
+    "stage-1-implement": 0,
+    "stage-2-temporary": 0,
+    "stage-2-revoke": 0,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [],
+  "recalls": [],
+  "beforeDreamMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "beforeMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "afterMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  }
+}

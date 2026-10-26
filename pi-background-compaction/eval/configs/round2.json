@@ -1,0 +1,12 @@
+{
+  "tx-coding": { "request": "transcript" },
+  "tx-pi-prompt": { "request": "transcript", "prompt": "pi" },
+  "tx-think-off": { "request": "transcript", "thinking": "off" },
+  "tx-trig-0.6": { "request": "transcript", "trigger": 0.6 },
+  "tx-trig-0.9": { "request": "transcript", "trigger": 0.9 },
+  "tx-keep-4k": { "request": "transcript", "keepRecentTokens": 4000 },
+  "tx-facts": { "request": "transcript", "focus": "Keep exact facts from files, logs, and command output the work may need later, including details nobody has discussed yet (limits, formats, codes, numbers, error text): the original output will be gone." },
+  "ser-tr16k": { "request": "serialized", "toolResultChars": 16000 },
+  "ser-facts": { "request": "serialized", "focus": "Keep exact facts from files, logs, and command output the work may need later, including details nobody has discussed yet (limits, formats, codes, numbers, error text): the original output will be gone." },
+  "ser-haiku-tr16k": { "request": "serialized", "model": "claude-bridge/claude-haiku-5-5", "toolResultChars": 16000 }
+}

@@ -1,0 +1,193 @@
+{
+  "id": "migration-off-1",
+  "project": "migration",
+  "arm": "off",
+  "repeat": 1,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "claude-bridge/claude-haiku-5-5",
+  "memoryEnv": {},
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/migration-off-1/project",
+  "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+  "calls": [
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 40062,
+      "modelRequests": 11,
+      "usage": {
+        "input": 22,
+        "output": 4516,
+        "cacheRead": 115622,
+        "cacheWrite": 13021,
+        "reasoning": 2128,
+        "totalTokens": 133181,
+        "cost": 0
+      },
+      "finalText": "The repaired source migrated to `work/repair-output.json`, and the visible test passes. I did not change any code.\n\n- **Evidence:** the truncated source (`{\"version\":`) is preserved at `work/evidence/repair-source.corrupt.json`.\n- **Repair:** `work/repair-source.json` was restored from the valid pre-migration backup at `work/backups/source.json`. That backup is still in place.\n- **Migration:** I ran `node bin/migrate.mjs work/repair-source.json work/repair-output.json` with no region argument. The expired `test-local` override was not used, so `region` is `us-east-1` from the durable default. The output has `version` 3, `timeoutMs` 3000, `features` `[\"ready\"]`, and keeps `extra: \"preserve\"`.\n- **Tests:** `node --test` passes, 1 of 1.\n\nTwo things you should know:\n- **Backup location:** `repair-output.json` did not exist before this run, so the code's `.bak` convention created nothing. The only valid backup is `work/backups/source.json`, which I used as the restore point. If the agreed location was meant to be `work/repair-output.json.bak`, that file does not exist.\n- **Session rename:** I could not run `rex session rename`, since bash is limited to `node` commands. I also could not read the memory directory outside the project, so I took the durable defaults from the code and did not confirm them against stored decisions."
+    }
+  ],
+  "scores": [
+    {
+      "project": "migration",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "version, units and sorted feature conversion",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "source remains byte-identical",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "already-v3 is semantically idempotent",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "region and corrected retry policy",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+        },
+        {
+          "name": "unknown customer fields retained under legacy",
+          "category": "memory",
+          "passed": false,
+          "error": "Cannot read properties of undefined (reading 'custom')"
+        },
+        {
+          "name": "exact backup at agreed location",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/migration-off-1/project/.acceptance-EHeIEi/backups/source.json'"
+        },
+        {
+          "name": "invocation override is honored",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "temporary region was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired region override does not affect later action",
+          "category": "memory",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+        },
+        {
+          "name": "corrupt new source recovers from preserved backup",
+          "category": "intrinsic",
+          "passed": false,
+          "error": "Unexpected end of JSON input"
+        },
+        {
+          "name": "corrupt source preserved at agreed recovery location",
+          "category": "memory",
+          "passed": false,
+          "error": "Unexpected end of JSON input"
+        },
+        {
+          "name": "actual fresh-session repair produced converted output",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 0.8,
+        "memory": 0,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 7,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 11,
+  "wallMs": 40149,
+  "usage": {
+    "input": 22,
+    "output": 4516,
+    "cacheRead": 115622,
+    "cacheWrite": 13021,
+    "reasoning": 2128,
+    "totalTokens": 133181,
+    "cost": 0
+  },
+  "toolCalls": 23,
+  "actualCliRuns": 1,
+  "cliRunsByPhase": {
+    "stage-1-implement": 0,
+    "stage-2-temporary": 0,
+    "stage-2-revoke": 0,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [
+    {
+      "at": "2026-10-25T19:40:52.242Z",
+      "phase": "stage-3-transfer",
+      "event": "blocked_command",
+      "command": "git status --short && git log --oneline | head -5 && find . -path ./.git -prune -o -type f -print | head -100"
+    },
+    {
+      "at": "2026-10-25T19:41:02.712Z",
+      "phase": "stage-3-transfer",
+      "event": "blocked_path",
+      "tool": "read",
+      "input": {
+        "path": "/Users/tomas/.claude/projects/-private-var-folders-dg-1s1vxvps60g694qr551l0l4c0000gn-T-pi-memory-long-2kJ7pl-migration-off-1-project/memory/MEMORY.md"
+      }
+    }
+  ],
+  "recalls": [],
+  "beforeDreamMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "beforeMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "afterMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": 3,
+  "name": "demo",
+  "customField": {
+    "keep": true
+  },
+  "timeoutMs": 2000,
+  "features": [
+    "a",
+    "z"
+  ],
+  "region": "us-east-1",
+  "retries": 3
+}

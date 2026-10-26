@@ -1,0 +1,171 @@
+{
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHashes": [
+    "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7"
+  ],
+  "sourceHashes": [
+    "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc"
+  ],
+  "directories": [
+    "/Users/tomas/pi-extensions/pi-memory/eval/long/results/hillclimb-v1/full-haiku-c0"
+  ],
+  "model": [
+    "claude-bridge/claude-haiku-5-5"
+  ],
+  "completedJobs": 8,
+  "repairOnly": false,
+  "arms": {
+    "off": {
+      "jobs": 4,
+      "completionRate": 0,
+      "meanModelRequests": 27.75,
+      "minModelRequests": 22,
+      "maxModelRequests": 33,
+      "meanToolCalls": 48.25,
+      "meanInputTokens": 365630.75,
+      "meanUncachedInputTokens": 55.5,
+      "meanCachedInputTokens": 365575.25,
+      "meanOutputTokens": 16319,
+      "meanProviderCost": 0,
+      "meanWallMs": 120090.75,
+      "p95WallMs": 158620,
+      "failedCalls": 0,
+      "budgetExhaustedJobs": 0,
+      "timedOutJobs": 0,
+      "actionBindingFailures": 8,
+      "scopeLeaks": 0,
+      "unknownMemoryIds": 0,
+      "meanStoreBytes": 0,
+      "meanActiveCanonicalBytes": 0,
+      "meanActiveRecords": 0,
+      "parentChildCoinjections": 0,
+      "maxInjectedTokens": 0,
+      "stages": {
+        "1": {
+          "scoredJobs": 4,
+          "intrinsic": 1,
+          "memory": 0.16666666666666666,
+          "action": null,
+          "control": 1,
+          "complete": 0,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 53,
+          "inputTokens": 785441,
+          "uncachedInputTokens": 106,
+          "cachedInputTokens": 785335,
+          "outputTokens": 37239
+        },
+        "2": {
+          "scoredJobs": 4,
+          "intrinsic": 1,
+          "memory": 0.125,
+          "action": 0.25,
+          "control": 1,
+          "complete": 0,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 24,
+          "inputTokens": 310750,
+          "uncachedInputTokens": 48,
+          "cachedInputTokens": 310702,
+          "outputTokens": 7700
+        },
+        "3": {
+          "scoredJobs": 4,
+          "intrinsic": 0.8999999999999999,
+          "memory": 0.1,
+          "action": 0.625,
+          "control": 1,
+          "complete": 0,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 34,
+          "inputTokens": 366332,
+          "uncachedInputTokens": 68,
+          "cachedInputTokens": 366264,
+          "outputTokens": 20337
+        }
+      }
+    },
+    "long": {
+      "jobs": 4,
+      "completionRate": 0.5,
+      "meanModelRequests": 24.75,
+      "minModelRequests": 23,
+      "maxModelRequests": 28,
+      "meanToolCalls": 43.25,
+      "meanInputTokens": 329620.25,
+      "meanUncachedInputTokens": 49.5,
+      "meanCachedInputTokens": 329570.75,
+      "meanOutputTokens": 15821.25,
+      "meanProviderCost": 0,
+      "meanWallMs": 117518,
+      "p95WallMs": 138767,
+      "failedCalls": 0,
+      "budgetExhaustedJobs": 0,
+      "timedOutJobs": 0,
+      "actionBindingFailures": 4,
+      "scopeLeaks": 0,
+      "unknownMemoryIds": 0,
+      "meanStoreBytes": 140958,
+      "meanActiveCanonicalBytes": 10822,
+      "meanActiveRecords": 6,
+      "parentChildCoinjections": 0,
+      "maxInjectedTokens": 1198,
+      "stages": {
+        "1": {
+          "scoredJobs": 4,
+          "intrinsic": 1,
+          "memory": 1,
+          "action": null,
+          "control": 1,
+          "complete": 1,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 47,
+          "inputTokens": 723992,
+          "uncachedInputTokens": 94,
+          "cachedInputTokens": 723898,
+          "outputTokens": 45162
+        },
+        "2": {
+          "scoredJobs": 4,
+          "intrinsic": 1,
+          "memory": 0.875,
+          "action": 0.5,
+          "control": 1,
+          "complete": 0.5,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 27,
+          "inputTokens": 359834,
+          "uncachedInputTokens": 54,
+          "cachedInputTokens": 359780,
+          "outputTokens": 7945
+        },
+        "3": {
+          "scoredJobs": 4,
+          "intrinsic": 1,
+          "memory": 0.8999999999999999,
+          "action": 0.75,
+          "control": 1,
+          "complete": 0.5,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 25,
+          "inputTokens": 234655,
+          "uncachedInputTokens": 50,
+          "cachedInputTokens": 234605,
+          "outputTokens": 10178
+        }
+      }
+    }
+  }
+}

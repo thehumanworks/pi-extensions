@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 36379,
+  "modelRequests": 8,
+  "usage": {
+    "input": 16,
+    "output": 5803,
+    "cacheRead": 89722,
+    "cacheWrite": 13710,
+    "reasoning": 2782,
+    "totalTokens": 109251,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint now recovers, and I ran the CLI on the real paths and the test suite. Both tests pass (2/2).\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` printed `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`.\n\n**Changes in `src/ingest.mjs`:**\n- A truncated or invalid checkpoint is moved to `work/recovery/checkpoint.bad.json`, not deleted. If that file already exists, the new one goes to a UUID-suffixed name so earlier evidence is never overwritten.\n- Replay then starts from line 0. Existing output is read first, and only unseen `(tenant, seq)` identities are appended.\n- The checkpoint is rewritten after replay.\n- The batch size default stays at 4.\n\n**Preservation:**\n- `work/repair-output.ndjson` still has its original line `transfer/0`, plus `transfer/1` and `transfer/2` appended.\n- The corrupt checkpoint content `{\"nextLine\":` is preserved in `work/recovery/checkpoint.bad.json`.\n\n**Test:** I added a regression test to `test/basic.test.mjs` that covers a corrupt checkpoint, duplicate skipping, and two tenants sharing `seq` 1.\n\nI couldn't run `rex session rename`, because bash here only allows `node` commands. The session is still unnamed."
+}

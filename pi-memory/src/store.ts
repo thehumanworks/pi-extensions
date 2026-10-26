@@ -447,16 +447,20 @@ export class MemoryStore {
       return { archived, duplicates };
     });
   }
-  private isStandingRule(item: MemoryItem): boolean {
-    return item.status === 'active' && !isExpired(item) && (item.type === 'feedback' || item.type === 'preference') && item.importance >= 8 && item.confidence >= 0.9 &&
+  private isStandingRule(item: MemoryItem, digestScope: 'rules' | 'decisions' = 'rules'): boolean {
+    const standingType = item.type === 'feedback' || item.type === 'preference' || (digestScope === 'decisions' && item.type === 'project' && item.retention !== 'short');
+    return item.status === 'active' && !isExpired(item) && standingType && item.importance >= 8 && item.confidence >= 0.9 &&
       (item.source.origin === 'user_statement' || item.source.origin === 'user_confirmation');
   }
   /** A compiled digest selects IDs; all prose is rebuilt from current sources.
    * Call initialize/reindex first to incorporate edits made with ordinary tools.
+   * With digestScope "decisions", standing items are selected live from current canonical sources (user-stated durable
+   * project decisions included), so an always-on "wake" block exists before the first consolidation. Digest prose is never read.
    */
-  readDigest(budgetTokens = 1200): string {
+  readDigest(budgetTokens = 1200, digestScope: 'rules' | 'decisions' = 'rules'): string {
     const chosen: MemoryItem[] = [];
     for (const scope of ['global', this.projectScope] as const) {
+      if (digestScope === 'decisions') { chosen.push(...this.list({ scope }).filter(item => this.isStandingRule(item, digestScope))); continue; }
       const path = join(this.scopeDirectory(scope), 'DIGEST.md');
       if (!existsSync(path)) continue;
       const ids = new Set([...readFileSync(path, 'utf8').matchAll(/\[(m_[a-z0-9]{20,64})\]/g)].map(match => match[1]!));

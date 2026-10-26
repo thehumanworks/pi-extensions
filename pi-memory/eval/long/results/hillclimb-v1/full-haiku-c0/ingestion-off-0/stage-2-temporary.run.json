@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 14981,
+  "modelRequests": 3,
+  "usage": {
+    "input": 6,
+    "output": 1006,
+    "cacheRead": 36819,
+    "cacheWrite": 11395,
+    "reasoning": 379,
+    "totalTokens": 49226,
+    "cost": 0
+  },
+  "finalText": "I ran the CLI once with batch size 1 against `fixtures/events.ndjson`, writing to `work/temporary.ndjson` and `work/temporary-checkpoint.json`. The report is in `temporary-report.json`:\n\n```json\n{\"accepted\": 1, \"rejected\": 0, \"duplicates\": 0, \"nextLine\": 1}\n```\n\nThe batch size was passed as a per-run argument. The permanent default in `src/ingest.mjs` (`DEFAULT_BATCH_SIZE = 100`) is unchanged.\n\nTwo things differ from your instructions:\n- **Report file:** the bash tool can't redirect output, so I wrote `temporary-report.json` with the write tool from the CLI's printed output. The content is the same, but it was not produced by a redirect.\n- **Session rename:** I did not run `rex session rename`, because bash only allows `node` commands."
+}

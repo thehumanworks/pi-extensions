@@ -1,0 +1,430 @@
+{
+  "id": "ingestion-long-1",
+  "project": "ingestion",
+  "arm": "long",
+  "repeat": 1,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "claude-bridge/claude-haiku-5-5",
+  "memoryEnv": {},
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-50ku5E/ingestion-long-1/project",
+  "repairOnlyFrom": "",
+  "calls": [
+    {
+      "name": "stage-1-implement",
+      "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 97415,
+      "modelRequests": 17,
+      "usage": {
+        "input": 34,
+        "output": 15626,
+        "cacheRead": 318935,
+        "cacheWrite": 23108,
+        "reasoning": 9328,
+        "totalTokens": 357703,
+        "cost": 0
+      },
+      "finalText": "Both modules are implemented. `node --test` passes (1/1), and the CLI works for fresh runs, resumes, malformed and duplicate lines, and corrupt-checkpoint recovery.\n\n**Files**\n- `src/ingest.mjs`: `processBatch` plus helpers.\n- `bin/ingest.mjs`: `node bin/ingest.mjs INPUT OUTPUT CHECKPOINT [BATCH_SIZE]`. It prints the report as JSON and exits 1 with a message on error.\n\n**Behaviour**\n- **Batch size:** defaults to 4 accepted records. An explicit `batchSize` overrides it. Non-positive or non-integer values throw a `RangeError`.\n- **Identity:** `(tenant, seq)` as a pair. Repeats are counted as `duplicates`, are not written again, and do not count toward the batch.\n- **Malformed lines:** invalid JSON, non-object, non-array-free objects missing a non-empty string `tenant` or integer `seq`, and blank lines are counted as `rejected`. The raw line goes to `rejected.ndjson` beside the output, and processing continues.\n- **Output:** accepted lines are appended exactly as they appeared in the input. Existing output is never rewritten or erased.\n- **Checkpoint:** `{\"nextLine\": N}`, where N is the number of input lines consumed. It is written via temp file plus rename, after the output append.\n- **Corrupt or missing checkpoint:** a corrupt checkpoint is moved to `recovery/checkpoint.bad.json` beside it (or a timestamped name if that exists). The input is then replayed from line 0. Identities already in the output are skipped. Malformed lines already in `rejected.ndjson` are not quarantined a second time.\n\n**Demonstrated** (fixtures and `work/` paths only)\n- `fixtures/events.ndjson` with the default batch: `accepted 4, nextLine 4`. A second call resumed and accepted the remaining 3.\n- A mixed input with a bad JSON line, an array line, and a duplicate identity, run with batch size 2 then again: the first run gave `accepted 2, rejected 1, nextLine 3`. The second gave `accepted 2, rejected 1, duplicates 1, nextLine 7`.\n- Replacing the checkpoint with truncated JSON and rerunning: the bad file was moved to `recovery/checkpoint.bad.json`, output was preserved, and a fresh checkpoint was written with `nextLine 7`. Counts were `accepted 0, rejected 2, duplicates 5`.\n\n**Caveats**\n- There is no lock. I ran two invocations in parallel by mistake, and they both appended the same identities to `work/demo2/out.ndjson`. Run one ingest per output at a time.\n- Crash-recovery replay depends on the output containing every prior accepted record. Output that was deleted or corrupted will not be reconstructed.\n- I did not run `rex session rename`, because bash is restricted to `node` commands."
+    },
+    {
+      "name": "stage-2-temporary",
+      "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 11641,
+      "modelRequests": 3,
+      "usage": {
+        "input": 6,
+        "output": 643,
+        "cacheRead": 41265,
+        "cacheWrite": 12945,
+        "reasoning": 246,
+        "totalTokens": 54859,
+        "cost": 0
+      },
+      "finalText": "I ran the CLI once with batch size 1 against `fixtures/events.ndjson`, writing to `work/temporary.ndjson` and `work/temporary-checkpoint.json`. It reported `accepted 1, rejected 0, duplicates 0, nextLine 1`.\n\nI saved that report to `temporary-report.json` in the project root. The write tool did the saving, since bash can't redirect output. The permanent default is still 4."
+    },
+    {
+      "name": "stage-2-revoke",
+      "prompt": "The diagnostic override has expired. Use the normal previously agreed default for a clean production-like invocation: CLI input fixtures/events.ndjson, output work/normal.ndjson, checkpoint work/normal-checkpoint.json, with no explicit batch size. Actually run it and write its returned JSON report to normal-report.json. Keep the implementation and earlier diagnostic files.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 9844,
+      "modelRequests": 3,
+      "usage": {
+        "input": 6,
+        "output": 696,
+        "cacheRead": 42487,
+        "cacheWrite": 13570,
+        "reasoning": 282,
+        "totalTokens": 56759,
+        "cost": 0
+      },
+      "finalText": "The normal run used the default batch size of 4 and reported `accepted 4, rejected 0, duplicates 0, nextLine 4`. I saved that report to `normal-report.json` in the project root.\n\nOutput went to `work/normal.ndjson` and the checkpoint to `work/normal-checkpoint.json`. The implementation and the earlier diagnostic files are unchanged.\n\nI did not rename the Rex session. The bash tool only allows `node` commands, so I couldn't run `rex session rename`."
+    },
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 19505,
+      "modelRequests": 5,
+      "usage": {
+        "input": 10,
+        "output": 2178,
+        "cacheRead": 44640,
+        "cacheWrite": 7617,
+        "reasoning": 751,
+        "totalTokens": 54445,
+        "cost": 0
+      },
+      "finalText": "The repair works, and the repaired CLI run and the tests both pass. The code already had the recovery logic, so I didn't change any source files.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json`\n- Result: `accepted: 2, rejected: 0, duplicates: 1, nextLine: 3`\n- The corrupt checkpoint was moved to `work/recovery/checkpoint.bad.json` and kept intact (`{\"nextLine\":`).\n- `work/repair-output.ndjson` was appended to, not rewritten. It now has all three events: `transfer` seq 0, 1, and 2. The original seq 0 line was kept and not duplicated.\n- The rebuilt `work/repair-checkpoint.json` contains `{\"nextLine\":3}`.\n\n**Tests:** `node --test` passes (1/1).\n\n**Notes:**\n- The batch size is 4 by default (`DEFAULT_BATCH_SIZE` in `src/ingest.mjs`), matching your correction.\n- I didn't run the `rex session rename` step from the session hook. Bash is limited to `node` commands here, so I couldn't run `rex`."
+    }
+  ],
+  "scores": [
+    {
+      "project": "ingestion",
+      "stage": 1,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 1,
+        "action": null,
+        "control": 1
+      },
+      "complete": true,
+      "passed": 8,
+      "total": 8
+    },
+    {
+      "project": "ingestion",
+      "stage": 2,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "temporary override was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired override does not affect later action",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 1,
+        "action": 1,
+        "control": 1
+      },
+      "complete": true,
+      "passed": 10,
+      "total": 10
+    },
+    {
+      "project": "ingestion",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "temporary override was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired override does not affect later action",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "new corrupt checkpoint preserves output and replays safely",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "recovery keeps corrupt checkpoint at agreed location",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "actual repair run preserved all three events",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 1,
+        "action": 1,
+        "control": 1
+      },
+      "complete": true,
+      "passed": 13,
+      "total": 13
+    }
+  ],
+  "complete": true,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 28,
+  "wallMs": 138767,
+  "usage": {
+    "input": 56,
+    "output": 19143,
+    "cacheRead": 447327,
+    "cacheWrite": 57240,
+    "reasoning": 10607,
+    "totalTokens": 523766,
+    "cost": 0
+  },
+  "toolCalls": 49,
+  "actualCliRuns": 12,
+  "cliRunsByPhase": {
+    "stage-1-implement": 9,
+    "stage-2-temporary": 1,
+    "stage-2-revoke": 1,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-2-temporary",
+      "expectedArguments": "bin/ingest.mjs fixtures/events.ndjson work/temporary.ndjson work/temporary-checkpoint.json 1",
+      "matched": true
+    },
+    {
+      "phase": "stage-2-revoke",
+      "expectedArguments": "bin/ingest.mjs fixtures/events.ndjson work/normal.ndjson work/normal-checkpoint.json",
+      "matched": true
+    },
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [
+    {
+      "at": "2026-10-25T19:54:42.045Z",
+      "phase": "stage-1-implement",
+      "event": "blocked_command",
+      "command": "node -e \"console.log(require('fs').readFileSync('work/demo2/out.ndjson','utf8')+'---\\n'+require('fs').readFileSync('work/demo2/cp.json','utf8')+'---\\n'+require('fs').readFileSync('work/demo2/rejected.ndjson','utf8'))\""
+    }
+  ],
+  "recalls": [
+    {
+      "event": "recall",
+      "query": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+      "ids": [
+        "m_mvnwc81254015609d066a4f43a35",
+        "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+      ],
+      "retiredIds": [],
+      "tokens": 1198,
+      "tokenUpperBound": 1198,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 0,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n\n[m_mvnwc81254015609d066a4f43a35] Ingestion acceptance, identity, quarantine, and recovery rules (project; user_statement; confidence 1.00; 2026-10-25)\nUse a default ingestion batch size of 4 accepted records, replacing the previous default of 2. Identify events by the pair (tenant, seq), never seq alone. Preserve original event objects and arrival order. Quarantine malformed input lines into `rejected.ndjson` and continue processing. Never erase existing output to recover a checkpoint.\n</memory_recall>"
+    },
+    {
+      "event": "recall",
+      "query": "The diagnostic override has expired. Use the normal previously agreed default for a clean production-like invocation: CLI input fixtures/events.ndjson, output work/normal.ndjson, checkpoint work/normal-checkpoint.json, with no explicit batch size. Actually run it and write its returned JSON report to normal-report.json. Keep the implementation and earlier diagnostic files.",
+      "ids": [],
+      "retiredIds": [],
+      "tokens": 0,
+      "tokenUpperBound": 0,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 1652,
+      "ceilingReached": false,
+      "content": ""
+    },
+    {
+      "event": "recall",
+      "query": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+      "ids": [
+        "m_mvnwa7bgf4bd5b83ba747b5999a1"
+      ],
+      "retiredIds": [],
+      "tokens": 454,
+      "tokenUpperBound": 454,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 1198,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwa7bgf4bd5b83ba747b5999a1] Auxiliary ingestion config must not leak into migration (project; user_statement; confidence 1.00; 2026-10-25)\nFor ingestion-only auxiliary configs, use region `us-west-9` and retry settings `maxAttempts: 11` and `backoffMs: 900`. Never apply these settings to the migration project.\n</memory_recall>"
+    },
+    {
+      "event": "recall",
+      "query": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "ids": [
+        "m_mvnwbt9r2bc5064d3e1d31f5ce39",
+        "m_mvnwa7bgf4bd5b83ba747b5999a1"
+      ],
+      "retiredIds": [],
+      "tokens": 1024,
+      "tokenUpperBound": 1024,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 0,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwa7bgf4bd5b83ba747b5999a1] Auxiliary ingestion config must not leak into migration (project; user_statement; confidence 1.00; 2026-10-25)\nFor ingestion-only auxiliary configs, use region `us-west-9` and retry settings `maxAttempts: 11` and `backoffMs: 900`. Never apply these settings to the migration project.\n\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+    }
+  ],
+  "beforeDreamMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "beforeMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "afterMemory": {
+    "bytes": 140958,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  }
+}

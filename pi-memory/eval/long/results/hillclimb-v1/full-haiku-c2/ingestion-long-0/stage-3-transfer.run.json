@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 46293,
+  "modelRequests": 13,
+  "usage": {
+    "input": 26,
+    "output": 7183,
+    "cacheRead": 183771,
+    "cacheWrite": 13996,
+    "reasoning": 2166,
+    "totalTokens": 204976,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint recovered without losing output, and all 3 visible tests pass.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` with the default batch size of 4 (no override).\n- Report: `accepted: 2`, `rejected: 0`, `duplicates: 1`, `nextLine: 3`.\n- The truncated checkpoint (`{\"nextLine\":`) was moved to `work/recovery/checkpoint.bad.json`, which is the same convention as `work/mixed/recovery/`.\n- `work/repair-output.ndjson` kept its original `transfer` seq 0 line and gained seq 1 and seq 2. Nothing was deleted or truncated.\n- `work/repair-checkpoint.json` was rewritten as `{\"nextLine\":3}`.\n\n**Implementation:** `src/ingest.mjs` already had the quarantine, `(tenant, seq)` identity, and replay logic, so I made no source changes. What was missing was test coverage, so I added `test/recovery.test.mjs` with two tests:\n- A corrupt checkpoint is quarantined and replay appends only unseen identities. Two tenants share seq 1, and the output bytes are checked.\n- A second corrupt checkpoint gets `checkpoint.bad.1.json` and never overwrites the earlier quarantine.\n\n**Tests:** `node --test` shows 3 pass, 0 fail. The new test temp directories are created under the project directory because the sandbox blocks writes to the system temp directory.\n\nI did not rename the Rex session, because the bash tool only allows `node` commands."
+}

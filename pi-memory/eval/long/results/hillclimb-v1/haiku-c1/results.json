@@ -1,0 +1,791 @@
+[
+  {
+    "id": "ingestion-long-0",
+    "project": "ingestion",
+    "arm": "long",
+    "repeat": 0,
+    "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+    "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+    "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+    "model": "claude-bridge/claude-haiku-5-5",
+    "memoryEnv": {
+      "PI_MEMORY_DIGEST_SCOPE": "decisions",
+      "PI_MEMORY_DIGEST_BUDGET": "2400"
+    },
+    "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/ingestion-long-0/project",
+    "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+    "calls": [
+      {
+        "name": "stage-3-transfer",
+        "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 32969,
+        "modelRequests": 9,
+        "usage": {
+          "input": 18,
+          "output": 5481,
+          "cacheRead": 99053,
+          "cacheWrite": 12945,
+          "reasoning": 1306,
+          "totalTokens": 117497,
+          "cost": 0
+        },
+        "finalText": "The corrupt checkpoint in `work/repair-checkpoint.json` now recovers. I ran the CLI on the real paths and both tests pass.\n\n**Change in `src/ingest.mjs`:**\n- A corrupt checkpoint (unparseable JSON or an invalid `nextLine`) is moved to `work/recovery/checkpoint.bad.json`. If that file already exists, the new one gets a unique name so earlier evidence is never overwritten.\n- Replay then starts from line 0. Existing output is never rewritten or truncated, and only `(tenant, seq)` identities not already in the output are appended.\n- The default batch size is 4, per the current project decision. Its only other change is the one above.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json`\n- Output: `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`\n\n**Verified by reading the files afterward:**\n- `work/recovery/checkpoint.bad.json` holds the original truncated content `{\"nextLine\":`.\n- `work/repair-output.ndjson` has all three events, `transfer` seq 0, 1, and 2. The original seq 0 line was kept.\n- `work/repair-checkpoint.json` contains `{\"nextLine\":3}`.\n\n**Tests:** `node --test` passes 2/2. I added a regression test for the corrupt-checkpoint path. It checks that the bad checkpoint is quarantined, that a duplicate identity is skipped, and that the output gains exactly one line.\n\n**Not done:** I could not rename this session with `rex session rename`, because bash here only allows `node` commands."
+      }
+    ],
+    "scores": [
+      {
+        "project": "ingestion",
+        "stage": 3,
+        "checks": [
+          {
+            "name": "explicit batch limit and checkpoint",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "resume appends without repeating prior records",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "duplicates within tenant are suppressed",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "small batch does not materialize a 48 MiB input",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "current default batch is four",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "identity includes tenant",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "malformed line is quarantined and processing continues",
+            "category": "memory",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/ingestion-long-0/project/.acceptance-pfCAq7/rejected.ndjson'"
+          },
+          {
+            "name": "temporary override was actually reported",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "expired override does not affect later action",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "new corrupt checkpoint preserves output and replays safely",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "recovery keeps corrupt checkpoint at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "actual repair run preserved all three events",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 0.8,
+          "action": 1,
+          "control": 1
+        },
+        "complete": false,
+        "passed": 12,
+        "total": 13
+      }
+    ],
+    "complete": false,
+    "budgetExhausted": false,
+    "timedOut": false,
+    "modelRequests": 9,
+    "wallMs": 33155,
+    "usage": {
+      "input": 18,
+      "output": 5481,
+      "cacheRead": 99053,
+      "cacheWrite": 12945,
+      "reasoning": 1306,
+      "totalTokens": 117497,
+      "cost": 0
+    },
+    "toolCalls": 17,
+    "actualCliRuns": 1,
+    "cliRunsByPhase": {
+      "stage-1-implement": 0,
+      "stage-2-temporary": 0,
+      "stage-2-revoke": 0,
+      "stage-3-transfer": 1
+    },
+    "actionBindings": [
+      {
+        "phase": "stage-3-transfer",
+        "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+        "matched": true
+      }
+    ],
+    "scopeLeaks": [],
+    "unknownMemoryIds": [],
+    "parentChildCoinjections": [],
+    "blockedActions": [],
+    "recalls": [
+      {
+        "event": "recall",
+        "query": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+        "ids": [
+          "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+        ],
+        "retiredIds": [],
+        "tokens": 706,
+        "tokenUpperBound": 706,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 0,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+      }
+    ],
+    "beforeDreamMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "beforeMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "afterMemory": {
+      "bytes": 140608,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    }
+  },
+  {
+    "id": "migration-long-0",
+    "project": "migration",
+    "arm": "long",
+    "repeat": 0,
+    "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+    "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+    "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+    "model": "claude-bridge/claude-haiku-5-5",
+    "memoryEnv": {
+      "PI_MEMORY_DIGEST_SCOPE": "decisions",
+      "PI_MEMORY_DIGEST_BUDGET": "2400"
+    },
+    "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/migration-long-0/project",
+    "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+    "calls": [
+      {
+        "name": "stage-3-transfer",
+        "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 51935,
+        "modelRequests": 6,
+        "usage": {
+          "input": 12,
+          "output": 9422,
+          "cacheRead": 64401,
+          "cacheWrite": 16488,
+          "reasoning": 6271,
+          "totalTokens": 90323,
+          "cost": 0
+        },
+        "finalText": "The migration is repaired and written to `work/repair-output.json`. The visible test passes and the CLI run succeeded.\n\n**Result**\n- `node --test test/basic.test.mjs`: 1 pass, 0 fail.\n- `node bin/migrate.mjs work/repair-source.json work/repair-output.json` produced:\n  - `version` 3, `name` `recovery-fixture`, `timeoutMs` 3000, `features` `[\"ready\"]`\n  - `region` `eu-north-7`, `retry` `{backoffMs: 125, maxAttempts: 5}`\n  - `legacy: {extra: \"preserve\"}`\n- The truncated source (`{\"version\":`) was moved to `work/recovery/source.bad.json`. It is no longer at `work/repair-source.json`.\n- `work/backups/source.json` is unchanged.\n\n**Changes in `src/migrate.mjs`**\n- **Truncated input recovery:** if the source fails to parse, the code first reads and parses `backups/source.json` beside the output. It then copies the corrupt file to `recovery/source.bad.json` with `COPYFILE_EXCL`, so earlier evidence is never overwritten, and removes the original. A missing or invalid backup stops the run before anything is moved.\n- **Defaults from the project decisions:** region defaults to `eu-north-7` and `backoffMs` to `125`. `maxAttempts` is always 5.\n- **Source values win:** an explicit region or backoff in the source is kept. Defaults only fill gaps.\n- **Unknown fields:** any source field that is not part of the v3 schema is kept under `legacy`.\n- **Feature names:** sorted for both v1 and v3 inputs.\n\n**Not done**\n- I did not rename the session with `rex`. The bash tool only allows `node` commands, so I could not run it."
+      }
+    ],
+    "scores": [
+      {
+        "project": "migration",
+        "stage": 3,
+        "checks": [
+          {
+            "name": "version, units and sorted feature conversion",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "source remains byte-identical",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "already-v3 is semantically idempotent",
+            "category": "intrinsic",
+            "passed": false,
+            "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    features: [\n      'ok'\n    ],\n    legacy: {\n+     legacy: {\n+       x: 1\n+     }\n-     x: 1\n    },\n    name: 'done',\n    region: 'custom',\n    retry: {\n      backoffMs: 42,\n+     maxAttempts: 5\n-     maxAttempts: 9\n    },\n    timeoutMs: 800,\n    version: 3\n  }\n"
+          },
+          {
+            "name": "region and corrected retry policy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "unknown customer fields retained under legacy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "exact backup at agreed location",
+            "category": "memory",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/migration-long-0/project/.acceptance-ee2VGf/backups/source.json'"
+          },
+          {
+            "name": "invocation override is honored",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "temporary region was actually reported",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "expired region override does not affect later action",
+            "category": "memory",
+            "passed": false,
+            "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+          },
+          {
+            "name": "corrupt new source recovers from preserved backup",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "corrupt source preserved at agreed recovery location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "actual fresh-session repair produced converted output",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 0.8,
+          "memory": 0.6,
+          "action": 1,
+          "control": 1
+        },
+        "complete": false,
+        "passed": 10,
+        "total": 13
+      }
+    ],
+    "complete": false,
+    "budgetExhausted": false,
+    "timedOut": false,
+    "modelRequests": 6,
+    "wallMs": 52042,
+    "usage": {
+      "input": 12,
+      "output": 9422,
+      "cacheRead": 64401,
+      "cacheWrite": 16488,
+      "reasoning": 6271,
+      "totalTokens": 90323,
+      "cost": 0
+    },
+    "toolCalls": 14,
+    "actualCliRuns": 1,
+    "cliRunsByPhase": {
+      "stage-1-implement": 0,
+      "stage-2-temporary": 0,
+      "stage-2-revoke": 0,
+      "stage-3-transfer": 1
+    },
+    "actionBindings": [
+      {
+        "phase": "stage-3-transfer",
+        "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+        "matched": true
+      }
+    ],
+    "scopeLeaks": [],
+    "unknownMemoryIds": [],
+    "parentChildCoinjections": [],
+    "blockedActions": [],
+    "recalls": [
+      {
+        "event": "recall",
+        "query": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+        "ids": [
+          "m_mvnweed283d48d1dbe1d530012c5"
+        ],
+        "retiredIds": [],
+        "tokens": 618,
+        "tokenUpperBound": 618,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 0,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n</memory_recall>"
+      }
+    ],
+    "beforeDreamMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "beforeMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "afterMemory": {
+      "bytes": 140608,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    }
+  },
+  {
+    "id": "ingestion-long-1",
+    "project": "ingestion",
+    "arm": "long",
+    "repeat": 1,
+    "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+    "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+    "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+    "model": "claude-bridge/claude-haiku-5-5",
+    "memoryEnv": {
+      "PI_MEMORY_DIGEST_SCOPE": "decisions",
+      "PI_MEMORY_DIGEST_BUDGET": "2400"
+    },
+    "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/ingestion-long-1/project",
+    "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+    "calls": [
+      {
+        "name": "stage-3-transfer",
+        "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 30610,
+        "modelRequests": 7,
+        "usage": {
+          "input": 14,
+          "output": 5765,
+          "cacheRead": 74286,
+          "cacheWrite": 13499,
+          "reasoning": 2055,
+          "totalTokens": 93564,
+          "cost": 0
+        },
+        "finalText": "The corrupt checkpoint now recovers. The CLI run and the tests both pass.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` printed `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`.\n\n**Result on disk:**\n- `work/repair-output.ndjson` has three lines: the original `transfer/seq 0` record is untouched, and `seq 1` and `seq 2` were appended. Nothing was truncated or rewritten.\n- `work/recovery/checkpoint.bad.json` holds the original corrupt content, `{\"nextLine\":`, as evidence.\n- `work/repair-checkpoint.json` was rewritten to `{\"nextLine\":3}`.\n\n**Code changes:**\n- `src/ingest.mjs`: a corrupt checkpoint (bad JSON or an invalid `nextLine`) is moved to `recovery/checkpoint.bad.json` beside the checkpoint and replay starts from line 0. Existing output identities are still built from `(tenant, seq)`, so already-written events are skipped rather than re-appended. If the evidence file name is already taken, it uses `checkpoint.bad.1.json`, `checkpoint.bad.2.json`, and so on, so earlier evidence is never overwritten. The default batch size of 4 was already in place.\n- `test/basic.test.mjs`: added a test covering a corrupt checkpoint, a duplicate identity, and a second tenant sharing `seq 1`. It checks the quarantined file, the rewritten checkpoint, and the output lines.\n\n**Test run:** `node --test` gave 2 passed, 0 failed.\n\n**Not done:**\n- The project memory says malformed input lines should be quarantined into `rejected.ndjson`. The current code counts rejected lines but does not write that file. This task didn't require it, so I left it alone. Say if you want it added.\n- I did not run `rex session rename`. The environment asks for it, but bash in this session only allows `node` commands."
+      }
+    ],
+    "scores": [
+      {
+        "project": "ingestion",
+        "stage": 3,
+        "checks": [
+          {
+            "name": "explicit batch limit and checkpoint",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "resume appends without repeating prior records",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "duplicates within tenant are suppressed",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "small batch does not materialize a 48 MiB input",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "current default batch is four",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "identity includes tenant",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "malformed line is quarantined and processing continues",
+            "category": "memory",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/ingestion-long-1/project/.acceptance-Fdqw1d/rejected.ndjson'"
+          },
+          {
+            "name": "temporary override was actually reported",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "expired override does not affect later action",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "new corrupt checkpoint preserves output and replays safely",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "recovery keeps corrupt checkpoint at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "actual repair run preserved all three events",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 0.8,
+          "action": 1,
+          "control": 1
+        },
+        "complete": false,
+        "passed": 12,
+        "total": 13
+      }
+    ],
+    "complete": false,
+    "budgetExhausted": false,
+    "timedOut": false,
+    "modelRequests": 7,
+    "wallMs": 30754,
+    "usage": {
+      "input": 14,
+      "output": 5765,
+      "cacheRead": 74286,
+      "cacheWrite": 13499,
+      "reasoning": 2055,
+      "totalTokens": 93564,
+      "cost": 0
+    },
+    "toolCalls": 16,
+    "actualCliRuns": 1,
+    "cliRunsByPhase": {
+      "stage-1-implement": 0,
+      "stage-2-temporary": 0,
+      "stage-2-revoke": 0,
+      "stage-3-transfer": 1
+    },
+    "actionBindings": [
+      {
+        "phase": "stage-3-transfer",
+        "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+        "matched": true
+      }
+    ],
+    "scopeLeaks": [],
+    "unknownMemoryIds": [],
+    "parentChildCoinjections": [],
+    "blockedActions": [],
+    "recalls": [
+      {
+        "event": "recall",
+        "query": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+        "ids": [
+          "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+        ],
+        "retiredIds": [],
+        "tokens": 706,
+        "tokenUpperBound": 706,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 0,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+      }
+    ],
+    "beforeDreamMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "beforeMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "afterMemory": {
+      "bytes": 140608,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    }
+  },
+  {
+    "id": "migration-long-1",
+    "project": "migration",
+    "arm": "long",
+    "repeat": 1,
+    "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+    "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+    "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+    "model": "claude-bridge/claude-haiku-5-5",
+    "memoryEnv": {
+      "PI_MEMORY_DIGEST_SCOPE": "decisions",
+      "PI_MEMORY_DIGEST_BUDGET": "2400"
+    },
+    "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-uNix6D/migration-long-1/project",
+    "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+    "calls": [
+      {
+        "name": "stage-3-transfer",
+        "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 61121,
+        "modelRequests": 9,
+        "usage": {
+          "input": 18,
+          "output": 12108,
+          "cacheRead": 132377,
+          "cacheWrite": 20012,
+          "reasoning": 7397,
+          "totalTokens": 164515,
+          "cost": 0
+        },
+        "finalText": "The repair migration is done. `work/repair-output.json` is written, the corrupt source is preserved, and the backup is unchanged. `node --test` passes 2 of 2.\n\n**Result**\n- `work/repair-output.json` has `version` 3, `timeoutMs` 3000, `features` `[\"ready\"]`, `region` `eu-north-7`, and `retry` `{backoffMs: 125, maxAttempts: 5}`. The source's unknown `extra` field is under `legacy`.\n- The truncated `{\"version\":` source is at `work/recovery/source.bad.json`. It was moved there, so `work/repair-source.json` no longer exists.\n- `work/backups/source.json` is byte-identical to its original contents.\n\n**Changes to `src/migrate.mjs`**\n- Defaults now follow the durable decisions: region `eu-north-7` and backoff 125. `maxAttempts` stays 5.\n- Unknown v1 fields go under `legacy` and are removed from the top level.\n- A truncated source is moved to `recovery/source.bad.json` beside the output, and the output is built from `backups/source.json`. The backup is validated before the source is moved, and an existing evidence file is never overwritten.\n- The pre-migration backup is now `backups/source.json` with exclusive creation, replacing the old `<output>.bak` copy.\n\n**Test change**\n- I added one test to `test/basic.test.mjs` covering the recovery path. It checks the evidence file, the unchanged backup, `legacy`, and the defaults.\n\n**Choices I made**\n- `legacy` applies to v1 inputs only. v3 inputs pass through unchanged.\n- I did not run the Rex session rename. The bash tool only allows `node` commands, so I couldn't call `rex`.\n- The expired `temporary.json` override was not used."
+      }
+    ],
+    "scores": [
+      {
+        "project": "migration",
+        "stage": 3,
+        "checks": [
+          {
+            "name": "version, units and sorted feature conversion",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "source remains byte-identical",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "already-v3 is semantically idempotent",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "region and corrected retry policy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "unknown customer fields retained under legacy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "exact backup at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "invocation override is honored",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "temporary region was actually reported",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "expired region override does not affect later action",
+            "category": "memory",
+            "passed": false,
+            "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'us-east-1'\n- 'eu-north-7'\n"
+          },
+          {
+            "name": "corrupt new source recovers from preserved backup",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "corrupt source preserved at agreed recovery location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "actual fresh-session repair produced converted output",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 0.8,
+          "action": 1,
+          "control": 1
+        },
+        "complete": false,
+        "passed": 12,
+        "total": 13
+      }
+    ],
+    "complete": false,
+    "budgetExhausted": false,
+    "timedOut": false,
+    "modelRequests": 9,
+    "wallMs": 61228,
+    "usage": {
+      "input": 18,
+      "output": 12108,
+      "cacheRead": 132377,
+      "cacheWrite": 20012,
+      "reasoning": 7397,
+      "totalTokens": 164515,
+      "cost": 0
+    },
+    "toolCalls": 20,
+    "actualCliRuns": 1,
+    "cliRunsByPhase": {
+      "stage-1-implement": 0,
+      "stage-2-temporary": 0,
+      "stage-2-revoke": 0,
+      "stage-3-transfer": 1
+    },
+    "actionBindings": [
+      {
+        "phase": "stage-3-transfer",
+        "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+        "matched": true
+      }
+    ],
+    "scopeLeaks": [],
+    "unknownMemoryIds": [],
+    "parentChildCoinjections": [],
+    "blockedActions": [
+      {
+        "at": "2026-10-25T19:43:21.678Z",
+        "phase": "stage-3-transfer",
+        "event": "blocked_command",
+        "command": "node -e process.stdout.write(process.cwd())"
+      }
+    ],
+    "recalls": [
+      {
+        "event": "recall",
+        "query": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+        "ids": [
+          "m_mvnweed283d48d1dbe1d530012c5"
+        ],
+        "retiredIds": [],
+        "tokens": 618,
+        "tokenUpperBound": 618,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 0,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n</memory_recall>"
+      }
+    ],
+    "beforeDreamMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "beforeMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "afterMemory": {
+      "bytes": 140608,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    }
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 26662,
+  "modelRequests": 7,
+  "usage": {
+    "input": 14,
+    "output": 2788,
+    "cacheRead": 68399,
+    "cacheWrite": 7925,
+    "reasoning": 964,
+    "totalTokens": 79126,
+    "cost": 0
+  },
+  "finalText": "The migration ran and wrote `work/repair-output.json`. The visible test suite passes (1/1).\n\n- **Recovery:** `work/repair-source.json` was truncated (`{\"version\":`). The existing backup at `work/backups/source.json` was valid, so the migration loaded from it. The corrupt file was moved to `work/recovery/source.bad.json` as evidence.\n- **Backup:** `work/backups/source.json` is unchanged and still contains the original `extra: \"preserve\"` field.\n- **Output:** `work/repair-output.json` is version 3 with `region: eu-north-7` (default), `retry.maxAttempts: 5`, `backoffMs: 125`, `features: [\"ready\"]`, `timeoutMs: 3000`, and the custom `extra` field under `legacy`.\n\nI used no test-local overrides (`INGEST_ORDER`, `MIGRATION_LOCK_MODE`). The repair code already implemented the approved recovery sequence, so I made no source edits. Because the input was moved, `work/repair-source.json` no longer exists; its contents are in `work/recovery/source.bad.json`.\n\nI could not rename the Rex session because the shell here only allows `node` commands."
+}

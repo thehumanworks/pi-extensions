@@ -6,8 +6,10 @@ export interface MemoryConfig {
   mode: "inject" | "agent" | "both";
   dir: string;
   capture: { enabled: boolean; model?: string; onCompact: boolean };
-  retrieval: { model?: string; maxItems: number; budgetTokens: number; timeoutMs: number; strategy: "baseline" | "improved" };
-  digest: { budgetTokens: number };
+  /** sessionBudgetTokens: cumulative ceiling on recall tokens injected into one session branch; 0 means no ceiling. */
+  retrieval: { model?: string; maxItems: number; budgetTokens: number; sessionBudgetTokens: number; timeoutMs: number; strategy: "baseline" | "improved" };
+  /** scope "rules": compiled standing feedback/preference rules only. "decisions": also user-stated durable project decisions, selected live when no compiled digest exists. */
+  digest: { budgetTokens: number; scope: "rules" | "decisions" };
   scope: { projectLocation: "home" | "repo" };
   consolidation: { everyCaptures: number };
   dream: { enabled: boolean; model?: string; maxSourceItems: number; softActiveBytes: number; timeoutMs: number; idleDelayMs: number; backoffMs: number };
@@ -47,6 +49,9 @@ export function readConfig(settings: unknown, agentDir: string, flags: Record<st
   if (location !== "home" && location !== "repo") throw new Error("memory.scope.projectLocation must be home or repo");
   const strategy = env.PI_MEMORY_STRATEGY ?? "improved";
   if (!["baseline", "improved", "ranked"].includes(strategy)) throw new Error("Unknown PI_MEMORY_STRATEGY");
+  // "decisions" is the measured default: see docs/HILLCLIMB-CODING.md for the fresh-session repair results behind it.
+  const digestScope = env.PI_MEMORY_DIGEST_SCOPE ?? digest.scope ?? "decisions";
+  if (digestScope !== "rules" && digestScope !== "decisions") throw new Error("memory.digest.scope must be rules or decisions");
   // Capture and dreaming make separate model calls. Neither runs unless its model is explicitly configured;
   // the session model is never used implicitly, so an expensive foreground model cannot leak into background work.
   const captureModel = model(flags["memory-model"] ?? env.PI_MEMORY_MODEL ?? capture.model);
@@ -55,8 +60,8 @@ export function readConfig(settings: unknown, agentDir: string, flags: Record<st
     enabled: flags["no-memory"] !== true && !/^(1|true|yes)$/i.test(env.PI_MEMORY_DISABLED ?? "") && bool(m.enabled, true),
     mode, dir: resolve(dir.replace(/^~(?=\/|$)/, homedir())),
     capture: { enabled: env.PI_MEMORY_CAPTURE !== "0" && captureModel !== undefined && bool(capture.enabled, true), model: captureModel, onCompact: bool(capture.onCompact, true) },
-    retrieval: { model: model(env.PI_MEMORY_RETRIEVAL_MODEL ?? retrieval.model), maxItems: number(retrieval.maxItems, 8, 1, 32), budgetTokens: number(env.PI_MEMORY_TOKEN_BUDGET === undefined ? retrieval.budgetTokens : Number(env.PI_MEMORY_TOKEN_BUDGET), 1200, 128, 8000), timeoutMs: number(retrieval.timeoutMs, 2500, 100, 30000), strategy: strategy === "baseline" ? "baseline" : "improved" },
-    digest: { budgetTokens: number(env.PI_MEMORY_DIGEST_BUDGET === undefined ? digest.budgetTokens : Number(env.PI_MEMORY_DIGEST_BUDGET), 1200, 0, 8000) },
+    retrieval: { model: model(env.PI_MEMORY_RETRIEVAL_MODEL ?? retrieval.model), maxItems: number(retrieval.maxItems, 8, 1, 32), budgetTokens: number(env.PI_MEMORY_TOKEN_BUDGET === undefined ? retrieval.budgetTokens : Number(env.PI_MEMORY_TOKEN_BUDGET), 1200, 128, 8000), sessionBudgetTokens: number(env.PI_MEMORY_SESSION_BUDGET === undefined ? retrieval.sessionBudgetTokens : Number(env.PI_MEMORY_SESSION_BUDGET), 0, 0, 200000), timeoutMs: number(retrieval.timeoutMs, 2500, 100, 30000), strategy: strategy === "baseline" ? "baseline" : "improved" },
+    digest: { budgetTokens: number(env.PI_MEMORY_DIGEST_BUDGET === undefined ? digest.budgetTokens : Number(env.PI_MEMORY_DIGEST_BUDGET), 1200, 0, 8000), scope: digestScope },
     scope: { projectLocation: location },
     consolidation: { everyCaptures: number(consolidation.everyCaptures, 20, 1, 10000) },
     dream: { enabled: env.PI_MEMORY_DREAM !== "0" && dreamModel !== undefined && bool(dream.enabled, true), model: dreamModel, maxSourceItems: number(dream.maxSourceItems, 12, 2, 24), softActiveBytes: number(dream.softActiveBytes, 1000000, 10000, 100000000), timeoutMs: number(dream.timeoutMs, 60000, 1000, 120000), idleDelayMs: number(dream.idleDelayMs, 30000, 1000, 3600000), backoffMs: number(dream.backoffMs, 300000, 1000, 86400000) },

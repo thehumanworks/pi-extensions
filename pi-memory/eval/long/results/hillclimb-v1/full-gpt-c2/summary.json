@@ -1,0 +1,95 @@
+{
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHashes": [
+    "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7"
+  ],
+  "sourceHashes": [
+    "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc"
+  ],
+  "directories": [
+    "/Users/tomas/pi-extensions/pi-memory/eval/long/results/hillclimb-v1/full-gpt-c2"
+  ],
+  "model": [
+    "openai/gpt-6.1-sol"
+  ],
+  "completedJobs": 4,
+  "repairOnly": false,
+  "arms": {
+    "long": {
+      "jobs": 4,
+      "completionRate": 1,
+      "meanModelRequests": 26.5,
+      "minModelRequests": 25,
+      "maxModelRequests": 28,
+      "meanToolCalls": 32.75,
+      "meanInputTokens": 119789.5,
+      "meanUncachedInputTokens": 13677.5,
+      "meanCachedInputTokens": 106112,
+      "meanOutputTokens": 4007.75,
+      "meanProviderCost": 0.0780437,
+      "meanWallMs": 158176,
+      "p95WallMs": 172374,
+      "failedCalls": 0,
+      "budgetExhaustedJobs": 0,
+      "timedOutJobs": 0,
+      "actionBindingFailures": 0,
+      "scopeLeaks": 0,
+      "unknownMemoryIds": 0,
+      "meanStoreBytes": 140750,
+      "meanActiveCanonicalBytes": 10822,
+      "meanActiveRecords": 6,
+      "parentChildCoinjections": 0,
+      "maxInjectedTokens": 706,
+      "stages": {
+        "1": {
+          "scoredJobs": 4,
+          "intrinsic": 1,
+          "memory": 1,
+          "action": null,
+          "control": 1,
+          "complete": 1,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 38,
+          "inputTokens": 149708,
+          "uncachedInputTokens": 20300,
+          "cachedInputTokens": 129408,
+          "outputTokens": 8050
+        },
+        "2": {
+          "scoredJobs": 4,
+          "intrinsic": 1,
+          "memory": 1,
+          "action": 1,
+          "control": 1,
+          "complete": 1,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 28,
+          "inputTokens": 154032,
+          "uncachedInputTokens": 5680,
+          "cachedInputTokens": 148352,
+          "outputTokens": 1696
+        },
+        "3": {
+          "scoredJobs": 4,
+          "intrinsic": 1,
+          "memory": 1,
+          "action": 1,
+          "control": 1,
+          "complete": 1,
+          "failedCalls": 0,
+          "budgetExhaustedCalls": 0,
+          "timedOutCalls": 0,
+          "modelRequests": 40,
+          "inputTokens": 175418,
+          "uncachedInputTokens": 28730,
+          "cachedInputTokens": 146688,
+          "outputTokens": 6285
+        }
+      }
+    }
+  }
+}

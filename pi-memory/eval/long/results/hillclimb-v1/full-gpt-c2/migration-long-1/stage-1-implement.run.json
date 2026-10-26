@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 52359,
+  "modelRequests": 8,
+  "usage": {
+    "input": 4114,
+    "output": 1571,
+    "cacheRead": 23680,
+    "cacheWrite": 0,
+    "reasoning": 88,
+    "totalTokens": 29365,
+    "cost": 0.026306
+  },
+  "finalText": "Implemented both modules:\n\n- `src/migrate.mjs`: v1-to-v3 migration, sorted enabled features, agreed region/retry defaults, unknown fields preserved under `legacy`, exact source backup without overwriting existing backups, atomic output writes, and truncated-JSON recovery. V3 input remains semantically unchanged except for an explicit region override.\n- `bin/migrate.mjs`: documented positional arguments, JSON output, and error handling.\n\nValidation:\n- `node --test` — passed (1 test).\n- `node bin/migrate.mjs fixtures/config.json work/config.v3.json` — succeeded using region `eu-north-7`, retry attempts `5`, and backoff `125`.\n\nOutput: `work/config.v3.json`  \nBackup: `work/backups/source.json`"
+}

@@ -1,0 +1,4 @@
+not json
+{"seq":2,"value":"no tenant"}
+[1,2]
+{"tenant":"a","seq":"3"}

@@ -41,8 +41,19 @@ for (const dir of manifest.workspaces) {
       assert.ok([...files].some(f => f.startsWith('docs/catalog/jira/operations/')));
       assert.ok([...files].some(f => f.startsWith('docs/catalog/confluence/operations/')));
     }
+    if (dir === 'pi-bot') {
+      for (const file of ['bin/pi-bot.mjs', 'src/bots.ts', 'src/prompt.ts', 'src/run.ts', 'src/sessions.ts', 'src/models.ts']) assert.ok(files.has(file), `missing ${file}`);
+      assert.ok(![...files].some(f => f.includes('fixtures')));
+    }
     if (dir === 'pi-loop') assert.ok(files.has('dist/worker.js'));
     if (dir === 'pi-xai') assert.ok(files.has('dist/src/index.js'));
+    if (dir === 'pi-remote') {
+      for (const file of ['hosts.ts', 'operations.ts', 'session.ts', 'README.md']) assert.ok(files.has(file), `missing ${file}`);
+    }
+    if (dir === 'pi-background-compaction') {
+      for (const file of ['src/config.ts', 'src/controller.ts', 'src/plan.ts', 'src/prompts.ts', 'src/summarize.ts']) assert.ok(files.has(file), `missing ${file}`);
+      assert.ok(![...files].some(f => f.startsWith('eval/')));
+    }
     if (dir === 'pi-memory') {
       assert.ok(files.has('prompts/memory-agent.preset.md'));
       assert.ok(files.has('src/capture.ts'));

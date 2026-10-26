@@ -1,0 +1,310 @@
+{
+  "allIntegrityChecksPassed": false,
+  "repairOnly": false,
+  "expectedJobs": 18,
+  "recordedJobs": 4,
+  "errors": [
+    "Missing job ingestion-off-0",
+    "Missing job ingestion-short-0",
+    "Missing job ingestion-empty-0",
+    "Missing job ingestion-dream-0",
+    "Missing job ingestion-off-1",
+    "Missing job ingestion-short-1",
+    "Missing job ingestion-dream-1",
+    "Missing job migration-off-0",
+    "Missing job migration-short-0",
+    "Missing job migration-empty-0",
+    "Missing job migration-dream-0",
+    "Missing job migration-off-1",
+    "Missing job migration-short-1",
+    "Missing job migration-dream-1"
+  ],
+  "provenance": [
+    {
+      "id": "ingestion-long-0",
+      "expectedScope": "project:3a558a15acd081cbba9db439",
+      "selectedIds": [
+        "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+      ],
+      "derivedSourceIds": [],
+      "dreamSourceIds": [],
+      "unresolvedOrWrongScope": []
+    },
+    {
+      "id": "ingestion-long-1",
+      "expectedScope": "project:3a558a15acd081cbba9db439",
+      "selectedIds": [
+        "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+      ],
+      "derivedSourceIds": [],
+      "dreamSourceIds": [],
+      "unresolvedOrWrongScope": []
+    },
+    {
+      "id": "migration-long-0",
+      "expectedScope": "project:a0464b452f01701e68e8d82f",
+      "selectedIds": [
+        "m_mvnweed283d48d1dbe1d530012c5"
+      ],
+      "derivedSourceIds": [],
+      "dreamSourceIds": [],
+      "unresolvedOrWrongScope": []
+    },
+    {
+      "id": "migration-long-1",
+      "expectedScope": "project:a0464b452f01701e68e8d82f",
+      "selectedIds": [
+        "m_mvnweed283d48d1dbe1d530012c5"
+      ],
+      "derivedSourceIds": [],
+      "dreamSourceIds": [],
+      "unresolvedOrWrongScope": []
+    }
+  ],
+  "pairs": [
+    {
+      "project": "ingestion",
+      "repeat": 0,
+      "arms": {
+        "long": {
+          "complete": true,
+          "finalScores": {
+            "intrinsic": 1,
+            "memory": 1,
+            "action": 1,
+            "control": 1
+          },
+          "correctedPolicy": [
+            {
+              "name": "current default batch is four",
+              "passed": true
+            },
+            {
+              "name": "expired override does not affect later action",
+              "passed": true
+            }
+          ],
+          "stageExits": [
+            {
+              "name": "stage-1-implement",
+              "exitCode": 0,
+              "modelRequests": 12,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-2-temporary",
+              "exitCode": 0,
+              "modelRequests": 3,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-2-revoke",
+              "exitCode": 0,
+              "modelRequests": 3,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-3-transfer",
+              "exitCode": 0,
+              "modelRequests": 9,
+              "budgetExhausted": false,
+              "timedOut": false
+            }
+          ],
+          "modelRequests": 27,
+          "totalInputTokens": 134922,
+          "uncachedInputTokens": 17930,
+          "cachedInputTokens": 116992,
+          "wallMs": 172374,
+          "actionBindingFailures": 0
+        }
+      }
+    },
+    {
+      "project": "ingestion",
+      "repeat": 1,
+      "arms": {
+        "long": {
+          "complete": true,
+          "finalScores": {
+            "intrinsic": 1,
+            "memory": 1,
+            "action": 1,
+            "control": 1
+          },
+          "correctedPolicy": [
+            {
+              "name": "current default batch is four",
+              "passed": true
+            },
+            {
+              "name": "expired override does not affect later action",
+              "passed": true
+            }
+          ],
+          "stageExits": [
+            {
+              "name": "stage-1-implement",
+              "exitCode": 0,
+              "modelRequests": 10,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-2-temporary",
+              "exitCode": 0,
+              "modelRequests": 3,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-2-revoke",
+              "exitCode": 0,
+              "modelRequests": 3,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-3-transfer",
+              "exitCode": 0,
+              "modelRequests": 12,
+              "budgetExhausted": false,
+              "timedOut": false
+            }
+          ],
+          "modelRequests": 28,
+          "totalInputTokens": 126208,
+          "uncachedInputTokens": 11648,
+          "cachedInputTokens": 114560,
+          "wallMs": 151372,
+          "actionBindingFailures": 0
+        }
+      }
+    },
+    {
+      "project": "migration",
+      "repeat": 0,
+      "arms": {
+        "long": {
+          "complete": true,
+          "finalScores": {
+            "intrinsic": 1,
+            "memory": 1,
+            "action": 1,
+            "control": 1
+          },
+          "correctedPolicy": [
+            {
+              "name": "region and corrected retry policy",
+              "passed": true
+            },
+            {
+              "name": "expired region override does not affect later action",
+              "passed": true
+            }
+          ],
+          "stageExits": [
+            {
+              "name": "stage-1-implement",
+              "exitCode": 0,
+              "modelRequests": 8,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-2-temporary",
+              "exitCode": 0,
+              "modelRequests": 4,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-2-revoke",
+              "exitCode": 0,
+              "modelRequests": 4,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-3-transfer",
+              "exitCode": 0,
+              "modelRequests": 10,
+              "budgetExhausted": false,
+              "timedOut": false
+            }
+          ],
+          "modelRequests": 26,
+          "totalInputTokens": 110362,
+          "uncachedInputTokens": 11546,
+          "cachedInputTokens": 98816,
+          "wallMs": 154540,
+          "actionBindingFailures": 0
+        }
+      }
+    },
+    {
+      "project": "migration",
+      "repeat": 1,
+      "arms": {
+        "long": {
+          "complete": true,
+          "finalScores": {
+            "intrinsic": 1,
+            "memory": 1,
+            "action": 1,
+            "control": 1
+          },
+          "correctedPolicy": [
+            {
+              "name": "region and corrected retry policy",
+              "passed": true
+            },
+            {
+              "name": "expired region override does not affect later action",
+              "passed": true
+            }
+          ],
+          "stageExits": [
+            {
+              "name": "stage-1-implement",
+              "exitCode": 0,
+              "modelRequests": 8,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-2-temporary",
+              "exitCode": 0,
+              "modelRequests": 4,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-2-revoke",
+              "exitCode": 0,
+              "modelRequests": 4,
+              "budgetExhausted": false,
+              "timedOut": false
+            },
+            {
+              "name": "stage-3-transfer",
+              "exitCode": 0,
+              "modelRequests": 9,
+              "budgetExhausted": false,
+              "timedOut": false
+            }
+          ],
+          "modelRequests": 25,
+          "totalInputTokens": 107666,
+          "uncachedInputTokens": 13586,
+          "cachedInputTokens": 94080,
+          "wallMs": 154418,
+          "actionBindingFailures": 0
+        }
+      }
+    }
+  ]
+}

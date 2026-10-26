@@ -5,18 +5,24 @@ import { tmpdir } from 'node:os';
 import { dirname,join,resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {isDeepStrictEqual} from 'node:util';
-import { fixtures,common,model } from './fixtures.mjs';
+import { fixtures,common,model as fixtureModel } from './fixtures.mjs';
 
 const here=dirname(fileURLToPath(import.meta.url)),extension=resolve(here,'../../index.ts');
 const option=(name,fallback)=>process.argv.find(arg=>arg.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
-if(process.argv.includes('--help')){console.log('Usage: node --import tsx eval/long/run.mjs --mode=init|history|run --state=DIR [--out=DIR] [--arms=off,short,empty,long,dream] [--repeats=2] [--project=ingestion|migration] [--wall-seconds=600] [--requests=16] [--concurrency=2]. Requests are capped per stage; stage2 shares a cap across temporary and revoke turns.');process.exit(0);}
-const allowedOptions=new Set(['mode','state','out','arms','repeats','project','wall-seconds','requests','concurrency','exclude-ids','empty-repeats','repair-only-from']);const seenOptions=new Set();
+if(process.argv.includes('--help')){console.log('Usage: node --import tsx eval/long/run.mjs --mode=init|history|run --state=DIR [--out=DIR] [--arms=off,short,empty,long,dream] [--repeats=2] [--project=ingestion|migration] [--wall-seconds=600] [--requests=16] [--concurrency=2] [--model=provider/id] [--memory-env=KEY=VALUE;KEY2=VALUE2]. Requests are capped per stage; stage2 shares a cap across temporary and revoke turns. --model applies to action sessions only; captured history keeps its own model. --memory-env passes PI_MEMORY_* overrides to memory arms so candidates can be compared under one source snapshot.');process.exit(0);}
+const allowedOptions=new Set(['mode','state','out','arms','repeats','project','wall-seconds','requests','concurrency','exclude-ids','empty-repeats','repair-only-from','model','memory-env']);const seenOptions=new Set();
 for(const arg of process.argv.slice(2)){const match=/^--([^=]+)=(.+)$/.exec(arg);if(!match||!allowedOptions.has(match[1])||seenOptions.has(match[1]))throw new Error(`Unknown, empty or duplicate option: ${arg}`);seenOptions.add(match[1]);}
 const mode=option('mode','run'),state=resolve(option('state',join(here,'state'))),out=resolve(option('out',join(here,'results',new Date().toISOString().replace(/[:.]/g,'-'))));
 const arms=option('arms','off,short,empty,long,dream').split(','),repeats=Number(option('repeats','2')),wallSeconds=Number(option('wall-seconds','600')),requestLimit=Number(option('requests','16')),concurrency=Number(option('concurrency','2'));
 const selected=fixtures.filter(f=>!option('project','')||f.id===option('project',''));
 if(!['init','history','run'].includes(mode)||!selected.length||arms.some(arm=>!['off','short','empty','long','dream','polluted'].includes(arm))||!Number.isInteger(repeats)||repeats<1||repeats>3||!Number.isFinite(wallSeconds)||wallSeconds<30||wallSeconds>600||!Number.isInteger(requestLimit)||requestLimit<4||requestLimit>48||![1,2].includes(concurrency))throw new Error('Invalid run options');
 const repairOnlyFrom=option('repair-only-from','');
+const model=option('model',fixtureModel);
+if(!/^[^/\s]+\/[^\s]+$/.test(model))throw new Error('Model must be provider/id');
+const memoryEnv=Object.fromEntries(option('memory-env','').split(';').filter(Boolean).map(pair=>{const match=/^(PI_MEMORY_[A-Z_]+)=(.*)$/.exec(pair);if(!match)throw new Error(`memory-env entries must be PI_MEMORY_*=value: ${pair}`);return[match[1],match[2]];}));
+// Provider extensions are disabled by --no-extensions; load the Claude bridge explicitly when its provider is selected.
+const providerExtensions=[];
+if(model.startsWith('claude-bridge/')){const bridge=resolve(process.env.HOME??'','.pi/agent/npm/node_modules/pi-claude-bridge');await stat(bridge);providerExtensions.push('-e',bridge);}
 if(arms.includes('polluted')&&!repairOnlyFrom)throw new Error('Polluted arm requires a fixed --repair-only-from stage2 snapshot root');
 const fixtureHash=createHash('sha256').update(await readFile(join(here,'fixtures.mjs'))).update(await readFile(join(here,'check.mjs'))).digest('hex');
 const protocolHash=createHash('sha256').update(await readFile(join(here,'run.mjs'))).update(await readFile(join(here,'guard.ts'))).digest('hex');
@@ -45,13 +51,13 @@ const textContent=message=>(message?.content??[]).filter(part=>part.type==='text
 async function piCall({name,cwd,memoryDir,sessionId,sessions,prompt,recentContext='',memory,capture=false,tools=true,budget,actionTrace,artifactDir,timeoutMs=180000}){
   await mkdir(artifactDir,{recursive:true});await mkdir(sessions,{recursive:true});
   const trace=join(artifactDir,`${name}.memory.jsonl`);
-  const args=['--no-extensions','-e',join(here,'guard.ts'),'--no-skills','--no-prompt-templates','--no-context-files','--no-mcp','--model',model,'--thinking','low','--mode','json','--session-dir',sessions,'--session-id',sessionId];
+  const args=['--no-extensions',...providerExtensions,'-e',join(here,'guard.ts'),'--no-skills','--no-prompt-templates','--no-context-files','--no-mcp','--model',model,'--thinking','low','--mode','json','--session-dir',sessions,'--session-id',sessionId];
   if(tools)args.push('--append-system-prompt',common);
   if(recentContext)args.push('--append-system-prompt',recentContext);
   if(tools)args.push('--tools','read,write,edit,bash,find,grep,ls');else args.push('--no-tools');
   if(memory)args.push('-e',extension,'--memory-dir',memoryDir,'--memory-mode','inject');
   args.push('-p',prompt);
-  const execution=await invoke(args,{cwd,timeoutMs,env:{...process.env,PI_MEMORY_DISABLED:memory?'0':'1',PI_MEMORY_DIR:memoryDir,PI_MEMORY_CAPTURE:capture?'1':'0',PI_MEMORY_MODEL:model,PI_MEMORY_RETRIEVAL_MODEL:'off',PI_MEMORY_STRATEGY:'improved',PI_MEMORY_TOKEN_BUDGET:'1200',PI_MEMORY_DIGEST_BUDGET:'0',PI_MEMORY_DREAM:'0',PI_MEMORY_TRACE:trace,PI_LONG_NODE:process.execPath,PI_LONG_CALL_NAME:name,PI_LONG_BUDGET:budget,PI_LONG_MAX_REQUESTS:String(requestLimit),PI_LONG_ACTION_TRACE:actionTrace}});
+  const execution=await invoke(args,{cwd,timeoutMs,env:{...process.env,PI_MEMORY_DISABLED:memory?'0':'1',PI_MEMORY_DIR:memoryDir,PI_MEMORY_CAPTURE:capture?'1':'0',PI_MEMORY_MODEL:model,PI_MEMORY_RETRIEVAL_MODEL:'off',PI_MEMORY_STRATEGY:'improved',PI_MEMORY_TOKEN_BUDGET:'1200',PI_MEMORY_DIGEST_BUDGET:'0',PI_MEMORY_DREAM:'0',...(capture?{}:memoryEnv),PI_MEMORY_TRACE:trace,PI_LONG_NODE:process.execPath,PI_LONG_CALL_NAME:name,PI_LONG_BUDGET:budget,PI_LONG_MAX_REQUESTS:String(requestLimit),PI_LONG_ACTION_TRACE:actionTrace}});
   await writeFile(join(artifactDir,`${name}.events.jsonl`),execution.stdout);await writeFile(join(artifactDir,`${name}.stderr.txt`),execution.stderr);
   const events=parseEvents(execution.stdout),messages=events.filter(event=>event.type==='message_end'&&event.message?.role==='assistant').map(event=>event.message);
   const usage=messages.reduce((sum,message)=>{for(const key of['input','output','cacheRead','cacheWrite','reasoning','totalTokens'])sum[key]=(sum[key]??0)+(message.usage?.[key]??0);sum.cost=(sum.cost??0)+(message.usage?.cost?.total??0);return sum;},{});
@@ -82,7 +88,7 @@ async function memorySize(root){const metadata=await memoryMetadata(root);return
 
 if(mode==='init'){
   await mkdir(state,{recursive:true});
-  await writeFile(join(state,'manifest.json'),JSON.stringify({fixtureHash,model,wallSeconds,requestLimit,created:new Date().toISOString(),fixtures:fixtures.map(({id,history,correction,repairHistory,implement,temporary,revoke,transfer})=>({id,history,correction,repairHistory,implement,temporary,revoke,transfer}))},null,2)+'\n');
+  await writeFile(join(state,'manifest.json'),JSON.stringify({fixtureHash,model:fixtureModel,wallSeconds,requestLimit,created:new Date().toISOString(),fixtures:fixtures.map(({id,history,correction,repairHistory,implement,temporary,revoke,transfer})=>({id,history,correction,repairHistory,implement,temporary,revoke,transfer}))},null,2)+'\n');
   console.log(`Frozen ${fixtureHash} at ${state}`);process.exit(0);
 }
 const frozen=JSON.parse(await readFile(join(state,'manifest.json'),'utf8'));
@@ -115,12 +121,13 @@ if(arms.some(arm=>arm!=='off'))for(const fixture of fixtures){const history=JSON
 await mkdir(out,{recursive:true});
 const sourceHashes={};for(const file of ['index.ts',...(await readdir(resolve(here,'../../src'))).filter(name=>name.endsWith('.ts')).sort().map(name=>`src/${name}`)]){const content=await readFile(resolve(here,'../..',file));sourceHashes[file]=createHash('sha256').update(content).digest('hex');if(arms.some(arm=>['empty','long','dream','polluted'].includes(arm))){const target=join(out,'source-snapshot',file);await mkdir(dirname(target),{recursive:true});await writeFile(target,content);}}
 const sourceHash=createHash('sha256').update(JSON.stringify(sourceHashes)).digest('hex');
-await writeFile(join(out,'manifest.json'),JSON.stringify({fixtureHash,protocolHash,sourceHash,sourceHashes,model,arms,repeats,wallSeconds,stageTimeoutSeconds:{1:240,2:120,3:240},requestLimitPerStage:requestLimit,maxRequestsPerJob:requestLimit*3,concurrency,state,started:new Date().toISOString(),recentBudgetBytes:600,recallBudgetUpperBound:1200,digestBudget:0},null,2)+'\n');
+await writeFile(join(out,'manifest.json'),JSON.stringify({fixtureHash,protocolHash,sourceHash,sourceHashes,model,historyModel:frozen.model,memoryEnv,arms,repeats,wallSeconds,stageTimeoutSeconds:{1:240,2:120,3:240},requestLimitPerStage:requestLimit,maxRequestsPerJob:requestLimit*3,concurrency,state,started:new Date().toISOString(),recentBudgetBytes:600,recallBudgetUpperBound:1200,digestBudget:0},null,2)+'\n');
 const workspace=await realpath(await mkdtemp(join(tmpdir(),'pi-memory-long-')));
 async function job(fixture,arm,repeat){
   const id=`${fixture.id}-${arm}-${repeat}`,root=join(workspace,id),cwd=join(root,'project'),memoryDir=join(root,'memory'),artifactDir=join(out,id),sessions=join(root,'sessions'),actionTrace=join(artifactDir,'actions.jsonl');
   await materialize(fixture,cwd);await mkdir(artifactDir,{recursive:true});
-  if(repairOnlyFrom)await cp(join(resolve(repairOnlyFrom),`${fixture.id}-long-${repeat}`,'stage-2-files'),cwd,{recursive:true});
+  // Repeats beyond the available templates reuse template 0 so repeated sampling starts from one identical snapshot.
+  if(repairOnlyFrom){const templates=resolve(repairOnlyFrom);let template=join(templates,`${fixture.id}-long-${repeat}`,'stage-2-files');try{await stat(template);}catch(error){if(error.code!=='ENOENT')throw error;template=join(templates,`${fixture.id}-long-0`,'stage-2-files');}await cp(template,cwd,{recursive:true});}
   const memory=['empty','long','dream','polluted'].includes(arm);
   if(['long','dream','polluted'].includes(arm))await cp(base,memoryDir,{recursive:true});else if(memory)await mkdir(memoryDir,{recursive:true});
   let pollution;
@@ -176,7 +183,7 @@ async function job(fixture,arm,repeat){
   const unknownMemoryIds=[...new Set(recallEvents.flatMap(event=>event.ids??[]).filter(id=>!byId.has(id)))];
   const parentChildCoinjections=recallEvents.flatMap(event=>(event.ids??[]).flatMap(id=>(byId.get(id)?.derivedFrom??[]).map(source=>typeof source==='string'?source:source.id).filter(sourceId=>event.ids.includes(sourceId)).map(sourceId=>({parent:id,source:sourceId}))));
   const actualRequiredCli=actionBindings.every(binding=>binding.matched);
-  const result={id,project:fixture.id,arm,repeat,fixtureHash,protocolHash,sourceHash,model,cwd,repairOnlyFrom,pollution,calls,scores,dream,complete:scores.every(score=>score.complete)&&calls.every(call=>call.exitCode===0)&&actualRequiredCli,budgetExhausted:calls.some(call=>call.budgetExhausted),timedOut:calls.some(call=>call.timedOut||call.skipped),modelRequests:calls.reduce((sum,call)=>sum+call.modelRequests,0),wallMs:Date.now()-started,usage:calls.reduce((sum,call)=>{for(const key of['input','output','cacheRead','cacheWrite','reasoning','totalTokens','cost'])sum[key]=(sum[key]??0)+(call.usage?.[key]??0);return sum;},{}),toolCalls:toolCalls.length,actualCliRuns,cliRunsByPhase,actionBindings,scopeLeaks,unknownMemoryIds,parentChildCoinjections,blockedActions:actionEvents.filter(event=>event.event==='blocked_path'||event.event==='blocked_command'),recalls:recallEvents,beforeDreamMemory,beforeMemory,afterMemory:await memorySize(memoryDir)};
+  const result={id,project:fixture.id,arm,repeat,fixtureHash,protocolHash,sourceHash,model,memoryEnv,cwd,repairOnlyFrom,pollution,calls,scores,dream,complete:scores.every(score=>score.complete)&&calls.every(call=>call.exitCode===0)&&actualRequiredCli,budgetExhausted:calls.some(call=>call.budgetExhausted),timedOut:calls.some(call=>call.timedOut||call.skipped),modelRequests:calls.reduce((sum,call)=>sum+call.modelRequests,0),wallMs:Date.now()-started,usage:calls.reduce((sum,call)=>{for(const key of['input','output','cacheRead','cacheWrite','reasoning','totalTokens','cost'])sum[key]=(sum[key]??0)+(call.usage?.[key]??0);return sum;},{}),toolCalls:toolCalls.length,actualCliRuns,cliRunsByPhase,actionBindings,scopeLeaks,unknownMemoryIds,parentChildCoinjections,blockedActions:actionEvents.filter(event=>event.event==='blocked_path'||event.event==='blocked_command'),recalls:recallEvents,beforeDreamMemory,beforeMemory,afterMemory:await memorySize(memoryDir)};
   await writeFile(join(artifactDir,'result.json'),JSON.stringify(result,null,2)+'\n');
   console.log(`${id}: requests=${result.modelRequests}, complete=${result.complete}, final=${JSON.stringify(scores.at(-1).categoryScores)}, wall=${result.wallMs}ms`);
   return result;

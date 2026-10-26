@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 37467,
+  "modelRequests": 7,
+  "usage": {
+    "input": 14,
+    "output": 6053,
+    "cacheRead": 64074,
+    "cacheWrite": 12328,
+    "reasoning": 2497,
+    "totalTokens": 82469,
+    "cost": 0
+  },
+  "finalText": "I implemented `src/migrate.mjs` and `bin/migrate.mjs`. The visible test passes, and the CLI runs on `fixtures/config.json` with output in `work/`.\n\n**What `migrateFile` does**\n- **Backup:** copies the exact source bytes to `backups/source.json` beside the output before migrating. An existing backup is never overwritten.\n- **Corrupt input:** if the source is invalid JSON and a valid backup exists, it moves the corrupt file to `recovery/source.bad.json` and migrates from the backup. If no valid backup exists, it throws. This is the recovery procedure you approved.\n- **v1 → v3:**\n  - `timeoutSeconds` becomes `timeoutMs` (×1000).\n  - `flags` becomes `features`, containing only the `true` flags, sorted.\n  - `name` is preserved.\n  - Unknown fields move under `legacy`.\n  - `region` is `eu-north-7` and `retry` is `{maxAttempts: 5, backoffMs: 125}`.\n- **v3 input:** returned unchanged, except that `options.region` replaces `region` when given.\n- **Other versions:** throw an error.\n- **Output:** written atomically through a temp file and rename, and the resulting config is returned.\n\n**Choices I made that you may want to change**\n- If the source is valid JSON, the backup is created on the first run only. Later runs leave it alone even if the source has changed.\n- If the recovery file already exists, the rename replaces it.\n- A v3 input with missing `retry` or `region` fields is not filled in, to keep it semantically unchanged.\n\n**Verification**\n- `node --test`: 1 test, 1 passing.\n- `node bin/migrate.mjs fixtures/config.json work/out.json` printed the v3 config with `region: eu-north-7`, `retry: {maxAttempts: 5, backoffMs: 125}`, `features: [\"a\",\"z\"]`, `timeoutMs: 2000`, and `legacy.customField` preserved.\n- `node bin/migrate.mjs fixtures/config.json work/out-region.json us-test-1` produced the same output with `region: us-test-1`.\n- `work/backups/source.json` matches the fixture's contents.\n\nI did not run the corrupt-input recovery path through the CLI, so it is unverified. I also could not run `rex session rename` because the shell is restricted to `node` commands."
+}

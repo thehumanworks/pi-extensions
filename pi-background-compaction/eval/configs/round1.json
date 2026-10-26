@@ -1,0 +1,12 @@
+{
+  "full": {},
+  "drop": {},
+  "pi": {},
+  "c0-coding": { "prompt": "coding" },
+  "p-pi-prompt": { "prompt": "pi" },
+  "m-luna": { "prompt": "coding", "model": "openai/gpt-6-luna" },
+  "m-haiku": { "prompt": "coding", "model": "claude-bridge/claude-haiku-5-5" },
+  "t-off": { "prompt": "coding", "thinking": "off" },
+  "tr-6000": { "prompt": "coding", "toolResultChars": 6000 },
+  "req-transcript": { "prompt": "coding", "request": "transcript" }
+}

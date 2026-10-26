@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 29384,
+  "modelRequests": 8,
+  "usage": {
+    "input": 16,
+    "output": 3969,
+    "cacheRead": 84455,
+    "cacheWrite": 9246,
+    "reasoning": 1283,
+    "totalTokens": 97686,
+    "cost": 0
+  },
+  "finalText": "The recovery migration is done: `work/repair-output.json` is written, the tests pass, and the backup and corrupt-source evidence are both preserved.\n\n**What happened**\n- `work/repair-source.json` is truncated (`{\"version\":`). The migration recovered from the existing backup `work/backups/source.json` and wrote `work/repair-output.json` with `version` 3, region `eu-north-7`, `retry.maxAttempts` 5, `retry.backoffMs` 125, sorted features `[\"ready\"]`, `timeoutMs` 3000, and the unknown `extra` field kept under `legacy`.\n- The backup is unchanged.\n- The corrupt source moved to `work/recovery/source.bad.1.json`.\n\n**Code change**\n- `src/migrate.mjs`: the recovery step refused to run when `work/recovery/source.bad.json` already existed. That file holds an earlier corrupt-source copy, so I kept it and changed the recovery step to use the first free name (`source.bad.json`, then `source.bad.1.json`, and so on). Nothing is overwritten.\n\n**Verification**\n- `node --test`: 1 test, 1 pass, 0 fail.\n- `node bin/migrate.mjs work/repair-source.json work/repair-output.json` printed the expected output.\n\n**Not done**\n- I did not run `rex session rename`, because bash here is limited to `node --test` and `node <script>` commands. The session still has its old name.\n- I did not use the expired test-local override. Region, retry, and backoff values come from the durable project decisions."
+}

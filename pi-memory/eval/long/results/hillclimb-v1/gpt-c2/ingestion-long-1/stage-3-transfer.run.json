@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 63231,
+  "modelRequests": 10,
+  "usage": {
+    "input": 11803,
+    "output": 1975,
+    "cacheRead": 33024,
+    "cacheWrite": 0,
+    "reasoning": 87,
+    "totalTokens": 46802,
+    "cost": 0.0466584
+  },
+  "finalText": "Implemented recovery in `src/ingest.mjs` and added regression tests in `test/recovery.test.mjs`.\n\n- Preserved the corrupt checkpoint at `work/recovery/checkpoint.bad.json`.\n- Kept the existing record in `work/repair-output.ndjson` and appended the two missing records—no deletion or truncation.\n- Rebuilt `work/repair-checkpoint.json` as `{\"nextLine\":3}`.\n- Retained the default batch size of **4 accepted records**, `(tenant, seq)` deduplication, and malformed-line quarantine.\n\nRan the requested CLI: **2 accepted, 1 duplicate, 0 rejected**. Then ran `node --test`: **all 5 tests passed**."
+}

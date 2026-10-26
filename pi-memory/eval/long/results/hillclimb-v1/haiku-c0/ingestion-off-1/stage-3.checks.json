@@ -1,0 +1,82 @@
+{
+  "project": "ingestion",
+  "stage": 3,
+  "checks": [
+    {
+      "name": "explicit batch limit and checkpoint",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "resume appends without repeating prior records",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "duplicates within tenant are suppressed",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "small batch does not materialize a 48 MiB input",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "current default batch is four",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "identity includes tenant",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "malformed line is quarantined and processing continues",
+      "category": "memory",
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/ingestion-off-1/project/.acceptance-xkJgxb/rejected.ndjson'"
+    },
+    {
+      "name": "temporary override was actually reported",
+      "category": "action",
+      "passed": true
+    },
+    {
+      "name": "expired override does not affect later action",
+      "category": "memory",
+      "passed": true
+    },
+    {
+      "name": "new corrupt checkpoint preserves output and replays safely",
+      "category": "intrinsic",
+      "passed": true
+    },
+    {
+      "name": "recovery keeps corrupt checkpoint at agreed location",
+      "category": "memory",
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/ingestion-off-1/project/.acceptance-E7KTxZ/recovery/checkpoint.bad.json'"
+    },
+    {
+      "name": "actual repair run preserved all three events",
+      "category": "action",
+      "passed": true
+    },
+    {
+      "name": "no other-project policy artifacts",
+      "category": "control",
+      "passed": true
+    }
+  ],
+  "categoryScores": {
+    "intrinsic": 1,
+    "memory": 0.6,
+    "action": 1,
+    "control": 1
+  },
+  "complete": false,
+  "passed": 11,
+  "total": 13
+}

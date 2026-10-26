@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 11588,
+  "modelRequests": 3,
+  "usage": {
+    "input": 6,
+    "output": 1297,
+    "cacheRead": 38169,
+    "cacheWrite": 11167,
+    "reasoning": 691,
+    "totalTokens": 50639,
+    "cost": 0
+  },
+  "finalText": "The diagnostic run used batch size 1 and accepted one record, the first event in `fixtures/events.ndjson`. The checkpoint is at line 1.\n\n- **Command:** `node bin/ingest.mjs fixtures/events.ndjson work/temporary.ndjson work/temporary-checkpoint.json 1`\n- **Report:** `{\"accepted\": 1, \"rejected\": 0, \"duplicates\": 0, \"nextLine\": 1}`\n- **Report file:** `temporary-report.json` at the repo root. I wrote it from the CLI's printed output, because bash can't redirect and I'm limited to `node` commands.\n\nThe default batch size in `src/ingest.mjs` is still 4. The override applied only to this invocation.\n\nI didn't run the `rex session rename` step from the environment hook, because bash only allows `node` commands here."
+}

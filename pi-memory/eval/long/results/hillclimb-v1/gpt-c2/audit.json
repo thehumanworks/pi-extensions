@@ -1,0 +1,136 @@
+{
+  "allIntegrityChecksPassed": false,
+  "repairOnly": true,
+  "expectedJobs": 4,
+  "recordedJobs": 4,
+  "errors": [
+    "Missing job ingestion-polluted-0",
+    "Missing job migration-polluted-0",
+    "Unexpected job ingestion-long-1",
+    "Unexpected job migration-long-1"
+  ],
+  "provenance": [
+    {
+      "id": "ingestion-long-0",
+      "expectedScope": "project:3a558a15acd081cbba9db439",
+      "selectedIds": [
+        "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+      ],
+      "derivedSourceIds": [],
+      "dreamSourceIds": [],
+      "unresolvedOrWrongScope": []
+    },
+    {
+      "id": "ingestion-long-1",
+      "expectedScope": "project:3a558a15acd081cbba9db439",
+      "selectedIds": [
+        "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+      ],
+      "derivedSourceIds": [],
+      "dreamSourceIds": [],
+      "unresolvedOrWrongScope": []
+    },
+    {
+      "id": "migration-long-0",
+      "expectedScope": "project:a0464b452f01701e68e8d82f",
+      "selectedIds": [
+        "m_mvnweed283d48d1dbe1d530012c5"
+      ],
+      "derivedSourceIds": [],
+      "dreamSourceIds": [],
+      "unresolvedOrWrongScope": []
+    },
+    {
+      "id": "migration-long-1",
+      "expectedScope": "project:a0464b452f01701e68e8d82f",
+      "selectedIds": [
+        "m_mvnweed283d48d1dbe1d530012c5"
+      ],
+      "derivedSourceIds": [],
+      "dreamSourceIds": [],
+      "unresolvedOrWrongScope": []
+    }
+  ],
+  "pairs": [
+    {
+      "project": "ingestion",
+      "repeat": 0,
+      "arms": {
+        "long": {
+          "complete": true,
+          "finalScores": {
+            "intrinsic": 1,
+            "memory": 1,
+            "action": 1,
+            "control": 1
+          },
+          "correctedPolicy": [
+            {
+              "name": "current default batch is four",
+              "passed": true
+            },
+            {
+              "name": "expired override does not affect later action",
+              "passed": true
+            }
+          ],
+          "stageExits": [
+            {
+              "name": "stage-3-transfer",
+              "exitCode": 0,
+              "modelRequests": 10,
+              "budgetExhausted": false,
+              "timedOut": false
+            }
+          ],
+          "modelRequests": 10,
+          "totalInputTokens": 44283,
+          "uncachedInputTokens": 9467,
+          "cachedInputTokens": 34816,
+          "wallMs": 60157,
+          "actionBindingFailures": 0
+        }
+      }
+    },
+    {
+      "project": "migration",
+      "repeat": 0,
+      "arms": {
+        "long": {
+          "complete": false,
+          "finalScores": {
+            "intrinsic": 1,
+            "memory": 0.8,
+            "action": 1,
+            "control": 1
+          },
+          "correctedPolicy": [
+            {
+              "name": "region and corrected retry policy",
+              "passed": true
+            },
+            {
+              "name": "expired region override does not affect later action",
+              "passed": false
+            }
+          ],
+          "stageExits": [
+            {
+              "name": "stage-3-transfer",
+              "exitCode": 0,
+              "modelRequests": 11,
+              "budgetExhausted": false,
+              "timedOut": false
+            }
+          ],
+          "modelRequests": 11,
+          "totalInputTokens": 46551,
+          "uncachedInputTokens": 5463,
+          "cachedInputTokens": 41088,
+          "wallMs": 67289,
+          "actionBindingFailures": 0
+        }
+      }
+    }
+  ]
+}

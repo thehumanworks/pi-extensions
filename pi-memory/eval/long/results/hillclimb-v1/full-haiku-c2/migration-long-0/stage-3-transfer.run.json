@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 35644,
+  "modelRequests": 8,
+  "usage": {
+    "input": 16,
+    "output": 4846,
+    "cacheRead": 86034,
+    "cacheWrite": 9837,
+    "reasoning": 2031,
+    "totalTokens": 100733,
+    "cost": 0
+  },
+  "finalText": "The repair migration ran to `work/repair-output.json`, and the visible test passes.\n\n**Result**\n- `work/repair-output.json` now holds the recovered v3 config: region `eu-north-7`, `retry` `{maxAttempts: 5, backoffMs: 125}`, features `[\"ready\"]`, `timeoutMs` 3000, and the unknown `extra: \"preserve\"` under `legacy`.\n- The truncated input was moved out of `work/repair-source.json` to `work/recovery/source.bad.1.json`. Its content is the original truncated `{\"version\":`.\n- `work/backups/source.json` was not modified. It still contains the full valid pre-migration JSON.\n- `node --test` reports 1 test, 1 pass, 0 fail.\n\n**Code change (`src/migrate.mjs`)**\n- The existing `work/recovery/source.bad.json` already held evidence from an earlier truncated input, and the code refused to run while that file existed. I kept it untouched.\n- The quarantine step now uses `recovery/source.bad.json` when that name is free and falls back to `source.bad.1.json`, `.2.json`, and so on when it is taken. Nothing gets overwritten.\n\n**Gaps**\n- The visible test only covers the v1 conversion, so the truncated-input recovery path has no automated test. I verified it by running the CLI and checking the filesystem.\n- I could not rename the Rex session as the startup hook asked, because the shell only allows `node` commands."
+}

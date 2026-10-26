@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 63889,
+  "modelRequests": 12,
+  "usage": {
+    "input": 24,
+    "output": 10911,
+    "cacheRead": 172315,
+    "cacheWrite": 17702,
+    "reasoning": 5616,
+    "totalTokens": 200952,
+    "cost": 0
+  },
+  "finalText": "Both modules are implemented. The visible test passes, and the CLI runs correctly when invoked sequentially.\n\n**Files**\n- `src/ingest.mjs`: `processBatch({inputPath, outputPath, checkpointPath, batchSize?})` returns `{accepted, rejected, duplicates, nextLine}`.\n- `bin/ingest.mjs`: `node bin/ingest.mjs INPUT OUTPUT CHECKPOINT [BATCH_SIZE]`, prints the report as JSON.\n\n**Behavior**\n- **Default batch size:** 4 accepted records. An explicit `batchSize` overrides it. Non-positive or non-integer values throw.\n- **Identity:** events are keyed by `(tenant, seq)`. Repeats are counted as `duplicates` and not written. The same `seq` under different tenants is accepted.\n- **Malformed lines:** invalid JSON, non-object values, a missing or empty `tenant`, or a non-integer `seq` are counted as `rejected`. The raw line goes to `rejected.ndjson` in the output's directory, and processing continues.\n- **Output:** accepted records are appended as their original lines, in arrival order. Existing output is never erased. If output lacks a trailing newline, one is added before appending.\n- **Checkpoint:** `{\"nextLine\": N}` is written to a temp file and renamed into place. `nextLine` is the 0-based index of the next unprocessed input line.\n- **Corrupt checkpoint:** moved to `recovery/checkpoint.bad.json` beside the checkpoint. Replay starts at line 0, and existing identities prevent duplicate appends. This follows the recovery procedure you approved.\n- **Parent directories:** created if missing.\n\n**Verification**\n- `node --test`: 1 test, passing.\n- Demo in `work/demo/`: the first run accepted 4 with `nextLine` 4. The second run accepted 3 with `nextLine` 7, covering all of `fixtures/events.ndjson`.\n- Edge case in `work/edge/`: a mixed input with malformed lines, a cross-tenant `seq` collision, and an in-batch duplicate, plus a corrupt checkpoint. The report was `accepted` 3, `rejected` 4, `duplicates` 1, `nextLine` 8. The corrupt checkpoint was preserved under `recovery/`.\n\n**Caveats**\n- My first demo run put concurrent CLI invocations on the same `work/` files. They duplicated four lines in `work/out.ndjson`. Concurrent runs against one output are not supported; I did not add locking. I reran the demo sequentially in `work/demo/` and left the damaged `work/` files in place.\n- Replaying after a crash between the output append and the checkpoint write can re-append the same malformed lines to `rejected.ndjson`. Accepted records are safe because of the identity check.\n- Bash is restricted to `node` commands here, so I did not run the `rex session rename` step from the environment hook."
+}

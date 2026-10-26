@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 30610,
+  "modelRequests": 7,
+  "usage": {
+    "input": 14,
+    "output": 5765,
+    "cacheRead": 74286,
+    "cacheWrite": 13499,
+    "reasoning": 2055,
+    "totalTokens": 93564,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint now recovers. The CLI run and the tests both pass.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` printed `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`.\n\n**Result on disk:**\n- `work/repair-output.ndjson` has three lines: the original `transfer/seq 0` record is untouched, and `seq 1` and `seq 2` were appended. Nothing was truncated or rewritten.\n- `work/recovery/checkpoint.bad.json` holds the original corrupt content, `{\"nextLine\":`, as evidence.\n- `work/repair-checkpoint.json` was rewritten to `{\"nextLine\":3}`.\n\n**Code changes:**\n- `src/ingest.mjs`: a corrupt checkpoint (bad JSON or an invalid `nextLine`) is moved to `recovery/checkpoint.bad.json` beside the checkpoint and replay starts from line 0. Existing output identities are still built from `(tenant, seq)`, so already-written events are skipped rather than re-appended. If the evidence file name is already taken, it uses `checkpoint.bad.1.json`, `checkpoint.bad.2.json`, and so on, so earlier evidence is never overwritten. The default batch size of 4 was already in place.\n- `test/basic.test.mjs`: added a test covering a corrupt checkpoint, a duplicate identity, and a second tenant sharing `seq 1`. It checks the quarantined file, the rewritten checkpoint, and the output lines.\n\n**Test run:** `node --test` gave 2 passed, 0 failed.\n\n**Not done:**\n- The project memory says malformed input lines should be quarantined into `rejected.ndjson`. The current code counts rejected lines but does not write that file. This task didn't require it, so I left it alone. Say if you want it added.\n- I did not run `rex session rename`. The environment asks for it, but bash in this session only allows `node` commands."
+}

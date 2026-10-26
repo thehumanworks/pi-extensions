@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 12210,
+  "modelRequests": 3,
+  "usage": {
+    "input": 6,
+    "output": 1460,
+    "cacheRead": 36664,
+    "cacheWrite": 11462,
+    "reasoning": 674,
+    "totalTokens": 49592,
+    "cost": 0
+  },
+  "finalText": "The diagnostic run with `test-local` is done. The CLI wrote `work/temporary.json`, and I wrote the same config to `work/temporary-report.json`.\n\n- **Region:** `test-local` is applied only to this run. The default `eu-north-7` is unchanged.\n- **Source:** `fixtures/config.json` is unchanged.\n- **Output:** `work/temporary.json` matches what the CLI printed. It has version 3, name `demo`, `timeoutMs` 2000, retry 5 attempts with 125 ms backoff, features `[\"a\",\"z\"]`, and `legacy.customField` preserved.\n\nThe CLI cannot redirect its output, so I wrote `temporary-report.json` directly. Its contents match the CLI output, but I did not generate it from the CLI. The session-rename step from the Rex hook was not done, because `rex` commands are outside the allowed bash commands."
+}

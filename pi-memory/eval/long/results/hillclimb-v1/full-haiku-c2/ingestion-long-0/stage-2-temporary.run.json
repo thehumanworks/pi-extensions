@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 11135,
+  "modelRequests": 3,
+  "usage": {
+    "input": 6,
+    "output": 1001,
+    "cacheRead": 41882,
+    "cacheWrite": 12844,
+    "reasoning": 509,
+    "totalTokens": 55733,
+    "cost": 0
+  },
+  "finalText": "The diagnostic run is done. I ran the CLI once with batch size 1 against `fixtures/events.ndjson`, writing to `work/temporary.ndjson` with checkpoint `work/temporary-checkpoint.json`.\n\nThe CLI reported `accepted: 1`, `rejected: 0`, `duplicates: 0`, `nextLine: 1`. I saved that JSON to `temporary-report.json` in the repo root.\n\nThe default batch size in `src/ingest.mjs` is unchanged at 4.\n\nThe bash tool can't redirect output, so I wrote the report file by hand from the CLI's stdout. The values match that output exactly."
+}

@@ -1,0 +1,58 @@
+{
+  "name": "ledger-extension-1",
+  "scenario": "ledger",
+  "arm": "extension",
+  "threshold": 40000,
+  "keep": 8000,
+  "config": {},
+  "wallMs": 424976,
+  "compactions": [
+    {
+      "reason": "threshold",
+      "ms": 4,
+      "turn": 6,
+      "summaryTokens": 1433
+    },
+    {
+      "reason": "threshold",
+      "ms": 1,
+      "turn": 12,
+      "summaryTokens": 2339
+    }
+  ],
+  "blockedMs": 5,
+  "probeScore": 0.8947368421052632,
+  "taskScore": 1,
+  "probes": {
+    "env-var": true,
+    "error-prefix": true,
+    "frozen-dir": true,
+    "banned-lib": true,
+    "money": true,
+    "map-why": true,
+    "crash-cause": true,
+    "crash-row": false,
+    "crash-count": true,
+    "top-categories": true,
+    "top-totals": true,
+    "delimiters": false,
+    "spec-memo": true,
+    "spec-future": true,
+    "spec-duplicates": true,
+    "spec-exit": true,
+    "spec-rounding": true,
+    "spec-order": true,
+    "first-function": true
+  },
+  "task": {
+    "memo-default": true,
+    "future-skip": true,
+    "dedupe-key": true,
+    "counts": true,
+    "error-prefix": true,
+    "no-floats": true
+  },
+  "probeText": "1. `LEDGER_HOME`; default: `~/.ledger`.\n2. `ledger: `\n3. `legacy/`.\n4. lodash.\n5. Integer cents, never floating-point money amounts.\n6. To safely support category names such as `__proto__` and `constructor`, without plain-object prototype collisions; keys are lowercase slugs.\n7. `TypeError: Cannot read properties of undefined (reading 'currency')` in `normalizeRow`, caused by dereferencing missing metadata.\n8. Row 637; the source CSV filename is unknown. The crash log was `logs/import-2026-10-20.log`, and the failing code was in `src/csv.js`.\n9. 636 rows; nothing was committed.\n10. rent, travel, groceries.\n11. rent: 5,023,578 cents; travel: 608,129 cents; groceries: 293,283 cents.\n12. Export uses `,`; import must accept both `;` and `,`.\n13. The memo defaults to the payee.\n14. Warn and skip them.\n15. By the combination of date, amount, and payee.\n16. User error: 1; data error: 2.\n17. Half-even rounding.\n18. Descending spend, with alphabetical ordering for ties.\n19. `parseAmount(text)` in `src/ledger.js`.",
+  "taskText": "```js\n/**\n * Prepare parsed rows for import.\n *\n * `amount` is an integer number of cents, not a decimal string.\n * `today` is a calendar date in YYYY-MM-DD format.\n *\n * Deduplication applies within this batch; existing ledger transactions\n * cannot be checked because they are not supplied to this function.\n */\nexport function importRows(rows, today) {\n\tfunction isValidDate(value) {\n\t\tif (\n\t\t\ttypeof value !== \"string\" ||\n\t\t\tvalue.length !== 10 ||\n\t\t\t!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)\n\t\t) {\n\t\t\treturn false;\n\t\t}\n\n\t\tconst date = new Date(`${value}T00:00:00.000Z`);\n\t\treturn (\n\t\t\t!Number.isNaN(date.getTime()) &&\n\t\t\tdate.toISOString().slice(0, 10) === value\n\t\t);\n\t}\n\n\tif (!Array.isArray(rows)) {\n\t\tthrow new Error(\"ledger: import rows must be an array\");\n\t}\n\tif (!isValidDate(today)) {\n\t\tthrow new Error(\"ledger: today must be a valid date in YYYY-MM-DD format\");\n\t}\n\n\tconst importedRows = [];\n\tconst warnings = [];\n\tconst seen = new Set();\n\tlet skipped = 0;\n\tlet deduplicated = 0;\n\n\tfor (let i = 0; i < rows.length; i++) {\n\t\tconst row = rows[i];\n\t\tconst rowNumber = i + 1;\n\n\t\tif (!row || typeof row !== \"object\" || Array.isArray(row)) {\n\t\t\tthrow new Error(`ledger: invalid import row ${rowNumber}`);\n\t\t}\n\t\tif (!isValidDate(row.date)) {\n\t\t\tthrow new Error(`ledger: invalid date in import row ${rowNumber}`);\n\t\t}\n\t\tif (typeof row.payee !== \"string\" || row.payee.trim() === \"\") {\n\t\t\tthrow new Error(`ledger: invalid payee in import row ${rowNumber}`);\n\t\t}\n\t\tif (!Number.isSafeInteger(row.amount)) {\n\t\t\tthrow new Error(\n\t\t\t\t`ledger: amount in import row ${rowNumber} must be safe integer cents`,\n\t\t\t);\n\t\t}\n\t\tif (row.memo != null && typeof row.memo !== \"string\") {\n\t\t\tthrow new Error(`ledger: invalid memo in import row ${rowNumber}`);\n\t\t}\n\n\t\tif (row.date > today) {\n\t\t\tskipped++;\n\t\t\twarnings.push(\n\t\t\t\t`ledger: skipping future-dated import row ${rowNumber} (${row.date})`,\n\t\t\t);\n\t\t\tcontinue;\n\t\t}\n\n\t\tconst amount = row.amount === 0 ? 0 : row.amount;\n\t\tconst key = JSON.stringify([row.date, amount, row.payee]);\n\n\t\tif (seen.has(key)) {\n\t\t\tdeduplicated++;\n\t\t\tcontinue;\n\t\t}\n\t\tseen.add(key);\n\n\t\timportedRows.push({\n\t\t\t...row,\n\t\t\tamount,\n\t\t\tmemo:\n\t\t\t\trow.memo == null || row.memo.trim() === \"\"\n\t\t\t\t\t? row.payee\n\t\t\t\t\t: row.memo,\n\t\t});\n\t}\n\n\treturn {\n\t\trows: importedRows,\n\t\timported: importedRows.length,\n\t\tskipped,\n\t\tdeduplicated,\n\t\twarnings,\n\t};\n}\n```",
+  "cwd": "/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/live-ledger-extension-1-Rc7pFx"
+}

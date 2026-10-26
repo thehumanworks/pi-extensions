@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 11790,
+  "modelRequests": 3,
+  "usage": {
+    "input": 6,
+    "output": 1094,
+    "cacheRead": 32311,
+    "cacheWrite": 9288,
+    "reasoning": 572,
+    "totalTokens": 42699,
+    "cost": 0
+  },
+  "finalText": "Both files were written with the test-local region override:\n\n- `work/temporary.json`: the CLI run on `fixtures/config.json` with `test-local` as the region.\n- `work/temporary-report.json`: the same run, written to this path. I ran the CLI a second time rather than copying the output by hand.\n\nBoth contain the same config: `version: 3`, `name: \"demo\"`, `timeoutMs: 2000`, `features: [\"a\",\"z\"]`, `region: \"test-local\"`, and `customField` preserved.\n\nI did not change the source config or any defaults. The override applies only to this invocation. The earlier `eu-west-1` run and the `work/config.out.json` output are unchanged.\n\nI also could not run the requested `rex session rename` because bash only permits `node` commands here."
+}

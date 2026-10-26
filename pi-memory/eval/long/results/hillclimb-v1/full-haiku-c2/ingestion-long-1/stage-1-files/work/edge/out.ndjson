@@ -1,0 +1,3 @@
+{"tenant":"a","seq":1,"value":"one"}
+{"tenant":"b","seq":1,"value":"b-one"}
+{"tenant":"a","seq":2,"value":"two"}

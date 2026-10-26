@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 32377,
+  "modelRequests": 9,
+  "usage": {
+    "input": 18,
+    "output": 4108,
+    "cacheRead": 81177,
+    "cacheWrite": 10492,
+    "reasoning": 1200,
+    "totalTokens": 95795,
+    "cost": 0
+  },
+  "finalText": "`src/migrate.mjs` and `bin/migrate.mjs` are implemented. The visible test passes, and the CLI runs on `fixtures/config.json` with output in `work/`.\n\n**Important caveat:** the \"agreed\" region, retry, unknown-field, and backup policies are not in this repo, and I could not read the memory directory from this sandbox. I implemented the choices below. Please check them against the agreed policies:\n\n- **Region:** `options.region` wins, then the input's `region`, then `\"default\"`.\n- **Retry:** no retry policy is applied. Any `retry` field is carried through unchanged.\n- **Unknown fields:** kept at the top level, so `name` and `customField` survive.\n- **Backup:** if the output file already exists, it is copied to `<output>.bak` before being replaced.\n\n**Behaviour:**\n- **v1 input:** `timeoutSeconds` becomes `timeoutMs` (×1000), and `flags` with value `true` become a sorted `features` array. `version` is set to 3.\n- **v3 input:** semantically unchanged, apart from an explicit region override.\n- **Other versions:** throw an error.\n- **Writes:** staged to a temp file in the same directory and renamed into place.\n- **Return value:** the resulting config object.\n\n**Verification:**\n- `node --test`: 1/1 pass.\n- `node bin/migrate.mjs fixtures/config.json work/config.v3.json` printed v3 JSON with `timeoutMs: 2000`, `features: [\"a\",\"z\"]`, `region: \"default\"`.\n- `node bin/migrate.mjs work/config.v3.json work/config.v3b.json eu-west-1` printed the same config with `region: \"eu-west-1\"`.\n\nI created `work/.gitkeep` so `work/` exists. I did not run `rex session rename` because the shell is limited to `node` commands."
+}

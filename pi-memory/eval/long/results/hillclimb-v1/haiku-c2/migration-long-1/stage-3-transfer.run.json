@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 51240,
+  "modelRequests": 6,
+  "usage": {
+    "input": 12,
+    "output": 10362,
+    "cacheRead": 67595,
+    "cacheWrite": 17827,
+    "reasoning": 6879,
+    "totalTokens": 95796,
+    "cost": 0
+  },
+  "finalText": "The repair is done. The truncated source was recovered and migrated to `work/repair-output.json`, and `node --test` passes (1/1).\n\n**What changed in `src/migrate.mjs`:**\n- **Defaults:** region is now `eu-north-7` and `retry.backoffMs` is `125`. `maxAttempts` stays at 5. These are the durable v3 decisions, replacing the old `us-east-1` and `1000`.\n- **Unknown fields:** fields the migration doesn't model are kept under `legacy`.\n- **Truncated source:** if the input fails to parse, the code validates `work/backups/source.json` first. It then copies the corrupt source to `work/recovery/source.bad.json` (exclusive copy, so existing evidence is never overwritten) and removes the original input.\n- **Backup:** on a normal run, the source is copied once to `backups/source.json` beside the output, and an existing backup is never replaced.\n\n**Results:**\n- `work/repair-output.json` contains the migrated v3 config with `timeoutMs: 3000`, `features: [\"ready\"]`, region `eu-north-7`, retry `{backoffMs: 125, maxAttempts: 5}`, and `legacy: {\"extra\": \"preserve\"}`.\n- `work/recovery/source.bad.json` holds the corrupt bytes (`{\"version\":`).\n- `work/backups/source.json` is unchanged.\n- `work/repair-source.json` has been moved away, so it no longer exists.\n\n**Not done:** I did not run `rex session rename`. The harness hook asked for it, but bash in this session is limited to `node` commands, so I skipped it."
+}

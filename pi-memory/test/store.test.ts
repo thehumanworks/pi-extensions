@@ -91,6 +91,24 @@ test('digests only select existing standing-rule IDs and never trust saved prose
   await store.reindex(); assert.equal(store.readDigest(), '');
 });
 
+test('decisions digest scope selects user-stated durable project decisions live without a compiled digest', async t => {
+  const { store } = await fixture(t);
+  const decision = await store.save({ ...input('Default batch size is 4 records.'), title: 'Batch default', type: 'project', importance: 9 });
+  const rule = await store.save({ ...input('Always ask before publishing.'), title: 'Publishing approval', type: 'feedback', importance: 9 });
+  const weak = await store.save({ ...input('Maybe use smaller batches.'), title: 'Batch hint', type: 'project', importance: 5 });
+  const observed = await store.save({ ...input('Recovery moves the checkpoint aside.'), title: 'Recovery', type: 'procedure', importance: 9, confidence: 0.6, source: { ...input().source, origin: 'tool_output' } });
+  const temporary = await store.save({ ...input('Use one worker today.'), title: 'Worker override', type: 'project', importance: 9, retention: 'short', expiresAt: new Date(Date.now() + 3600000).toISOString() });
+  assert.equal(store.readDigest(), '');
+  const wake = store.readDigest(2400, 'decisions');
+  assert.ok(wake.includes(decision.id)); assert.ok(wake.includes(rule.id));
+  for (const excluded of [weak, observed, temporary]) assert.ok(!wake.includes(excluded.id));
+  // The rules scope still requires a compiled digest and never includes project decisions.
+  await store.consolidate();
+  assert.ok(store.readDigest().includes(rule.id)); assert.ok(!store.readDigest().includes(decision.id));
+  // A small budget drops whole items rather than truncating them.
+  assert.equal(store.readDigest(150, 'decisions'), '');
+});
+
 test('automatic recall excludes uncertain claims while explicit search keeps them inspectable', async t => {
   const { store } = await fixture(t);
   const draft = await store.save({ ...input('Tentative: restore snapshot before restarting the graph worker.'), title: 'Graph worker recovery draft', confidence: 0.3 });

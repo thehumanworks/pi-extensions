@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 33163,
+  "modelRequests": 6,
+  "usage": {
+    "input": 12,
+    "output": 5140,
+    "cacheRead": 57540,
+    "cacheWrite": 12676,
+    "reasoning": 2469,
+    "totalTokens": 75368,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint now recovers without losing output. I ran the repaired CLI on the real paths and the visible test suite passes.\n\n**Change (`src/ingest.mjs`):** If the checkpoint is unparseable or has an invalid `nextLine`, `processBatch` moves it to `work/recovery/checkpoint.bad.json` and restarts from line 0. Existing `(tenant, seq)` identities in the output prevent duplicates. If that evidence file already exists, the new one gets a UUID suffix so nothing is overwritten. Output is only appended to, never rewritten or truncated.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` (default batch size 4)\n- Result: `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`\n\n**Results:**\n- `work/repair-output.ndjson` has all three `transfer` records (seq 0, 1, 2), with the original seq-0 record preserved.\n- `work/repair-checkpoint.json` is now `{\"nextLine\":3}`.\n- The corrupt checkpoint is preserved at `work/recovery/checkpoint.bad.json` with its original truncated content `{\"nextLine\":`.\n- `node --test`: 1 test, 1 pass, 0 fail.\n\nI did not add a new test for the recovery path. The `rex` session rename was also skipped because bash is limited to `node` commands here."
+}

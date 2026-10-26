@@ -1,0 +1,57 @@
+{
+  "expectedScope": "project:a0464b452f01701e68e8d82f",
+  "items": [
+    {
+      "id": "m_mvnweed283d48d1dbe1d530012c5",
+      "scope": "project:a0464b452f01701e68e8d82f",
+      "type": "procedure",
+      "title": "Recover truncated migration JSON without overwriting its backup",
+      "summary": "Verified migration recovery quarantines truncated input and restores JSON from an unchanged backup while preserving custom data.",
+      "keywords": [
+        "migration",
+        "JSON",
+        "truncated",
+        "recovery",
+        "backup",
+        "custom data"
+      ],
+      "triggers": [
+        "recovering corrupt migration input",
+        "implementing migration recovery"
+      ],
+      "paths": [],
+      "importance": 7,
+      "confidence": 0.6,
+      "source": {
+        "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v3/history/migration/sessions/2026-10-25T14-02-02-002Z_c9407a00-389f-4c38-8a8b-13847a50f40b.jsonl",
+        "entries": [
+          "e37c17b2"
+        ],
+        "origin": "tool_output"
+      },
+      "sources": [
+        {
+          "session": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v3/history/migration/sessions/2026-10-25T14-02-02-002Z_c9407a00-389f-4c38-8a8b-13847a50f40b.jsonl",
+          "entries": [
+            "e37c17b2"
+          ],
+          "origin": "tool_output"
+        }
+      ],
+      "supersedes": [],
+      "links": [],
+      "status": "active",
+      "created": "2026-10-25T14:03:24.086Z",
+      "updated": "2026-10-25T14:03:24.086Z",
+      "last_used": "2026-10-25T19:46:57.379Z",
+      "stats": {
+        "injected": 1,
+        "used": 0,
+        "helpful": 0,
+        "harmful": 0
+      },
+      "retention": "long",
+      "body": "When migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "pi": {},
+  "tx-0.8": { "request": "transcript" },
+  "tx-0.6": { "request": "transcript", "trigger": 0.6 },
+  "tx-0.6-swap0.7": { "request": "transcript", "trigger": 0.6, "maxSwapRatio": 0.7 },
+  "tx-0.5-swap0.7": { "request": "transcript", "trigger": 0.5, "maxSwapRatio": 0.7 },
+  "ser16k-0.6": { "request": "serialized", "toolResultChars": 16000, "trigger": 0.6 }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 29748,
+  "modelRequests": 8,
+  "usage": {
+    "input": 16,
+    "output": 5007,
+    "cacheRead": 95267,
+    "cacheWrite": 12507,
+    "reasoning": 1412,
+    "totalTokens": 112797,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint now recovers automatically, and `work/repair-output.ndjson` is intact. I ran the CLI on the real paths and the full test suite passes (8/8).\n\n**Result of the CLI run** (`node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json`):\n- accepted 2, rejected 0, duplicates 1, nextLine 3\n- `work/repair-output.ndjson` now holds `transfer` seq 0, 1, 2. The existing seq 0 line was kept and not re-appended.\n- `work/repair-checkpoint.json` is now `{\"nextLine\":3}`.\n\n**Evidence kept:** the corrupt checkpoint, `{\"nextLine\":`, was copied to `work/repair-checkpoint.json.corrupt-2026-10-25T19-56-08-137Z`. Nothing was deleted or truncated.\n\n**Changes:**\n- `src/ingest.mjs`: if the checkpoint fails to parse, `readCheckpoint` copies it to `<checkpoint>.corrupt-<ISO timestamp>` and restarts from line 0. Replay is safe because identities already in the output are counted as duplicates and not re-appended.\n- `test/ingest.test.mjs`: added a test that covers a truncated checkpoint. It checks the evidence copy exists with the original bytes, and that no duplicates are appended.\n\n**Caveats:**\n- I could not read the project memory directory, so I did not apply the previously verified recovery procedure or the agreed evidence-naming convention. I used a timestamped `.corrupt-` sibling copy as a default. If the convention differs, the naming in `readCheckpoint` needs to change.\n- I did not rename the Rex session. The bash tool only allows `node` commands, so I could not run `rex`."
+}

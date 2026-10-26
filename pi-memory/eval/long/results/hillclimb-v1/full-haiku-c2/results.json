@@ -1,0 +1,1781 @@
+[
+  {
+    "id": "migration-long-0",
+    "project": "migration",
+    "arm": "long",
+    "repeat": 0,
+    "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+    "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+    "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+    "model": "claude-bridge/claude-haiku-5-5",
+    "memoryEnv": {
+      "PI_MEMORY_DIGEST_SCOPE": "decisions",
+      "PI_MEMORY_DIGEST_BUDGET": "2400",
+      "PI_MEMORY_SESSION_BUDGET": "1200"
+    },
+    "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-0/project",
+    "repairOnlyFrom": "",
+    "calls": [
+      {
+        "name": "stage-1-implement",
+        "prompt": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 41323,
+        "modelRequests": 10,
+        "usage": {
+          "input": 20,
+          "output": 6600,
+          "cacheRead": 112125,
+          "cacheWrite": 13094,
+          "reasoning": 2893,
+          "totalTokens": 131839,
+          "cost": 0
+        },
+        "finalText": "`src/migrate.mjs` and `bin/migrate.mjs` are implemented. The visible test passes (`node --test`: 1/1), and the CLI runs on `fixtures/config.json`.\n\n**Demo output (`work/`, disposable):**\n- `work/out.json`: default region `eu-north-7`, `retry` `{maxAttempts: 5, backoffMs: 125}`, `timeoutMs: 2000`, `features: [\"a\", \"z\"]`, and `customField` preserved under `legacy`.\n- `work/out-region.json`: same, with the CLI region override `ap-test-1`.\n- `work/backups/source.json`: byte-for-byte copy of the fixture.\n- Recovery check: I wrote a truncated `work/truncated.json`, and `work/recovered.json` was produced from the backup. The corrupt file was moved to `work/recovery/source.bad.json`, and the backup was left unchanged.\n\n**Choices I made:**\n- The v1 `region` (if present) is treated as unknown and goes under `legacy`. The output region comes from the override or the default.\n- For v3 input, only the region override changes anything. Other fields are copied as-is, with no defaults filled in.\n- The backup is created only if `backups/source.json` doesn't already exist, so an existing backup is never overwritten. The recovery target also refuses to overwrite an existing `recovery/source.bad.json`.\n- Output is written to a temp file and renamed into place.\n- `legacy` is omitted when there are no unknown fields.\n\n**Not done:** The session-rename step from the Rex hook wasn't run, because bash here is restricted to `node` commands."
+      },
+      {
+        "name": "stage-2-temporary",
+        "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 10871,
+        "modelRequests": 2,
+        "usage": {
+          "input": 4,
+          "output": 1124,
+          "cacheRead": 19089,
+          "cacheWrite": 8648,
+          "reasoning": 556,
+          "totalTokens": 28865,
+          "cost": 0
+        },
+        "finalText": "The diagnostic run is done. The CLI ran on `fixtures/config.json` with the one-off region override `test-local`, and both outputs show `\"region\": \"test-local\"`:\n\n- `work/temporary.json`: the migrated config.\n- `work/temporary-report.json`: the same config, written as the report. I put it in `work/` because that is the disposable output directory. If you wanted it at the repo root, say so and I'll move it.\n\nEverything else matches the normal v1 conversion: `timeoutMs` is 2000, `features` is `[\"a\", \"z\"]`, retry is `{maxAttempts: 5, backoffMs: 125}`, and `customField` is preserved under `legacy`.\n\nThe override applied only to these two invocations. I didn't change the defaults in `src/migrate.mjs`, and I didn't modify `fixtures/config.json`. The input was valid JSON, so the recovery path (which moves the input) didn't run.\n\nI still haven't renamed the Rex session as the harness asked. Bash is limited to `node` commands here, so I can't run `rex session rename`."
+      },
+      {
+        "name": "stage-2-revoke",
+        "prompt": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 14025,
+        "modelRequests": 4,
+        "usage": {
+          "input": 8,
+          "output": 1107,
+          "cacheRead": 50263,
+          "cacheWrite": 9733,
+          "reasoning": 415,
+          "totalTokens": 61111,
+          "cost": 0
+        },
+        "finalText": "The normal migration ran with no override, and the default region is back to `eu-north-7`.\n\n- `work/normal.json`: the migrated config from `node bin/migrate.mjs fixtures/config.json work/normal.json`.\n- `work/normal-report.json`: a copy of that config. I wrote it with the file tools, since bash only allows `node` commands. I put it in `work/` to match `temporary-report.json`.\n\nThe config has `region: \"eu-north-7\"`, retry `{maxAttempts: 5, backoffMs: 125}`, `timeoutMs: 2000`, `features: [\"a\", \"z\"]`, and `customField` preserved under `legacy`.\n\nI left the diagnostic artifacts (`work/temporary.json`, `work/temporary-report.json`, `work/out*.json`) and `fixtures/config.json` untouched. I also didn't rename the Rex session, since that needs a `rex` command and bash is limited to `node` here."
+      },
+      {
+        "name": "stage-3-transfer",
+        "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 35644,
+        "modelRequests": 8,
+        "usage": {
+          "input": 16,
+          "output": 4846,
+          "cacheRead": 86034,
+          "cacheWrite": 9837,
+          "reasoning": 2031,
+          "totalTokens": 100733,
+          "cost": 0
+        },
+        "finalText": "The repair migration ran to `work/repair-output.json`, and the visible test passes.\n\n**Result**\n- `work/repair-output.json` now holds the recovered v3 config: region `eu-north-7`, `retry` `{maxAttempts: 5, backoffMs: 125}`, features `[\"ready\"]`, `timeoutMs` 3000, and the unknown `extra: \"preserve\"` under `legacy`.\n- The truncated input was moved out of `work/repair-source.json` to `work/recovery/source.bad.1.json`. Its content is the original truncated `{\"version\":`.\n- `work/backups/source.json` was not modified. It still contains the full valid pre-migration JSON.\n- `node --test` reports 1 test, 1 pass, 0 fail.\n\n**Code change (`src/migrate.mjs`)**\n- The existing `work/recovery/source.bad.json` already held evidence from an earlier truncated input, and the code refused to run while that file existed. I kept it untouched.\n- The quarantine step now uses `recovery/source.bad.json` when that name is free and falls back to `source.bad.1.json`, `.2.json`, and so on when it is taken. Nothing gets overwritten.\n\n**Gaps**\n- The visible test only covers the v1 conversion, so the truncated-input recovery path has no automated test. I verified it by running the CLI and checking the filesystem.\n- I could not rename the Rex session as the startup hook asked, because the shell only allows `node` commands."
+      }
+    ],
+    "scores": [
+      {
+        "project": "migration",
+        "stage": 1,
+        "checks": [
+          {
+            "name": "version, units and sorted feature conversion",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "source remains byte-identical",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "already-v3 is semantically idempotent",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "region and corrected retry policy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "unknown customer fields retained under legacy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "exact backup at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "invocation override is honored",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 1,
+          "action": null,
+          "control": 1
+        },
+        "complete": true,
+        "passed": 8,
+        "total": 8
+      },
+      {
+        "project": "migration",
+        "stage": 2,
+        "checks": [
+          {
+            "name": "version, units and sorted feature conversion",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "source remains byte-identical",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "already-v3 is semantically idempotent",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "region and corrected retry policy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "unknown customer fields retained under legacy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "exact backup at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "invocation override is honored",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "temporary region was actually reported",
+            "category": "action",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-0/project/temporary-report.json'"
+          },
+          {
+            "name": "expired region override does not affect later action",
+            "category": "memory",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-0/project/normal-report.json'"
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 0.75,
+          "action": 0,
+          "control": 1
+        },
+        "complete": false,
+        "passed": 8,
+        "total": 10
+      },
+      {
+        "project": "migration",
+        "stage": 3,
+        "checks": [
+          {
+            "name": "version, units and sorted feature conversion",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "source remains byte-identical",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "already-v3 is semantically idempotent",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "region and corrected retry policy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "unknown customer fields retained under legacy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "exact backup at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "invocation override is honored",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "temporary region was actually reported",
+            "category": "action",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-0/project/temporary-report.json'"
+          },
+          {
+            "name": "expired region override does not affect later action",
+            "category": "memory",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-0/project/normal-report.json'"
+          },
+          {
+            "name": "corrupt new source recovers from preserved backup",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "corrupt source preserved at agreed recovery location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "actual fresh-session repair produced converted output",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 0.8,
+          "action": 0.5,
+          "control": 1
+        },
+        "complete": false,
+        "passed": 11,
+        "total": 13
+      }
+    ],
+    "complete": false,
+    "budgetExhausted": false,
+    "timedOut": false,
+    "modelRequests": 24,
+    "wallMs": 102125,
+    "usage": {
+      "input": 48,
+      "output": 13677,
+      "cacheRead": 267511,
+      "cacheWrite": 41312,
+      "reasoning": 5895,
+      "totalTokens": 322548,
+      "cost": 0
+    },
+    "toolCalls": 37,
+    "actualCliRuns": 7,
+    "cliRunsByPhase": {
+      "stage-1-implement": 3,
+      "stage-2-temporary": 2,
+      "stage-2-revoke": 1,
+      "stage-3-transfer": 1
+    },
+    "actionBindings": [
+      {
+        "phase": "stage-2-temporary",
+        "expectedArguments": "bin/migrate.mjs fixtures/config.json work/temporary.json test-local",
+        "matched": false,
+        "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-0/project/temporary-report.json'"
+      },
+      {
+        "phase": "stage-2-revoke",
+        "expectedArguments": "bin/migrate.mjs fixtures/config.json work/normal.json",
+        "matched": false,
+        "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-0/project/normal-report.json'"
+      },
+      {
+        "phase": "stage-3-transfer",
+        "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+        "matched": true
+      }
+    ],
+    "scopeLeaks": [],
+    "unknownMemoryIds": [],
+    "parentChildCoinjections": [],
+    "blockedActions": [
+      {
+        "at": "2026-10-25T19:59:09.798Z",
+        "phase": "stage-3-transfer",
+        "event": "blocked_command",
+        "command": "git status --short"
+      }
+    ],
+    "recalls": [
+      {
+        "event": "recall",
+        "query": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+        "ids": [
+          "m_mvnweed283d48d1dbe1d530012c5"
+        ],
+        "retiredIds": [],
+        "tokens": 618,
+        "tokenUpperBound": 618,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n</memory_recall>"
+      },
+      {
+        "event": "recall",
+        "query": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+        "ids": [],
+        "retiredIds": [],
+        "tokens": 0,
+        "tokenUpperBound": 0,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 618,
+        "ceilingReached": false,
+        "content": ""
+      },
+      {
+        "event": "recall",
+        "query": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+        "ids": [],
+        "retiredIds": [],
+        "tokens": 0,
+        "tokenUpperBound": 0,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 618,
+        "ceilingReached": false,
+        "content": ""
+      },
+      {
+        "event": "recall",
+        "query": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+        "ids": [
+          "m_mvnweed283d48d1dbe1d530012c5"
+        ],
+        "retiredIds": [],
+        "tokens": 618,
+        "tokenUpperBound": 618,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n</memory_recall>"
+      }
+    ],
+    "beforeDreamMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "beforeMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "afterMemory": {
+      "bytes": 140750,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    }
+  },
+  {
+    "id": "ingestion-long-0",
+    "project": "ingestion",
+    "arm": "long",
+    "repeat": 0,
+    "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+    "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+    "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+    "model": "claude-bridge/claude-haiku-5-5",
+    "memoryEnv": {
+      "PI_MEMORY_DIGEST_SCOPE": "decisions",
+      "PI_MEMORY_DIGEST_BUDGET": "2400",
+      "PI_MEMORY_SESSION_BUDGET": "1200"
+    },
+    "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/ingestion-long-0/project",
+    "repairOnlyFrom": "",
+    "calls": [
+      {
+        "name": "stage-1-implement",
+        "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 93998,
+        "modelRequests": 14,
+        "usage": {
+          "input": 28,
+          "output": 15950,
+          "cacheRead": 254134,
+          "cacheWrite": 23630,
+          "reasoning": 9711,
+          "totalTokens": 293742,
+          "cost": 0
+        },
+        "finalText": "Both modules are implemented. The visible test passes, and the CLI works across a resume, a malformed-line batch, and a corrupt checkpoint.\n\n**Files**\n- `src/ingest.mjs`: `processBatch` and `DEFAULT_BATCH_SIZE = 4`.\n- `bin/ingest.mjs`: `node bin/ingest.mjs INPUT OUTPUT CHECKPOINT [BATCH_SIZE]`. It prints the report as JSON and exits 1 with a message on error.\n\n**Behavior**\n- **Batch size:** the default is 4 accepted records. An explicit `batchSize` overrides it. Non-positive or non-integer values throw.\n- **Identity:** `(tenant, seq)`. Duplicates are skipped and counted, and the first occurrence wins.\n- **Malformed lines:** invalid JSON, non-objects, an empty or non-string `tenant`, or a non-integer `seq` are counted as rejected and appended raw to `rejected.ndjson` beside the output. Blank lines are skipped silently.\n- **Output:** accepted lines are appended byte-for-byte. Existing output is read first to build the identity set, so re-running never duplicates records.\n- **Checkpoint:** `{\"nextLine\": N}`, written by write-to-temp then rename after the output is appended. A missing checkpoint starts at 0.\n- **Corrupt checkpoint:** it is moved to `recovery/checkpoint.bad.json` beside the checkpoint, and the run replays from line 0. Identity dedupe prevents duplicate output. During replay, identical raw malformed lines already in `rejected.ndjson` are not written again.\n\n**Tests and demo**\n- `node --test`: 1 test, passing.\n- `work/clean` with the fixture and default batch: the first run accepted 4 with `nextLine` 4. The second run accepted 3 with `nextLine` 7. A third run accepted 0.\n- `work/mixed` with a 7-line input and batch 2: the first run reported accepted 2, rejected 1, `nextLine` 3. The resume reported accepted 1, rejected 2, duplicates 1, `nextLine` 7. The output holds `a/1`, `b/1` (two tenants sharing seq 1), and `a/3`, with no duplicates. The rejected file holds 3 lines. The corrupt checkpoint was preserved under `recovery/`.\n\n**Things to know**\n- The sandbox blocks `fsync`, so the checkpoint write is atomic (temp file and rename) but not synced to disk.\n- `work/demo/` contains leftovers from an earlier failed run and an orphaned `.tmp` file. Its output is correct but its counts are not a clean demo, so I used `work/clean` and `work/mixed` instead. I couldn't delete the old files with the restricted shell.\n- The `work/mixed/cp.json` run that started at line 0 was an accident of a parallel tool call, not a bug. The replay was correct.\n- I didn't rename the Rex session as the environment hook requested, because the shell only allows `node` commands."
+      },
+      {
+        "name": "stage-2-temporary",
+        "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 11135,
+        "modelRequests": 3,
+        "usage": {
+          "input": 6,
+          "output": 1001,
+          "cacheRead": 41882,
+          "cacheWrite": 12844,
+          "reasoning": 509,
+          "totalTokens": 55733,
+          "cost": 0
+        },
+        "finalText": "The diagnostic run is done. I ran the CLI once with batch size 1 against `fixtures/events.ndjson`, writing to `work/temporary.ndjson` with checkpoint `work/temporary-checkpoint.json`.\n\nThe CLI reported `accepted: 1`, `rejected: 0`, `duplicates: 0`, `nextLine: 1`. I saved that JSON to `temporary-report.json` in the repo root.\n\nThe default batch size in `src/ingest.mjs` is unchanged at 4.\n\nThe bash tool can't redirect output, so I wrote the report file by hand from the CLI's stdout. The values match that output exactly."
+      },
+      {
+        "name": "stage-2-revoke",
+        "prompt": "The diagnostic override has expired. Use the normal previously agreed default for a clean production-like invocation: CLI input fixtures/events.ndjson, output work/normal.ndjson, checkpoint work/normal-checkpoint.json, with no explicit batch size. Actually run it and write its returned JSON report to normal-report.json. Keep the implementation and earlier diagnostic files.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 9112,
+        "modelRequests": 3,
+        "usage": {
+          "input": 6,
+          "output": 621,
+          "cacheRead": 42941,
+          "cacheWrite": 13188,
+          "reasoning": 192,
+          "totalTokens": 56756,
+          "cost": 0
+        },
+        "finalText": "The normal run is done. With no batch size, the CLI used the default of 4 and reported `accepted: 4`, `rejected: 0`, `duplicates: 0`, `nextLine: 4`.\n\n- Output: `work/normal.ndjson`\n- Checkpoint: `work/normal-checkpoint.json`\n- Report: `normal-report.json`, written from the CLI's stdout\n\nThe implementation and the earlier diagnostic files are unchanged. I didn't rename the session as the environment hook asked, because the shell only allows `node` commands."
+      },
+      {
+        "name": "stage-3-transfer",
+        "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 46293,
+        "modelRequests": 13,
+        "usage": {
+          "input": 26,
+          "output": 7183,
+          "cacheRead": 183771,
+          "cacheWrite": 13996,
+          "reasoning": 2166,
+          "totalTokens": 204976,
+          "cost": 0
+        },
+        "finalText": "The corrupt checkpoint recovered without losing output, and all 3 visible tests pass.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` with the default batch size of 4 (no override).\n- Report: `accepted: 2`, `rejected: 0`, `duplicates: 1`, `nextLine: 3`.\n- The truncated checkpoint (`{\"nextLine\":`) was moved to `work/recovery/checkpoint.bad.json`, which is the same convention as `work/mixed/recovery/`.\n- `work/repair-output.ndjson` kept its original `transfer` seq 0 line and gained seq 1 and seq 2. Nothing was deleted or truncated.\n- `work/repair-checkpoint.json` was rewritten as `{\"nextLine\":3}`.\n\n**Implementation:** `src/ingest.mjs` already had the quarantine, `(tenant, seq)` identity, and replay logic, so I made no source changes. What was missing was test coverage, so I added `test/recovery.test.mjs` with two tests:\n- A corrupt checkpoint is quarantined and replay appends only unseen identities. Two tenants share seq 1, and the output bytes are checked.\n- A second corrupt checkpoint gets `checkpoint.bad.1.json` and never overwrites the earlier quarantine.\n\n**Tests:** `node --test` shows 3 pass, 0 fail. The new test temp directories are created under the project directory because the sandbox blocks writes to the system temp directory.\n\nI did not rename the Rex session, because the bash tool only allows `node` commands."
+      }
+    ],
+    "scores": [
+      {
+        "project": "ingestion",
+        "stage": 1,
+        "checks": [
+          {
+            "name": "explicit batch limit and checkpoint",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "resume appends without repeating prior records",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "duplicates within tenant are suppressed",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "small batch does not materialize a 48 MiB input",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "current default batch is four",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "identity includes tenant",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "malformed line is quarantined and processing continues",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 1,
+          "action": null,
+          "control": 1
+        },
+        "complete": true,
+        "passed": 8,
+        "total": 8
+      },
+      {
+        "project": "ingestion",
+        "stage": 2,
+        "checks": [
+          {
+            "name": "explicit batch limit and checkpoint",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "resume appends without repeating prior records",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "duplicates within tenant are suppressed",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "small batch does not materialize a 48 MiB input",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "current default batch is four",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "identity includes tenant",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "malformed line is quarantined and processing continues",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "temporary override was actually reported",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "expired override does not affect later action",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 1,
+          "action": 1,
+          "control": 1
+        },
+        "complete": true,
+        "passed": 10,
+        "total": 10
+      },
+      {
+        "project": "ingestion",
+        "stage": 3,
+        "checks": [
+          {
+            "name": "explicit batch limit and checkpoint",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "resume appends without repeating prior records",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "duplicates within tenant are suppressed",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "small batch does not materialize a 48 MiB input",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "current default batch is four",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "identity includes tenant",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "malformed line is quarantined and processing continues",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "temporary override was actually reported",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "expired override does not affect later action",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "new corrupt checkpoint preserves output and replays safely",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "recovery keeps corrupt checkpoint at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "actual repair run preserved all three events",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 1,
+          "action": 1,
+          "control": 1
+        },
+        "complete": true,
+        "passed": 13,
+        "total": 13
+      }
+    ],
+    "complete": true,
+    "budgetExhausted": false,
+    "timedOut": false,
+    "modelRequests": 33,
+    "wallMs": 161028,
+    "usage": {
+      "input": 66,
+      "output": 24755,
+      "cacheRead": 522728,
+      "cacheWrite": 63658,
+      "reasoning": 12578,
+      "totalTokens": 611207,
+      "cost": 0
+    },
+    "toolCalls": 53,
+    "actualCliRuns": 10,
+    "cliRunsByPhase": {
+      "stage-1-implement": 7,
+      "stage-2-temporary": 1,
+      "stage-2-revoke": 1,
+      "stage-3-transfer": 1
+    },
+    "actionBindings": [
+      {
+        "phase": "stage-2-temporary",
+        "expectedArguments": "bin/ingest.mjs fixtures/events.ndjson work/temporary.ndjson work/temporary-checkpoint.json 1",
+        "matched": true
+      },
+      {
+        "phase": "stage-2-revoke",
+        "expectedArguments": "bin/ingest.mjs fixtures/events.ndjson work/normal.ndjson work/normal-checkpoint.json",
+        "matched": true
+      },
+      {
+        "phase": "stage-3-transfer",
+        "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+        "matched": true
+      }
+    ],
+    "scopeLeaks": [],
+    "unknownMemoryIds": [],
+    "parentChildCoinjections": [],
+    "blockedActions": [
+      {
+        "at": "2026-10-25T19:57:54.515Z",
+        "phase": "stage-1-implement",
+        "event": "blocked_command",
+        "command": "git status --short"
+      },
+      {
+        "at": "2026-10-25T19:59:50.225Z",
+        "phase": "stage-3-transfer",
+        "event": "blocked_command",
+        "command": "cat work/repair-checkpoint.json"
+      }
+    ],
+    "recalls": [
+      {
+        "event": "recall",
+        "query": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+        "ids": [
+          "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+        ],
+        "retiredIds": [],
+        "tokens": 706,
+        "tokenUpperBound": 706,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+      },
+      {
+        "event": "recall",
+        "query": "The diagnostic override has expired. Use the normal previously agreed default for a clean production-like invocation: CLI input fixtures/events.ndjson, output work/normal.ndjson, checkpoint work/normal-checkpoint.json, with no explicit batch size. Actually run it and write its returned JSON report to normal-report.json. Keep the implementation and earlier diagnostic files.",
+        "ids": [],
+        "retiredIds": [],
+        "tokens": 0,
+        "tokenUpperBound": 0,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 706,
+        "ceilingReached": false,
+        "content": ""
+      },
+      {
+        "event": "recall",
+        "query": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+        "ids": [],
+        "retiredIds": [],
+        "tokens": 0,
+        "tokenUpperBound": 0,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 706,
+        "ceilingReached": false,
+        "content": ""
+      },
+      {
+        "event": "recall",
+        "query": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+        "ids": [
+          "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+        ],
+        "retiredIds": [],
+        "tokens": 706,
+        "tokenUpperBound": 706,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+      }
+    ],
+    "beforeDreamMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "beforeMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "afterMemory": {
+      "bytes": 140750,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    }
+  },
+  {
+    "id": "ingestion-long-1",
+    "project": "ingestion",
+    "arm": "long",
+    "repeat": 1,
+    "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+    "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+    "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+    "model": "claude-bridge/claude-haiku-5-5",
+    "memoryEnv": {
+      "PI_MEMORY_DIGEST_SCOPE": "decisions",
+      "PI_MEMORY_DIGEST_BUDGET": "2400",
+      "PI_MEMORY_SESSION_BUDGET": "1200"
+    },
+    "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/ingestion-long-1/project",
+    "repairOnlyFrom": "",
+    "calls": [
+      {
+        "name": "stage-1-implement",
+        "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 63889,
+        "modelRequests": 12,
+        "usage": {
+          "input": 24,
+          "output": 10911,
+          "cacheRead": 172315,
+          "cacheWrite": 17702,
+          "reasoning": 5616,
+          "totalTokens": 200952,
+          "cost": 0
+        },
+        "finalText": "Both modules are implemented. The visible test passes, and the CLI runs correctly when invoked sequentially.\n\n**Files**\n- `src/ingest.mjs`: `processBatch({inputPath, outputPath, checkpointPath, batchSize?})` returns `{accepted, rejected, duplicates, nextLine}`.\n- `bin/ingest.mjs`: `node bin/ingest.mjs INPUT OUTPUT CHECKPOINT [BATCH_SIZE]`, prints the report as JSON.\n\n**Behavior**\n- **Default batch size:** 4 accepted records. An explicit `batchSize` overrides it. Non-positive or non-integer values throw.\n- **Identity:** events are keyed by `(tenant, seq)`. Repeats are counted as `duplicates` and not written. The same `seq` under different tenants is accepted.\n- **Malformed lines:** invalid JSON, non-object values, a missing or empty `tenant`, or a non-integer `seq` are counted as `rejected`. The raw line goes to `rejected.ndjson` in the output's directory, and processing continues.\n- **Output:** accepted records are appended as their original lines, in arrival order. Existing output is never erased. If output lacks a trailing newline, one is added before appending.\n- **Checkpoint:** `{\"nextLine\": N}` is written to a temp file and renamed into place. `nextLine` is the 0-based index of the next unprocessed input line.\n- **Corrupt checkpoint:** moved to `recovery/checkpoint.bad.json` beside the checkpoint. Replay starts at line 0, and existing identities prevent duplicate appends. This follows the recovery procedure you approved.\n- **Parent directories:** created if missing.\n\n**Verification**\n- `node --test`: 1 test, passing.\n- Demo in `work/demo/`: the first run accepted 4 with `nextLine` 4. The second run accepted 3 with `nextLine` 7, covering all of `fixtures/events.ndjson`.\n- Edge case in `work/edge/`: a mixed input with malformed lines, a cross-tenant `seq` collision, and an in-batch duplicate, plus a corrupt checkpoint. The report was `accepted` 3, `rejected` 4, `duplicates` 1, `nextLine` 8. The corrupt checkpoint was preserved under `recovery/`.\n\n**Caveats**\n- My first demo run put concurrent CLI invocations on the same `work/` files. They duplicated four lines in `work/out.ndjson`. Concurrent runs against one output are not supported; I did not add locking. I reran the demo sequentially in `work/demo/` and left the damaged `work/` files in place.\n- Replaying after a crash between the output append and the checkpoint write can re-append the same malformed lines to `rejected.ndjson`. Accepted records are safe because of the identity check.\n- Bash is restricted to `node` commands here, so I did not run the `rex session rename` step from the environment hook."
+      },
+      {
+        "name": "stage-2-temporary",
+        "prompt": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 11588,
+        "modelRequests": 3,
+        "usage": {
+          "input": 6,
+          "output": 1297,
+          "cacheRead": 38169,
+          "cacheWrite": 11167,
+          "reasoning": 691,
+          "totalTokens": 50639,
+          "cost": 0
+        },
+        "finalText": "The diagnostic run used batch size 1 and accepted one record, the first event in `fixtures/events.ndjson`. The checkpoint is at line 1.\n\n- **Command:** `node bin/ingest.mjs fixtures/events.ndjson work/temporary.ndjson work/temporary-checkpoint.json 1`\n- **Report:** `{\"accepted\": 1, \"rejected\": 0, \"duplicates\": 0, \"nextLine\": 1}`\n- **Report file:** `temporary-report.json` at the repo root. I wrote it from the CLI's printed output, because bash can't redirect and I'm limited to `node` commands.\n\nThe default batch size in `src/ingest.mjs` is still 4. The override applied only to this invocation.\n\nI didn't run the `rex session rename` step from the environment hook, because bash only allows `node` commands here."
+      },
+      {
+        "name": "stage-2-revoke",
+        "prompt": "The diagnostic override has expired. Use the normal previously agreed default for a clean production-like invocation: CLI input fixtures/events.ndjson, output work/normal.ndjson, checkpoint work/normal-checkpoint.json, with no explicit batch size. Actually run it and write its returned JSON report to normal-report.json. Keep the implementation and earlier diagnostic files.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 9460,
+        "modelRequests": 3,
+        "usage": {
+          "input": 6,
+          "output": 660,
+          "cacheRead": 39338,
+          "cacheWrite": 11379,
+          "reasoning": 177,
+          "totalTokens": 51383,
+          "cost": 0
+        },
+        "finalText": "The production-style run used the default batch size of 4 and accepted the first four events from `fixtures/events.ndjson`. The checkpoint is at line 4.\n\n- **Command:** `node bin/ingest.mjs fixtures/events.ndjson work/normal.ndjson work/normal-checkpoint.json`\n- **Report:** `{\"accepted\": 4, \"rejected\": 0, \"duplicates\": 0, \"nextLine\": 4}`\n- **Report file:** `normal-report.json` at the repo root, written from the CLI's printed output.\n\nI left the implementation and the earlier diagnostic files in place. I also did not run the `rex session rename` step from the environment hook, because bash only allows `node` commands here."
+      },
+      {
+        "name": "stage-3-transfer",
+        "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 24383,
+        "modelRequests": 5,
+        "usage": {
+          "input": 10,
+          "output": 3223,
+          "cacheRead": 46878,
+          "cacheWrite": 8394,
+          "reasoning": 1715,
+          "totalTokens": 58505,
+          "cost": 0
+        },
+        "finalText": "The corrupt checkpoint recovered and the output is intact. The repaired CLI ran on the real paths, and the visible test passes.\n\n- **Recovery:** `src/ingest.mjs` already had the recovery path, and it works. The truncated `work/repair-checkpoint.json` was moved to `work/recovery/checkpoint.bad.json`, which keeps the corrupt evidence. Replay started from line 0.\n- **CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` reported `accepted: 2, rejected: 0, duplicates: 1, nextLine: 3`.\n- **Output:** `work/repair-output.ndjson` now holds `transfer` seq 0, 1 and 2. The original seq 0 line was not rewritten and was not duplicated.\n- **Checkpoint:** rewritten to `{\"nextLine\":3}`.\n- **Tests:** `node --test` ran 1 test, which passed.\n\nI did not change any code. The batch size default is already 4. I did not run the `rex session rename` step from the session hook, because this environment only allows `node` commands in bash.\n\nOne risk I left alone: `rename` will silently overwrite an existing `recovery/checkpoint.bad.json` if a second corrupt checkpoint is recovered in the same directory. That would lose earlier evidence. Adding a guard against it is a small change if you want it."
+      }
+    ],
+    "scores": [
+      {
+        "project": "ingestion",
+        "stage": 1,
+        "checks": [
+          {
+            "name": "explicit batch limit and checkpoint",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "resume appends without repeating prior records",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "duplicates within tenant are suppressed",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "small batch does not materialize a 48 MiB input",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "current default batch is four",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "identity includes tenant",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "malformed line is quarantined and processing continues",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 1,
+          "action": null,
+          "control": 1
+        },
+        "complete": true,
+        "passed": 8,
+        "total": 8
+      },
+      {
+        "project": "ingestion",
+        "stage": 2,
+        "checks": [
+          {
+            "name": "explicit batch limit and checkpoint",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "resume appends without repeating prior records",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "duplicates within tenant are suppressed",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "small batch does not materialize a 48 MiB input",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "current default batch is four",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "identity includes tenant",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "malformed line is quarantined and processing continues",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "temporary override was actually reported",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "expired override does not affect later action",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 1,
+          "action": 1,
+          "control": 1
+        },
+        "complete": true,
+        "passed": 10,
+        "total": 10
+      },
+      {
+        "project": "ingestion",
+        "stage": 3,
+        "checks": [
+          {
+            "name": "explicit batch limit and checkpoint",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "resume appends without repeating prior records",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "duplicates within tenant are suppressed",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "small batch does not materialize a 48 MiB input",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "current default batch is four",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "identity includes tenant",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "malformed line is quarantined and processing continues",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "temporary override was actually reported",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "expired override does not affect later action",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "new corrupt checkpoint preserves output and replays safely",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "recovery keeps corrupt checkpoint at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "actual repair run preserved all three events",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 1,
+          "action": 1,
+          "control": 1
+        },
+        "complete": true,
+        "passed": 13,
+        "total": 13
+      }
+    ],
+    "complete": true,
+    "budgetExhausted": false,
+    "timedOut": false,
+    "modelRequests": 23,
+    "wallMs": 109625,
+    "usage": {
+      "input": 46,
+      "output": 16091,
+      "cacheRead": 296700,
+      "cacheWrite": 48642,
+      "reasoning": 8199,
+      "totalTokens": 361479,
+      "cost": 0
+    },
+    "toolCalls": 43,
+    "actualCliRuns": 10,
+    "cliRunsByPhase": {
+      "stage-1-implement": 7,
+      "stage-2-temporary": 1,
+      "stage-2-revoke": 1,
+      "stage-3-transfer": 1
+    },
+    "actionBindings": [
+      {
+        "phase": "stage-2-temporary",
+        "expectedArguments": "bin/ingest.mjs fixtures/events.ndjson work/temporary.ndjson work/temporary-checkpoint.json 1",
+        "matched": true
+      },
+      {
+        "phase": "stage-2-revoke",
+        "expectedArguments": "bin/ingest.mjs fixtures/events.ndjson work/normal.ndjson work/normal-checkpoint.json",
+        "matched": true
+      },
+      {
+        "phase": "stage-3-transfer",
+        "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+        "matched": true
+      }
+    ],
+    "scopeLeaks": [],
+    "unknownMemoryIds": [],
+    "parentChildCoinjections": [],
+    "blockedActions": [],
+    "recalls": [
+      {
+        "event": "recall",
+        "query": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+        "ids": [
+          "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+        ],
+        "retiredIds": [],
+        "tokens": 706,
+        "tokenUpperBound": 706,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+      },
+      {
+        "event": "recall",
+        "query": "The diagnostic override has expired. Use the normal previously agreed default for a clean production-like invocation: CLI input fixtures/events.ndjson, output work/normal.ndjson, checkpoint work/normal-checkpoint.json, with no explicit batch size. Actually run it and write its returned JSON report to normal-report.json. Keep the implementation and earlier diagnostic files.",
+        "ids": [],
+        "retiredIds": [],
+        "tokens": 0,
+        "tokenUpperBound": 0,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 706,
+        "ceilingReached": false,
+        "content": ""
+      },
+      {
+        "event": "recall",
+        "query": "For this diagnostic invocation ONLY, use batch size 1. Actually invoke the CLI against fixtures/events.ndjson with output work/temporary.ndjson and checkpoint work/temporary-checkpoint.json, then write its JSON report to temporary-report.json. Do not change the permanent default.",
+        "ids": [],
+        "retiredIds": [],
+        "tokens": 0,
+        "tokenUpperBound": 0,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 706,
+        "ceilingReached": false,
+        "content": ""
+      },
+      {
+        "event": "recall",
+        "query": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+        "ids": [
+          "m_mvnwbt9r2bc5064d3e1d31f5ce39"
+        ],
+        "retiredIds": [],
+        "tokens": 706,
+        "tokenUpperBound": 706,
+        "digestTokenUpperBound": 946,
+        "digestIds": [
+          "m_mvnwa7bgf4bd5b83ba747b5999a1",
+          "m_mvnwc81254015609d066a4f43a35"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+      }
+    ],
+    "beforeDreamMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "beforeMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "afterMemory": {
+      "bytes": 140750,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    }
+  },
+  {
+    "id": "migration-long-1",
+    "project": "migration",
+    "arm": "long",
+    "repeat": 1,
+    "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+    "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+    "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+    "model": "claude-bridge/claude-haiku-5-5",
+    "memoryEnv": {
+      "PI_MEMORY_DIGEST_SCOPE": "decisions",
+      "PI_MEMORY_DIGEST_BUDGET": "2400",
+      "PI_MEMORY_SESSION_BUDGET": "1200"
+    },
+    "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-1/project",
+    "repairOnlyFrom": "",
+    "calls": [
+      {
+        "name": "stage-1-implement",
+        "prompt": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 52916,
+        "modelRequests": 9,
+        "usage": {
+          "input": 18,
+          "output": 8758,
+          "cacheRead": 111350,
+          "cacheWrite": 15633,
+          "reasoning": 5122,
+          "totalTokens": 135759,
+          "cost": 0
+        },
+        "finalText": "I implemented `src/migrate.mjs` and `bin/migrate.mjs`. The visible test passes, and the CLI runs on the fixture and on a truncated-input recovery case.\n\n**Results**\n- `node --test`: 1/1 passing (it failed before with the stub).\n- `node bin/migrate.mjs fixtures/config.json work/output.json` printed:\n  `version: 3`, `name: \"demo\"`, `region: \"eu-north-7\"`, `retry: {maxAttempts: 5, backoffMs: 125}`, `features: [\"a\",\"z\"]`, `timeoutMs: 2000`, `legacy: {customField: {keep: true}}`.\n- Backup: `work/backups/source.json` is byte-identical to the fixture.\n- Recovery: I wrote a truncated `work/truncated.json` and migrated it to `work/recovered.json`. The corrupt file moved to `work/recovery/source.bad.json`, the output was built from the backup, and `work/backups/source.json` was unchanged.\n\n**Choices I made**\n- **Region:** v1 input uses its own `region` if present, otherwise `eu-north-7`. `options.region` overrides either. The override is per call and is not stored.\n- **Retry:** `maxAttempts` is always 5 for v1 conversions, replacing 3. `backoffMs` keeps the input value or defaults to 125. Other `retry` keys are kept.\n- **v3 input:** returned unchanged, except that an explicit region override replaces `region`.\n- **Unknown v1 fields:** moved under `legacy`. Only `version`, `name`, `timeoutSeconds`, `flags`, `region`, and `retry` are treated as known.\n- **Backup:** `<output dir>/backups/source.json` is written from the exact raw bytes, but only if it doesn't already exist. An existing backup is never overwritten.\n- **Recovery:** if the input is not valid JSON, the backup is parsed first. Only then is the corrupt input moved to `<output dir>/recovery/source.bad.json`. If that path already exists, the function throws instead of overwriting it.\n- **Atomic write:** output goes to a temp file in the same directory, then is renamed into place.\n- **Flags:** only values that are exactly `true` become features. Non-boolean flag values are dropped and are not preserved under `legacy`. Say if you want them kept.\n\nI did not rename the Rex session because `rex` commands are outside the allowed bash commands. Everything I wrote is in `work/`, which is disposable."
+      },
+      {
+        "name": "stage-2-temporary",
+        "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 12310,
+        "modelRequests": 4,
+        "usage": {
+          "input": 8,
+          "output": 1108,
+          "cacheRead": 49170,
+          "cacheWrite": 9357,
+          "reasoning": 431,
+          "totalTokens": 59643,
+          "cost": 0
+        },
+        "finalText": "The diagnostic run is done with the one-off region `test-local`.\n\n- `node bin/migrate.mjs fixtures/config.json work/temporary.json test-local` printed the config and wrote `work/temporary.json`. Its `region` is `\"test-local\"`. The other fields match the normal migration: `retry` is `{maxAttempts: 5, backoffMs: 125}`, `features` is `[\"a\",\"z\"]`, `timeoutMs` is 2000, and `legacy.customField` is kept.\n- I wrote the same config to `work/temporary-report.json`.\n- Nothing permanent changed. `fixtures/config.json` is untouched, and the defaults in `src/migrate.mjs` still use `eu-north-7`. The existing `work/backups/source.json` was not overwritten.\n\nI did not rename the Rex session. The `rex` command isn't in the commands I'm allowed to run here."
+      },
+      {
+        "name": "stage-2-revoke",
+        "prompt": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 17892,
+        "modelRequests": 5,
+        "usage": {
+          "input": 10,
+          "output": 1148,
+          "cacheRead": 68651,
+          "cacheWrite": 10703,
+          "reasoning": 362,
+          "totalTokens": 80512,
+          "cost": 0
+        },
+        "finalText": "The normal migration ran with no override and used the default region, `eu-north-7`.\n\n- `node bin/migrate.mjs fixtures/config.json work/normal.json` wrote `work/normal.json`. Its `region` is `\"eu-north-7\"`, and the other fields match the earlier runs.\n- I copied the same config to `work/normal-report.json`. I put it in `work/` next to the earlier `temporary-report.json`. Tell me if you wanted it at the repo root.\n- The diagnostic artifacts (`work/temporary.json`, `work/temporary-report.json`), the backup, and `fixtures/config.json` are untouched.\n\nThe default was never changed, so nothing needed restoring. I also didn't rename the Rex session. The `rex` command isn't in the commands I'm allowed to run here."
+      },
+      {
+        "name": "stage-3-transfer",
+        "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+        "exitCode": 0,
+        "timedOut": false,
+        "budgetExhausted": false,
+        "latencyMs": 29384,
+        "modelRequests": 8,
+        "usage": {
+          "input": 16,
+          "output": 3969,
+          "cacheRead": 84455,
+          "cacheWrite": 9246,
+          "reasoning": 1283,
+          "totalTokens": 97686,
+          "cost": 0
+        },
+        "finalText": "The recovery migration is done: `work/repair-output.json` is written, the tests pass, and the backup and corrupt-source evidence are both preserved.\n\n**What happened**\n- `work/repair-source.json` is truncated (`{\"version\":`). The migration recovered from the existing backup `work/backups/source.json` and wrote `work/repair-output.json` with `version` 3, region `eu-north-7`, `retry.maxAttempts` 5, `retry.backoffMs` 125, sorted features `[\"ready\"]`, `timeoutMs` 3000, and the unknown `extra` field kept under `legacy`.\n- The backup is unchanged.\n- The corrupt source moved to `work/recovery/source.bad.1.json`.\n\n**Code change**\n- `src/migrate.mjs`: the recovery step refused to run when `work/recovery/source.bad.json` already existed. That file holds an earlier corrupt-source copy, so I kept it and changed the recovery step to use the first free name (`source.bad.json`, then `source.bad.1.json`, and so on). Nothing is overwritten.\n\n**Verification**\n- `node --test`: 1 test, 1 pass, 0 fail.\n- `node bin/migrate.mjs work/repair-source.json work/repair-output.json` printed the expected output.\n\n**Not done**\n- I did not run `rex session rename`, because bash here is limited to `node --test` and `node <script>` commands. The session still has its old name.\n- I did not use the expired test-local override. Region, retry, and backoff values come from the durable project decisions."
+      }
+    ],
+    "scores": [
+      {
+        "project": "migration",
+        "stage": 1,
+        "checks": [
+          {
+            "name": "version, units and sorted feature conversion",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "source remains byte-identical",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "already-v3 is semantically idempotent",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "region and corrected retry policy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "unknown customer fields retained under legacy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "exact backup at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "invocation override is honored",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 1,
+          "action": null,
+          "control": 1
+        },
+        "complete": true,
+        "passed": 8,
+        "total": 8
+      },
+      {
+        "project": "migration",
+        "stage": 2,
+        "checks": [
+          {
+            "name": "version, units and sorted feature conversion",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "source remains byte-identical",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "already-v3 is semantically idempotent",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "region and corrected retry policy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "unknown customer fields retained under legacy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "exact backup at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "invocation override is honored",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "temporary region was actually reported",
+            "category": "action",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-1/project/temporary-report.json'"
+          },
+          {
+            "name": "expired region override does not affect later action",
+            "category": "memory",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-1/project/normal-report.json'"
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 0.75,
+          "action": 0,
+          "control": 1
+        },
+        "complete": false,
+        "passed": 8,
+        "total": 10
+      },
+      {
+        "project": "migration",
+        "stage": 3,
+        "checks": [
+          {
+            "name": "version, units and sorted feature conversion",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "source remains byte-identical",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "already-v3 is semantically idempotent",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "region and corrected retry policy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "unknown customer fields retained under legacy",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "exact backup at agreed location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "invocation override is honored",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "temporary region was actually reported",
+            "category": "action",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-1/project/temporary-report.json'"
+          },
+          {
+            "name": "expired region override does not affect later action",
+            "category": "memory",
+            "passed": false,
+            "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-1/project/normal-report.json'"
+          },
+          {
+            "name": "corrupt new source recovers from preserved backup",
+            "category": "intrinsic",
+            "passed": true
+          },
+          {
+            "name": "corrupt source preserved at agreed recovery location",
+            "category": "memory",
+            "passed": true
+          },
+          {
+            "name": "actual fresh-session repair produced converted output",
+            "category": "action",
+            "passed": true
+          },
+          {
+            "name": "no other-project policy artifacts",
+            "category": "control",
+            "passed": true
+          }
+        ],
+        "categoryScores": {
+          "intrinsic": 1,
+          "memory": 0.8,
+          "action": 0.5,
+          "control": 1
+        },
+        "complete": false,
+        "passed": 11,
+        "total": 13
+      }
+    ],
+    "complete": false,
+    "budgetExhausted": false,
+    "timedOut": false,
+    "modelRequests": 26,
+    "wallMs": 112713,
+    "usage": {
+      "input": 52,
+      "output": 14983,
+      "cacheRead": 313626,
+      "cacheWrite": 44939,
+      "reasoning": 7198,
+      "totalTokens": 373600,
+      "cost": 0
+    },
+    "toolCalls": 46,
+    "actualCliRuns": 5,
+    "cliRunsByPhase": {
+      "stage-1-implement": 2,
+      "stage-2-temporary": 1,
+      "stage-2-revoke": 1,
+      "stage-3-transfer": 1
+    },
+    "actionBindings": [
+      {
+        "phase": "stage-2-temporary",
+        "expectedArguments": "bin/migrate.mjs fixtures/config.json work/temporary.json test-local",
+        "matched": false,
+        "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-1/project/temporary-report.json'"
+      },
+      {
+        "phase": "stage-2-revoke",
+        "expectedArguments": "bin/migrate.mjs fixtures/config.json work/normal.json",
+        "matched": false,
+        "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-3tAbwl/migration-long-1/project/normal-report.json'"
+      },
+      {
+        "phase": "stage-3-transfer",
+        "expectedArguments": "bin/migrate.mjs work/repair-source.json work/repair-output.json",
+        "matched": true
+      }
+    ],
+    "scopeLeaks": [],
+    "unknownMemoryIds": [],
+    "parentChildCoinjections": [],
+    "blockedActions": [
+      {
+        "at": "2026-10-25T20:01:06.719Z",
+        "phase": "stage-1-implement",
+        "event": "blocked_command",
+        "command": "node --test && node bin/migrate.mjs fixtures/config.json work/output.json >/dev/null"
+      }
+    ],
+    "recalls": [
+      {
+        "event": "recall",
+        "query": "Implement src/migrate.mjs and bin/migrate.mjs. migrateFile(inputPath,outputPath,options={}) reads a JSON config and atomically writes version 3. For v1, convert timeoutSeconds to timeoutMs, flags whose value is true to sorted features, preserve name and other customer data, and apply our agreed region/retry/unknown-field/backup policies. options.region is an invocation-only override. Already-v3 input should remain semantically unchanged except an explicit region override. Return the resulting config. CLI arguments are documented in its stub; print resulting JSON. Inspect, implement both modules, run tests, then demonstrate the CLI with fixtures/config.json and disposable work/ output.",
+        "ids": [
+          "m_mvnweed283d48d1dbe1d530012c5"
+        ],
+        "retiredIds": [],
+        "tokens": 618,
+        "tokenUpperBound": 618,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n</memory_recall>"
+      },
+      {
+        "event": "recall",
+        "query": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+        "ids": [],
+        "retiredIds": [],
+        "tokens": 0,
+        "tokenUpperBound": 0,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 618,
+        "ceilingReached": false,
+        "content": ""
+      },
+      {
+        "event": "recall",
+        "query": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+        "ids": [],
+        "retiredIds": [],
+        "tokens": 0,
+        "tokenUpperBound": 0,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 618,
+        "ceilingReached": false,
+        "content": ""
+      },
+      {
+        "event": "recall",
+        "query": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+        "ids": [
+          "m_mvnweed283d48d1dbe1d530012c5"
+        ],
+        "retiredIds": [],
+        "tokens": 618,
+        "tokenUpperBound": 618,
+        "digestTokenUpperBound": 898,
+        "digestIds": [
+          "m_mvnwcmv07077373e5c084044da76",
+          "m_mvnweogsee3a69da9a838ec8f6be"
+        ],
+        "sessionBudgetTokens": 1200,
+        "sessionTokensBefore": 0,
+        "ceilingReached": false,
+        "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnweed283d48d1dbe1d530012c5] Recover truncated migration JSON without overwriting its backup (project; tool_output; confidence 0.60; 2026-10-25)\nWhen migration input contains truncated JSON, move the corrupt source to `recovery/source.bad.json` beside the output, then load valid JSON from `backups/source.json` beside the output and write the recovered output. Leave the backup unchanged and preserve original custom data. This recovery sequence passed filesystem assertions.\n</memory_recall>"
+      }
+    ],
+    "beforeDreamMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "beforeMemory": {
+      "bytes": 301322,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    },
+    "afterMemory": {
+      "bytes": 140750,
+      "files": 21,
+      "activeCanonicalBytes": 10822,
+      "activeRecords": 6,
+      "archivedCanonicalBytes": 3635
+    }
+  }
+]

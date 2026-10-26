@@ -5,13 +5,15 @@
   "workspaces": [
     "pi-advisor",
     "pi-atlassian",
+    "pi-bot",
+    "pi-background-compaction",
     "pi-canary",
     "pi-fast",
     "pi-loop",
     "pi-memory",
+    "pi-remote",
     "pi-tps",
     "pi-voice",
-    "pi-remote",
     "pi-xai"
   ],
   "engines": {

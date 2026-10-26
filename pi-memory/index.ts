@@ -28,6 +28,8 @@ export default function memoryExtension(pi: ExtensionAPI): void {
   let background: IdleScheduler<ExtensionContext> | undefined, dreamWanted = false;
   const injected = new Map<string, string | undefined>();
   const retired = new Set<string>(), digestVersions = new Map<string, string>();
+  // Recall tokens already injected into the current session branch; enforces retrieval.sessionBudgetTokens across process restarts.
+  let recallTokensUsed = 0;
   const flags = ["no-memory", "memory-dir", "memory-mode", "memory-model"];
   pi.registerFlag("no-memory", { type: "boolean", description: "Disable all memory reads, writes, and background calls" });
   for (const name of flags.slice(1)) pi.registerFlag(name, { type: "string", description: `${name}: override pi-memory settings for this invocation` });
@@ -51,9 +53,10 @@ export default function memoryExtension(pi: ExtensionAPI): void {
       proposal.provenance.some(p => p.id === item.id && p.evidenceVersion === 1 && p.hash === evidenceHash(item)));
   };
   const restoreInjected = (ctx: ExtensionContext) => {
-    injected.clear(); retired.clear();
+    injected.clear(); retired.clear(); recallTokensUsed = 0;
     for (const entry of ctx.sessionManager.getBranch()) {
       if (entry.type === "compaction") { injected.clear(); retired.clear(); }
+      if (entry.type === "custom_message" && entry.customType === "pi-memory/recall") recallTokensUsed += estimateTokens(typeof entry.content === "string" ? entry.content : (entry.content ?? []).filter(b => b.type === "text").map(b => b.text).join("\n"));
       if ((entry.type === "custom_message" && entry.customType === "pi-memory/recall") ||
           (entry.type === "custom" && entry.customType === "pi-memory/reference")) {
         const details = (entry.type === "custom_message" ? entry.details : entry.data) as { ids?: string[]; versions?: Record<string, string>; retiredIds?: string[] } | undefined;
@@ -110,7 +113,7 @@ export default function memoryExtension(pi: ExtensionAPI): void {
   pi.on("session_start", async (_event, ctx) => {
     await background?.dispose(); background = undefined; dreamWanted = false;
     controller?.abort(); await pending; store?.close(); store = undefined; pipeline = undefined; proposals = undefined; dream = undefined;
-    injected.clear(); retired.clear(); digestVersions.clear(); digest = ""; captures = 0;
+    injected.clear(); retired.clear(); digestVersions.clear(); digest = ""; captures = 0; recallTokensUsed = 0;
     try {
       config = readConfig(pi.getSettings(), getAgentDir(), Object.fromEntries(flags.map(key => [key, pi.getFlag(key)])));
       if (!config.enabled) return;
@@ -134,7 +137,7 @@ export default function memoryExtension(pi: ExtensionAPI): void {
       proposals = new ProposalManager(store, { root: config.dir, projectKey, cwd: ctx.cwd, agentDir: getAgentDir() });
       // Read only canonical items referenced by a compiled digest; ignore arbitrary digest prose.
       // This validated section remains byte-identical until the next session.
-      digest = store.readDigest(config.digest.budgetTokens);
+      digest = store.readDigest(config.digest.budgetTokens, config.digest.scope);
       for (const match of digest.matchAll(/\[(m_[a-z0-9]{20,64})\]/g)) {
         const item = store.get([match[1]!])[0];
         if (item) digestVersions.set(item.id, evidenceHash(item));
@@ -158,15 +161,18 @@ export default function memoryExtension(pi: ExtensionAPI): void {
     const renderNotice = () => retiredIds.length ? `<memory_update>Earlier versions of ${retiredIds.join(", ")} no longer apply. Use current evidence.</memory_update>\n\n` : "";
     while (retiredIds.length && estimateTokens(renderNotice()) > config!.retrieval.budgetTokens) retiredIds.pop();
     const notice = renderNotice();
-    const budgetTokens = Math.max(0, config!.retrieval.budgetTokens - estimateTokens(notice));
+    // Invalidation notices are correctness, not retrieval; the session ceiling bounds new evidence only.
+    const ceiling = config!.retrieval.sessionBudgetTokens, ceilingRemaining = ceiling ? Math.max(0, ceiling - recallTokensUsed) : Infinity;
+    const budgetTokens = Math.max(0, Math.min(config!.retrieval.budgetTokens - estimateTokens(notice), ceilingRemaining));
     const query = event.messageType === "user" ? event.prompt : "";
     const automatic = config!.mode !== "agent" && !!query;
-    const candidates = automatic ? store!.search(query, { limit: 24, strategy: config!.retrieval.strategy, automatic: config!.retrieval.strategy !== "baseline" }) : [];
+    const candidates = automatic && budgetTokens > 0 ? store!.search(query, { limit: 24, strategy: config!.retrieval.strategy, automatic: config!.retrieval.strategy !== "baseline" }) : [];
     const ranked = await rerank(candidates, query, config!.retrieval.model, config!.retrieval.timeoutMs, ctx);
     const items = selectMemories(ranked, { ...config!.retrieval, budgetTokens, excludeIds: new Set([...priorVersions.keys()].filter(id => !retired.has(id) && !retiredIds.includes(id))) });
     const content = notice + renderMemories(items, budgetTokens);
-    await trace({ event: "recall", query, ids: items.map(item => item.id), retiredIds, tokens: estimateTokens(content), tokenUpperBound: estimateTokens(content), digestTokenUpperBound: estimateTokens(digest), content });
+    await trace({ event: "recall", query, ids: items.map(item => item.id), retiredIds, tokens: estimateTokens(content), tokenUpperBound: estimateTokens(content), digestTokenUpperBound: estimateTokens(digest), digestIds: [...digestVersions.keys()], sessionBudgetTokens: ceiling, sessionTokensBefore: recallTokensUsed, ceilingReached: ceiling > 0 && ceilingRemaining <= 0, content });
     if (!content) return;
+    recallTokensUsed += estimateTokens(content);
     retiredIds.forEach(id => retired.add(id));
     items.forEach(item => { injected.set(item.id, evidenceHash(item)); retired.delete(item.id); });
     if (items.length) await store!.markInjected(items.map(item => item.id), ctx.sessionManager.getSessionId());

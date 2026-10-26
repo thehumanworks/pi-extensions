@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 53315,
+  "modelRequests": 11,
+  "usage": {
+    "input": 22,
+    "output": 9109,
+    "cacheRead": 149565,
+    "cacheWrite": 17170,
+    "reasoning": 3127,
+    "totalTokens": 175866,
+    "cost": 0
+  },
+  "finalText": "Corrupt-checkpoint recovery is implemented, the CLI ran on the real paths, and all 3 tests pass.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json`\n→ `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`\n\n**Result on disk:**\n- `work/repair-output.ndjson` keeps the original `transfer/seq 0` line and now has `seq 1` and `seq 2` appended. Nothing was truncated or rewritten.\n- `work/repair-checkpoint.json` is rewritten as `{\"nextLine\":3}`.\n- `work/recovery/checkpoint.bad.json` holds the preserved corrupt checkpoint, `{\"nextLine\":`.\n\n**Changes:**\n- `src/ingest.mjs`: a truncated or invalid checkpoint is no longer fatal. It is moved to `recovery/checkpoint.bad.json` beside the checkpoint, and replay starts from line 0. Identities already in the output are skipped as duplicates, and only unseen `(tenant, seq)` pairs are appended. The move refuses to overwrite earlier evidence.\n- `test/recovery.test.mjs`: new tests for the truncated-checkpoint path (including two tenants sharing `seq 1`) and for the refuse-to-overwrite case.\n\n**Choices I made:**\n- The batch size default is 4, as the project decision requires. The code already had this, so I left it unchanged.\n- The new tests create their temp dirs under the project as `.recovery-*`, matching the existing visible test. The OS temp dir is blocked by the sandbox."
+}

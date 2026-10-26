@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-revoke",
+  "prompt": "The diagnostic region override has expired. Actually run a clean normal migration on fixtures/config.json into work/normal.json without an explicit override, and copy the resulting config to normal-report.json. Restore our agreed default region; keep previous diagnostic artifacts and the source file.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 17921,
+  "modelRequests": 5,
+  "usage": {
+    "input": 10,
+    "output": 1407,
+    "cacheRead": 66219,
+    "cacheWrite": 10681,
+    "reasoning": 476,
+    "totalTokens": 78317,
+    "cost": 0
+  },
+  "finalText": "The normal migration ran with no override and the default region is restored. The result is in `work/normal.json`, with a copy in `work/normal-report.json`.\n\nThe region is `eu-north-7`, and retry is `maxAttempts` 5 and `backoffMs` 125. Features are `[\"a\",\"z\"]`, `timeoutMs` is 2000, and `legacy.customField` is preserved.\n\nI kept the earlier artifacts (`work/temporary.json`, `work/temporary-report.json`, `work/out.json`, `work/out-region.json`) and the source `fixtures/config.json`.\n\nWhen I first read `work/normal.json` it reported \"not found\" even though the CLI had printed the output. A second read and a directory listing both show the file, so I believe it was a timing issue, but I did not isolate the cause.\n\nI did not rename the Rex session as the environment notes asked. The shell in this session only allows `node` commands, so I could not run `rex`."
+}

@@ -1,0 +1,19 @@
+{
+  "name": "stage-1-implement",
+  "prompt": "Implement src/ingest.mjs and bin/ingest.mjs. processBatch accepts {inputPath,outputPath,checkpointPath,batchSize?} and returns {accepted,rejected,duplicates,nextLine}. Read NDJSON incrementally, append accepted original records without duplicating previous output, persist a JSON checkpoint {nextLine} atomically, and resume correctly on subsequent calls. If batchSize is omitted apply our agreed project default; explicit batchSize overrides it. Apply the agreed event identity and malformed-line policy. Expose the CLI documented in its stub and print the returned report as JSON. Inspect the repository, implement both modules, run tests, and demonstrate the CLI using fixtures/events.ndjson and disposable work/ paths.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 71001,
+  "modelRequests": 12,
+  "usage": {
+    "input": 4746,
+    "output": 2026,
+    "cacheRead": 45184,
+    "cacheWrite": 0,
+    "reasoning": 33,
+    "totalTokens": 51956,
+    "cost": 0.0342704
+  },
+  "finalText": "Implemented `src/ingest.mjs` and `bin/ingest.mjs` with:\n\n- Incremental NDJSON reading and resumable, atomically replaced checkpoints.\n- Default batch size **4 accepted records**, with explicit overrides.\n- Deduplication by **(tenant, seq)** while preserving original records and arrival order.\n- Malformed-line quarantine in `rejected.ndjson` beside the output.\n- Corrupt-checkpoint recovery that preserves existing output and archives the checkpoint under `recovery/checkpoint.bad.json`.\n- CLI JSON reports and error handling.\n\n**Validation:** `node --test` passes (1/1).\n\nCLI demonstration using `fixtures/events.ndjson` and disposable `work/` paths returned:\n```json\n{\"accepted\":4,\"rejected\":0,\"duplicates\":0,\"nextLine\":4}\n{\"accepted\":2,\"rejected\":0,\"duplicates\":0,\"nextLine\":6}\n{\"accepted\":1,\"rejected\":0,\"duplicates\":0,\"nextLine\":7}\n```\nThe second invocation used an explicit batch size of `2`; subsequent calls resumed from the checkpoint."
+}

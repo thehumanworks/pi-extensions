@@ -1,0 +1,5 @@
+{"tenant":"alpha","seq":1,"value":"a1"}
+{"tenant":"beta","seq":1,"value":"b1"}
+{"tenant":"alpha","seq":2,"value":"a2"}
+{"tenant":"beta","seq":2,"value":"b2"}
+{"tenant":"alpha","seq":3,"value":"a3"}

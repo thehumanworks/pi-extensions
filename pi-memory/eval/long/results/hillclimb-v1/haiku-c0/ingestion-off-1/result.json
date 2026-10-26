@@ -1,0 +1,195 @@
+{
+  "id": "ingestion-off-1",
+  "project": "ingestion",
+  "arm": "off",
+  "repeat": 1,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "claude-bridge/claude-haiku-5-5",
+  "memoryEnv": {},
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/ingestion-off-1/project",
+  "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+  "calls": [
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 49587,
+      "modelRequests": 12,
+      "usage": {
+        "input": 24,
+        "output": 8501,
+        "cacheRead": 145559,
+        "cacheWrite": 16174,
+        "reasoning": 4101,
+        "totalTokens": 170258,
+        "cost": 0
+      },
+      "finalText": "The corrupt checkpoint now recovers on its own. I ran the CLI on the repair paths, and both test runs pass (2/2).\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json`\n- Result: `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3,\"quarantinedCheckpoint\":\"work/repair-checkpoint.json.corrupt-2026-10-25T19-40-45-242Z\"}`\n- `work/repair-output.ndjson` kept its existing `seq 0` line and gained `seq 1` and `seq 2`. Nothing was truncated.\n- The new `work/repair-checkpoint.json` contains `{\"nextLine\":3}`.\n- The truncated original (`{\"nextLine\":`) is preserved byte-for-byte at the `.corrupt-<timestamp>` path above.\n\n**Code changes:**\n- `src/ingest.mjs`: a checkpoint that is unparseable JSON or has an invalid `nextLine` is renamed to `<checkpoint>.corrupt-<ISO timestamp>` and processing restarts at line 0. The output identity check suppresses lines already written. The report gains a `quarantinedCheckpoint` field only when this happens. Missing checkpoints and other read errors behave as before.\n- `test/repair.test.mjs`: new test covering the corrupt-checkpoint path. It checks the evidence file, the unchanged output prefix, and the rewritten checkpoint.\n\n**Caveat:** I could not read the project memory directory (outside the synthetic project), so I could not confirm the \"previously verified procedure\" or the agreed evidence-naming convention. I used the restart-from-zero-with-dedup behaviour that the existing code comments imply, and a `.corrupt-<timestamp>` suffix. If the remembered convention differs, the rename target is a one-line change in `src/ingest.mjs`.\n\nI also could not rename the Rex session, because bash is restricted to `node` commands here."
+    }
+  ],
+  "scores": [
+    {
+      "project": "ingestion",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/ingestion-off-1/project/.acceptance-xkJgxb/rejected.ndjson'"
+        },
+        {
+          "name": "temporary override was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired override does not affect later action",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "new corrupt checkpoint preserves output and replays safely",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "recovery keeps corrupt checkpoint at agreed location",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/ingestion-off-1/project/.acceptance-E7KTxZ/recovery/checkpoint.bad.json'"
+        },
+        {
+          "name": "actual repair run preserved all three events",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0.6,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 11,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 12,
+  "wallMs": 49703,
+  "usage": {
+    "input": 24,
+    "output": 8501,
+    "cacheRead": 145559,
+    "cacheWrite": 16174,
+    "reasoning": 4101,
+    "totalTokens": 170258,
+    "cost": 0
+  },
+  "toolCalls": 22,
+  "actualCliRuns": 1,
+  "cliRunsByPhase": {
+    "stage-1-implement": 0,
+    "stage-2-temporary": 0,
+    "stage-2-revoke": 0,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [
+    {
+      "at": "2026-10-25T19:40:08.040Z",
+      "phase": "stage-3-transfer",
+      "event": "blocked_path",
+      "tool": "read",
+      "input": {
+        "path": "/Users/tomas/.claude/projects/-private-var-folders-dg-1s1vxvps60g694qr551l0l4c0000gn-T-pi-memory-long-2kJ7pl-ingestion-off-1-project/memory/MEMORY.md"
+      }
+    },
+    {
+      "at": "2026-10-25T19:40:08.040Z",
+      "phase": "stage-3-transfer",
+      "event": "blocked_command",
+      "command": "git status --short"
+    },
+    {
+      "at": "2026-10-25T19:40:17.962Z",
+      "phase": "stage-3-transfer",
+      "event": "blocked_command",
+      "command": "git log --oneline --all"
+    }
+  ],
+  "recalls": [],
+  "beforeDreamMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "beforeMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  },
+  "afterMemory": {
+    "bytes": 0,
+    "files": 0,
+    "activeCanonicalBytes": 0,
+    "activeRecords": 0,
+    "archivedCanonicalBytes": 0
+  }
+}

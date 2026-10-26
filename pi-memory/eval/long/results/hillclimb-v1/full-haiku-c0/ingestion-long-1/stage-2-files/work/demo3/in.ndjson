@@ -1,0 +1,7 @@
+{"tenant":"a","seq":1,"value":"one"}
+not json
+{"tenant":"b","seq":1,"value":"b-one"}
+{"tenant":"a","seq":1,"value":"dup"}
+{"tenant":"a","seq":2,"value":"two"}
+[1,2]
+{"tenant":"a","seq":3,"value":"three"}

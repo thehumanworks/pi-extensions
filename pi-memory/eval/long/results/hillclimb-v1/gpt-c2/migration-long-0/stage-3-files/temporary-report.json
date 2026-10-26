@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "name": "demo",
+  "customField": {
+    "keep": true
+  },
+  "timeoutMs": 2000,
+  "features": [
+    "a",
+    "z"
+  ],
+  "region": "test-local",
+  "retry": {
+    "backoffMs": 1000,
+    "maxAttempts": 5
+  }
+}

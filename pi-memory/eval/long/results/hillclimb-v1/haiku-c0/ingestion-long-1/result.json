@@ -1,0 +1,190 @@
+{
+  "id": "ingestion-long-1",
+  "project": "ingestion",
+  "arm": "long",
+  "repeat": 1,
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "model": "claude-bridge/claude-haiku-5-5",
+  "memoryEnv": {},
+  "cwd": "/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/ingestion-long-1/project",
+  "repairOnlyFrom": "pi-memory/eval/long/repair-templates-v3/long",
+  "calls": [
+    {
+      "name": "stage-3-transfer",
+      "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "exitCode": 0,
+      "timedOut": false,
+      "budgetExhausted": false,
+      "latencyMs": 33163,
+      "modelRequests": 6,
+      "usage": {
+        "input": 12,
+        "output": 5140,
+        "cacheRead": 57540,
+        "cacheWrite": 12676,
+        "reasoning": 2469,
+        "totalTokens": 75368,
+        "cost": 0
+      },
+      "finalText": "The corrupt checkpoint now recovers without losing output. I ran the repaired CLI on the real paths and the visible test suite passes.\n\n**Change (`src/ingest.mjs`):** If the checkpoint is unparseable or has an invalid `nextLine`, `processBatch` moves it to `work/recovery/checkpoint.bad.json` and restarts from line 0. Existing `(tenant, seq)` identities in the output prevent duplicates. If that evidence file already exists, the new one gets a UUID suffix so nothing is overwritten. Output is only appended to, never rewritten or truncated.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json` (default batch size 4)\n- Result: `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`\n\n**Results:**\n- `work/repair-output.ndjson` has all three `transfer` records (seq 0, 1, 2), with the original seq-0 record preserved.\n- `work/repair-checkpoint.json` is now `{\"nextLine\":3}`.\n- The corrupt checkpoint is preserved at `work/recovery/checkpoint.bad.json` with its original truncated content `{\"nextLine\":`.\n- `node --test`: 1 test, 1 pass, 0 fail.\n\nI did not add a new test for the recovery path. The `rex` session rename was also skipped because bash is limited to `node` commands here."
+    }
+  ],
+  "scores": [
+    {
+      "project": "ingestion",
+      "stage": 3,
+      "checks": [
+        {
+          "name": "explicit batch limit and checkpoint",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "resume appends without repeating prior records",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "duplicates within tenant are suppressed",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "small batch does not materialize a 48 MiB input",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "current default batch is four",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "identity includes tenant",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "malformed line is quarantined and processing continues",
+          "category": "memory",
+          "passed": false,
+          "error": "ENOENT: no such file or directory, open '/private/var/folders/dg/1s1vxvps60g694qr551l0l4c0000gn/T/pi-memory-long-2kJ7pl/ingestion-long-1/project/.acceptance-up2UY8/rejected.ndjson'"
+        },
+        {
+          "name": "temporary override was actually reported",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "expired override does not affect later action",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "new corrupt checkpoint preserves output and replays safely",
+          "category": "intrinsic",
+          "passed": true
+        },
+        {
+          "name": "recovery keeps corrupt checkpoint at agreed location",
+          "category": "memory",
+          "passed": true
+        },
+        {
+          "name": "actual repair run preserved all three events",
+          "category": "action",
+          "passed": true
+        },
+        {
+          "name": "no other-project policy artifacts",
+          "category": "control",
+          "passed": true
+        }
+      ],
+      "categoryScores": {
+        "intrinsic": 1,
+        "memory": 0.8,
+        "action": 1,
+        "control": 1
+      },
+      "complete": false,
+      "passed": 12,
+      "total": 13
+    }
+  ],
+  "complete": false,
+  "budgetExhausted": false,
+  "timedOut": false,
+  "modelRequests": 6,
+  "wallMs": 33299,
+  "usage": {
+    "input": 12,
+    "output": 5140,
+    "cacheRead": 57540,
+    "cacheWrite": 12676,
+    "reasoning": 2469,
+    "totalTokens": 75368,
+    "cost": 0
+  },
+  "toolCalls": 15,
+  "actualCliRuns": 1,
+  "cliRunsByPhase": {
+    "stage-1-implement": 0,
+    "stage-2-temporary": 0,
+    "stage-2-revoke": 0,
+    "stage-3-transfer": 1
+  },
+  "actionBindings": [
+    {
+      "phase": "stage-3-transfer",
+      "expectedArguments": "bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json",
+      "matched": true
+    }
+  ],
+  "scopeLeaks": [],
+  "unknownMemoryIds": [],
+  "parentChildCoinjections": [],
+  "blockedActions": [],
+  "recalls": [
+    {
+      "event": "recall",
+      "query": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+      "ids": [
+        "m_mvnwbt9r2bc5064d3e1d31f5ce39",
+        "m_mvnwa7bgf4bd5b83ba747b5999a1"
+      ],
+      "retiredIds": [],
+      "tokens": 1024,
+      "tokenUpperBound": 1024,
+      "digestTokenUpperBound": 0,
+      "digestIds": [],
+      "sessionBudgetTokens": 0,
+      "sessionTokensBefore": 0,
+      "ceilingReached": false,
+      "content": "Relevant remembered evidence. Use supported facts when applicable; current instructions take precedence.\n<memory_recall>\n[m_mvnwa7bgf4bd5b83ba747b5999a1] Auxiliary ingestion config must not leak into migration (project; user_statement; confidence 1.00; 2026-10-25)\nFor ingestion-only auxiliary configs, use region `us-west-9` and retry settings `maxAttempts: 11` and `backoffMs: 900`. Never apply these settings to the migration project.\n\n[m_mvnwbt9r2bc5064d3e1d31f5ce39] Recover corrupt ingestion checkpoints without losing output (project; tool_output; confidence 0.60; 2026-10-25)\nFor corrupt-checkpoint recovery, move the corrupt checkpoint to `recovery/checkpoint.bad.json` beside the checkpoint. Preserve existing output, build a set of existing `(tenant, seq)` identities, and replay input while appending only unseen identities. Rewrite the checkpoint after replay. Filesystem assertions verified preservation of the corrupt checkpoint and all three events, including two tenants sharing sequence 1.\n</memory_recall>"
+    }
+  ],
+  "beforeDreamMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "beforeMemory": {
+    "bytes": 301322,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  },
+  "afterMemory": {
+    "bytes": 140641,
+    "files": 21,
+    "activeCanonicalBytes": 10822,
+    "activeRecords": 6,
+    "archivedCanonicalBytes": 3635
+  }
+}

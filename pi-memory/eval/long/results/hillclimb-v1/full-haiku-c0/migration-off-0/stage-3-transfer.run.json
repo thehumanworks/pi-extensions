@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different host left work/repair-source.json truncated. Its valid pre-migration backup already exists at the agreed backup location beside work/repair-output.json. Repair the implementation using the previously verified recovery convention. Actually migrate to work/repair-output.json, run tests, and preserve both the backup and evidence of the corrupt source. This fresh session must use durable project decisions, not the expired test-local diagnostic override.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 36220,
+  "modelRequests": 8,
+  "usage": {
+    "input": 16,
+    "output": 4552,
+    "cacheRead": 78855,
+    "cacheWrite": 9737,
+    "reasoning": 1836,
+    "totalTokens": 93160,
+    "cost": 0
+  },
+  "finalText": "The migration is done: `work/repair-output.json` now holds the v3 config, recovered from the valid backup. The test suite passes (1/1).\n\n- **Recovery source:** `work/backups/source.json`, the valid pre-migration copy. I migrated it with `node bin/migrate.mjs work/backups/source.json work/repair-output.json`.\n- **Corrupt source evidence:** `work/repair-source.json` is untouched. Running the CLI against it fails with `Unexpected end of JSON input`, and it writes nothing. I saved the truncated bytes to `work/evidence/repair-source.corrupt.json` and the failure to `work/evidence/repair-source.failure.txt`.\n- **Backup:** the valid backup is still at `work/backups/source.json`. The output path did not exist before, so the migration created no `.bak` file.\n- **Region:** no region override was passed, so the output has no `region` field. The `test-local` override from the earlier temporary files was not used.\n- **Code:** I made no code changes. I found no defect in `src/migrate.mjs` for this case. The output keeps the unknown `extra` field and converts `timeoutSeconds: 3` to `timeoutMs: 3000` with `features: [\"ready\"]`.\n\nTwo things I could not do:\n- **Recovery convention:** I could not read the memory directory, which is outside the project, so I followed the repo's own behavior: recover from the valid backup, keep the corrupt file, and never persist a region override. If the agreed convention differs, tell me and I'll adjust.\n- **Session rename:** the startup hook asked me to rename the Rex session, but shell access is limited to `node` commands, so I did not run `rex session rename`."
+}

@@ -10,3 +10,6 @@ mise.local.toml
 
 # Eval harness git-inits these scratch projects
 pi-memory/eval/long/state-*/history/*/project/
+
+# Background compaction replays write timestamped result directories
+pi-background-compaction/eval/results/20*/

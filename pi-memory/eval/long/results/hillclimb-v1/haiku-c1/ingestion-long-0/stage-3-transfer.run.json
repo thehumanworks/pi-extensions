@@ -1,0 +1,19 @@
+{
+  "name": "stage-3-transfer",
+  "prompt": "A different machine left work/repair-checkpoint.json truncated. Repair the implementation so corrupt checkpoints recover using our previously verified procedure, without losing work/repair-output.ndjson. The input is fixtures/repair-events.ndjson. Actually run the repaired CLI with these paths and then run tests. Do not delete or truncate existing output, and keep evidence of the corrupt checkpoint according to our agreed recovery convention. This is a fresh session; apply durable project decisions, not expired diagnostics.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 32969,
+  "modelRequests": 9,
+  "usage": {
+    "input": 18,
+    "output": 5481,
+    "cacheRead": 99053,
+    "cacheWrite": 12945,
+    "reasoning": 1306,
+    "totalTokens": 117497,
+    "cost": 0
+  },
+  "finalText": "The corrupt checkpoint in `work/repair-checkpoint.json` now recovers. I ran the CLI on the real paths and both tests pass.\n\n**Change in `src/ingest.mjs`:**\n- A corrupt checkpoint (unparseable JSON or an invalid `nextLine`) is moved to `work/recovery/checkpoint.bad.json`. If that file already exists, the new one gets a unique name so earlier evidence is never overwritten.\n- Replay then starts from line 0. Existing output is never rewritten or truncated, and only `(tenant, seq)` identities not already in the output are appended.\n- The default batch size is 4, per the current project decision. Its only other change is the one above.\n\n**CLI run:** `node bin/ingest.mjs fixtures/repair-events.ndjson work/repair-output.ndjson work/repair-checkpoint.json`\n- Output: `{\"accepted\":2,\"rejected\":0,\"duplicates\":1,\"nextLine\":3}`\n\n**Verified by reading the files afterward:**\n- `work/recovery/checkpoint.bad.json` holds the original truncated content `{\"nextLine\":`.\n- `work/repair-output.ndjson` has all three events, `transfer` seq 0, 1, and 2. The original seq 0 line was kept.\n- `work/repair-checkpoint.json` contains `{\"nextLine\":3}`.\n\n**Tests:** `node --test` passes 2/2. I added a regression test for the corrupt-checkpoint path. It checks that the bad checkpoint is quarantined, that a duplicate identity is skipped, and that the output gains exactly one line.\n\n**Not done:** I could not rename this session with `rex session rename`, because bash here only allows `node` commands."
+}

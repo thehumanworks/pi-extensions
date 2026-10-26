@@ -1,0 +1,47 @@
+{
+  "fixtureHash": "7ee568b08cbbe6349a9810f88a7784eb9e8e23bfbf1ccf527be42aee01201916",
+  "protocolHash": "88e7dbb5361270ac5519833cf23beec8527e6789228a66ff8b7e4e0bf60ddef7",
+  "sourceHash": "0435143b4f30c0059acdafb7deda762abdcd0e30999f7f15eab29b279f44a2dc",
+  "sourceHashes": {
+    "index.ts": "870238c9b2ee2e1b371087fa78781595a43506dad811b66aea7dab02f98bb40f",
+    "src/capture.ts": "a6af1ebb682f9162f8e594f15dddbd173f99e8eb4bf05abd80850952d332cc29",
+    "src/config.ts": "7c2d504b15f200a9a40611d17211802055d49001f80c7f75d29eb80c497fc736",
+    "src/dream.ts": "bc5982ae0908d97b7ece42748c502e50ea929159e28d77d4415cbe92bd5a2666",
+    "src/maintenance.ts": "7b5cbce70ebf23746f958141e603722ebe2a74ecfb5b15ff4734a75346fb685a",
+    "src/project.ts": "fc3e727df2c7d0e6a992e0a4a0fe6ecbdabd52f9292c44de1b9ac113f8fc2a74",
+    "src/retrieve.ts": "85b3bd33556b38aca411fbbc53f33a32531d9c318814ef24698279c260413f3f",
+    "src/scheduler.ts": "43b42e25cc20b9f46ed36d5e2543435ce7e20f2a214223eba374c73e03536740",
+    "src/secrets.ts": "82092369c82d405949323805aa139c51fd86253f72fb25dc39497fda873aac8d",
+    "src/selector.ts": "24e64780cef06ac4191f83c50cd0a539a3a6425bcf0fc38b09cc9fbbc56b1e8d",
+    "src/settings.ts": "c3cd4f3d8c68968e8df82c5a5ba480e86e618b0ec66ec200bbcbdc23bb7095b3",
+    "src/store.ts": "848f3c8182383abdc9f426f4395cb26c07471765759b991eb00d936cb8a15325",
+    "src/tools.ts": "bb86a68df04c2fd836505fc34418f83f4ab8a5058e7a826fdae7a6edfe4d7b38",
+    "src/types.ts": "560862991c212d2bcdec336a9b4b576de82c6d5af7dfc05b160eedb1f09ed747",
+    "src/ui.ts": "86733ed57d3512220bc8f216711278bd95081f327a10be45a45454622ff69d3d"
+  },
+  "model": "claude-bridge/claude-haiku-5-5",
+  "historyModel": "openai/gpt-6.1-sol",
+  "memoryEnv": {
+    "PI_MEMORY_DIGEST_SCOPE": "decisions",
+    "PI_MEMORY_DIGEST_BUDGET": "2400",
+    "PI_MEMORY_SESSION_BUDGET": "1200"
+  },
+  "arms": [
+    "long"
+  ],
+  "repeats": 2,
+  "wallSeconds": 600,
+  "stageTimeoutSeconds": {
+    "1": 240,
+    "2": 120,
+    "3": 240
+  },
+  "requestLimitPerStage": 16,
+  "maxRequestsPerJob": 48,
+  "concurrency": 2,
+  "state": "/Users/tomas/pi-extensions/pi-memory/eval/long/state-v3",
+  "started": "2026-10-25T19:57:48.920Z",
+  "recentBudgetBytes": 600,
+  "recallBudgetUpperBound": 1200,
+  "digestBudget": 0
+}

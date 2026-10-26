@@ -1,0 +1,19 @@
+{
+  "name": "stage-2-temporary",
+  "prompt": "For this diagnostic invocation ONLY, region is test-local. Actually run the CLI on fixtures/config.json into work/temporary.json with that explicit override. Also write the resulting config as temporary-report.json. Do not change permanent defaults or the source config.",
+  "exitCode": 0,
+  "timedOut": false,
+  "budgetExhausted": false,
+  "latencyMs": 10871,
+  "modelRequests": 2,
+  "usage": {
+    "input": 4,
+    "output": 1124,
+    "cacheRead": 19089,
+    "cacheWrite": 8648,
+    "reasoning": 556,
+    "totalTokens": 28865,
+    "cost": 0
+  },
+  "finalText": "The diagnostic run is done. The CLI ran on `fixtures/config.json` with the one-off region override `test-local`, and both outputs show `\"region\": \"test-local\"`:\n\n- `work/temporary.json`: the migrated config.\n- `work/temporary-report.json`: the same config, written as the report. I put it in `work/` because that is the disposable output directory. If you wanted it at the repo root, say so and I'll move it.\n\nEverything else matches the normal v1 conversion: `timeoutMs` is 2000, `features` is `[\"a\", \"z\"]`, retry is `{maxAttempts: 5, backoffMs: 125}`, and `customField` is preserved under `legacy`.\n\nThe override applied only to these two invocations. I didn't change the defaults in `src/migrate.mjs`, and I didn't modify `fixtures/config.json`. The input was valid JSON, so the recovery path (which moves the input) didn't run.\n\nI still haven't renamed the Rex session as the harness asked. Bash is limited to `node` commands here, so I can't run `rex session rename`."
+}
