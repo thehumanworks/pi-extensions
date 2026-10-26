@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
-import { CURRENT_SESSION_VERSION, SessionManager, type SessionInfo } from "@earendil-works/pi-coding-agent";
-import { expandHome } from "./bots.ts";
+import { basename, dirname, join, resolve } from "node:path";
+import { CURRENT_SESSION_VERSION, SessionManager, type ExtensionContext, type SessionInfo } from "@earendil-works/pi-coding-agent";
+import { expandHome, isInside } from "./bots.ts";
 
 /** A session file name in Pi's own `<timestamp>_<id>.jsonl` format. */
 export function newSessionPath(dir: string, id: string = randomUUID()): string {
@@ -22,6 +22,41 @@ export async function freshSessionFile(dir: string, cwd: string): Promise<string
     await writeFile(path, `${JSON.stringify(header)}\n`, { flag: "wx" });
   }
   return path;
+}
+
+/**
+ * Keep the selected conversation in `dir` without changing its identity, history or cwd.
+ * Copy rather than move existing history: opening an ordinary session as a bot must not
+ * destroy the original. Exclusive creation also prevents overwriting an earlier copy.
+ * Explicit in-memory sessions (--no-session) stay ephemeral.
+ *
+ * Pi currently exposes no storage setter to extensions. Its context holds the actual
+ * SessionManager behind a read-only type. Keep that compatibility boundary here: use
+ * setSessionFile() to reload a complete snapshot, and scope the public directory getters
+ * used by /new, /fork and /resume. No private SessionManager fields are changed.
+ */
+export async function storeSessionIn(sessions: ExtensionContext["sessionManager"], dir: string): Promise<void> {
+  const file = sessions.getSessionFile();
+  if (!file) return;
+  const sameDir = (a: string, b: string) => isInside(a, b) && isInside(b, a);
+  const relocate = !sameDir(dirname(file), dir);
+  if (!relocate && sameDir(sessions.getSessionDir(), dir)) return;
+
+  const manager = sessions as SessionManager;
+  if (typeof manager.setSessionFile !== "function") throw new Error("This Pi version cannot redirect bot session storage.");
+  await mkdir(dir, { recursive: true });
+  if (relocate) {
+    const header = sessions.getHeader();
+    if (!header) throw new Error("Cannot redirect a session without a header.");
+    const path = join(dir, basename(file));
+    const leaf = sessions.getLeafId();
+    const snapshot = [header, ...sessions.getEntries()].map(entry => JSON.stringify(entry)).join("\n") + "\n";
+    await writeFile(path, snapshot, { flag: "wx" });
+    manager.setSessionFile(path);
+    if (leaf === null) manager.resetLeaf(); else manager.branch(leaf);
+  }
+  manager.getSessionDir = () => dir;
+  manager.usesDefaultSessionDir = () => false;
 }
 
 /** Sessions stored in a bot's sessions directory, across all projects, newest first. */

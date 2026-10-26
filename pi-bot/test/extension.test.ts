@@ -1,7 +1,7 @@
 import { test, type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { SessionManager, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -21,10 +21,11 @@ const ALL_TOOLS = ["read", "bash", "edit", "write", "grep", "find", "ls", "bot_m
 
 function fixture(flag?: string) {
   const tools: Record<string, any> = {}, commands: Record<string, any> = {}, events: Record<string, any> = {};
-  const calls = { models: [] as unknown[], thinking: [] as string[] };
+  const calls = { models: [] as unknown[], thinking: [] as string[], flags: [] as Array<{ name: string; description: string }> };
   let active = ["read", "bash", "edit", "write", "bot_manage", "bot_run"];
   const pi = {
-    registerFlag: () => {}, getFlag: (name: string) => name === "bot" ? flag : undefined,
+    registerFlag: (name: string, options: { description: string }) => { calls.flags.push({ name, ...options }); },
+    getFlag: (name: string) => name === "bot" ? flag : undefined,
     registerTool: (tool: any) => { tools[tool.name] = tool; },
     registerCommand: (name: string, command: any) => { commands[name] = command; },
     on: (name: string, handler: any) => { events[name] = handler; },
@@ -39,7 +40,7 @@ function fixture(flag?: string) {
   return { tools, commands, events, calls, active: () => active };
 }
 
-function context(options: { sessionFile?: string; sessionDir?: string; entries?: unknown[]; cwd?: string; selections?: number[] } = {}) {
+function context(options: { sessionManager?: SessionManager; sessionFile?: string; sessionDir?: string; entries?: unknown[]; cwd?: string; selections?: number[] } = {}) {
   const notices: Array<[string, string | undefined]> = [], status: Array<[string, string | undefined]> = [], switched: string[] = [];
   const selections = [...(options.selections ?? [])];
   const ui = {
@@ -52,7 +53,7 @@ function context(options: { sessionFile?: string; sessionDir?: string; entries?:
   };
   const ctx = {
     cwd: options.cwd ?? process.cwd(), hasUI: true, mode: "tui", model: models[1], modelRegistry: registry, ui,
-    sessionManager: {
+    sessionManager: options.sessionManager ?? {
       getSessionFile: () => options.sessionFile,
       getSessionDir: () => options.sessionDir ?? (options.sessionFile ? dirname(options.sessionFile) : ""),
       getEntries: () => options.entries ?? [],
@@ -153,16 +154,68 @@ test("resumed conversations keep their model; unknown models only warn", async t
   assert.match(c.notices[0]![0], /model "missing\/model" was not found/);
 });
 
-test("--bot pins only the startup session and warns where history goes", async t => {
-  await reviewer(t);
+test("--bot stores startup history in the bot's home without changing cwd", async t => {
+  const { root, bot } = await reviewer(t);
+  const sessions = SessionManager.create(root, join(root, "ordinary"));
+  const original = sessions.getSessionFile()!;
+  const id = sessions.getSessionId();
+  sessions.appendSessionInfo("Review the API");
   const f = fixture("reviewer");
-  const startup = context({ sessionFile: "/tmp/elsewhere/s.jsonl" });
+  const startup = context({ sessionManager: sessions, cwd: root });
   await f.events.session_start({ type: "session_start", reason: "startup" }, startup.ctx);
   assert.deepEqual(startup.status.at(-1), ["pi-bot", "bot: reviewer"]);
-  assert.match(startup.notices.find(([, level]) => level === "warning")![0], /not in the bot's home/);
-  const later = context({ sessionFile: "/tmp/elsewhere/t.jsonl" });
-  await f.events.session_start({ type: "session_start", reason: "new" }, later.ctx);
-  assert.deepEqual(later.status.at(-1), ["pi-bot", undefined]);
+  assert.ok(!startup.notices.some(([, level]) => level === "warning"));
+  assert.equal(sessions.getSessionDir(), join(bot.home, "sessions"));
+  assert.equal(dirname(sessions.getSessionFile()!), sessions.getSessionDir());
+  assert.equal(sessions.getCwd(), root);
+  assert.equal(sessions.getSessionId(), id);
+  assert.equal(sessions.getSessionName(), "Review the API");
+  sessions.appendMessage({ role: "user", content: "Review this", timestamp: Date.now() });
+  assert.match(readFileSync(sessions.getSessionFile()!, "utf8"), /Review this/);
+  assert.ok(!existsSync(original));
+  assert.equal(f.events.input({ type: "input" }, startup.ctx), undefined);
+});
+
+test("--bot selects the requested startup bot even when opening another bot's history", async t => {
+  const { root, bot } = await reviewer(t);
+  const other = await createBot({ name: "scout", description: "Maps codebases", prompt: persona });
+  const sessions = SessionManager.create(root, join(other.home, "sessions"));
+  sessions.appendMessage({ role: "user", content: "Prior work", timestamp: Date.now() });
+  const original = sessions.getSessionFile()!;
+  const f = fixture("reviewer"), c = context({ sessionManager: sessions, cwd: root });
+  await f.events.session_start({ type: "session_start", reason: "startup" }, c.ctx);
+  assert.equal(dirname(sessions.getSessionFile()!), join(bot.home, "sessions"));
+  assert.ok(existsSync(original));
+  assert.deepEqual(c.status.at(-1), ["pi-bot", "bot: reviewer"]);
+});
+
+test("session switches and reloads follow storage, not the startup --bot flag", async t => {
+  const { sessionFile } = await reviewer(t);
+  const f = fixture("reviewer");
+  const bot = context({ sessionFile });
+  await f.events.session_start({ type: "session_start", reason: "reload" }, bot.ctx);
+  assert.deepEqual(bot.status.at(-1), ["pi-bot", "bot: reviewer"]);
+  for (const reason of ["new", "resume", "reload"]) {
+    const ordinary = context({ sessionFile: "/tmp/ordinary/s.jsonl" });
+    await f.events.session_start({ type: "session_start", reason }, ordinary.ctx);
+    assert.deepEqual(ordinary.status.at(-1), ["pi-bot", undefined]);
+  }
+});
+
+test("storage failures block prompts instead of falling back to ordinary storage", async t => {
+  const { root, bot } = await reviewer(t);
+  const sessions = SessionManager.create(root, join(root, "ordinary"));
+  const original = sessions.getSessionFile()!;
+  // Make the destination unusable without relying on filesystem permissions (tests may run as root).
+  await rm(join(bot.home, "sessions"), { recursive: true });
+  await writeFile(join(bot.home, "sessions"), "not a directory");
+  const f = fixture("reviewer"), c = context({ sessionManager: sessions });
+  await f.events.session_start({ type: "session_start", reason: "startup" }, c.ctx);
+  assert.match(c.notices[0]![0], /Cannot start bot reviewer/);
+  assert.deepEqual(f.events.input({ type: "input" }, c.ctx), { action: "handled" });
+  assert.equal(sessions.getSessionFile(), original);
+  assert.ok(!existsSync(original));
+  assert.deepEqual(f.calls.models, []);
 });
 
 test("a missing definition is reported instead of activating", async t => {
@@ -264,6 +317,8 @@ test("/bot help and completions", async t => {
   const f = fixture(), c = context();
   await f.commands.bot.handler("help", c.ctx);
   assert.match(c.notices[0]![0], /\/bot resume \[name\]/);
+  assert.match(c.notices[0]![0], /From a shell: pi --bot <name>/);
+  assert.equal(f.calls.flags[0]!.description, "Run as this bot, saving conversation history in its home");
   const values = (items: Array<{ value: string }> | null) => items?.map(item => item.value);
   assert.deepEqual(values(await f.commands.bot.getArgumentCompletions("re")), ["resume", "reviewer"]);
   assert.deepEqual(values(await f.commands.bot.getArgumentCompletions("edit r")), ["edit reviewer"]);

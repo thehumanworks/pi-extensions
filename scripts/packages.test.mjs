@@ -42,7 +42,9 @@ for (const dir of manifest.workspaces) {
       assert.ok([...files].some(f => f.startsWith('docs/catalog/confluence/operations/')));
     }
     if (dir === 'pi-bot') {
-      for (const file of ['bin/pi-bot.mjs', 'src/bots.ts', 'src/prompt.ts', 'src/run.ts', 'src/sessions.ts', 'src/models.ts']) assert.ok(files.has(file), `missing ${file}`);
+      assert.equal(pkg.bin, undefined, 'bots use pi --bot, not a separate launcher');
+      assert.ok(![...files].some(f => f.startsWith('bin/')));
+      for (const file of ['src/bots.ts', 'src/prompt.ts', 'src/run.ts', 'src/sessions.ts', 'src/models.ts']) assert.ok(files.has(file), `missing ${file}`);
       assert.ok(![...files].some(f => f.includes('fixtures')));
     }
     if (dir === 'pi-loop') assert.ok(files.has('dist/worker.js'));

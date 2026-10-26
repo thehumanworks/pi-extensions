@@ -12,7 +12,7 @@ import {
 import { modelRef, resolveModel } from "./src/models.ts";
 import { botSections, openTasks } from "./src/prompt.ts";
 import { currentDepth, failed, MAX_DEPTH, runBot, type RunResult } from "./src/run.ts";
-import { defaultSessionDir, describeSession, findSession, freshSessionFile, listSessions, sessionFileForId } from "./src/sessions.ts";
+import { defaultSessionDir, describeSession, findSession, freshSessionFile, listSessions, sessionFileForId, storeSessionIn } from "./src/sessions.ts";
 
 const EXTENSION_PATH = fileURLToPath(import.meta.url);
 /** Granted to every bot, limited to its home when its tools allowlist omits them, so it can always keep its memory. */
@@ -87,10 +87,11 @@ function progressText(result: RunResult): string {
 
 export default function piBot(pi: ExtensionAPI): void {
   let active: Bot | undefined;
+  let activationError: string | undefined;
   /** HOME_TOOLS added to the active bot's allowlist, and therefore limited to its home. */
   let homeOnly: string[] = [];
 
-  pi.registerFlag("bot", { type: "string", description: "Run the session as this pi-bot (launch with `pi-bot <name>` to keep its history in the bot's home)" });
+  pi.registerFlag("bot", { type: "string", description: "Run as this bot, saving conversation history in its home" });
 
   async function applyModel(bot: Bot, ctx: ExtensionContext) {
     if (bot.model) {
@@ -117,28 +118,41 @@ export default function piBot(pi: ExtensionAPI): void {
 
   pi.on("session_start", async (event, ctx) => {
     active = undefined;
+    activationError = undefined;
     homeOnly = [];
     const sessions = ctx.sessionManager, file = sessions.getSessionFile();
-    let name = botForSessionDir(file ? dirname(file) : sessions.getSessionDir());
     const flag = pi.getFlag("bot");
-    // --bot pins the startup session only; later session switches follow the session's location.
-    const pinned = !name && typeof flag === "string" && !!flag.trim() && (event.reason === "startup" || event.reason === "reload");
-    if (pinned) name = (flag as string).trim();
+    // --bot selects the startup identity. After that, including reloads, storage owns it.
+    const name = event.reason === "startup" && typeof flag === "string" && flag.trim()
+      ? flag.trim()
+      : botForSessionDir(file ? dirname(file) : sessions.getSessionDir());
     if (!name) {
       if (ctx.hasUI) ctx.ui.setStatus("pi-bot", undefined);
       return;
     }
-    try { active = await loadBot(name); }
-    catch (error) {
-      notify(ctx, errorText(error), "error");
+    try {
+      const bot = await loadBot(name);
+      await scaffoldHome(bot.home);
+      await storeSessionIn(sessions, botPaths(bot.home).sessions);
+      active = bot;
+    } catch (error) {
+      activationError = `Cannot start bot ${name}: ${errorText(error)}`;
+      if (ctx.hasUI) ctx.ui.setStatus("pi-bot", undefined);
+      notify(ctx, activationError, "error");
       return;
     }
-    await scaffoldHome(active.home);
-    if (pinned && file) notify(ctx, `${name}: this conversation is saved in ${sessions.getSessionDir()}, not in the bot's home. Start with \`pi-bot ${name}\` or /bot ${name} to keep the history with the bot.`, "warning");
     const fresh = !sessions.getEntries().some(entry => entry.type === "message" && (entry.message.role === "user" || entry.message.role === "assistant"));
     if (fresh) await applyModel(active, ctx);
     applyTools(active, ctx);
     if (ctx.hasUI) ctx.ui.setStatus("pi-bot", `bot: ${name}`);
+  });
+
+  // Lifecycle errors alone do not stop Pi. Never accept a prompt after activation or
+  // storage failed: it would silently run without the requested bot or save elsewhere.
+  pi.on("input", (_event, ctx) => {
+    if (!activationError) return;
+    notify(ctx, activationError, "error");
+    return { action: "handled" };
   });
 
   pi.on("resources_discover", (_event, ctx) => {
@@ -416,7 +430,7 @@ Returns the bot's final answer and a session id. Pass that id as session to cont
 /bot info [name] — show a bot's home, settings and state
 /bot exit — leave the bot and start a normal session
 /bot delete <name> — archive a bot's home
-Bots live in ${botsRoot()}. From a shell: pi-bot <name> [pi options].`, "info");
+Bots live in ${botsRoot()}. From a shell: pi --bot <name> [pi options].`, "info");
         return;
       case "":
       case "list": {

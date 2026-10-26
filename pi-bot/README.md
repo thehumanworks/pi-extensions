@@ -2,7 +2,7 @@
 
 Create named agents ("bots"), each with its own persona (system prompt), model, reasoning effort, and optional tool and skill allowlists. A bot works in your current directory like any other Pi agent. It also has a **home** at `~/.pi/agent/bots/<name>/` holding its memory, skills, scripts, task state and **conversation history**. Whatever a bot learns or builds goes with it to every project, and resuming a conversation pulls the history from the bot's home, not from the project.
 
-Both humans and agents can create and edit bots; only humans can delete them. Humans talk to a bot directly with `/bot <name>` or `pi-bot <name>`. Agents delegate to a bot with the `bot_run` tool, much like Claude Code subagents, except that the bot remembers and its conversations can be resumed.
+Both humans and agents can create and edit bots; only humans can delete them. Humans talk to a bot directly with `/bot <name>` or `pi --bot <name>`. Agents delegate to a bot with the `bot_run` tool, much like Claude Code subagents, except that the bot remembers and its conversations can be resumed.
 
 The design takes ideas from Claude Code custom subagents (frontmatter definitions, `MEMORY.md` injection, resumable runs), Grok Bot (a roster of durable bots, memory per bot), OpenAI dots, Meta's Muse and Claude Duet (one ongoing identity that learns and keeps working toward goals).
 
@@ -15,8 +15,6 @@ pi install ./pi-bot
 # Or for one session:
 pi -e ./pi-bot
 ```
-
-The optional `pi-bot` shell launcher ships in the same package. `pi install` does not put it on your `PATH`. To get it, run `npm install -g @nothumanwork/pi-bot`, or alias `node /path/to/pi-bot/bin/pi-bot.mjs`.
 
 ## Quick start
 
@@ -32,14 +30,13 @@ Or ask the agent: *"Create a bot called reviewer that reviews diffs for security
 From a shell:
 
 ```sh
-pi-bot reviewer                     # new conversation, history stored in reviewer's home
-pi-bot reviewer -c                  # continue its latest conversation in this directory
-pi-bot reviewer -r                  # choose from all its conversations (the "all" tab spans projects)
-pi-bot reviewer -p "review the staged diff"
-pi-bot list
+pi --bot reviewer                   # new conversation, history stored in reviewer's home
+pi --bot reviewer -p "review the staged diff"
 ```
 
-`pi-bot <name> [options]` runs `pi --session-dir ~/.pi/agent/bots/<name>/sessions --bot <name> [options]`, so every other Pi option works.
+No separate launcher or alias is needed. `--bot` keeps persistent conversation history in the bot's `sessions/`, regardless of the working directory or Pi's session-directory configuration. The working directory still controls project context and tools. If Pi has already opened a conversation outside the bot's home, its history is copied into the home before the bot accepts prompts; the original is left untouched. Explicit `--no-session` runs remain ephemeral.
+
+To choose an earlier bot conversation, use `/bot resume <name>`. Pi resolves CLI `--continue` and `--resume` before extensions start, so those flags still use Pi's startup session lookup rather than a bot-specific lookup.
 
 ## The home
 
@@ -148,12 +145,12 @@ If a bot's `tools` list leaves out `read`, `write` or `edit`, pi-bot still enabl
 | Variable | Purpose |
 | --- | --- |
 | `PI_BOT_HOME` | Bots root (default `$PI_CODING_AGENT_DIR/bots`, i.e. `~/.pi/agent/bots`) |
-| `PI_BOT_PI_COMMAND` | Executable that `bot_run` and `pi-bot` use to start Pi (default: the running Pi, or `pi` on `PATH`) |
+| `PI_BOT_PI_COMMAND` | Executable that `bot_run` uses to start Pi (default: the running Pi, or `pi` on `PATH`) |
 | `PI_BOT_DEPTH` | Set by `bot_run` for child processes to limit nesting |
 
 ## Notes
 
-- `pi --bot <name>` without a matching `--session-dir` applies the persona to that startup session only, and its history stays in Pi's normal session directory. Use `pi-bot <name>` or `/bot <name>` instead.
+- `--bot` selects the startup bot. Later session switches and reloads follow the bot owning the session's storage directory; `/bot exit` leaves the bot, including after a reload.
 - Parallel `bot_run` calls to the same bot use separate conversations but share its home. Concurrent edits to the same memory file can race.
 - Tool allowlists apply to tools registered when the session starts. MCP tools remain reachable as their exposure allows.
 - A home is a plain directory. To carry a bot to another machine, sync it (for example with git), or leave out `sessions/` if the history is sensitive.

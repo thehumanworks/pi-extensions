@@ -20,12 +20,8 @@
   "files": [
     "index.ts",
     "src",
-    "bin",
     "README.md"
   ],
-  "bin": {
-    "pi-bot": "bin/pi-bot.mjs"
-  },
   "pi": {
     "extensions": [
       "./index.ts"
