@@ -101,7 +101,3 @@ export async function botSections(bot: Bot, cwd: string, homeOnlyTools: string[]
     bot_state: await stateSection(bot),
   };
 }
-
-export function rosterSection(bots: Bot[]): string {
-  return `Persistent bots you can delegate to with bot_run. Each works in the current directory with its own persona, memory and history:\n${bots.map(b => `- ${b.name}: ${b.description}`).join("\n")}`;
-}

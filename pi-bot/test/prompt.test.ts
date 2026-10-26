@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createBot } from "../src/bots.ts";
-import { botSections, MEMORY_BYTES, MEMORY_LINES, memoryExcerpt, openTasks, rosterSection, stateSection } from "../src/prompt.ts";
+import { botSections, MEMORY_BYTES, MEMORY_LINES, memoryExcerpt, openTasks, stateSection } from "../src/prompt.ts";
 import { persona, tempRoot } from "./helpers.ts";
 
 test("sections name the home, persona and persistence protocol", async t => {
@@ -66,10 +66,4 @@ test("state lists open tasks newest first, scripts and the latest journal entry"
   assert.doesNotMatch(state, /old\.md/);
   assert.match(state, /Scripts: scripts\/bench\.sh$/m);
   assert.match(state, /Latest journal entry: journal\/2026-10-25\.md/);
-});
-
-test("roster lists bots for delegation", async t => {
-  await tempRoot(t);
-  const bot = await createBot({ name: "a", description: "Finds bugs", prompt: persona });
-  assert.match(rosterSection([bot]), /bot_run[\s\S]*- a: Finds bugs/);
 });

@@ -159,11 +159,15 @@ cannot connect, `/voice on` switches to dictation instead of failing.
 - Native audio binaries are optional platform dependencies. Do **not** omit
   optional dependencies. If the load error reports a missing package, run
   `npm install --include=optional` in the pi-voice installation directory.
+  In this monorepo, use the current root `package-lock.json`: a lockfile missing
+  other platforms' binary entries can make npm report "up to date" without
+  installing the required binary, even with `--include=optional`.
   Other load failures include the underlying error; reinstalling optional
   dependencies will not fix every runtime or binary compatibility problem.
   The loader supports both Node and Pi's compiled Bun runtime.
 - macOS (arm64/x64), Linux (arm64/x64), and Windows (arm64/x64) have upstream
-  binaries. Only binary loading on macOS arm64 has been smoke-tested here.
+  binaries. Binary loading has been smoke-tested on macOS arm64 and on Linux
+  x64 under Node and Bun; this does not test audio devices.
   Linux also needs a functioning system audio server/device backend.
 - Realtime media needs **outbound UDP to OpenAI on port 3478**. The native peer
   has no ICE-TCP or TURN fallback, so networks that block it (corporate

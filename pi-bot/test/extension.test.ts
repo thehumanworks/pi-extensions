@@ -172,7 +172,7 @@ test("a missing definition is reported instead of activating", async t => {
   assert.match(c.notices[0]![0], /Unknown bot "ghost"/);
 });
 
-test("before_agent_start adds the persona sections, filters skills and lists other bots", async t => {
+test("before_agent_start adds the persona sections and filters skills, without listing other bots", async t => {
   const { bot, sessionFile } = await reviewer(t, { skills: ["allowed"] });
   await createBot({ name: "scout", description: "Maps codebases", prompt: persona });
   const f = fixture();
@@ -180,20 +180,19 @@ test("before_agent_start adds the persona sections, filters skills and lists oth
   const own = { name: "own", filePath: join(bot.home, "skills", "own", "SKILL.md") };
   const options = { sections: {} as Record<string, string>, skills: [{ name: "allowed", filePath: "/s/allowed/SKILL.md" }, { name: "other", filePath: "/s/other/SKILL.md" }, own] };
   await f.events.before_agent_start({ type: "before_agent_start", systemPromptOptions: options }, c.ctx);
-  assert.deepEqual(Object.keys(options.sections), ["bot", "bot_home", "bot_memory", "bot_state", "bots"]);
+  assert.deepEqual(Object.keys(options.sections), ["bot", "bot_home", "bot_memory", "bot_state"]);
   assert.match(options.sections.bot_home!, new RegExp(`Home: ${bot.home}`));
   assert.deepEqual(options.skills.map(skill => skill.name), ["allowed", "own"]);
-  assert.match(options.sections.bots!, /- scout: Maps codebases/);
-  assert.doesNotMatch(options.sections.bots!, /- reviewer/);
 });
 
-test("ordinary sessions only get the roster", async t => {
+// Creating a bot elsewhere must not change a running session's system prompt.
+test("ordinary sessions get no prompt sections, even when bots exist", async t => {
   await reviewer(t);
   const f = fixture(), c = context({ sessionFile: "/tmp/normal/s.jsonl" });
   await f.events.session_start({ type: "session_start", reason: "startup" }, c.ctx);
   const options = { sections: {} as Record<string, string>, skills: [] };
   await f.events.before_agent_start({ type: "before_agent_start", systemPromptOptions: options }, c.ctx);
-  assert.deepEqual(Object.keys(options.sections), ["bots"]);
+  assert.deepEqual(Object.keys(options.sections), []);
   assert.equal(f.events.resources_discover({ type: "resources_discover" }, c.ctx), undefined);
 });
 

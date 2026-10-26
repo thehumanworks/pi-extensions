@@ -97,7 +97,7 @@ On every prompt in a bot session, pi-bot adds these system prompt sections:
 - `bot_memory`: the `MEMORY.md` index.
 - `bot_state`: today's date, open tasks, scripts and the latest journal entry.
 
-Ordinary sessions where `bot_run` is active also get a `bots` roster (name and description) so the agent knows whom it can delegate to.
+Ordinary sessions get no pi-bot sections, so creating or editing a bot never changes the system prompt of a running session. Agents find bots with `bot_manage` `list`.
 
 ## Commands
 

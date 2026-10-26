@@ -10,7 +10,7 @@ import {
   THINKING_LEVELS, updateBot, validateName, validateThinking, writeDefinition, type Bot, type ThinkingLevel,
 } from "./src/bots.ts";
 import { modelRef, resolveModel } from "./src/models.ts";
-import { botSections, openTasks, rosterSection } from "./src/prompt.ts";
+import { botSections, openTasks } from "./src/prompt.ts";
 import { currentDepth, failed, MAX_DEPTH, runBot, type RunResult } from "./src/run.ts";
 import { defaultSessionDir, describeSession, findSession, freshSessionFile, listSessions, sessionFileForId } from "./src/sessions.ts";
 
@@ -158,10 +158,6 @@ export default function piBot(pi: ExtensionAPI): void {
       Object.assign(options.sections, await botSections(bot, ctx.cwd, homeOnly));
       options.skills = options.skills.filter(skill => allowedSkill(skill, bot, ctx.cwd));
     }
-    if (pi.getActiveTools().includes("bot_run")) {
-      const others = (await listBots()).bots.filter(bot => bot.name !== active?.name);
-      if (others.length) options.sections.bots = rosterSection(others);
-    }
   });
 
   pi.on("tool_call", (event, ctx) => {
@@ -257,6 +253,7 @@ This tool cannot delete bots; only the human can, with /bot delete. Use bot_run 
     name: "bot_run",
     label: "Bot run",
     description: `Delegate a task to a persistent pi-bot. The bot runs as a separate Pi agent in the working directory with its own persona, model, tools, skills and memory, and saves the conversation in its home.
+Use bot_manage list to see which bots exist.
 It does not see this conversation, so write a self-contained task with the needed context and the expected result.
 Returns the bot's final answer and a session id. Pass that id as session to continue the same conversation, or "last" to continue its latest conversation in this directory.`,
     promptSnippet: "Delegate a self-contained task to a persistent pi-bot",
