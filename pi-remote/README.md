@@ -19,7 +19,7 @@ pi install npm:@nothumanwork/pi-remote
 ## Prerequisites
 
 - An OpenSSH client (`ssh`) on the local machine.
-- Key-based SSH access to each remote host. Connections run in `BatchMode`, so password and interactive prompts are not supported; use `ssh-agent` or an identity file.
+- Key-based SSH access to each remote host. Connections run in `BatchMode`, so password and interactive prompts are not supported; use `ssh-agent` or an identity file. If `ssh <host>` works without a password, pi-remote works too: `~/.ssh/config` (aliases, users, identity files, jump hosts) applies.
 - A remote system supported by [`@earendil-works/pi-env`](https://www.npmjs.com/package/@earendil-works/pi-env): Linux, macOS, Android (Termux), or Windows on x86-64 or arm64. On first connection pi-env deploys a small verified daemon to the remote host; nothing else needs to be installed there.
 
 ## Use
@@ -74,14 +74,17 @@ A per-host `identityFile` is resolved relative to the config file. Invalid confi
 | `--remote` | | Initial execution host |
 | `--remote-hosts` | | Comma-separated hosts available to the agent |
 | `--remote-identity` | `PI_REMOTE_IDENTITY` | SSH private key used when a host has none of its own |
-| `--remote-trust-new` | `PI_REMOTE_TRUST_NEW=1` | Trust a host key the first time a host is seen |
-| | `PI_REMOTE_KNOWN_HOSTS` | Known-hosts file (default `~/.pi/remote/known_hosts`) |
+| | `PI_REMOTE_KNOWN_HOSTS` | pi-remote's known-hosts file (default `~/.pi/remote/known_hosts`) |
 
 ## Host keys
 
-pi-remote keeps its own known-hosts file and checks host keys strictly; it does not use `~/.ssh/known_hosts`. An unknown host is rejected unless `--remote-trust-new` is set, in which case the scanned key fingerprints are logged and saved. A changed key is always rejected: confirm the new key out of band, call `remote_host` with `forget`, and reconnect.
+Host keys are checked strictly against pi-remote's own known-hosts file, which is filled the way `ssh` would decide:
 
-Per-host SSH config is generated under `~/.pi/remote/ssh-config/`; your `~/.ssh/config` is not applied. Agent forwarding, port forwarding, and connection sharing are disabled.
+- A host that OpenSSH already trusts (`~/.ssh/known_hosts` and the other files `ssh -G` lists, hashed entries included) gets exactly the keys OpenSSH trusts. Running `ssh <host>` once and accepting its fingerprint is enough.
+- A host OpenSSH has never seen is trusted on first use, like `StrictHostKeyChecking accept-new`; its fingerprint is logged.
+- A key that differs from a trusted one is always rejected. If the change is expected, update `~/.ssh/known_hosts` (`ssh-keygen -R`, then `ssh <host>`), or call `remote_host` with `forget` for a host OpenSSH does not know, and reconnect.
+
+Agent forwarding, X11 and port forwarding, connection sharing, `RemoteCommand`, and `LocalCommand` are disabled whatever `~/.ssh/config` says.
 
 ## Development
 

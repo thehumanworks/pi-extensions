@@ -54,14 +54,12 @@ export default function remoteExtension(pi: ExtensionAPI) {
 	pi.registerFlag("remote", { type: "string", description: "Initial execution host: user@host[:port][/cwd]" });
 	pi.registerFlag("remote-hosts", { type: "string", description: "Comma-separated remote hosts available to the agent" });
 	pi.registerFlag("remote-identity", { type: "string", description: "SSH private key for remote hosts" });
-	pi.registerFlag("remote-trust-new", { type: "boolean", description: "Trust a remote host key on its first connection" });
 
 	const session = new RemoteSession({
 		cwd: process.cwd(),
 		identityFile: process.env.PI_REMOTE_IDENTITY,
 		knownHostsFile: process.env.PI_REMOTE_KNOWN_HOSTS,
 		sshConfigFile: process.env.PI_REMOTE_SSH_CONFIG,
-		trustUnknownHostKeys: pi.getFlag("remote-trust-new") === true || process.env.PI_REMOTE_TRUST_NEW === "1",
 		log: (text) => process.stderr.write(text),
 	});
 

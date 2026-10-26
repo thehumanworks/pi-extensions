@@ -42,13 +42,14 @@ test("connects to disposable SSH hosts and switches execution between them", asy
 	const secondHome = join(root, "two");
 	const first = await sshServer(root, "one", firstHome, sshd);
 	const second = await sshServer(root, "two", secondHome, sshd);
+	const logs: string[] = [];
 	const session = new RemoteSession({
 		cwd: root,
 		hostList: `${userInfo().username}@${address}:${first.port}${firstHome}/srv/one,${userInfo().username}@${address}:${second.port}${secondHome}/srv/two`,
 		identityFile: first.identity,
 		knownHostsFile: join(root, "known_hosts"),
-		sshConfigFile: join(root, "empty_config"),
-		trustUnknownHostKeys: true,
+		sshConfigFile: sshConfig(root).file,
+		log: (text) => logs.push(text),
 	});
 	session.hosts.get(hostId({ user: userInfo().username, host: address, port: first.port }))!.identityFile = first.identity;
 	session.hosts.get(hostId({ user: userInfo().username, host: address, port: second.port }))!.identityFile = second.identity;
@@ -57,6 +58,7 @@ test("connects to disposable SSH hosts and switches execution between them", asy
 		const beta = await session.use(`${userInfo().username}@${address}:${second.port}`, `${secondHome}/srv/two`);
 		expect(alpha.remote).toBe(true);
 		expect(beta.cwd).toBe(`${secondHome}/srv/two`);
+		expect(logs.filter((line) => line.startsWith("Trusted first-seen host key"))).toHaveLength(2);
 		const written = await session.execOn(beta.id, "printf remote > marker.txt");
 		expect(written).toMatchObject({ ok: true, exitCode: 0 });
 		expect(readFileSync(join(secondHome, "srv/two/marker.txt"), "utf8")).toBe("remote");
@@ -73,12 +75,72 @@ test("connects to disposable SSH hosts and switches execution between them", asy
 	}
 }, 30_000);
 
+test("trusts the host key ssh already trusts, from a hashed known_hosts entry", async () => {
+	const { root, home, server, config } = await singleHost();
+	const [type, key] = readFileSync(server.hostKey, "utf8").trim().split(/\s+/);
+	writeFileSync(config.knownHosts, `[${address}]:${server.port} ${type} ${key}\n`);
+	execFileSync("ssh-keygen", ["-q", "-H", "-f", config.knownHosts], { stdio: "ignore" });
+	const logs: string[] = [];
+	const session = new RemoteSession({
+		cwd: root,
+		identityFile: server.identity,
+		knownHostsFile: join(root, "known_hosts"),
+		sshConfigFile: config.file,
+		log: (text) => logs.push(text),
+	});
+	try {
+		const current = await session.use(`${userInfo().username}@${address}:${server.port}`, `${home}/srv/one`);
+		expect(current.remote).toBe(true);
+		expect(readFileSync(join(root, "known_hosts"), "utf8")).toContain(`${type} ${key}`);
+		expect(logs.join("")).not.toContain("first-seen");
+	} finally {
+		session.close();
+		server.process.kill();
+	}
+}, 30_000);
+
+test("refuses a host whose key differs from the one ssh trusts", async () => {
+	const { root, home, server, config } = await singleHost();
+	execFileSync("ssh-keygen", ["-q", "-t", "ed25519", "-N", "", "-f", join(root, "impostor")]);
+	const [type, key] = readFileSync(join(root, "impostor.pub"), "utf8").trim().split(/\s+/);
+	writeFileSync(config.knownHosts, `[${address}]:${server.port} ${type} ${key}\n`);
+	const session = new RemoteSession({
+		cwd: root,
+		identityFile: server.identity,
+		knownHostsFile: join(root, "known_hosts"),
+		sshConfigFile: config.file,
+	});
+	try {
+		await expect(session.use(`${userInfo().username}@${address}:${server.port}`, `${home}/srv/one`)).rejects.toThrow(/changed.*ssh-keygen -R/);
+		expect(readFileSync(join(root, "known_hosts"), "utf8")).not.toContain(readFileSync(server.hostKey, "utf8").split(/\s+/)[1]!);
+		expect(session.current().remote).toBe(false);
+	} finally {
+		session.close();
+		server.process.kill();
+	}
+}, 30_000);
+
+async function singleHost() {
+	const sshd = execFileSync("sh", ["-c", "command -v sshd"], { encoding: "utf8" }).trim();
+	const root = mkdtempSync(join(tmpdir(), "pi-remote-e2e-"));
+	roots.push(root);
+	const home = join(root, "one");
+	return { root, home, server: await sshServer(root, "one", home, sshd), config: sshConfig(root) };
+}
+
+/** An ssh_config whose known-hosts files are the test's own, standing in for ~/.ssh/config and ~/.ssh/known_hosts. */
+function sshConfig(root: string) {
+	const file = join(root, "ssh_config");
+	const knownHosts = join(root, "openssh_known_hosts");
+	writeFileSync(file, `UserKnownHostsFile ${knownHosts}\nGlobalKnownHostsFile none\n`);
+	return { file, knownHosts };
+}
+
 async function sshServer(root: string, name: string, home: string, sshd: string) {
 	mkdirSync(join(home, "srv", name), { recursive: true });
 	execFileSync("ssh-keygen", ["-q", "-t", "ed25519", "-N", "", "-f", join(root, `${name}_host`)]);
 	execFileSync("ssh-keygen", ["-q", "-t", "ed25519", "-N", "", "-f", join(root, `${name}_client`)]);
 	writeFileSync(join(root, `${name}_authorized`), readFileSync(join(root, `${name}_client.pub`)));
-	writeFileSync(join(root, "empty_config"), "");
 	const port = await freePort();
 	writeFileSync(join(root, `${name}_sshd_config`), [
 		`Port ${port}`,
@@ -94,7 +156,7 @@ async function sshServer(root: string, name: string, home: string, sshd: string)
 	].join("\n"));
 	const process = spawn(sshd, ["-D", "-e", "-f", join(root, `${name}_sshd_config`)], { stdio: "ignore" });
 	await waitForPort(port);
-	return { port, process, identity: join(root, `${name}_client`) };
+	return { port, process, identity: join(root, `${name}_client`), hostKey: join(root, `${name}_host.pub`) };
 }
 
 function freePort(): Promise<number> {

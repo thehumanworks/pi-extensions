@@ -1,8 +1,10 @@
+import { execFile } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { promisify } from "node:util";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import {
 	acceptHostKey,
@@ -36,7 +38,6 @@ export interface RemoteSessionOptions {
 	identityFile?: string;
 	knownHostsFile?: string;
 	sshConfigFile?: string;
-	trustUnknownHostKeys?: boolean;
 	log?: (text: string) => void;
 }
 
@@ -45,6 +46,48 @@ interface RemoteConfigFile {
 	identityFile?: string;
 	knownHostsFile?: string;
 	sshConfigFile?: string;
+}
+
+const execFileAsync = promisify(execFile);
+
+/**
+ * The keys OpenSSH trusts for the host, as `type key` lines: the known-hosts files and the name the key is filed under
+ * (`HostKeyAlias`, `[host]:port`) come from `ssh -G`, so they match what `ssh` checks. Revoked keys and certificate
+ * authorities are left out, and only the first key of each type is kept.
+ */
+async function openSshHostKeys(spec: RemoteHostSpec, configFile: string | undefined): Promise<string[]> {
+	const { stdout } = await execFileAsync("ssh", [
+		"-G",
+		...(configFile ? ["-F", configFile] : []),
+		...(spec.user ? ["-l", spec.user] : []),
+		...(spec.port ? ["-p", String(spec.port)] : []),
+		"--",
+		spec.host,
+	]);
+	const settings = new Map(stdout.split("\n").map((line) => {
+		const [name = "", ...values] = line.trim().split(/\s+/);
+		return [name, values] as const;
+	}));
+	const host = settings.get("hostname")?.[0] ?? spec.host;
+	const port = settings.get("port")?.[0] ?? "22";
+	const name = settings.get("hostkeyalias")?.[0] ?? (port === "22" ? host : `[${host}]:${port}`);
+	const files = [...(settings.get("userknownhostsfile") ?? []), ...(settings.get("globalknownhostsfile") ?? [])];
+	const keys = new Map<string, string>();
+	const revoked = new Set<string>();
+	for (const file of files.filter((file) => file !== "none")) {
+		// `ssh-keygen -F` matches hashed names and patterns as `ssh` does; it fails when nothing matches or the file is missing.
+		const found = await execFileAsync("ssh-keygen", ["-F", name, "-f", file]).then(({ stdout }) => stdout, () => "");
+		for (const line of found.split("\n")) {
+			const fields = line.trim().split(/\s+/);
+			if (fields[0] === "" || fields[0]!.startsWith("#")) continue;
+			const marker = fields[0]!.startsWith("@") ? fields.shift() : undefined;
+			const [, type, key] = fields;
+			if (type === undefined || key === undefined) continue;
+			if (marker === "@revoked") revoked.add(key);
+			else if (marker === undefined && !keys.has(type)) keys.set(type, key);
+		}
+	}
+	return [...keys].filter(([, key]) => !revoked.has(key)).map(([type, key]) => `${type} ${key}`);
 }
 
 export class RemoteSession {
@@ -226,24 +269,55 @@ export class RemoteSession {
 	private async connect(spec: RemoteHostSpec): Promise<ConnectedRemote> {
 		const cached = this.connected.get(spec.id);
 		if (cached) return cached;
-		const target = await this.sshTarget(spec);
+		const { connection, remote } = await this.connectTrusted(spec, this.sshTarget(spec));
+		const cwd = spec.cwd ?? remote.home;
+		const env = new RemoteExecutionEnv({ connection, id: `pi-remote:${spec.id}`, cwd });
+		const connected = { spec, connection, env, platform: remote, cwd };
+		this.connected.set(spec.id, connected);
+		return connected;
+	}
+
+	/**
+	 * Connect, settling host keys as `ssh` would: the keys OpenSSH trusts for the host replace ours, and a host OpenSSH
+	 * has never seen is trusted on first use. A key that differs from a trusted one is refused.
+	 */
+	private async connectTrusted(spec: RemoteHostSpec, target: SshTarget): ReturnType<typeof connectSsh> {
+		const connect = () => connectSsh({ ...target, onLog: this.options.log });
+		const ssh = `ssh ${spec.port ? `-p ${spec.port} ` : ""}${spec.user ? `${spec.user}@` : ""}${spec.host}`;
+		const changed = (error: HostKeyChangedError, fromOpenSsh: boolean) => {
+			const fix = fromOpenSsh
+				? `remove the old key from ~/.ssh/known_hosts with ssh-keygen -R and accept the new one with \`${ssh}\``
+				: `remove the old key with remote_host forget ${spec.id}`;
+			return new Error(
+				`The host key of ${spec.host} changed, which can mean the connection is being intercepted. If the change is expected, ${fix}, then retry.`,
+				{ cause: error },
+			);
+		};
 		try {
-			await this.trustUnknownKey(target);
-			const { connection, remote } = await connectSsh({ ...target, onLog: this.options.log });
-			const cwd = spec.cwd ?? remote.home;
-			const env = new RemoteExecutionEnv({ connection, id: `pi-remote:${spec.id}`, cwd });
-			const connected = { spec, connection, env, platform: remote, cwd };
-			this.connected.set(spec.id, connected);
-			return connected;
+			return await connect();
 		} catch (error) {
-			if (error instanceof HostKeyChangedError) {
-				throw new Error(`${error.message} Confirm the new key out of band, then retry after the old key is forgotten.`, { cause: error });
+			if (!(error instanceof HostKeyUnknownError) && !(error instanceof HostKeyChangedError)) throw error;
+			const known = await openSshHostKeys(spec, this.options.sshConfigFile);
+			if (known.length > 0) {
+				await forgetHostKey(target);
+				await acceptHostKey(target, known.map((line) => `${target.hostKeyAlias} ${line}`));
+			} else if (error instanceof HostKeyUnknownError) {
+				const scanned = await scanHostKey(target);
+				await acceptHostKey(target, scanned.lines);
+				this.options.log?.(`Trusted first-seen host key for ${target.host}: ${scanned.fingerprints.join("; ")}\n`);
+			} else {
+				throw changed(error, false);
 			}
-			throw error;
+			try {
+				return await connect();
+			} catch (retryError) {
+				if (retryError instanceof HostKeyChangedError) throw changed(retryError, known.length > 0);
+				throw retryError;
+			}
 		}
 	}
 
-	private async sshTarget(spec: RemoteHostSpec): Promise<SshTarget> {
+	private sshTarget(spec: RemoteHostSpec): SshTarget {
 		return {
 			host: spec.host,
 			...(spec.user ? { user: spec.user } : {}),
@@ -251,44 +325,15 @@ export class RemoteSession {
 			...(spec.identityFile || this.options.identityFile ? { identityFile: spec.identityFile ?? this.options.identityFile } : {}),
 			knownHostsFile: this.options.knownHostsFile ?? join(homedir(), ".pi", "remote", "known_hosts"),
 			hostKeyAlias: `pi-remote-${spec.id.replaceAll(/[^A-Za-z0-9._-]/g, "_")}`,
-			configFile: await this.sshConfig(spec),
+			// Without a config file `ssh` reads ~/.ssh/config, so aliases, users, keys and jump hosts work as with `ssh`.
+			...(this.options.sshConfigFile ? { configFile: this.options.sshConfigFile } : {}),
 		};
-	}
-
-	private async sshConfig(spec: RemoteHostSpec): Promise<string> {
-		const path = join(homedir(), ".pi", "remote", "ssh-config", `${spec.id.replaceAll(/[^A-Za-z0-9._-]/g, "_")}.conf`);
-		const identity = spec.identityFile ?? this.options.identityFile;
-		const config = [
-			`Host ${spec.host}`,
-			`  HostName ${spec.host}`,
-			...(spec.port ? [`  Port ${spec.port}`] : []),
-			...(spec.user ? [`  User ${spec.user}`] : []),
-			...(identity ? [`  IdentityFile ${identity}`, "  IdentitiesOnly yes"] : []),
-			"",
-		].join("\n");
-		await mkdir(dirname(path), { recursive: true });
-		await writeFile(path, config, { mode: 0o600 });
-		return path;
-	}
-
-	private async trustUnknownKey(target: SshTarget): Promise<void> {
-		if (!this.options.trustUnknownHostKeys) return;
-		try {
-			const { detectPlatform } = await import("@earendil-works/pi-env");
-			await detectPlatform(target);
-		} catch (error) {
-			if (!(error instanceof HostKeyUnknownError)) throw error;
-			const scanned = await scanHostKey(target);
-			await mkdir(dirname(target.knownHostsFile), { recursive: true });
-			await acceptHostKey(target, scanned.lines);
-			this.options.log?.(`Trusted first-seen host key for ${target.host}: ${scanned.fingerprints.join("; ")}\n`);
-		}
 	}
 
 	async forget(id: string): Promise<void> {
 		const spec = this.hosts.get(id);
 		if (!spec) throw new Error(`Unknown remote host: ${id}`);
-		await forgetHostKey(await this.sshTarget(spec));
+		await forgetHostKey(this.sshTarget(spec));
 		this.connected.get(id)?.connection.close();
 		this.connected.delete(id);
 		if (this.activeId === id) this.activeId = "local";
