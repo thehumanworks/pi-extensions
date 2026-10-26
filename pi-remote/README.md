@@ -19,7 +19,7 @@ pi install npm:@nothumanwork/pi-remote
 ## Prerequisites
 
 - An OpenSSH client (`ssh`) on the local machine.
-- Key-based SSH access to each remote host. Connections run in `BatchMode`, so password and interactive prompts are not supported; use `ssh-agent` or an identity file. If `ssh <host>` works without a password, pi-remote works too: `~/.ssh/config` (aliases, users, identity files, jump hosts) applies.
+- Key-based SSH access to each remote host. Connections run in `BatchMode`, so password and interactive prompts are not supported; use `ssh-agent` or an identity file available to the process running Pi. `~/.ssh/config` (aliases, users, identity files, jump hosts) applies, but existing shared SSH connections are not reused.
 - A remote system supported by [`@earendil-works/pi-env`](https://www.npmjs.com/package/@earendil-works/pi-env): Linux, macOS, Android (Termux), or Windows on x86-64 or arm64. On first connection pi-env deploys a small verified daemon to the remote host; nothing else needs to be installed there.
 
 ## Use
@@ -54,6 +54,8 @@ The agent gets a `remote_host` tool and a system prompt section naming the activ
 
 User `!` shell commands also run on the active host. The footer shows `remote <host>` while a remote host is active.
 
+If the initial `--remote` connection fails, the extension stays available, but file and shell tools (including `!` commands) are blocked rather than silently running locally. Fix authentication and retry with `/remote use <host>`, or explicitly choose `/remote use local`.
+
 ## Configuration
 
 Hosts can also be listed in `.pi/remote-hosts.json` in the project directory or `~/.pi/remote-hosts.json`:
@@ -67,7 +69,7 @@ Hosts can also be listed in `.pi/remote-hosts.json` in the project directory or 
 }
 ```
 
-A per-host `identityFile` is resolved relative to the config file. Invalid config files are ignored.
+A per-host `identityFile` is resolved relative to the config file and is preserved when the same host is listed in `--remote-hosts`. Invalid config files are ignored.
 
 | Flag | Environment variable | Purpose |
 | --- | --- | --- |
@@ -75,6 +77,18 @@ A per-host `identityFile` is resolved relative to the config file. Invalid confi
 | `--remote-hosts` | | Comma-separated hosts available to the agent |
 | `--remote-identity` | `PI_REMOTE_IDENTITY` | SSH private key used when a host has none of its own |
 | | `PI_REMOTE_KNOWN_HOSTS` | pi-remote's known-hosts file (default `~/.pi/remote/known_hosts`) |
+| | `PI_REMOTE_SSH_CONFIG` | Optional SSH config file used instead of `~/.ssh/config` |
+
+## SSH authentication failures
+
+`Permission denied (publickey,password,keyboard-interactive)` means the server rejected the available SSH credentials, not that its host key is untrusted. Test from the same shell that launches Pi, replacing `user@host` with your target (and adding the same `-p`, `-i`, or `-F` options if used):
+
+```sh
+ssh -o BatchMode=yes -o ControlMaster=no -o ControlPath=none user@host true
+ssh-add -l
+```
+
+Check the remote username, the configured identity path, and whether Pi can reach your SSH agent. A shell that succeeds only after a password prompt or by reusing an existing shared connection does not establish that non-interactive authentication works. The error includes the configured identity, when present, and a matching diagnostic command. Correcting authentication does not require weakening host-key checks.
 
 ## Host keys
 

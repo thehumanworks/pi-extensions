@@ -18,10 +18,11 @@ import {
 	type RemotePlatform,
 	RemoteExecutionEnv,
 	scanHostKey,
+	SshError,
 	type SshTarget,
 } from "@earendil-works/pi-env";
 import { getOrThrow, type ExecutionEnv } from "@earendil-works/pi-durable/env";
-import { hostId, parseHostList, parseRemoteTarget, type RemoteHostSpec } from "./hosts.ts";
+import { hostId, parseHostList, parseRemoteTarget, shellQuote, type RemoteHostSpec } from "./hosts.ts";
 
 export interface ConnectedRemote {
 	spec: RemoteHostSpec;
@@ -98,6 +99,7 @@ export class RemoteSession {
 	private localConnection: Connection | undefined;
 	private localEnv: ExecutionEnv | undefined;
 	private pendingInitial: string | undefined;
+	private startupFailure: { target: string; message: string } | undefined;
 	private readonly options: RemoteSessionOptions;
 
 	constructor(options: RemoteSessionOptions) {
@@ -108,9 +110,11 @@ export class RemoteSession {
 	}
 
 	configure(options: Pick<RemoteSessionOptions, "initial" | "hostList" | "identityFile">): void {
-		if (options.identityFile) this.options.identityFile = options.identityFile;
-		for (const host of parseHostList(options.hostList, "flag")) this.hosts.set(host.id, host);
 		if (options.initial) this.pendingInitial = options.initial;
+		if (options.identityFile) this.options.identityFile = options.identityFile;
+		for (const host of parseHostList(options.hostList, "flag")) {
+			this.hosts.set(host.id, { ...this.hosts.get(host.id), ...host });
+		}
 	}
 
 	private addConfiguredHosts(parsed: RemoteConfigFile, file: string): void {
@@ -122,7 +126,8 @@ export class RemoteSession {
 		const parsed = parseRemoteTarget(target);
 		const spec: RemoteHostSpec = { id: hostId(parsed), ...parsed, source: "config" };
 		if (typeof item !== "string" && item.identityFile) spec.identityFile = resolve(dirname(file), item.identityFile);
-		if (!this.hosts.has(spec.id)) this.hosts.set(spec.id, spec);
+		// Flags override fields they supply, not configured credentials or cwd they omit.
+		this.hosts.set(spec.id, { ...spec, ...this.hosts.get(spec.id) });
 	}
 
 	private loadConfiguredHostsSync(): void {
@@ -136,21 +141,40 @@ export class RemoteSession {
 		}
 	}
 
-	async loadConfiguredHosts(): Promise<void> {
-		if (this.pendingInitial) await this.use(this.pendingInitial);
-		for (const file of [join(this.localCwd, ".pi", "remote-hosts.json"), join(homedir(), ".pi", "remote-hosts.json")]) {
-			let parsed: RemoteConfigFile;
-			try {
-				parsed = JSON.parse(await readFile(file, "utf8")) as RemoteConfigFile;
-			} catch {
-				continue;
+	async loadConfiguredHosts(options?: Pick<RemoteSessionOptions, "initial" | "hostList" | "identityFile">): Promise<void> {
+		try {
+			if (options) this.configure(options);
+			for (const file of [join(this.localCwd, ".pi", "remote-hosts.json"), join(homedir(), ".pi", "remote-hosts.json")]) {
+				try {
+					this.addConfiguredHosts(JSON.parse(await readFile(file, "utf8")) as RemoteConfigFile, file);
+				} catch {
+					// Invalid optional config must not prevent selection of the requested host.
+				}
 			}
-			for (const item of parsed.hosts ?? []) {
-				const target = typeof item === "string" ? item : item.target;
-				this.addConfiguredHost(item, file);
+			if (this.pendingInitial) await this.use(this.pendingInitial);
+		} catch (error) {
+			if (this.pendingInitial) {
+				this.startupFailure = {
+					target: this.pendingInitial,
+					message: error instanceof Error ? error.message : String(error),
+				};
 			}
+			throw error;
 		}
-		if (this.options.initial) await this.use(this.options.initial);
+	}
+
+	get unavailable(): Readonly<{ target: string; message: string }> | undefined {
+		return this.startupFailure;
+	}
+
+	/** Never silently execute locally when the user explicitly requested an unavailable remote host. */
+	assertReady(): void {
+		if (this.startupFailure) {
+			throw new Error(
+				`Execution is blocked because the requested remote host ${this.startupFailure.target} is unavailable. ` +
+				`Retry with /remote use <host> or explicitly select /remote use local.\n${this.startupFailure.message}`,
+			);
+		}
 	}
 
 	list(): Array<{ id: string; cwd?: string; active: boolean; connected: boolean }> {
@@ -173,12 +197,14 @@ export class RemoteSession {
 	}
 
 	activeEnv(): ExecutionEnv | undefined {
+		this.assertReady();
 		return this.activeId === "local" ? undefined : this.connected.get(this.activeId)?.env;
 	}
 
 	async use(target: string, cwd?: string): Promise<{ id: string; cwd: string; remote: boolean }> {
 		if (target === "local") {
 			this.activeId = "local";
+			this.startupFailure = undefined;
 			return this.current();
 		}
 		const parsed = this.hosts.has(target) ? undefined : parseRemoteTarget(target);
@@ -201,6 +227,7 @@ export class RemoteSession {
 			connected.env.cwd = cwd;
 		}
 		this.activeId = id;
+		this.startupFailure = undefined;
 		return this.current();
 	}
 
@@ -269,7 +296,32 @@ export class RemoteSession {
 	private async connect(spec: RemoteHostSpec): Promise<ConnectedRemote> {
 		const cached = this.connected.get(spec.id);
 		if (cached) return cached;
-		const { connection, remote } = await this.connectTrusted(spec, this.sshTarget(spec));
+		const target = this.sshTarget(spec);
+		let result: Awaited<ReturnType<typeof connectSsh>>;
+		try {
+			result = await this.connectTrusted(spec, target);
+		} catch (error) {
+			if (error instanceof SshError && error.exitCode === 255 && /Permission denied \([^)]+\)/i.test(error.stderr)) {
+				const command = [
+					"ssh", "-o", "BatchMode=yes", "-o", "ControlMaster=no", "-o", "ControlPath=none",
+					...(target.configFile ? ["-F", shellQuote(target.configFile)] : []),
+					...(target.identityFile ? ["-i", shellQuote(target.identityFile), "-o", "IdentitiesOnly=yes"] : []),
+					...(target.user ? ["-l", shellQuote(target.user)] : []),
+					...(target.port ? ["-p", String(target.port)] : []),
+					"--", shellQuote(target.host), "true",
+				].join(" ");
+				throw new Error(
+					`SSH authentication failed for ${spec.id}. pi-remote uses non-interactive SSH (BatchMode=yes); ` +
+					"passwords and keyboard-interactive prompts are unavailable, and existing shared SSH connections are not reused. " +
+					(target.identityFile ? `Configured identity: ${target.identityFile} (IdentitiesOnly=yes). ` : "") +
+					"Check the SSH user and that an authorized key or SSH agent is available to the process running Pi. " +
+					`Test from the same shell: ${command}\n${error.message}`,
+					{ cause: error },
+				);
+			}
+			throw error;
+		}
+		const { connection, remote } = result;
 		const cwd = spec.cwd ?? remote.home;
 		const env = new RemoteExecutionEnv({ connection, id: `pi-remote:${spec.id}`, cwd });
 		const connected = { spec, connection, env, platform: remote, cwd };

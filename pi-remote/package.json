@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-remote",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Run Pi's read, write, edit, bash, ls, find, and grep tools on remote hosts over SSH",
   "keywords": [

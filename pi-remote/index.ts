@@ -110,14 +110,15 @@ export default function remoteExtension(pi: ExtensionAPI) {
 		label: "remote host",
 		description: "Inspect or change the host where read, write, edit, bash, ls, find, and grep execute. Use local for this machine. Hosts added here remain available for later calls.",
 		parameters: remoteHostSchema,
-		async execute(_id, params) {
+		async execute(_id, params, _signal, _onUpdate, ctx) {
 			switch (params.action) {
 				case "status":
-					return textResult(JSON.stringify({ current: session.current(), hosts: session.list() }, null, 2), session.current());
+					return textResult(JSON.stringify({ current: session.current(), hosts: session.list(), unavailable: session.unavailable }, null, 2), session.current());
 				case "use":
 				case "switch": {
 					if (!params.host) throw new Error("host is required");
 					const current = await session.use(params.host, params.cwd);
+					renderStatus(ctx);
 					return textResult(`Execution host is now ${current.id}${current.remote ? ` (${current.cwd})` : ""}`, current);
 				}
 				case "probe":
@@ -136,6 +137,7 @@ export default function remoteExtension(pi: ExtensionAPI) {
 				case "forget": {
 					if (!params.host) throw new Error("host is required");
 					await session.forget(params.host);
+					renderStatus(ctx);
 					return textResult(`Forgot trusted host key for ${params.host}`);
 				}
 			}
@@ -149,17 +151,29 @@ export default function remoteExtension(pi: ExtensionAPI) {
 			if (action === "use" && host) await session.use(host, cwdParts.join(" ") || undefined);
 			const current = session.current();
 			renderStatus(ctx);
-			ctx.ui.notify(`Execution host: ${current.id}${current.remote ? ` (${current.cwd})` : ""}`, "info");
+			if (session.unavailable) {
+				ctx.ui.notify(`Remote host unavailable: ${session.unavailable.target}\n${session.unavailable.message}`, "error");
+			} else {
+				ctx.ui.notify(`Execution host: ${current.id}${current.remote ? ` (${current.cwd})` : ""}`, "info");
+			}
 		},
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
-		session.configure({
-			initial: flag(pi, "remote"),
-			hostList: flag(pi, "remote-hosts"),
-			identityFile: flag(pi, "remote-identity") ?? process.env.PI_REMOTE_IDENTITY,
-		});
-		await session.loadConfiguredHosts();
+		try {
+			await session.loadConfiguredHosts({
+				initial: flag(pi, "remote"),
+				hostList: flag(pi, "remote-hosts"),
+				identityFile: flag(pi, "remote-identity") ?? process.env.PI_REMOTE_IDENTITY,
+			});
+		} catch (error) {
+			ctx.ui.notify(
+				`${error instanceof Error ? error.message : String(error)}\n${session.unavailable
+					? "File and shell tools are blocked. Retry with /remote use <host> or choose /remote use local."
+					: "Use /remote to inspect or select an execution host."}`,
+				"error",
+			);
+		}
 		renderStatus(ctx);
 	});
 	pi.on("session_shutdown", async () => session.close());
@@ -180,8 +194,14 @@ export default function remoteExtension(pi: ExtensionAPI) {
 		const current = session.current();
 		const available = session.list().map((host) => host.id).join(", ");
 		event.systemPromptOptions.sections.execution_host = [
-			`Active execution host: ${current.id}`,
-			`Working directory: ${current.cwd}`,
+			...(session.unavailable ? [
+				`Requested execution host is unavailable: ${session.unavailable.target}`,
+				"Initial remote setup failed. Call remote_host status to inspect the error.",
+				"Built-in file and shell tools are blocked; they have NOT fallen back to local execution. Tell the user and retry the requested host, or ask before switching to local.",
+			] : [
+				`Active execution host: ${current.id}`,
+				`Working directory: ${current.cwd}`,
+			]),
 			`Available hosts: ${available}`,
 			"Built-in file and shell tools follow the active host. Call remote_host to switch hosts, probe them, run one command on many hosts, or copy files between them.",
 		].join("\n");
@@ -190,7 +210,9 @@ export default function remoteExtension(pi: ExtensionAPI) {
 	function renderStatus(ctx: ExtensionContext): void {
 		if (!ctx.hasUI) return;
 		const current = session.current();
-		ctx.ui.setStatus("remote", current.remote ? ctx.ui.theme.fg("accent", `remote ${current.id}`) : undefined);
+		ctx.ui.setStatus("remote", session.unavailable
+			? ctx.ui.theme.fg("error", `remote unavailable: ${session.unavailable.target}`)
+			: current.remote ? ctx.ui.theme.fg("accent", `remote ${current.id}`) : undefined);
 	}
 }
 
