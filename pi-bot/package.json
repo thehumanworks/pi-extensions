@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-bot",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Persistent custom agents for Pi with their own persona, model, tools, skills, memory and conversation history",
   "keywords": [

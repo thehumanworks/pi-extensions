@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-voice",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ChatGPT realtime speech-to-speech conversations for Pi",
   "type": "module",
   "license": "MIT",
