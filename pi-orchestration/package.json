@@ -1,0 +1,74 @@
+{
+  "name": "@nothumanwork/pi-orchestration",
+  "version": "0.1.0",
+  "description": "Durable multi-agent workflows for Pi and the command line",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "workflow",
+    "orchestration"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-orchestration"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "dist",
+    "bin",
+    "examples/workflows",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "bin": {
+    "pi-workflow": "bin/pi-workflow.mjs"
+  },
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./recipes": "./dist/recipes.js"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "test": "npm run build && node --experimental-strip-types --test test/*.test.ts",
+    "eval:report": "node eval/report.mjs",
+    "eval:preflight": "node --experimental-strip-types eval/lib.mts --preflight"
+  },
+  "dependencies": {
+    "@babel/parser": "8.0.8",
+    "@earendil-works/chord": "1.4.0",
+    "@earendil-works/pi-durable": "1.4.0",
+    "jiti": "2.6.1",
+    "pi-workflow-runtime": "npm:@earendil-works/pi-coding-agent@1.4.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-agent-core": "1.4.0",
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-tui": "1.4.0",
+    "@types/node": "^22.19.0",
+    "typebox": "1.3.27",
+    "typescript": "^5.9.3"
+  }
+}
