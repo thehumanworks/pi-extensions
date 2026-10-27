@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Durable multi-agent workflows for Pi and the command line",
   "type": "module",
+  "license": "MIT",
   "keywords": [
     "pi-package",
     "workflow",
@@ -25,7 +26,8 @@
     "dist",
     "bin",
     "examples/workflows",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "pi": {
     "extensions": [
@@ -44,9 +46,7 @@
     "check": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
-    "test": "npm run build && node --experimental-strip-types --test test/*.test.ts",
-    "eval:report": "node eval/report.mjs",
-    "eval:preflight": "node --experimental-strip-types eval/lib.mts --preflight"
+    "test": "npm run build && node --experimental-strip-types --test test/*.test.ts"
   },
   "dependencies": {
     "@babel/parser": "8.0.8",

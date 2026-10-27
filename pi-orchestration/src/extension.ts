@@ -61,7 +61,8 @@ const parameters = Type.Object({
   })),
 });
 
-interface TrackedRun { runId: string; home?: string }
+/** attached counts foreground waiters that report the outcome themselves. */
+interface TrackedRun { runId: string; home?: string; attached: number }
 interface SessionWatch {
   id: string;
   context: ExtensionContext;
@@ -137,6 +138,8 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
           }) as RunRecord;
           if (active !== session || session.controller.signal.aborted) return;
           if (TERMINAL_STATUSES.has(run.status)) {
+            // A foreground wait already returns this outcome; a second message would trigger a redundant turn.
+            if (tracked.attached) continue;
             const result = modelResult(run.result ?? run.error ?? run.status, run.id);
             pi.sendMessage({
               customType: "workflow", display: true,
@@ -170,13 +173,32 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     return active;
   }
 
-  function track(ctx: ExtensionContext, runId: string, home?: string) {
+  function track(ctx: ExtensionContext, runId: string, home?: string): TrackedRun {
     const session = sessionFor(ctx);
-    if (!session.runs.has(runId)) {
-      session.runs.set(runId, { runId, home });
+    let tracked = session.runs.get(runId);
+    if (!tracked) {
+      tracked = { runId, home, attached: 0 };
+      session.runs.set(runId, tracked);
       pi.appendEntry("workflow_run", { runId, home });
     }
     schedule(session);
+    return tracked;
+  }
+
+  /** Track a run while a foreground caller waits. A caller that saw the terminal state owns the outcome. */
+  function attach(ctx: ExtensionContext, runId: string, home?: string): (terminal: boolean) => void {
+    const tracked = track(ctx, runId, home);
+    const session = active!;
+    tracked.attached++;
+    let released = false;
+    return terminal => {
+      if (released) return;
+      released = true;
+      tracked.attached--;
+      if (!terminal || active !== session || session.runs.get(runId) !== tracked) return;
+      session.runs.delete(runId);
+      pi.appendEntry("workflow_run", { runId, home, done: true });
+    };
   }
 
   async function restore(ctx: ExtensionContext) {
@@ -185,8 +207,10 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     for (const entry of ctx.sessionManager.getBranch()) {
       if (entry.type === "custom" && entry.customType === "workflow_run") {
         const data = record(entry.data);
-        if (typeof data?.runId === "string") session.runs.set(data.runId, {
-          runId: data.runId, home: typeof data.home === "string" ? data.home : undefined,
+        if (typeof data?.runId !== "string") continue;
+        if (data.done === true) session.runs.delete(data.runId);
+        else session.runs.set(data.runId, {
+          runId: data.runId, home: typeof data.home === "string" ? data.home : undefined, attached: 0,
         });
       } else if (entry.type === "custom_message" && entry.customType === "workflow") {
         const data = record(entry.details);
@@ -256,27 +280,31 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
       let result = await client.request(request, { signal });
       if (request.action === "run") {
         const launched = result as { runId: string; status: RunStatus };
-        track(ctx, launched.runId);
-        if (args.wait) {
-          const timeout = Math.min(600_000, Math.max(1, args.waitTimeoutMs ?? 60_000));
-          const deadline = Date.now() + timeout;
-          const timeoutSignal = AbortSignal.timeout(timeout);
-          const waitSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
-          try {
-            do {
-              waitSignal.throwIfAborted();
-              const run = await client.request({ action: "status", runId: launched.runId, verbose: true }, {
-                signal: waitSignal, timeoutMs: Math.max(1, deadline - Date.now()),
-              }) as RunRecord;
-              result = { ...run, runId: run.id };
-              if (TERMINAL_STATUSES.has(run.status) || Date.now() >= deadline) break;
-              onUpdate?.(toolResult({ runId: run.id, status: run.status, progress: runSummary(run) }, run.id));
-              await delay(Math.min(pollInterval, Math.max(1, deadline - Date.now())), undefined, { signal: waitSignal });
-            } while (Date.now() < deadline);
-          } catch (error) {
-            if (signal?.aborted || !timeoutSignal.aborted) throw error;
-          }
+        if (!args.wait) {
+          track(ctx, launched.runId);
+          return toolResult(result, launched.runId);
         }
+        const release = attach(ctx, launched.runId);
+        let terminal = false;
+        const timeout = Math.min(600_000, Math.max(1, args.waitTimeoutMs ?? 60_000));
+        const deadline = Date.now() + timeout;
+        const timeoutSignal = AbortSignal.timeout(timeout);
+        const waitSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+        try {
+          do {
+            waitSignal.throwIfAborted();
+            const run = await client.request({ action: "status", runId: launched.runId, verbose: true }, {
+              signal: waitSignal, timeoutMs: Math.max(1, deadline - Date.now()),
+            }) as RunRecord;
+            result = { ...run, runId: run.id };
+            terminal = TERMINAL_STATUSES.has(run.status);
+            if (terminal || Date.now() >= deadline) break;
+            onUpdate?.(toolResult({ runId: run.id, status: run.status, progress: runSummary(run) }, run.id));
+            await delay(Math.min(pollInterval, Math.max(1, deadline - Date.now())), undefined, { signal: waitSignal });
+          } while (Date.now() < deadline);
+        } catch (error) {
+          if (signal?.aborted || !timeoutSignal.aborted) throw error;
+        } finally { release(terminal); }
         return toolResult(result, launched.runId);
       }
       return toolResult(result, args.runId);
@@ -294,7 +322,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
           thinkingLevel: pi.getThinkingLevel() as ThinkingLevel,
           origin: { kind: "tool", sessionId: ctx.sessionManager.getSessionId() },
           authorizeRun: launch => authorize(ctx, launch),
-          onLaunch: (runId, home) => track(ctx, runId, home),
+          onLaunch: (runId, home, attached) => attached ? attach(ctx, runId, home) : void track(ctx, runId, home),
           stdout: text => {
             if (active !== session) return;
             pi.sendMessage({ customType: "workflow", content: text.trimEnd(), display: true, details: { kind: "command" } });

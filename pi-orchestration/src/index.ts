@@ -20,6 +20,13 @@ export interface AgentSpec {
 export interface AgentOptions extends AgentSpec { label?: string; phase?: string; agentType?: string; key?: string }
 export type Settled<T> = { status: "fulfilled"; value: T } | { status: "rejected"; reason: { message: string; code?: string } };
 export type PipelineStage<In, Out, Item> = (prev: In, item: Item, index: number) => Promise<Out> | Out;
+/** Passed to ctx.step callbacks. They run in the shared worker process, whose working directory is not the run's. */
+export interface StepContext {
+  signal: AbortSignal;
+  /** The run's absolute working directory. Resolve relative paths against it. */
+  cwd: string;
+  log(message: string): void;
+}
 export interface BackgroundAgent {
   readonly name: string;
   readonly conversationId: string;
@@ -50,7 +57,7 @@ export interface WorkflowContext<Args = unknown> {
   pipeline<T, A, B>(items: readonly T[], s1: PipelineStage<T, A, T>, s2: PipelineStage<A, B, T>): Promise<Array<B | null>>;
   pipeline<T, A, B, C>(items: readonly T[], s1: PipelineStage<T, A, T>, s2: PipelineStage<A, B, T>, s3: PipelineStage<B, C, T>): Promise<Array<C | null>>;
   pipeline<T, A, B, C, D>(items: readonly T[], s1: PipelineStage<T, A, T>, s2: PipelineStage<A, B, T>, s3: PipelineStage<B, C, T>, s4: PipelineStage<C, D, T>): Promise<Array<D | null>>;
-  step<T>(key: string, fn: (step: { signal: AbortSignal; log(msg: string): void }) => Promise<T>, options?: { retries?: number; compensate?: (result: T) => Promise<void> }): Promise<T>;
+  step<T>(key: string, fn: (step: StepContext) => Promise<T>, options?: { retries?: number; compensate?: (result: T) => Promise<void> }): Promise<T>;
   workflow<R = unknown>(nameOrRef: string | { path: string }, args?: unknown): Promise<R>;
   signal<S extends TSchema = TSchema>(key: string, options?: { schema?: S; timeoutMs?: number; prompt?: string }): Promise<Static<S>>;
   sleep(ms: number): Promise<void>;
@@ -134,5 +141,13 @@ export interface BackgroundAgentRecord {
   active?: boolean;
   detached: boolean;
 }
-export interface CatalogEntry { name: string; description?: string; path: string; args: TSchema; source: "project" | "user" }
+export interface CatalogEntry {
+  name: string;
+  description?: string;
+  path: string;
+  args: TSchema;
+  source: "project" | "user";
+  /** Present when the file could not be loaded; name is then the file's base name. */
+  error?: string;
+}
 export interface ValidationResult { valid: boolean; path?: string; name?: string; hash?: string; args?: TSchema; diagnostics: Array<{ message: string; line?: number; code?: string }> }

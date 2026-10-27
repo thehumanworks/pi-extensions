@@ -10,7 +10,7 @@ const packs = JSON.parse(execFileSync('npm', ['pack', '--workspaces', '--dry-run
 test('root is a private workspace, with no Git submodules', () => {
   assert.equal(manifest.private, true);
   assert.equal(packs.length, manifest.workspaces.length);
-  const index = execFileSync('git', ['ls-files', '--stage'], { cwd: root, encoding: 'utf8' });
+  const index = execFileSync('git', ['ls-files', '--stage'], { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   assert.doesNotMatch(index, /^160000 /m);
 });
 
@@ -48,6 +48,13 @@ for (const dir of manifest.workspaces) {
       assert.ok(![...files].some(f => f.includes('fixtures')));
     }
     if (dir === 'pi-loop') assert.ok(files.has('dist/worker.js'));
+    if (dir === 'pi-orchestration') {
+      for (const file of ['dist/index.js', 'dist/index.d.ts', 'dist/recipes.js', 'dist/recipes.d.ts', 'dist/cli.js', 'dist/worker.js', 'dist/engine/index.js']) assert.ok(files.has(file), `missing ${file}`);
+      assert.ok(files.has(pkg.types.replace(/^\.\//, '')));
+      assert.equal([...files].filter(f => f.startsWith('examples/workflows/')).length, 9);
+      assert.ok(![...files].some(f => f.startsWith('eval/')));
+      assert.ok(files.has('LICENSE'));
+    }
     if (dir === 'pi-xai') assert.ok(files.has('dist/src/index.js'));
     if (dir === 'pi-remote') {
       for (const file of ['hosts.ts', 'operations.ts', 'session.ts', 'README.md']) assert.ok(files.has(file), `missing ${file}`);

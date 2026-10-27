@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, realpath } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { WorkflowError } from "../errors.ts";
@@ -21,18 +21,30 @@ async function git(cwd: string, args: string[]): Promise<string> {
 async function exists(path: string): Promise<boolean> {
   try { await realpath(path); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return false; throw error; }
 }
+/** Resolve symlinks in the existing prefix, so paths compare like Git's real-path listing. */
+async function canonical(path: string): Promise<string> {
+  const absolute = resolve(path);
+  try { return await realpath(absolute); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT" || dirname(absolute) === absolute) throw error;
+    return join(await canonical(dirname(absolute)), basename(absolute));
+  }
+}
+async function listWorktrees(cwd: string): Promise<string[]> {
+  const listed = (await git(cwd, ["worktree", "list", "--porcelain", "-z"])).split("\0").filter(line => line.startsWith("worktree ")).map(line => line.slice(9));
+  return Promise.all(listed.map(canonical));
+}
 export async function ensureWorktree(options: { home: string; runId: string; key: string; label?: string; cwd: string }): Promise<Worktree> {
   if (!/^[a-zA-Z0-9_-]+$/.test(options.runId)) throw new WorkflowError("worktree_error", "Invalid run ID for a worktree path.");
   const suffix = worktreeSuffix(options.label ?? options.key);
-  const path = join(resolve(options.home), "worktrees", options.runId, suffix);
+  const path = await canonical(join(options.home, "worktrees", options.runId, suffix));
   const branch = `orch/${options.runId}/${suffix}`;
   const common = await realpath(await git(options.cwd, ["rev-parse", "--path-format=absolute", "--git-common-dir"]));
-  const listed = (await git(options.cwd, ["worktree", "list", "--porcelain", "-z"])).split("\0").filter(line => line.startsWith("worktree ")).map(line => line.slice(9));
+  const listed = await listWorktrees(options.cwd);
   if (await exists(path)) {
-    const actual = await realpath(path);
     const foundCommon = await realpath(await git(path, ["rev-parse", "--path-format=absolute", "--git-common-dir"]));
     const foundBranch = await git(path, ["symbolic-ref", "--short", "HEAD"]);
-    if (!listed.includes(path) || foundCommon !== common || foundBranch !== branch || actual !== path) {
+    if (!listed.includes(path) || foundCommon !== common || foundBranch !== branch) {
       throw new WorkflowError("worktree_conflict", `Refusing to reuse ${path}: it is not the expected ${branch} worktree. Move it aside or use a different agent label.`);
     }
     return { path, branch };
@@ -46,8 +58,8 @@ export async function ensureWorktree(options: { home: string; runId: string; key
   return { path, branch };
 }
 export async function removeWorktree(cwd: string, worktree: Worktree): Promise<void> {
-  const listed = (await git(cwd, ["worktree", "list", "--porcelain", "-z"])).split("\0").filter(line => line.startsWith("worktree ")).map(line => line.slice(9));
-  if (!listed.includes(worktree.path)) {
+  const listed = await listWorktrees(cwd);
+  if (!listed.includes(await canonical(worktree.path))) {
     if (await exists(worktree.path)) throw new WorkflowError("worktree_conflict", `Refusing to remove unregistered directory ${worktree.path}.`);
     return;
   }

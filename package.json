@@ -11,6 +11,7 @@
     "pi-fast",
     "pi-loop",
     "pi-memory",
+    "pi-orchestration",
     "pi-remote",
     "pi-tps",
     "pi-voice",

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { access, readFile, readdir, realpath } from "node:fs/promises";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createJiti } from "jiti";
 import { Type } from "typebox";
@@ -44,7 +44,7 @@ export async function resolveWorkflow(ref: WorkflowRef | string, cwd: string): P
     }
   }
   if ("name" in reference) {
-    const declared = (await catalog(cwd)).find(entry => entry.name === reference.name);
+    const declared = (await catalog(cwd)).find(entry => entry.name === reference.name && entry.error === undefined);
     if (declared) return declared.path;
   }
   throw new WorkflowError("workflow_not_found", `Workflow not found: ${"path" in reference ? reference.path : reference.name}. Use catalog --cwd ${cwd}, or pass a workflow file path.`);
@@ -89,7 +89,14 @@ export async function catalog(cwd: string): Promise<CatalogEntry[]> {
     try { files = (await readdir(directory)).filter(f => f.endsWith(".ts") && !f.endsWith(".d.ts")).sort(); }
     catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") continue; throw error; }
     for (const filename of files) {
-      const loaded = await loadWorkflow({ path: join(directory, filename) }, cwd);
+      let loaded: LoadedWorkflow;
+      try { loaded = await loadWorkflow({ path: join(directory, filename) }, cwd); }
+      catch (error) {
+        // One broken file must not hide every other workflow. Report it in place.
+        entries.push({ name: basename(filename, ".ts"), path: join(directory, filename), args: Type.Object({}), source,
+          error: error instanceof Error ? error.message : String(error) });
+        continue;
+      }
       // Project definitions take precedence over user definitions of the same name.
       if (names.has(loaded.definition.name)) continue;
       names.add(loaded.definition.name);

@@ -2,6 +2,7 @@ import type { Context } from "@earendil-works/chord/context";
 import type { JsonValue } from "@earendil-works/chord";
 import { defineTask, type Task, type TaskRuntime } from "@earendil-works/pi-durable";
 import { WorkflowError } from "../errors.ts";
+import type { StepContext } from "../index.ts";
 import type { Engine } from "./index.ts";
 import { json, RunStore, storedRun } from "./store.ts";
 import { outsideScript } from "./scopes.ts";
@@ -9,7 +10,7 @@ import { outsideScript } from "./scopes.ts";
 type EffectInput = { runId: string; key: string; retries: number };
 type EffectState = { phase: "execute"; attempt: number } | { phase: "backoff"; attempt: number; until: number };
 export type EffectTask = Task<EffectInput, EffectState, JsonValue, object>;
-export type EffectCallback = (context: { signal: AbortSignal; log(message: string): void }) => Promise<unknown>;
+export type EffectCallback = (context: StepContext) => Promise<unknown>;
 
 export function effectTask(getEngine: () => Engine): EffectTask {
   return defineTask<EffectInput, EffectState, JsonValue>({
@@ -27,12 +28,15 @@ export function effectTask(getEngine: () => Engine): EffectTask {
           if (await runtime.memo(`effect:${attempt}`, ctx))
             throw new WorkflowError("interrupted_step", `Step ${key} was interrupted before its completion commit. Inspect external effects, then retry --from '${key}' if safe.`, key);
           await runtime.memo(`effect:${attempt}`, true, ctx);
+          let cwd = "";
           await runtime.commit(async tx => {
-            const step = storedRun((await tx.doc(RunStore)).runs[runId]).steps.find(item => item.key === key)!;
+            const run = storedRun((await tx.doc(RunStore)).runs[runId]);
+            const step = run.steps.find(item => item.key === key)!;
             step.attempts = attempt; step.startedAt ??= runtime.now(); step.status = "running";
+            cwd = run.cwd;
             return undefined;
           }, ctx);
-          const result = json(await outsideScript(() => callback({ signal: runtime.signal,
+          const result = json(await outsideScript(() => callback({ signal: runtime.signal, cwd,
             log: message => { void getEngine().mutate(runId, run => { run.logs.push({ time: runtime.now(), message }); }).catch(() => {}); },
           })));
           await runtime.commit(async tx => {

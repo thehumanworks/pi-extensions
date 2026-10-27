@@ -5,7 +5,7 @@ import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { withAbortSignal, type Context } from "@earendil-works/chord/context";
 import type { TSchema } from "typebox";
 import { Value } from "typebox/value";
-import type { AgentOptions, PipelineStage, Settled, StepRecord, WorkflowContext, WorkflowDefinition } from "../index.ts";
+import type { AgentOptions, PipelineStage, Settled, StepContext, StepRecord, WorkflowContext, WorkflowDefinition } from "../index.ts";
 import { WorkflowError } from "../errors.ts";
 import type { Engine, RunRuntime } from "./index.ts";
 import { AgentMeta, copy, json, RunStore, storedRun, StructuredResult, type JournalEntry, type RunData } from "./store.ts";
@@ -76,7 +76,7 @@ export class Execution {
         const key = structuralKey("pipeline");
         return outsideScript(() => this.pipeline(key, items, stages));
       }) as WorkflowContext["pipeline"],
-      step: <T>(key: string, fn: (step: { signal: AbortSignal; log(message: string): void }) => Promise<T>, options?: { retries?: number; compensate?: (value: T) => Promise<void> }) => {
+      step: <T>(key: string, fn: (step: StepContext) => Promise<T>, options?: { retries?: number; compensate?: (value: T) => Promise<void> }) => {
         const fullKey = structuralKey("step", key);
         return outsideScript(() => this.step(fullKey, fn, options));
       },
@@ -213,7 +213,7 @@ export class Execution {
     await this.complete(key, result); return result;
   }
 
-  private async step<T>(key: string, fn: (step: { signal: AbortSignal; log(message: string): void }) => Promise<T>, options: { retries?: number; compensate?: (value: T) => Promise<void> } = {}): Promise<T> {
+  private async step<T>(key: string, fn: (step: StepContext) => Promise<T>, options: { retries?: number; compensate?: (value: T) => Promise<void> } = {}): Promise<T> {
     const record = await this.journal(key, "step", { retries: options.retries ?? 0, compensate: !!options.compensate });
     if (options.compensate) this.compensations.set(key, value => options.compensate!(value as T));
     if (record.status === "completed" || record.status === "compensated") return this.engine.readResult(record) as Promise<T>;

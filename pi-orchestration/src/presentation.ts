@@ -64,7 +64,20 @@ export function runTree(run: RunRecord, now = Date.now()): string {
 
 export function runList(runs: RunRecord[]): string {
   if (!runs.length) return "No workflow runs.";
-  return runs.map(run => `${"  ".repeat(run.depth)}${runSummary(run)}`).join("\n");
+  // Show children beneath their parent, oldest first; keep the given order for top-level runs.
+  const present = new Set(runs.map(run => run.id));
+  const children = new Map<string, RunRecord[]>();
+  for (const run of runs) if (run.origin.kind === "workflow" && present.has(run.origin.parentRunId)) {
+    const siblings = children.get(run.origin.parentRunId) ?? [];
+    siblings.push(run); children.set(run.origin.parentRunId, siblings);
+  }
+  const lines: string[] = [];
+  const add = (run: RunRecord) => {
+    lines.push(`${"  ".repeat(run.depth)}${runSummary(run)}`);
+    for (const child of (children.get(run.id) ?? []).sort((a, b) => a.createdAt - b.createdAt)) add(child);
+  };
+  for (const run of runs) if (!(run.origin.kind === "workflow" && present.has(run.origin.parentRunId))) add(run);
+  return lines.join("\n");
 }
 
 /** Truncate UTF-8 without cutting a code point; the full result remains in the worker. */

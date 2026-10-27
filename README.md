@@ -23,6 +23,7 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | `@nothumanwork/pi-fast` | [pi-fast](pi-fast/README.md) |
 | `@nothumanwork/pi-loop` | [pi-loop](pi-loop/README.md) |
 | `@nothumanwork/pi-memory` | [pi-memory](pi-memory/README.md) |
+| `@nothumanwork/pi-orchestration` | [pi-orchestration](pi-orchestration/README.md) |
 | `@nothumanwork/pi-remote` | [pi-remote](pi-remote/README.md) |
 | `@nothumanwork/pi-tps` | [pi-tps](pi-tps/README.md) |
 | `@nothumanwork/pi-voice` | [pi-voice](pi-voice/README.md) |

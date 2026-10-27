@@ -4,7 +4,7 @@ Durable TypeScript workflows for Pi. A workflow controls branching, loops and de
 
 The package implements parallel work, pipelines, child workflows, structured results, durable signals and sleep, persistent background agents, shared-queue swarms, worktree isolation, retries and compensating steps. It uses `@earendil-works/pi-durable@1.4.0` for tasks, ownership, conversations and persistence.
 
-**Implementation status:** deterministic engine, process, integration and example tests are included. The requested real-model evaluation has not run because this implementation environment has no configured provider credentials. No model-quality score or tuned-default claim is implied. See [Evaluation](#evaluation) for the remaining acceptance work and reproduction commands. This package has not been published as part of this work.
+**Status:** version 0.1.0. The test suite drives the engine, worker, CLI and Pi extension with a scripted model and needs no provider credentials. Text, structured, worktree, background-agent and swarm workflows have also been run against a live model. Defaults are conservative and have not been tuned by evaluation.
 
 ## Install and first run
 
@@ -70,7 +70,7 @@ The tool's launch request is:
 {"action":"run","workflow":{"name":"review"},"args":{"path":"src"}}
 ```
 
-It returns `{"runId":"…","status":"queued"}` immediately. The originating Pi session receives a completion message; the extension reattaches after a session restart. TUI mode also displays a one-line progress widget. The worker continues when Pi closes.
+It returns `{"runId":"…","status":"queued"}` immediately. The originating Pi session receives a completion message (except after `wait: true` or a foreground `/workflow run`, which already return the outcome); the extension reattaches after a session restart. TUI mode also displays a one-line progress widget. The worker continues when Pi closes.
 
 From a shell, explicitly enable unattended execution and select an available model:
 
@@ -86,7 +86,7 @@ CLI `run` waits by default. Add `--bg` for an immediate launch reply. Ctrl-C det
 
 A workflow is a trusted TypeScript module with a default `defineWorkflow({...})` export. Its name must be kebab-case. `args` is a TypeBox schema, checked before a run is admitted; omitting it means an empty argument object. `run(ctx)` returns a JSON-serializable result.
 
-Files are resolved by explicit path, then project `.pi/workflows/`, then user `~/.pi/agent/workflows/`. `PI_CODING_AGENT_DIR` changes the user location. Catalog lookup also recognizes a definition's declared name in files such as `01-leader-worker.ts`. Project definitions take precedence over user definitions with the same name. Modules are freshly loaded after edits. The definition file's SHA-256 hash identifies the code used for a run; imported files are not snapshotted.
+Files are resolved by explicit path, then project `.pi/workflows/`, then user `~/.pi/agent/workflows/`. A file that fails to load still appears in `catalog`, under its file name with an `error` field, so one broken file does not hide the others. `PI_CODING_AGENT_DIR` changes the user location. Catalog lookup also recognizes a definition's declared name in files such as `01-leader-worker.ts`. Project definitions take precedence over user definitions with the same name. Modules are freshly loaded after edits. The definition file's SHA-256 hash identifies the code used for a run; imported files are not snapshotted.
 
 The loader resolves this package, its recipes, TypeBox and the durable tool API from the installation, so a project workflow does not need a second copy just to import them. Other project dependencies follow normal Node module resolution.
 
@@ -100,7 +100,7 @@ The loader resolves this package, its recipes, TypeBox and the durable tool API 
 | `agent` | `await ctx.agent("Inspect src", { tools: ["read"] })` | Fresh durable conversation; returns text or schema-validated data. |
 | `parallel` | `await ctx.parallel([() => ctx.agent("A"), () => ctx.agent("B")])` | Barrier; output positions match input positions. Default failures become `null`. |
 | `pipeline` | `await ctx.pipeline(files, inspect, verify)` | Each item advances independently through stages; no stage-wide barrier. |
-| `step` | `await ctx.step("save", async ({ signal }) => save(signal))` | Journaled, owned task for application effects, with optional retries and compensation. |
+| `step` | `await ctx.step("save", async ({ signal, cwd }) => save(cwd, signal))` | Journaled, owned task for application effects, with optional retries and compensation. |
 | `workflow` | `await ctx.workflow("review", { path: "src" })` | Owned child run whose usage counts against ancestor budgets. |
 | `signal` | `await ctx.signal("approve", { schema: Type.Boolean() })` | Durable external input; status becomes `waiting_signal`. |
 | `sleep` | `await ctx.sleep(5_000)` | Durable deadline that survives process restart. |
@@ -182,16 +182,22 @@ const findings = await untilDry(ctx, async (_seen, round) => {
 Wrap filesystem, network and subprocess effects in `ctx.step`. Keep the key stable and return the information needed to compensate:
 
 ```ts
-const savedPath = await ctx.step("save-report", async ({ signal }) => {
-  await writeReport("report.json", result, signal);
-  return "report.json";
+import { join } from "node:path";
+import { rm, writeFile } from "node:fs/promises";
+
+const savedPath = await ctx.step("save-report", async ({ signal, cwd }) => {
+  const path = join(cwd, "report.json");
+  await writeFile(path, JSON.stringify(result), { signal });
+  return path;
 }, {
   retries: 1,
-  compensate: async path => removeReport(path),
+  compensate: async path => rm(path, { force: true }),
 });
 ```
 
-A committed result is replayed without invoking the callback again. A process can still die after an external effect but before its durable result commit. Use an external idempotency key or inspect the destination to make such an effect safe to retry. Marking an application callback as a step does not turn an arbitrary service into an exactly-once service.
+Step and compensation callbacks run inside the shared worker process. Its working directory is the workflow home, not the run's, so resolve relative paths against the callback's `cwd` (the same value as `ctx.cwd`), and pass `cwd` to subprocesses.
+
+A committed result is replayed without invoking the callback again. A step that was interrupted after it started is not silently re-run; it fails with `interrupted_step` so you can inspect the external state and then `retry --from` its key. A process can still die after an external effect but before its durable result commit. Use an external idempotency key or inspect the destination to make such an effect safe to retry. Marking an application callback as a step does not turn an arbitrary service into an exactly-once service.
 
 `retry <runId>` resumes failed work while replaying committed earlier results. `--from <stepKey>` invalidates that step and its later journal suffix; inspect `status --verbose` for exact keys. Changed definition hashes are rejected unless `--allow-changed` explicitly starts a clean journal attempt. That option can repeat effects and should be used only after reviewing the previous attempt.
 
@@ -356,7 +362,7 @@ The worker starts lazily on the first action that needs it, runs compiled `dist/
 | `PI_WORKFLOW_AGENT_RETRIES` | `0` automatic additional agent attempts. |
 | `PI_WORKFLOW_AGENT_TIMEOUT_MS` | `600000`. |
 
-These are conservative implementation defaults, not values selected by completed live-model rounds. Per-run budgets combine definition limits with explicit launch overrides. Set the same values in evaluation configs when comparing candidates.
+These are conservative defaults, not tuned values. Per-run budgets combine definition limits with explicit launch overrides.
 
 No OS service is installed. A user-managed systemd/launchd service can supervise `node /absolute/path/pi-orchestration/dist/worker.js` with a fixed `PI_WORKFLOW_HOME`, the intended Pi configuration and a restart policy. Use one service per home. Keep the source/package version and model environment consistent across restarts.
 
@@ -377,7 +383,7 @@ No OS service is installed. A user-managed systemd/launchd service can supervise
 
 ## Relation to Claude Code Workflows
 
-The authoring shape follows the [official dynamic-workflows cookbook](https://platform.claude.com/cookbook/claude-agent-sdk-08-dynamic-workflows). The attached brief's comparison is a design reference, not a promise of compatibility with an evolving research preview.
+The authoring shape follows the [official dynamic-workflows cookbook](https://platform.claude.com/cookbook/claude-agent-sdk-08-dynamic-workflows). The comparison below is a design reference, not a promise of compatibility with an evolving research preview.
 
 | Reference concept | This package |
 |---|---|
@@ -389,11 +395,11 @@ The authoring shape follows the [official dynamic-workflows cookbook](https://pl
 | Worktree isolation | Explicit `isolation: "worktree"`, owned paths and deterministic branch names. |
 | Saved workflow scripts | Project/user `.pi/workflows/*.ts`. |
 | Journaled background execution | Detached pi-durable worker plus retry-from, compensation, signal, sleep, spawn and swarm. |
-| Restricted script environment in the brief | Trusted TypeScript/Node module with imports and host permissions; a deliberate divergence. |
+| Restricted script environment | Trusted TypeScript/Node module with imports and host permissions; a deliberate divergence. |
 
 ## Examples
 
-All nine supplied workflows are adapted under `examples/workflows/` and executed by `test/examples.test.ts` with real pi-durable conversations and the faux provider:
+Nine example workflows ship in `examples/workflows/`. The tests type-check each one and check that it loads and passes `validate`. To try them, copy the directory's files into a project's `.pi/workflows/`; `09-composition.ts` calls the others by their declared names.
 
 | File | Pattern |
 |---|---|
@@ -409,66 +415,21 @@ All nine supplied workflows are adapted under `examples/workflows/` and executed
 
 The composition example verifies the current checkout; isolated worker branches must be reviewed and merged explicitly before using it for a real release. None of these examples publishes a package.
 
-## Evaluation
-
-The unpublished `eval/` harness provides deterministic dependency-free scenario fixtures, T1 authored workflows, T2 fresh-agent sessions, T3 review tooling, seeded chaos configurations, saved artifacts, reports and offline regrading. The deterministic acceptance tests also exercise real sockets, compiled CLI/Pi print commands, SQLite reopen and SIGKILL recovery; a faux provider controls model responses without provider spend.
-
-| Scenario | Tasks | What deterministic grading checks |
-|---|---|---|
-| `ledger-cli` | T-A, T-B, T-C | Repair, defect discovery and review; concrete reproductions for planted rounding/date/CSV defects. |
-| `tasks-api` | T-D, T-E, T-F | API work with independent attempts, verification and dependency-aware execution. |
-| `mono-lite` | T-G, T-H | Multi-module migration and background-agent coordination. |
-| `release-gate` | T-I, T-J | Human gate, composition, release artifacts and compensation. |
-
-Fixtures are seeded and byte-checked. Graders reject protected-file edits and execute behavioral checks instead of rewarding defect names. Provider preflight records available model IDs without printing credentials. T2 sessions exclude project instructions, context files, other skills/extensions and this implementation's notes; the fresh author receives the installed public surface and package README.
-
-### Measured results
-
-| Required live evaluation | Runs completed | Mean ± SE | Cost / wall time | Status |
-|---|---:|---|---|---|
-| S0–S6 cheap-model T1/T2 rounds | 0 | Not measured | Not measured | Blocked: provider credentials unavailable. |
-| Final: all scenarios × both cheap outer models × 3 repeats | 0 | Not measured | Not measured | Pending model access. |
-| Stronger-model confirmation | 0 | Not measured | Not measured | Pending model access. |
-| Fresh-model T3 review | 0 | Not measured | Not measured | Pending model access. |
-| Live-model runs of all nine examples | 0 | Not measured | Not measured | Pending model access. |
-
-`eval/results/hill-climb.json` contains no invented rounds or keep/revert decisions. `model-preflight.json` records the missing prerequisite; deterministic checkpoints and test output are separate evidence. Consequently the brief's live-evaluation acceptance requirements remain incomplete, and there are no observed T2 failure frequencies to report. No default was presented as model-tuned.
-
-Observed deterministic development findings changed implementation: conversations/extensions must be reconstructed before resume; live agents must reserve concurrency slots on restart; structural scopes must follow input order; pipeline items must advance without a barrier; completed parallel branches must be traversed during compensation reconstruction; failed attempts must still charge usage; Pi print commands need explicit output handling; and one client's cancellation must not abort another client's worker startup. Tests preserve these cases. These are engineering corrections, not measured model-quality improvements.
-
-Reproduce from this package directory:
-
-```sh
-npm test
-node --experimental-strip-types --test eval/test/*.test.mjs
-node --experimental-strip-types eval/engine.mts --preflight
-node --experimental-strip-types eval/engine.mts --dry-run
-node --experimental-strip-types eval/engine.mts \
-  --config eval/configs/s0.json --round s0-baseline \
-  --model openai/gpt-6.1-sol --repeats 3 --max-cost-usd 4.5
-node eval/report.mjs eval/results/hill-climb.json --round s0-baseline
-node --experimental-strip-types eval/regrade.mjs eval/results/hill-climb.json --round s0-baseline
-```
-
-See [eval/README.md](eval/README.md) for T2, T3, chaos, final and confirmation commands and current model prerequisites. Start with the S0 baseline after authentication is configured, then evaluate one change at a time and retain all failed/capped runs. Prioritize failures by the recorded taxonomy: selection, authoring, launch, async handling, aggregation, replay, output and task quality. These are proposed next rounds, not observed failure rankings.
-
 ## Design decisions
 
 - `RunRecord.id` is canonical; launch replies use `runId`. `parallel({failure:"allSettled"})` has a discriminated return type rather than an inaccurate nullable-success type.
 - One worker, SQLite store and control protocol serve every entry point. No sibling workspace imports are used.
 - `jiti` handles fresh TypeScript module loading. `@babel/parser` handles deterministic-call linting so comments, strings and valid step callbacks are not rejected by a text search.
-- Worker-only `pi-workflow-runtime` is pinned to Pi 1.4.0 for standalone auth/model resolution. Host-facing Pi packages and TypeBox remain peers; durable/chord are pinned runtime dependencies.
-- Installed 1.4.0 declarations govern the implementation. The brief's historical upstream example numbers and `runtime.sleep` reference differ from the installed API; notes record the adapted ownership and timer APIs.
-- The architecture's held-wait design takes precedence over the prompt's older `SuspendRun` mention. Restart replays to a stored signal/deadline.
+- The worker is a plain Node process outside Pi, so it carries its own copy of Pi 1.4.0, installed as `pi-workflow-runtime`, for credential and model resolution. Inside Pi, the extension uses the host's packages; they remain peer dependencies. pi-durable and chord are pinned runtime dependencies.
+- Signals and sleeps hold the script invocation while they wait. A restart replays the script to the stored signal or deadline; there is no separate suspended-invocation scheduler.
 - Worktree branch selection and merging remain explicit. The release example performs a dry run to make its demonstration safe and reviewable.
-- The research evaluation infrastructure is implemented, but credentials prevented live hill-climbing. No synthetic score substitutes for the required model rounds.
 
 ### Deliberately not built
 
 | Feature | Reason | Evidence that would justify it |
 |---|---|---|
 | Streaming watch/agent output over the socket | Polling supplies the progress tree with a simpler protocol. | A reviewer/user needs live agent text. |
-| Full-screen workflow panel | Widget and text tree expose current state. | T2/T3 finds necessary information hard to obtain. |
+| Full-screen workflow panel | Widget and text tree expose current state. | Users find the information they need hard to obtain. |
 | Pause/resume controls | Cancel plus retry-from covers stop-and-reconsider. | A recorded use case needs scheduler-level pause. |
 | DAG/best-of/until-dry engine primitives | They are composable public recipes. | Keep them as recipes. |
 | Per-launch depth dials or nested shell launch tracking | Root-only launching and authored composition bound ownership. | No planned addition. |
@@ -489,4 +450,16 @@ npm run test:scripts
 npm run publish:package -- pi-orchestration --dry-run
 ```
 
-Build output in `dist/` is checked in. The npm payload contains the thin Pi entry, source, compiled JavaScript/declarations, binary, examples and this README. Tests, evaluation fixtures/results, verification logs, `NOTES.md` and `AGENTS.md` are development-only. Source and full verification notes remain available in the repository. `NOTES.md` records the exact baseline, implementation findings and checks actually run.
+Build output in `dist/` is generated by `npm run build` and the `prepack` lifecycle; it is not checked in. `tsconfig.json` checks the Pi entry, source, tests and examples; `tsconfig.build.json` compiles only `src/` into JavaScript and declarations for the standalone CLI, worker and library exports.
+
+No test needs provider credentials or makes a model request:
+
+| File | Covers |
+|---|---|
+| `test/engine.test.ts` | An in-process worker over its socket with a scripted faux model: control flow, steps, retries, compensation, signals, child runs, budgets, structured output, worktrees, background agents, swarms and the inner-agent launch refusal. |
+| `test/process.test.ts` | The compiled CLI and detached worker: headless opt-in, exit codes, signals, cancel and SIGKILL recovery. |
+| `test/extension.test.ts` | The Pi tool and `/workflow` command against a fake host: launch authorization, completion messages and session restore. |
+| `test/unit.test.ts` | Determinism lint, command parsing, presentation, and loading every example. |
+| `test/package.test.ts` | A source-only checkout whose `prepack` recreates the runtime files and usable compiled entry points. |
+
+The npm payload contains the thin Pi entry, source, compiled JavaScript and declarations, the binary, examples, this README and the MIT `LICENSE`. TypeScript configs and tests are development-only.

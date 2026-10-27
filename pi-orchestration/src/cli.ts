@@ -60,7 +60,11 @@ export interface CliContext {
   model?: ModelRef;
   thinkingLevel?: ThinkingLevel;
   authorizeRun?: (request: LaunchRequest) => Promise<void>;
-  onLaunch?: (runId: string, home?: string) => void;
+  /**
+   * Called after admission. For an attached (foreground) launch, the returned
+   * callback runs when the client stops waiting, with whether it saw the end.
+   */
+  onLaunch?: (runId: string, home: string | undefined, attached: boolean) => ((terminal: boolean) => void) | void;
 }
 
 class CliError extends Error {
@@ -144,7 +148,8 @@ function errorInfo(error: unknown): { code: string; message: string; exitCode: n
   const message = data.message ?? String(error);
   const worker = ["worker_unavailable", "worker_unreachable", "ENOENT", "ECONNREFUSED", "EACCES", "EPERM", "ETIMEDOUT"].includes(code)
     || /worker.*(?:did not start|unavailable|timed out|closed|protocol)/i.test(message);
-  const usage = ["usage_error", "validation_error", "invalid_args", "invalid_request", "workflow_not_found", "nondeterministic_call"].includes(code)
+  const usage = ["usage_error", "validation_error", "invalid_args", "invalid_request", "invalid_signal", "invalid_workflow",
+    "invalid_cwd", "unknown_step", "workflow_not_found", "nondeterministic_call"].includes(code)
     || code.startsWith("ERR_PARSE_ARGS");
   return { code, message, exitCode: worker ? 4 : usage ? 1 : 2 };
 }
@@ -231,12 +236,18 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         if (context.authorizeRun) await context.authorizeRun(launch); else assertUnattended(context.env ?? process.env);
         context.signal?.throwIfAborted();
         const result = await request<{ runId: string; status: RunStatus }>(launch);
-        context.onLaunch?.(result.runId, home);
-        if (values.bg || values.background) {
+        const attached = !(values.bg || values.background);
+        const release = context.onLaunch?.(result.runId, home, attached);
+        if (!attached) {
           emit(result, `run ${result.runId} ${result.status}\npoll: pi-workflow poll ${result.runId}\ncancel: pi-workflow cancel ${result.runId}`);
           return 0;
         }
-        return await poll(result.runId, true);
+        let terminal = false;
+        try {
+          const code = await poll(result.runId, true);
+          terminal = true;
+          return code;
+        } finally { release?.(terminal); }
       }
       case "poll": case "watch":
         count(1, `${action} <runId>`);

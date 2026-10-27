@@ -511,6 +511,9 @@ export class Engine {
 
 export async function openEngine(storage: Storage, models: Models, options: EngineOptions): Promise<Engine> {
   installDeterminismGuard();
+  // Git reports worktrees by real path. A symlinked home (for example /tmp on
+  // macOS) must not make owned worktrees look foreign.
+  options = { ...options, home: await realpath(options.home).catch(() => resolve(options.home)) };
   const registry = createRegistry();
   registry.install(CodingTools);
   registry.install(SwarmTools);
