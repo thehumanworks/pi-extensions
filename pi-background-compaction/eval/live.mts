@@ -40,7 +40,7 @@ const { session: agent } = await session({
 	extensions: arm === "extension" ? [backgroundCompaction] : [],
 	settings: {
 		compaction: { keepRecentTokens: keep, modelOverrides: { [model]: { reserveTokens: contextWindow - threshold } } },
-		backgroundCompaction: { minTokens: 0, ...config },
+		backgroundCompaction: { enabled: true, model, minTokens: 0, ...config },
 	},
 });
 

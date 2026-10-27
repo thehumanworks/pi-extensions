@@ -103,7 +103,7 @@ interface Outcome {
 async function runController(entries: SessionEntry[], candidate: Record<string, unknown>, THRESHOLD: number): Promise<Outcome | undefined> {
 	const SETTINGS = settingsFor(THRESHOLD);
 	const { modelRuntime } = await models();
-	const config = readConfig({ backgroundCompaction: { minTokens: 0, ...candidate } }, here, {});
+	const config = readConfig({ backgroundCompaction: { enabled: true, model: SESSION_MODEL, minTokens: 0, ...candidate } }, here, {});
 	const summarizer = find(modelRuntime, config.model ?? SESSION_MODEL);
 	let clock = 0;
 	let taking = false;

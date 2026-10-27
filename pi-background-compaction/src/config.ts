@@ -14,7 +14,7 @@ export interface BackgroundCompactionConfig {
 	minTokens: number;
 	/** `threshold`: hold the summary until Pi compacts. `ready`: swap it in as soon as it is written. */
 	swap: "threshold" | "ready";
-	/** Summarizer as `provider/modelId`; undefined uses the session model. */
+	/** Explicit summarizer as `provider/modelId`; required before enabling. */
 	model?: string;
 	thinking: ThinkingSetting;
 	/**
@@ -81,8 +81,14 @@ function text(value: unknown, name: string, cwd: string): string | undefined {
 
 const ENV = "PI_BACKGROUND_COMPACTION";
 
-/** Merge `backgroundCompaction` settings with `PI_BACKGROUND_COMPACTION_*` environment overrides. */
-export function readConfig(settings: unknown, cwd: string, env: NodeJS.ProcessEnv = process.env): BackgroundCompactionConfig {
+/** Session commands override environment and file settings without changing other sessions. */
+export interface CompactionControl {
+	enabled?: boolean;
+	model?: string;
+}
+
+/** Merge file settings, environment overrides, and explicit session controls (highest priority). */
+export function readConfig(settings: unknown, cwd: string, env: NodeJS.ProcessEnv = process.env, control: CompactionControl = {}): BackgroundCompactionConfig {
 	const raw = object(object(settings, "settings").backgroundCompaction, "backgroundCompaction");
 	const pick = (key: string, envKey: string) => env[`${ENV}_${envKey}`] ?? raw[key];
 	const promptName = oneOf(pick("prompt", "PROMPT"), "prompt", Object.keys(PRESETS)) ?? "coding";
@@ -93,16 +99,18 @@ export function readConfig(settings: unknown, cwd: string, env: NodeJS.ProcessEn
 		update: text(pick("updateInstructions", "UPDATE_INSTRUCTIONS"), "updateInstructions", cwd) ?? preset.update,
 		transcript: text(pick("transcriptInstructions", "TRANSCRIPT_INSTRUCTIONS"), "transcriptInstructions", cwd) ?? preset.transcript,
 	};
-	const model = pick("model", "MODEL");
-	if (model !== undefined && model !== "" && model !== "session" && (typeof model !== "string" || !/^[^/\s]+\/\S+$/.test(model))) {
-		throw new Error("backgroundCompaction.model must be provider/modelId or session");
+	const model = control.model ?? pick("model", "MODEL");
+	if (model !== undefined && model !== "" && (typeof model !== "string" || !/^[^/\s]+\/\S+$/.test(model))) {
+		throw new Error("backgroundCompaction.model must be an explicit provider/modelId (not session)");
 	}
+	const enabled = bool(control.enabled ?? env[ENV] ?? raw.enabled, "enabled") ?? false;
+	if (enabled && !model) throw new Error("set a compaction model with /bg-compact model <provider/modelId> before enabling");
 	return {
-		enabled: bool(env[ENV] ?? raw.enabled, "enabled") ?? true,
+		enabled,
 		trigger: number(pick("trigger", "TRIGGER"), "trigger", 0.05, 1, false) ?? 0.7,
 		minTokens: number(pick("minTokens", "MIN_TOKENS"), "minTokens", 0, 10_000_000) ?? 16_000,
 		swap: oneOf(pick("swap", "SWAP"), "swap", ["threshold", "ready"] as const) ?? "threshold",
-		model: model && model !== "session" ? (model as string) : undefined,
+		model: model ? (model as string) : undefined,
 		thinking: oneOf(pick("thinking", "THINKING"), "thinking", THINKING) ?? "session",
 		request: oneOf(pick("request", "REQUEST"), "request", ["serialized", "transcript", "auto"] as const) ?? "auto",
 		prompts,

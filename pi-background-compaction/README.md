@@ -19,7 +19,16 @@ pi install npm:@nothumanwork/pi-background-compaction
 
 The npm command works after the package has been published. From a checkout of this repository, run `npm ci --ignore-scripts` at the root, then `pi install ./pi-background-compaction`.
 
-It works with Pi's automatic compaction (`compaction.enabled`, on by default) and changes nothing else about when Pi compacts: `compaction.reserveTokens`, `compaction.keepRecentTokens`, and their per-model overrides still decide the threshold and how much recent history stays verbatim.
+**Background compaction is off by default and has no default summarizer model.** Select a concrete model and explicitly enable it:
+
+```text
+/bg-compact model claude-bridge/claude-haiku-5-5
+/bg-compact on
+```
+
+Use an available, authenticated `provider/modelId`. `on` fails without one; `session` and virtual/router models are not accepted. Selecting or changing the model leaves the extension off until another explicit `on`. `/bg-compact` alone shows status and never toggles it.
+
+When enabled, it works with Pi's automatic compaction (`compaction.enabled`, on by default): `compaction.reserveTokens`, `compaction.keepRecentTokens`, and their per-model overrides still decide the threshold and how much recent history stays verbatim. **Turning this extension off does not disable Pi's built-in compaction**, which can still use the session model.
 
 ## How it works
 
@@ -27,7 +36,7 @@ It works with Pi's automatic compaction (`compaction.enabled`, on by default) an
 2. **Hold.** The finished summary is kept in memory and not applied, so the prompt cache stays valid until compaction is due. If the conversation grows past the staleness bound (OpenCode's `max(2 × keepRecentTokens, 30k)`, at most a quarter of the threshold), the held summary is extended in the background with only the messages since.
 3. **Swap.** When Pi compacts (`session_before_compact`, for the threshold, context overflow, or `/compact` without instructions), the extension returns the held summary with the first kept entry it was planned for. Pi appends it like its own compaction. If the summary is still being written, compaction waits for it, which is still sooner than starting a new one. A refresh in flight is not waited for when the held summary already fits, and no refresh starts at the boundary where Pi is about to compact.
 4. **Validate.** A held summary is used only if the session still contains the history it covers: the same latest compaction, its first kept entry on the current branch (not lost to `/tree` or a fork), and no context edits to a summarized message. If swapping it in would leave more than `maxSwapRatio` of the threshold in context, a short catch-up request extends it first. This prevents a compaction that frees almost nothing ([anthropics/claude-code#70459](https://github.com/anthropics/claude-code/issues/70459)).
-5. **Fall back.** Without a usable background summary, the extension writes one at compaction time with the same model and prompt, as a transcript request where it can; overflow recovery always uses a serialized one, since the overflowing context cannot be resent. If that fails, Pi's built-in compaction runs as usual. After two background failures in a row, background summaries stop until the next compaction.
+5. **Use only the selected model.** Without a usable background summary, the extension writes one at compaction time with the explicitly configured model and prompt, as a transcript request where it can; overflow recovery always uses a serialized one, since the overflowing context cannot be resent. If no usable summary can be produced, compaction is cancelled with a warning rather than silently falling back to the session model or Pi's built-in summarizer. Retry after fixing the model, or explicitly run `/bg-compact off` to allow Pi's built-in compaction. After two background failures in a row, background summaries stop until the next compaction.
 
 Summaries keep Pi's `<read-files>` and `<modified-files>` lists, and their usage is recorded on the compaction entry so session totals include it. Summaries that are never used still cost tokens.
 
@@ -38,11 +47,14 @@ Summaries keep Pi's `<read-files>` and `<modified-files>` lists, and their usage
 
 ## Configuration
 
-Add a `backgroundCompaction` object to `~/.pi/agent/settings.json` or a project's `.pi/settings.json`. Every key is optional; each also has a `PI_BACKGROUND_COMPACTION_*` environment override (for example `PI_BACKGROUND_COMPACTION_TRIGGER=0.6`). Text values accept `@path/to/file` to read a file.
+Add a `backgroundCompaction` object to `~/.pi/agent/settings.json` or a project's `.pi/settings.json`. Enabling requires both `enabled: true` and an explicit `model`. Other keys are optional; each also has a `PI_BACKGROUND_COMPACTION_*` environment override (for example `PI_BACKGROUND_COMPACTION_TRIGGER=0.6`), except `enabled`, which uses `PI_BACKGROUND_COMPACTION`. Prompt and focus text values accept `@path/to/file` to read a file.
+
+Command choices override environment and file settings **for the current session**, survive reload/resume, and do not change global or project settings. `/tree` does not undo an explicit `off`. For new sessions, precedence is environment → project settings → global settings → defaults.
 
 ```json
 {
   "backgroundCompaction": {
+    "enabled": true,
     "trigger": 0.7,
     "model": "claude-bridge/claude-haiku-5-5"
   }
@@ -51,10 +63,10 @@ Add a `backgroundCompaction` object to `~/.pi/agent/settings.json` or a project'
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `enabled` | `true` | Turn the extension off (`PI_BACKGROUND_COMPACTION=0`). |
+| `enabled` | `false` | Explicit opt-in; requires a configured compaction model. Environment: `PI_BACKGROUND_COMPACTION=1` or `0`. |
 | `trigger` | `0.7` | Fraction of Pi's compaction threshold at which the background summary starts. Lower gives a slow summary more time to finish before compaction is due, at the cost of an older summary and occasional refreshes. |
 | `minTokens` | `16000` | Smaller contexts are not summarized in the background. |
-| `model` | session model | Summarizer as `provider/modelId`. Falls back to the session model when it is unavailable or signed out. |
+| `model` | none | Required concrete summarizer as `provider/modelId`. Environment: `PI_BACKGROUND_COMPACTION_MODEL`. No implicit session model or fallback; unavailable, unauthenticated, and virtual models cannot be enabled. |
 | `thinking` | `session` | Summarizer thinking level: `session`, `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. Transcript requests keep the session's level so cached prefixes stay valid. |
 | `request` | `auto` | `transcript`, `serialized`, or `auto`. |
 | `prompt` | `coding` | Prompt preset: `coding` (structured checkpoint for coding agents) or `pi` (Pi's built-in prompts). |
@@ -71,15 +83,18 @@ Add a `backgroundCompaction` object to `~/.pi/agent/settings.json` or a project'
 
 ## Commands and status
 
-- `/bg-compact` or `/bg-compact status`: current state, limits, settings, and counters.
-- `/bg-compact start`: write a background summary now, regardless of the trigger.
-- `/bg-compact cancel`: drop the background summary.
+- `/bg-compact` or `/bg-compact status`: show on/off state, the explicit model, limits, settings, and counters. Never toggles anything.
+- `/bg-compact model <provider/modelId>`: select a summarizer for this session, cancel pending work, and leave compaction off. Model IDs have tab completion. `/bg-compact model` shows the selection without changing it.
+- `/bg-compact on`: enable only after the model is explicitly set, available, and authenticated. The confirmation names the model and warns that summaries incur usage even if not applied.
+- `/bg-compact off`: disable and abort pending background/foreground summaries; discard held summaries. Pi's built-in compaction is unchanged. Requests already sent may still incur provider charges.
+- `/bg-compact start`: write a background summary now, regardless of the trigger, **only if already on**.
+- `/bg-compact cancel`: cancel pending work and drop the held summary without disabling future background work. Use `off` to disable it.
 
-While a summary is being written the footer shows `compact: writing`, then `compact: ready` while one is held.
+The footer shows `compact: off` when disabled. When enabled it always includes the concrete model, even while idle: `compact: idle provider/modelId`, `compact: writing provider/modelId`, or `compact: ready provider/modelId`. Startup also announces the model when enabled by settings or restored session controls.
 
 ## Evaluation
 
-The `eval/` directory (not published) holds the harness used to choose the defaults. It uses two coding scenarios, a bookkeeping CLI and a JSON API, with 12 scripted user turns each. Facts are planted in user rules, decisions, corrections, long documents, logs, and data files. Each was recorded three times with `openai/gpt-6.1-sol` and compaction off, giving six real sessions of 46k to 61k tokens.
+The `eval/` directory (not published) holds the harness used to choose the summarization defaults. The evaluation explicitly enables the extension with a named model; references to “defaults” below describe summarization parameters, not automatic activation. It uses two coding scenarios, a bookkeeping CLI and a JSON API, with 12 scripted user turns each. Facts are planted in user rules, decisions, corrections, long documents, logs, and data files. Each was recorded three times with `openai/gpt-6.1-sol` and compaction off, giving six real sessions of 46k to 61k tokens.
 
 The replay runs the production `BackgroundCompactor` over each recorded session on the session's own clock. A background summary becomes ready its measured latency after it starts, so waits and blocking reflect the original pace. At Pi's threshold, the session model is asked two things from the compacted context, without tools:
 
@@ -145,7 +160,8 @@ npx tsx eval/live.mts --scenario=tasks --arm=extension       # end to end in Pi'
 
 ## Limitations
 
-- Held summaries live in memory. A restart or `/reload` loses them, and the next compaction writes its summary in the foreground.
+- Held summaries live in memory. A restart or `/reload` loses them, and the next compaction writes its summary in the foreground if the extension remains enabled. The selected model and on/off command choices are saved separately in the session.
+- While enabled, failure to produce a usable summary cancels compaction. At a full context window, fix/re-authenticate the selected model or explicitly turn the extension off before continuing.
 - A background summary that is never used, because the session ended, moved to another branch, or compacted manually with instructions, still costs its tokens.
 - Transcript requests send the whole conversation again. Cached input is cheap, but a provider without prompt caching charges for it in full; set `request` to `serialized` for those.
 - Compactions written by the extension are recorded as extension-provided (`fromHook`). Pi does not carry file lists forward from those, so the extension carries its own.

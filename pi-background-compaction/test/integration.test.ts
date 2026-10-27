@@ -39,7 +39,10 @@ async function start(settings: Record<string, unknown>, summaryDelayMs = 0, exte
 	const dir = await mkdtemp(join(tmpdir(), "pi-bg-compaction-"));
 	const tracePath = join(dir, "trace.jsonl");
 	process.env.PI_BACKGROUND_COMPACTION_TRACE = tracePath;
-	const faux = fauxProvider({ provider: "faux", models: [{ id: "faux-1", contextWindow: 30_000, maxTokens: 4000 }] });
+	const faux = fauxProvider({ provider: "faux", models: [
+		{ id: "faux-1", contextWindow: 30_000, maxTokens: 4000 },
+		{ id: "cheap", contextWindow: 30_000, maxTokens: 4000 },
+	] });
 	const summaryRequests: Run["summaryRequests"] = [];
 	let reply = 0;
 	const respond = async (context: TranscriptContext): Promise<AssistantMessage> => {
@@ -80,6 +83,9 @@ async function start(settings: Record<string, unknown>, summaryDelayMs = 0, exte
 		settingsManager,
 		noTools: "all",
 	});
+	// Extension binding reads the registry's synchronous auth snapshot.
+	await modelRuntime.refresh({ allowNetwork: false });
+	assert.equal(modelRuntime.hasConfiguredAuth("faux"), true);
 	await session.bindExtensions({});
 	const events: Run["events"] = [];
 	session.subscribe((event) => events.push({ ...event, at: Date.now() }));
@@ -104,7 +110,7 @@ async function start(settings: Record<string, unknown>, summaryDelayMs = 0, exte
 const compactions = (run: Run) => run.entries().filter((entry): entry is CompactionEntry => entry.type === "compaction");
 
 test("Pi compacts with the summary written in the background", async () => {
-	const run = await start({ backgroundCompaction: { minTokens: 0, prompt: "pi", trigger: 0.8 } });
+	const run = await start({ backgroundCompaction: { enabled: true, model: "faux/faux-1", minTokens: 0, prompt: "pi", trigger: 0.8 } });
 	try {
 		const turnsAt: number[] = [];
 		for (let i = 0; i < 8 && compactions(run).length === 0; i++) {
@@ -139,7 +145,7 @@ test("Pi compacts with the summary written in the background", async () => {
 });
 
 test("a slow background summary is awaited instead of starting another", async () => {
-	const run = await start({ backgroundCompaction: { minTokens: 0, trigger: 0.95 } }, 300);
+	const run = await start({ backgroundCompaction: { enabled: true, model: "faux/faux-1", minTokens: 0, trigger: 0.95 } }, 300);
 	try {
 		for (let i = 0; i < 10 && compactions(run).length === 0; i++) await run.prompt(`step ${i} ${words(1500)}`);
 		assert.equal(compactions(run).length, 1);
@@ -153,7 +159,7 @@ test("a slow background summary is awaited instead of starting another", async (
 });
 
 test("transcript requests read the conversation from the prompt cache", async () => {
-	const run = await start({ backgroundCompaction: { minTokens: 0, request: "transcript" } });
+	const run = await start({ backgroundCompaction: { enabled: true, model: "faux/faux-1", minTokens: 0, request: "transcript" } });
 	try {
 		for (let i = 0; i < 8 && compactions(run).length === 0; i++) await run.prompt(`step ${i} ${words(1500)}`);
 		const [compaction] = compactions(run);
@@ -161,6 +167,32 @@ test("transcript requests read the conversation from the prompt cache", async ()
 		assert.ok(run.summaryRequests[0]!.text.startsWith("Context checkpoint."));
 		const usage = compaction.usage!;
 		assert.ok(usage.cacheRead > usage.input, `cache read ${usage.cacheRead}, uncached ${usage.input}`);
+	} finally {
+		await run.dispose();
+	}
+});
+
+test("slash commands enable only the selected summarizer in a real Pi session", async () => {
+	const run = await start({});
+	try {
+		for (let i = 0; i < 5; i++) await run.prompt(`step ${i} ${words(1500)}`);
+		await run.prompt("/bg-compact on"); // No model: rejected.
+		await run.prompt("/bg-compact start");
+		assert.equal(run.summaryRequests.length, 0);
+		await run.prompt("/bg-compact model faux/cheap");
+		await run.prompt("/bg-compact start"); // Model selection alone is not opt-in.
+		assert.equal(run.summaryRequests.length, 0);
+		await run.prompt("/bg-compact on");
+		for (let i = 5; i < 10 && compactions(run).length === 0; i++) await run.prompt(`step ${i} ${words(1500)}`);
+		const [compaction] = compactions(run);
+		assert.ok(compaction?.fromHook);
+		assert.equal((compaction.details as { backgroundCompaction: { model: string } }).backgroundCompaction.model, "faux/cheap");
+		await run.prompt("/bg-compact off");
+		const controls = run.entries().filter((entry) => entry.type === "custom" && entry.customType === "background-compaction-settings");
+		assert.equal(controls.length, 3);
+		const last = controls.at(-1);
+		assert.ok(last?.type === "custom");
+		assert.deepEqual(last.data, { enabled: false, model: "faux/cheap" });
 	} finally {
 		await run.dispose();
 	}
