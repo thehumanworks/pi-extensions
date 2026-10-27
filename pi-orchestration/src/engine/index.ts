@@ -18,7 +18,7 @@ import type { ControlRequest } from "../protocol.ts";
 import { loadWorkflow } from "../loader.ts";
 import { WorkflowError } from "../errors.ts";
 import { Execution } from "./execution.ts";
-import { AgentMeta, copy, json, RunStore, storedRun, type RunData } from "./store.ts";
+import { AgentMeta, copy, json, publicRun, RunStore, storedRun, type RunData } from "./store.ts";
 import { installDeterminismGuard, outsideScript, wallNow } from "./scopes.ts";
 import { Semaphore } from "./semaphore.ts";
 import { effectTask, type EffectCallback, type EffectTask } from "./effects.ts";
@@ -154,7 +154,7 @@ export class Engine {
     const parked = await this.parkedTasks(id);
     if (parked.length) {
       run.parked = true;
-      run.error = { reason: "restart_limit", message: `Run has ${parked.length} task(s) parked after repeated interrupted executions. Inspect the cause and use pi-workflow retry ${run.id}.` };
+      run.error = { reason: "restart_limit", message: `Run has ${parked.length} task(s) parked after repeated interrupted executions. Inspect the cause and use workflow retry ${run.id}.` };
     }
     return run;
   }
@@ -218,7 +218,7 @@ export class Engine {
 
   async get(id: string): Promise<RunData> {
     const value = (await this.harness.snapshot(RunStore, context))?.runs[id];
-    if (!value) throw new WorkflowError("not_found", `Unknown workflow run ${id}. Use pi-workflow list.`);
+    if (!value) throw new WorkflowError("not_found", `Unknown workflow run ${id}. Use workflow list.`);
     return copy(storedRun(value));
   }
 
@@ -283,7 +283,7 @@ export class Engine {
     }
   }
 
-  async launch(request: Launch, owner?: { taskId: TaskId; parentRunId: string; stepKey: string }): Promise<{ runId: RunId; status: RunRecord["status"] }> {
+  async launch(request: Launch, owner?: { taskId: TaskId; parentRunId: string; stepKey: string }): Promise<{ runId: RunId; status: RunRecord["status"]; model?: ModelRef }> {
     if (!owner && request.callerRunId)
       throw new WorkflowError("not_from_root", `Workflows are launched by the user or root Pi session, not from inside run ${request.callerRunId}, step ${request.callerStep ?? "unknown"}. Compose with ctx.workflow() instead.`);
     const canonicalCwd = await realpath(request.cwd);
@@ -291,14 +291,15 @@ export class Engine {
     if (!owner && worktreeRelative !== ".." && !worktreeRelative.startsWith(`..${sep}`) && !isAbsolute(worktreeRelative))
       throw new WorkflowError("not_from_root", "Cannot launch a workflow from an inner agent worktree. Compose with ctx.workflow() instead.");
     const already = (await this.harness.snapshot(RunStore, context))?.requests[request.requestId];
-    if (already) { const run = await this.get(already); return { runId: run.id, status: run.status }; }
+    if (already) { const run = await this.get(already); return { runId: run.id, status: run.status, ...(run.model ? { model: run.model } : {}) }; }
     if (!isAbsolute(request.cwd) || !(await stat(request.cwd)).isDirectory())
       throw new WorkflowError("invalid_cwd", "cwd must be an existing absolute directory.");
     const loaded = await loadWorkflow(request.workflow, request.cwd);
     const argsSchema = loaded.definition.args ?? Type.Object({}, { additionalProperties: false });
     if (!Value.Check(argsSchema, request.args ?? {}))
       throw new WorkflowError("invalid_args", `Arguments do not match the workflow schema: ${JSON.stringify([...Value.Errors(argsSchema, request.args ?? {})]).slice(0, 2000)}`);
-    const model = request.model ?? loaded.definition.defaults?.model ?? this.options.defaultModel;
+    // Definition defaults outrank the launch model for every agent, so record the model agents will actually use.
+    const model = loaded.definition.defaults?.model ?? request.model ?? this.options.defaultModel;
     if (model) this.resolveModel(model);
     const parent = owner ? await this.get(owner.parentRunId) : undefined;
     const depth = parent ? parent.depth + 1 : 0;
@@ -307,7 +308,7 @@ export class Engine {
     return this.root.commit(async tx => {
       const store = await tx.doc(RunStore);
       const duplicate = store.requests[request.requestId];
-      if (duplicate) { const run = storedRun(store.runs[duplicate]); return { runId: run.id, status: run.status }; }
+      if (duplicate) { const run = storedRun(store.runs[duplicate]); return { runId: run.id, status: run.status, ...(run.model ? { model: run.model } : {}) }; }
       const runId = randomUUID() as RunId;
       const taskId = await tx.createTask(this.runTask, { runId }, {
         ownership: owner ? { kind: "task", taskId: owner.taskId } : { kind: "conversation" },
@@ -326,7 +327,7 @@ export class Engine {
       store.runs[runId] = json(run) as Record<string, import("@earendil-works/chord").JsonValue>;
       store.requests[request.requestId] = runId;
       if (owner) storedRun(store.runs[owner.parentRunId]).children.push(runId);
-      return { runId, status: run.status };
+      return { runId, status: run.status, ...(model ? { model } : {}) };
     }, context);
   }
 
@@ -482,7 +483,7 @@ export class Engine {
 
   private async handle(request: ControlRequest): Promise<unknown> {
     if (request.action === "run") return this.launch(request);
-    if (request.action === "status") return this.describe(request.runId);
+    if (request.action === "status") return publicRun(await this.describe(request.runId));
     if (request.action === "result") {
       const run = await this.get(request.runId);
       if (["queued", "running", "waiting_signal"].includes(run.status))
@@ -495,12 +496,12 @@ export class Engine {
       return copy(values.filter(run => (request.filter?.all || run.origin.kind !== "workflow") &&
         (!request.filter?.status?.length || request.filter.status.includes(run.status)) &&
         (!request.filter?.workflow || request.filter.workflow === run.workflow.name))
-        .sort((a, b) => b.createdAt - a.createdAt).slice(0, request.filter?.limit ?? 100));
+        .sort((a, b) => b.createdAt - a.createdAt).slice(0, request.filter?.limit ?? 100).map(publicRun));
     }
-    if (request.action === "cancel") return this.cancel(request.runId);
-    if (request.action === "retry") return this.retry(request.runId, request.from, request.allowChanged);
+    if (request.action === "cancel") return publicRun(await this.cancel(request.runId));
+    if (request.action === "retry") return publicRun(await this.retry(request.runId, request.from, request.allowChanged));
     if (request.action === "signal") return this.signal(request.runId, request.key, request.value);
-    if (request.action === "revert") return this.revert(request.runId, request.keepWorktrees);
+    if (request.action === "revert") return publicRun(await this.revert(request.runId, request.keepWorktrees));
     if (request.action === "agents") return listBackgroundAgents(this, request.runId);
     if (request.action === "steer") return steerBackgroundAgent(this, request.runId, request.agent, request.message);
     throw new WorkflowError("unsupported_action", `Engine action ${request.action} is not available in this slice.`);

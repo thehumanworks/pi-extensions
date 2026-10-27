@@ -8,7 +8,7 @@ import { PI_PROMPTS } from "../src/prompts.ts";
 
 test("defaults", () => {
 	const config = readConfig({}, "/tmp", {});
-	assert.equal(config.enabled, true);
+	assert.equal(config.enabled, false);
 	assert.equal(config.trigger, 0.7);
 	assert.equal(config.swap, "threshold");
 	assert.equal(config.request, "auto");
@@ -33,7 +33,24 @@ test("settings and environment overrides", async () => {
 	assert.equal(config.keepRecentTokens, 8000);
 	assert.equal(config.trace, "/tmp/t.jsonl");
 	assert.equal(readConfig({}, dir, { PI_BACKGROUND_COMPACTION: "0" }).enabled, false);
-	assert.equal(readConfig({ backgroundCompaction: { model: "session" } }, dir, {}).model, undefined);
+	assert.throws(() => readConfig({ backgroundCompaction: { model: "session" } }, dir, {}), /explicit provider\/modelId/);
+});
+
+test("enabling requires an explicit model, and a model alone does not enable", () => {
+	assert.equal(readConfig({ backgroundCompaction: { model: "test/cheap" } }, "/tmp", {}).enabled, false);
+	assert.throws(() => readConfig({ backgroundCompaction: { enabled: true } }, "/tmp", {}), /set a compaction model/);
+	assert.throws(() => readConfig({}, "/tmp", { PI_BACKGROUND_COMPACTION: "1" }), /set a compaction model/);
+	assert.equal(readConfig({}, "/tmp", { PI_BACKGROUND_COMPACTION: "1", PI_BACKGROUND_COMPACTION_MODEL: "test/cheap" }).enabled, true);
+});
+
+test("session commands override environment and file controls", () => {
+	const config = readConfig(
+		{ backgroundCompaction: { enabled: true, model: "test/file" } }, "/tmp",
+		{ PI_BACKGROUND_COMPACTION: "1", PI_BACKGROUND_COMPACTION_MODEL: "test/env" },
+		{ enabled: false, model: "test/command" },
+	);
+	assert.equal(config.enabled, false);
+	assert.equal(config.model, "test/command");
 });
 
 test("invalid settings are rejected", () => {

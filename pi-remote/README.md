@@ -28,16 +28,31 @@ Start on a remote host, or make hosts available for the agent to choose from:
 
 ```sh
 pi --remote alice@gpu.example:2222/work/app
+pi --remote alice@my-box:~/src/app
 pi --remote-hosts alice@gpu.example/work/app,build.example --remote-identity ~/.ssh/id_ed25519
 ```
 
-Hosts use the form `user@host[:port][/absolute/cwd]`. Without a working directory, the remote home directory is used. `local` always refers to this machine.
+Hosts use the form `user@host[:port][/absolute/cwd]` or, as with `scp`, `user@host[:port]:cwd`. The user and port are optional, so a Tailscale or `~/.ssh/config` name needs neither:
+
+| Target | Working directory |
+| --- | --- |
+| `alice@my-box` | Remote home |
+| `alice@my-box/srv/app` | `/srv/app` |
+| `alice@my-box:/srv/app` | `/srv/app` |
+| `alice@my-box:~/src/app` or `alice@my-box:src/app` | `src/app` in the remote home |
+| `alice@my-box:2222/srv/app` or `alice@my-box:2222:/srv/app` | `/srv/app`, port 2222 |
+| `alice@[fd7a:115c::1]:2222/srv/app` | `/srv/app`, IPv6 host |
+
+Digits right after the host's `:` are always a port. The remote home is read once the connection is up, so it is the default working directory and the base of `~` and relative paths whatever this machine's layout is. A working directory given with a host is created if missing. `local` always refers to this machine.
+
+Pi's own working directory stays local: while a remote host is active, tool paths, `~` in tool paths, `!` commands and the working directory in the system prompt all refer to the remote host.
 
 In the TUI:
 
 ```text
 /remote                                  # show the active host
 /remote use alice@gpu.example /work/app  # switch host and working directory
+/remote use alice@gpu.example:/work/app  # the same
 /remote use local                        # return to this machine
 ```
 

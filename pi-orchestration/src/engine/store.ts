@@ -89,3 +89,18 @@ export function json(value: unknown): JsonValue {
 export function copy<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T; }
 
 export function storedRun(value: JsonObject): RunData { return value as unknown as RunData; }
+
+const RUN_FIELDS = ["id", "workflow", "args", "cwd", "model", "thinkingLevel", "budget", "status", "createdAt", "startedAt", "endedAt",
+  "attempt", "phases", "steps", "usage", "result", "resultRef", "error", "origin", "depth", "children", "logs", "parked", "waitingFor", "worktrees"] as const;
+const STEP_FIELDS = ["key", "kind", "label", "phase", "status", "attempts", "startedAt", "endedAt", "conversationId", "usage", "error",
+  "result", "resultRef", "worktree", "childRunId"] as const;
+
+function pick<T extends object>(value: T, fields: readonly string[]): Partial<T> {
+  return Object.fromEntries(fields.filter(field => (value as Record<string, unknown>)[field] !== undefined)
+    .map(field => [field, (value as Record<string, unknown>)[field]])) as Partial<T>;
+}
+
+/** The documented run shape. Journal bookkeeping stays inside the worker. */
+export function publicRun(run: RunData): RunRecord {
+  return { ...pick(run, RUN_FIELDS), steps: run.steps.map(step => pick(step, STEP_FIELDS)) } as RunRecord;
+}

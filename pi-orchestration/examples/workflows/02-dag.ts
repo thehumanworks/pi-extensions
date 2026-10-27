@@ -29,7 +29,8 @@ export default defineWorkflow({
         dependsOn: ["outline"],
         run: async (deps) => {
           const outline = deps.outline as Static<typeof OUTLINE>;
-          return ctx.parallel(outline.sections.map((s) => () => ctx.agent(`Write section "${s.heading}": ${s.brief}`, { label: `section:${s.id}`, phase: "Write" })));
+          // A report with a missing section is not useful, so one failed section stops the rest.
+          return ctx.parallel(outline.sections.map((s) => () => ctx.agent(`Write section "${s.heading}": ${s.brief}`, { label: `section:${s.id}`, phase: "Write" })), { failure: "failFast" });
         },
       },
 

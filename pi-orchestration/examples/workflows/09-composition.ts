@@ -19,7 +19,8 @@ export default defineWorkflow({
     ctx.phase("Audit current checkout");
     const bugs = await ctx.workflow<unknown[]>("bug-hunt", { dir: "src" });
     if (bugs.length > 0) {
-      await ctx.parallel(bugs.map((b, i) => () => ctx.agent(`Fix this confirmed bug: ${JSON.stringify(b)}`, { label: `fix:${i}`, phase: "Harden" })));
+      // Do not release with an unfixed bug: one failed fix stops the others and fails the run.
+      await ctx.parallel(bugs.map((b, i) => () => ctx.agent(`Fix this confirmed bug: ${JSON.stringify(b)}`, { label: `fix:${i}`, phase: "Harden" })), { failure: "failFast" });
     }
 
     ctx.phase("Release");

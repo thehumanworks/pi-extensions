@@ -105,13 +105,17 @@ export interface StepRecord {
   result?: unknown;
   resultRef?: string;
   worktree?: { path: string; branch: string };
+  /** For ctx.workflow() steps: the child run. */
+  childRunId?: RunId;
 }
 export interface RunRecord {
   id: RunId;
   workflow: { name: string; path: string; hash: string };
   args: unknown;
   cwd: string;
+  /** The model agents use unless their options, agentType or the definition's defaults choose one. */
   model?: ModelRef;
+  thinkingLevel?: ThinkingLevel;
   budget?: RunBudget;
   status: RunStatus;
   createdAt: number;

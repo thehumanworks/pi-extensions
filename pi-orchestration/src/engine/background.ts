@@ -82,7 +82,7 @@ function definitions(engine: Engine): { anchor: AnchorTask; message: MessageTask
 
 async function readAgent(engine: Engine, id: string, ctx = BACKGROUND_CONTEXT): Promise<AgentRecord> {
   const data = (await engine.harness.snapshot(BackgroundStore, ctx))?.agents[id];
-  if (!data) throw new WorkflowError("agent_not_found", `Unknown background agent ${id}. Use pi-workflow agents.`);
+  if (!data) throw new WorkflowError("agent_not_found", `Unknown background agent ${id}. Use workflow agents.`);
   return copy(agentRecord(data));
 }
 
@@ -185,7 +185,7 @@ export async function listBackgroundAgents(engine: Engine, runId?: string): Prom
 export async function steerBackgroundAgent(engine: Engine, runId: string, name: string, message: string): Promise<{ runId: string; agent: string; delivered: "steer" }> {
   const store = await engine.harness.snapshot(BackgroundStore, BACKGROUND_CONTEXT);
   const agent = Object.values(store?.agents ?? {}).map(agentRecord).find(item => item.runId === runId && item.name === name && !item.stopped);
-  if (!agent) throw new WorkflowError("agent_not_found", `No active background agent '${name}' in run ${runId}. Use pi-workflow agents --run ${runId}.`);
+  if (!agent) throw new WorkflowError("agent_not_found", `No active background agent '${name}' in run ${runId}. Use workflow agents --run ${runId}.`);
   await enqueueBackground(engine, agent.id, `${agent.id}/external:${randomUUID()}`, message, "steer");
   return { runId, agent: name, delivered: "steer" };
 }

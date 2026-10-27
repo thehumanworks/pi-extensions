@@ -1,18 +1,32 @@
 {
   "name": "@nothumanwork/pi-background-compaction",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Summarize the conversation in the background as Pi nears its compaction threshold, so compaction swaps a ready summary in instead of pausing the session",
-  "keywords": ["pi-package"],
-  "engines": { "node": ">=22.19.0" },
-  "publishConfig": { "access": "public" },
+  "keywords": [
+    "pi-package"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thehumanworks/pi-extensions.git",
     "directory": "pi-background-compaction"
   },
-  "files": ["index.ts", "src", "README.md"],
-  "pi": { "extensions": ["./index.ts"] },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
   "scripts": {
     "check": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts"

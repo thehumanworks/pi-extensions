@@ -1,5 +1,5 @@
-import { Type } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Type, type TSchema } from "@earendil-works/pi-ai";
+import type { BashOperations, ExtensionAPI, ExtensionContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
 import {
 	createBashToolDefinition,
 	createEditToolDefinition,
@@ -18,7 +18,8 @@ import {
 	createRemoteReadOperations,
 	createRemoteWriteOperations,
 } from "./operations.ts";
-import { RemoteSession } from "./session.ts";
+import { resolveRemotePath } from "./hosts.ts";
+import { RemoteSession, type ConnectedRemote } from "./session.ts";
 
 const remoteHostSchema = Type.Object({
 	action: Type.Union([
@@ -30,9 +31,9 @@ const remoteHostSchema = Type.Object({
 		Type.Literal("copy"),
 		Type.Literal("forget"),
 	]),
-	host: Type.Optional(Type.String({ description: "local or user@host[:port][/absolute/cwd]" })),
+	host: Type.Optional(Type.String({ description: "local, user@host[:port][/absolute/cwd] or user@host[:port]:cwd" })),
 	hosts: Type.Optional(Type.Array(Type.String(), { description: "Hosts for probe or exec" })),
-	cwd: Type.Optional(Type.String({ description: "Absolute remote working directory when switching" })),
+	cwd: Type.Optional(Type.String({ description: "Remote working directory when switching; ~ and relative paths start at the remote home" })),
 	command: Type.Optional(Type.String({ description: "Command for exec" })),
 	timeoutSeconds: Type.Optional(Type.Number()),
 	sourceHost: Type.Optional(Type.String()),
@@ -50,8 +51,25 @@ function textResult(text: string, details: unknown = undefined) {
 	return { content: [{ type: "text" as const, text }], details };
 }
 
+/** Pi's tools prefer `ctx.cwd`, the local session directory, over the cwd they were created with. */
+function withCwd<T extends object>(ctx: T, cwd: string): T {
+	return Object.create(ctx, { cwd: { value: cwd, enumerable: true } });
+}
+
+/** Pi expands `~` in tool paths to the local home. */
+function withRemoteHome<T>(params: T, remote: ConnectedRemote): T {
+	const path = (params as { path?: unknown } | undefined)?.path;
+	if (typeof path !== "string" || (path !== "~" && !path.startsWith("~/"))) return params;
+	return { ...params, path: resolveRemotePath(path, remote.platform.home, remote.platform.platform === "windows") };
+}
+
+/** `!` commands run in Pi's local session directory unless redirected to the remote cwd. */
+function inRemoteCwd(operations: BashOperations, remote: ConnectedRemote): BashOperations {
+	return { exec: (command, _cwd, options) => operations.exec(command, remote.cwd, options) };
+}
+
 export default function remoteExtension(pi: ExtensionAPI) {
-	pi.registerFlag("remote", { type: "string", description: "Initial execution host: user@host[:port][/cwd]" });
+	pi.registerFlag("remote", { type: "string", description: "Initial execution host: user@host[:port][/absolute/cwd] or user@host[:port]:cwd" });
 	pi.registerFlag("remote-hosts", { type: "string", description: "Comma-separated remote hosts available to the agent" });
 	pi.registerFlag("remote-identity", { type: "string", description: "SSH private key for remote hosts" });
 
@@ -63,47 +81,25 @@ export default function remoteExtension(pi: ExtensionAPI) {
 		log: (text) => process.stderr.write(text),
 	});
 
-	const toolCwd = () => session.current().cwd;
-	const operationsFor = <T>(create: (env: NonNullable<ReturnType<RemoteSession["activeEnv"]>>) => T): T | undefined => {
-		const env = session.activeEnv();
-		return env ? create(env) : undefined;
-	};
-
-	pi.registerTool({
-		...createReadToolDefinition(process.cwd()),
-		execute: (id, params, signal, onUpdate, ctx) =>
-			createReadToolDefinition(toolCwd(), { operations: operationsFor(createRemoteReadOperations) }).execute(id, params, signal, onUpdate, ctx),
+	const registerRemoteTool = <TParams extends TSchema, TDetails, TOperations>(
+		create: (cwd: string, options?: { operations?: TOperations }) => ToolDefinition<TParams, TDetails>,
+		operations: (env: ConnectedRemote["env"]) => TOperations,
+	) => pi.registerTool({
+		...create(process.cwd()),
+		execute: (id, params, signal, onUpdate, ctx) => {
+			const remote = session.activeRemote();
+			if (!remote) return create(session.localCwd).execute(id, params, signal, onUpdate, ctx);
+			return create(remote.cwd, { operations: operations(remote.env) })
+				.execute(id, withRemoteHome(params, remote), signal, onUpdate, withCwd(ctx, remote.cwd));
+		},
 	});
-	pi.registerTool({
-		...createWriteToolDefinition(process.cwd()),
-		execute: (id, params, signal, onUpdate, ctx) =>
-			createWriteToolDefinition(toolCwd(), { operations: operationsFor(createRemoteWriteOperations) }).execute(id, params, signal, onUpdate, ctx),
-	});
-	pi.registerTool({
-		...createEditToolDefinition(process.cwd()),
-		execute: (id, params, signal, onUpdate, ctx) =>
-			createEditToolDefinition(toolCwd(), { operations: operationsFor(createRemoteEditOperations) }).execute(id, params, signal, onUpdate, ctx),
-	});
-	pi.registerTool({
-		...createBashToolDefinition(process.cwd()),
-		execute: (id, params, signal, onUpdate, ctx) =>
-			createBashToolDefinition(toolCwd(), { operations: operationsFor(createRemoteBashOperations) }).execute(id, params, signal, onUpdate, ctx),
-	});
-	pi.registerTool({
-		...createLsToolDefinition(process.cwd()),
-		execute: (id, params, signal, onUpdate, ctx) =>
-			createLsToolDefinition(toolCwd(), { operations: operationsFor(createRemoteLsOperations) }).execute(id, params, signal, onUpdate, ctx),
-	});
-	pi.registerTool({
-		...createFindToolDefinition(process.cwd()),
-		execute: (id, params, signal, onUpdate, ctx) =>
-			createFindToolDefinition(toolCwd(), { operations: operationsFor(createRemoteFindOperations) }).execute(id, params, signal, onUpdate, ctx),
-	});
-	pi.registerTool({
-		...createGrepToolDefinition(process.cwd()),
-		execute: (id, params, signal, onUpdate, ctx) =>
-			createGrepToolDefinition(toolCwd(), { operations: operationsFor(createRemoteGrepOperations) }).execute(id, params, signal, onUpdate, ctx),
-	});
+	registerRemoteTool(createReadToolDefinition, createRemoteReadOperations);
+	registerRemoteTool(createWriteToolDefinition, createRemoteWriteOperations);
+	registerRemoteTool(createEditToolDefinition, createRemoteEditOperations);
+	registerRemoteTool(createBashToolDefinition, createRemoteBashOperations);
+	registerRemoteTool(createLsToolDefinition, createRemoteLsOperations);
+	registerRemoteTool(createFindToolDefinition, createRemoteFindOperations);
+	registerRemoteTool(createGrepToolDefinition, createRemoteGrepOperations);
 
 	pi.registerTool({
 		name: "remote_host",
@@ -178,8 +174,8 @@ export default function remoteExtension(pi: ExtensionAPI) {
 	});
 	pi.on("session_shutdown", async () => session.close());
 	pi.on("user_bash", () => {
-		const operations = operationsFor(createRemoteBashOperations);
-		return operations ? { operations } : undefined;
+		const remote = session.activeRemote();
+		return remote ? { operations: inRemoteCwd(createRemoteBashOperations(remote.env), remote) } : undefined;
 	});
 	if (process.env.PI_REMOTE_TEST_MAX_TOKENS) {
 		const maxTokens = Number(process.env.PI_REMOTE_TEST_MAX_TOKENS);
@@ -205,6 +201,8 @@ export default function remoteExtension(pi: ExtensionAPI) {
 			`Available hosts: ${available}`,
 			"Built-in file and shell tools follow the active host. Call remote_host to switch hosts, probe them, run one command on many hosts, or copy files between them.",
 		].join("\n");
+		// Pi's own <cwd> section names the local directory.
+		if (current.remote) event.systemPromptOptions.sections.cwd = current.cwd;
 	});
 
 	function renderStatus(ctx: ExtensionContext): void {

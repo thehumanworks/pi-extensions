@@ -55,7 +55,7 @@ export async function rpc<R = unknown>(input: ControlRequest, options: ClientOpt
 async function ready(options: ClientOptions): Promise<WorkerStatus | undefined> {
   try {
     const status = await rpc<WorkerStatus>({ action: "ping" }, { ...options, timeoutMs: 1000 });
-    if (status.version !== PROTOCOL_VERSION) throw new WorkflowError("protocol_mismatch", "Workflow worker uses a different protocol. Run pi-workflow worker stop, then worker start.");
+    if (status.version !== PROTOCOL_VERSION) throw new WorkflowError("protocol_mismatch", "Workflow worker uses a different protocol. Run workflow worker stop, then worker start.");
     return status;
   } catch (error) {
     if (["ENOENT", "ECONNREFUSED"].includes((error as NodeJS.ErrnoException).code ?? "")) return undefined;

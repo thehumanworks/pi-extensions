@@ -46,6 +46,7 @@ export default defineWorkflow({
           phase: "Implement",
         }),
       ),
+      // "null" (the default) records a failed worker as null and lets the others finish; status lists the failure.
       { failure: "null" },
     );
 
