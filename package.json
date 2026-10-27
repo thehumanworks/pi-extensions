@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "workspaces": [
+    "bot",
     "pi-advisor",
     "pi-atlassian",
     "pi-bot",

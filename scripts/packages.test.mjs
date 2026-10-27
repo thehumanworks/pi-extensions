@@ -22,11 +22,12 @@ for (const dir of manifest.workspaces) {
     assert.equal(pkg.name, `@nothumanwork/${dir}`);
     assert.notEqual(pkg.private, true);
     assert.equal(pkg.publishConfig.access, 'public');
-    assert.ok(pkg.keywords.includes('pi-package'));
+    if (dir !== 'bot') assert.ok(pkg.keywords.includes('pi-package'));
+    else assert.equal(pkg.pi, undefined, 'the standalone SDK is not a Pi extension');
     assert.equal(pkg.repository.directory, dir);
     assert.ok(!existsSync(new URL(`${dir}/.git`, root)));
     const files = new Set(pack.files.map(f => f.path));
-    for (const entry of [...pkg.pi.extensions, ...Object.values(pkg.bin ?? {}), ...Object.values(pkg.exports ?? {})]) {
+    for (const entry of [...(pkg.pi?.extensions ?? []), ...Object.values(pkg.bin ?? {}), ...Object.values(pkg.exports ?? {})]) {
       assert.ok(files.has(entry.replace(/^\.\//, '')), `missing entry: ${entry}`);
     }
     for (const path of files) {
@@ -34,7 +35,17 @@ for (const dir of manifest.workspaces) {
       assert.doesNotMatch(path, /\.(test|spec)\.[cm]?[jt]s$/);
     }
     for (const name of Object.keys(pkg.dependencies ?? {})) {
-      assert.ok(!['@earendil-works/pi-ai', '@earendil-works/pi-coding-agent', '@earendil-works/pi-tui', 'typebox'].includes(name), `host dependency bundled: ${name}`);
+      if (dir !== 'bot') assert.ok(!['@earendil-works/pi-ai', '@earendil-works/pi-coding-agent', '@earendil-works/pi-tui', 'typebox'].includes(name), `host dependency bundled: ${name}`);
+    }
+    if (dir === 'bot') {
+      for (const entry of ['index', 'project', 'runtime', 'server', 'client', 'cli', 'pi', 'worker-client', 'worker', 'worker-protocol', 'worker-tree', 'catalog']) {
+        assert.ok(files.has(`dist/${entry}.js`), `missing SDK module ${entry}`);
+        assert.ok(files.has(`dist/${entry}.d.ts`), `missing SDK declarations ${entry}`);
+      }
+      assert.ok(files.has('bin/bot.mjs'));
+      assert.ok(![...files].some(f => f.includes('legacy')), 'no backwards-compatibility layer');
+      assert.equal(pkg.dependencies['@earendil-works/pi-durable'], '1.4.0');
+      assert.equal(pkg.dependencies['@earendil-works/pi-coding-agent'], '1.4.0');
     }
     if (dir === 'pi-atlassian') {
       assert.ok(files.has('docs/catalog/index.json'));
@@ -42,9 +53,10 @@ for (const dir of manifest.workspaces) {
       assert.ok([...files].some(f => f.startsWith('docs/catalog/confluence/operations/')));
     }
     if (dir === 'pi-bot') {
-      assert.equal(pkg.bin, undefined, 'bots use pi --bot, not a separate launcher');
-      assert.ok(![...files].some(f => f.startsWith('bin/')));
-      for (const file of ['src/bots.ts', 'src/prompt.ts', 'src/run.ts', 'src/sessions.ts', 'src/models.ts']) assert.ok(files.has(file), `missing ${file}`);
+      assert.equal(pkg.bin, undefined, 'the SDK, not the extension, provides the bot executable');
+      assert.ok(pkg.dependencies['@nothumanwork/bot']);
+      assert.ok(files.has('index.ts'));
+      assert.ok(![...files].some(f => f.startsWith('src/')), 'the extension must not carry a second bot implementation');
       assert.ok(![...files].some(f => f.includes('fixtures')));
     }
     if (dir === 'pi-loop') assert.ok(files.has('dist/worker.js'));

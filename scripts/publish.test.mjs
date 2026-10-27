@@ -58,6 +58,15 @@ test('propagates publish errors', t => {
   f.run = () => ({ error: new Error('npm unavailable') });
   assert.throws(() => publish(['pi-example', '--dry-run'], f), /npm unavailable/);
 });
+test('publishes the standalone SDK only when explicitly registered and scoped', t => {
+  const f = fixture(t);
+  mkdirSync(join(f.cwd, 'bot'));
+  writeFileSync(join(f.cwd, 'package.json'), JSON.stringify({ workspaces: ['bot', 'pi-example'] }));
+  writeFileSync(join(f.cwd, 'bot/package.json'), JSON.stringify({ name: '@nothumanwork/bot', version: '0.1.0', publishConfig: { access: 'public' } }));
+  publish(['bot', '--dry-run'], f);
+  assert.ok(f.calls[0][1].includes('--workspace=@nothumanwork/bot'));
+  assert.throws(() => publish(['bot-missing'], f));
+});
 test('help does not call npm', t => {
   const f = fixture(t);
   publish(['--help'], f);

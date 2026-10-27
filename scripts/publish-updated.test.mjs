@@ -87,6 +87,15 @@ test('stops on first publish failure', t => {
   assert.throws(() => publishUpdated([], f), /publish failed/);
   assert.deepEqual(f.published, ['pi-test-0']);
 });
+test('allows the standalone bot SDK in the release roster', t => {
+  const f = fixture(t, []);
+  mkdirSync(join(f.cwd, 'bot'));
+  writeFileSync(join(f.cwd, 'package.json'), JSON.stringify({ workspaces: ['bot'] }));
+  writeFileSync(join(f.cwd, 'bot/package.json'), JSON.stringify({ name: '@nothumanwork/bot', version: '0.1.0', publishConfig: { access: 'public' } }));
+  f.run = () => ({ status: 1, stderr: JSON.stringify({ error: { code: 'E404' } }) });
+  const candidates = publishUpdated(['--dry-run'], f);
+  assert.deepEqual(candidates.map(item => item.name), ['@nothumanwork/bot']);
+});
 test('no updates means no publisher or login check', t => {
   const f = fixture(t, [{ local: '1.0.0', remote: ['1.0.0'] }]);
   assert.deepEqual(publishUpdated([], f), []);

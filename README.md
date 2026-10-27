@@ -1,6 +1,6 @@
 # Pi extensions
 
-An npm-workspace monorepo with independently versioned, independently installable Pi extensions. The root is private and is never published. Each directory is a separate npm package; there is no aggregate extension that loads everything.
+An npm-workspace monorepo with independently versioned Pi extensions and standalone Pi-powered SDKs. The root is private and is never published. Each directory is a separate npm package; there is no aggregate extension that loads everything.
 
 ## Install an extension
 
@@ -15,6 +15,7 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 
 | Package | Source and documentation |
 | --- | --- |
+| `@nothumanwork/bot` | [bot](bot/README.md) — standalone bot SDK, CLI and daemon |
 | `@nothumanwork/pi-advisor` | [pi-advisor](pi-advisor/README.md) |
 | `@nothumanwork/pi-atlassian` | [pi-atlassian](pi-atlassian/README.md) |
 | `@nothumanwork/pi-background-compaction` | [pi-background-compaction](pi-background-compaction/README.md) |
@@ -41,7 +42,7 @@ Local installs reference the checkout rather than copying it. If you previously 
 
 ## Develop
 
-Requires Node.js 22.19+ and npm; Bun is also required for the advisor, canary, fast, and remote tests. Run dependency installation from the repository root. `.npmrc` suppresses automatic peer installation because Pi provides the host SDK at runtime; explicit development dependencies provide the SDK for tests. All workspaces test against Pi 1.4.0. Pi Loop intentionally retains its separate, pinned worker runtime.
+Requires Node.js 22.19+ and npm; Bun is also required for the advisor, canary, fast, and remote tests. Run dependency installation from the repository root. `.npmrc` suppresses automatic peer installation because Pi provides the host SDK at runtime; explicit development dependencies provide the SDK for tests. All workspaces test against Pi 1.4.0. Pi Loop intentionally retains its separate, pinned worker runtime. The standalone `@nothumanwork/bot` SDK owns pinned Pi runtime dependencies; `pi-bot` uses that SDK rather than implementing another bot runtime.
 
 ```sh
 npm ci --ignore-scripts
@@ -80,7 +81,7 @@ npm run publish:package -- pi-voice --dry-run
 npm run publish:package -- pi-voice
 ```
 
-The helper in `scripts/publish.mjs` accepts only a registered `pi-*` workspace, verifies its `@nothumanwork` name and public access, then runs `npm whoami` before publishing to `https://registry.npmjs.org/`. If login cannot be verified, it stops and asks you to run `npm login`; it does not log in automatically. npm still enforces scope permissions, version uniqueness, and 2FA. Terminal input is passed through for npm prompts. `--dry-run` skips the helper's authentication check and upload but still runs npm lifecycle scripts and may contact the registry. npm can reject a dry run if that version is already published; use `npm pack --workspace @nothumanwork/pi-voice --dry-run` for a packaging-only preview. The helper does not bump versions or run the test suite for you.
+The helper in `scripts/publish.mjs` accepts only the registered `bot` SDK or a registered `pi-*` workspace, verifies its `@nothumanwork` name and public access, then runs `npm whoami` before publishing to `https://registry.npmjs.org/`. If login cannot be verified, it stops and asks you to run `npm login`; it does not log in automatically. npm still enforces scope permissions, version uniqueness, and 2FA. Terminal input is passed through for npm prompts. `--dry-run` skips the helper's authentication check and upload but still runs npm lifecycle scripts and may contact the registry. npm can reject a dry run if that version is already published; use `npm pack --workspace @nothumanwork/pi-voice --dry-run` for a packaging-only preview. The helper does not bump versions or run the test suite for you.
 
 You can also run `node /path/to/pi-extensions/scripts/publish.mjs pi-voice` from any directory.
 
@@ -90,6 +91,8 @@ For later releases, bump only the changed package, commit its manifest and the r
 npm version patch --workspace @nothumanwork/pi-voice --no-git-tag-version
 npm run publish:package -- pi-voice
 ```
+
+Publish `bot` before `pi-bot` when releasing their initial SDK split; the extension depends on `@nothumanwork/bot`. The SDK is installed with npm (`npm install @nothumanwork/bot` or `npm install -g @nothumanwork/bot`), not `pi install`.
 
 Versions are independent; npm will reject re-publishing an existing name/version. Avoid `npm publish --workspaces` unless you intend to release every package. Authentication and native-system prerequisites remain documented in the individual packages.
 

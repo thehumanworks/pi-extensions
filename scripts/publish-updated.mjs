@@ -33,7 +33,7 @@ export function publishUpdated(args, { cwd = root, run = spawnSync, log = consol
 
   // Finish all lookups before publishing, so a lookup error cannot cause a partial release.
   for (const dir of manifest.workspaces) {
-    if (typeof dir !== 'string' || !/^pi-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(dir)) {
+    if (typeof dir !== 'string' || !/^(?:bot|pi-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(dir)) {
       throw new Error(`Invalid workspace directory: ${dir}`);
     }
     const pkg = JSON.parse(readFileSync(resolve(cwd, dir, 'package.json'), 'utf8'));

@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const registry = 'https://registry.npmjs.org/';
-const usage = 'Usage: node scripts/publish.mjs pi-<name> [--dry-run]';
+const usage = 'Usage: node scripts/publish.mjs <workspace> [--dry-run]';
 
 // Injection keeps tests entirely offline: never run a real npm publish in tests.
 export function publish(args, { cwd = root, run = spawnSync, log = console.log } = {}) {
@@ -15,7 +15,7 @@ export function publish(args, { cwd = root, run = spawnSync, log = console.log }
     return;
   }
   const [shortName, ...options] = args;
-  if (!/^pi-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(shortName ?? '') ||
+  if (!/^(?:bot|pi-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(shortName ?? '') ||
       options.length > 1 || options.some(option => option !== '--dry-run')) {
     throw new Error(usage);
   }
