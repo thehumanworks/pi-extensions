@@ -1,14 +1,28 @@
 # pi-orchestration
 
-Durable TypeScript workflows for Pi. A workflow controls branching, loops and dependencies in code and delegates model work to fresh agents. One detached worker runs the same workflows for Pi's `workflow` tool, the `/workflow` command and the `pi-workflow` CLI.
+Durable TypeScript workflows for Pi. A workflow controls branching, loops and dependencies in code and delegates model work to fresh agents. One detached worker runs the same workflows for Pi's `workflow` tool, the `/workflow` command and the `workflow` shell command.
 
 The package implements parallel work, pipelines, child workflows, structured results, durable signals and sleep, persistent background agents, shared-queue swarms, worktree isolation, retries and compensating steps. It uses `@earendil-works/pi-durable@1.4.0` for tasks, ownership, conversations and persistence.
 
-**Status:** version 0.1.0. The test suite drives the engine, worker, CLI and Pi extension with a scripted model and needs no provider credentials. Text, structured, worktree, background-agent and swarm workflows have also been run against a live model. Defaults are conservative and have not been tuned by evaluation.
+**Status:** version 0.2.0. The test suite drives the engine, worker, CLI and Pi extension with a scripted model and needs no provider credentials. Text, structured, worktree, background-agent and swarm workflows have also been run against a live model. Defaults are conservative and have not been tuned by evaluation.
 
 ## Install and first run
 
 Requires Node **22.19 or newer**, Git for worktree isolation, and Linux or macOS. Use WSL on Windows. Configure a model through Pi's normal credentials and `models.json`; the worker uses Pi's `ModelRuntime`. A session-only provider is not available to it.
+
+```sh
+pi install npm:@nothumanwork/pi-orchestration
+```
+
+There are three ways in. Pi packages cannot add `pi` subcommands, so `pi workflow` is not one of them.
+
+| Where | How |
+|---|---|
+| Asking the agent | The `workflow` tool. Ask for a workflow; the tool's `guide` action teaches the agent the API. |
+| Inside Pi | `/workflow guide`, `/workflow run …` |
+| A shell | `workflow guide`, `workflow run …` |
+
+Pi installs packages without linking their binaries. So when a Pi session starts and nothing named `workflow` is on your PATH, the extension links the command into `~/.local/bin` or `~/bin` (the first that exists and is on PATH) and tells you where. It never replaces an existing file. Deleting the link opts out for good, because a marker in the workflow home (`cli-link.json`) records that the link was made. With neither directory on PATH, `/workflow guide` prints the full `node …/bin/workflow.mjs` command to use instead. `npm install -g @nothumanwork/pi-orchestration` also installs `workflow`.
 
 From this repository:
 
@@ -16,18 +30,12 @@ From this repository:
 npm ci --ignore-scripts
 npm run build --workspace @nothumanwork/pi-orchestration
 pi -e ./pi-orchestration/index.ts
-node pi-orchestration/bin/pi-workflow.mjs --help
+node pi-orchestration/bin/workflow.mjs --help
 ```
 
-After publication, the standard Pi installation command will be:
+`npm pack --workspace @nothumanwork/pi-orchestration` produces an installable local tarball.
 
-```sh
-pi install npm:@nothumanwork/pi-orchestration
-```
-
-Pi package installation does not put package binaries on your shell's PATH. Use the checked-in binary above, an alias to its absolute path, or `npm install -g @nothumanwork/pi-orchestration` after publication. `npm pack --workspace @nothumanwork/pi-orchestration` also produces an installable local tarball.
-
-Create `.pi/workflows/review.ts` in the project you want agents to inspect:
+`workflow init <name>` writes a commented starter to `.pi/workflows/<name>.ts`, and `workflow guide` prints the template, the `ctx` API and the model rules. A fuller example, `.pi/workflows/review.ts` in the project you want agents to inspect:
 
 ```ts
 import { Type } from "typebox";
@@ -47,6 +55,7 @@ export default defineWorkflow({
           tools: ["read"],
         }),
       ),
+      { failure: "failFast" }, // the default, "null", keeps going with null for a failed review
     );
     ctx.phase("Synthesize");
     return ctx.agent(`Summarize these reviews, preserving uncertainty:\n${JSON.stringify(notes)}`, {
@@ -70,14 +79,13 @@ The tool's launch request is:
 {"action":"run","workflow":{"name":"review"},"args":{"path":"src"}}
 ```
 
-It returns `{"runId":"…","status":"queued"}` immediately. The originating Pi session receives a completion message (except after `wait: true` or a foreground `/workflow run`, which already return the outcome); the extension reattaches after a session restart. TUI mode also displays a one-line progress widget. The worker continues when Pi closes.
+It returns the run ID and the model its agents will use, immediately. When the run ends, the originating Pi session gets a completion message. That message waits for the agent's current turn to end, and is skipped when the outcome was already seen: through `wait: true`, a foreground `/workflow run`, or a `status` or `result` call. The extension reattaches after a session restart. TUI mode also displays a one-line progress widget. The worker continues when Pi closes.
 
 From a shell, explicitly enable unattended execution and select an available model:
 
 ```sh
 export PI_WORKFLOW_ALLOW_UNATTENDED=1
-node pi-orchestration/bin/pi-workflow.mjs run ./.pi/workflows/review.ts \
-  --cwd ./project --args '{"path":"src"}' --model openai/gpt-6.1-sol --json
+workflow run review --cwd ./project --args '{"path":"src"}' --model openai/gpt-6.1-sol
 ```
 
 CLI `run` waits by default. Add `--bg` for an immediate launch reply. Ctrl-C detaches the client and leaves the run active; use `cancel` to stop it. The same commands work through `pi -p "/workflow …"` with the extension loaded and the unattended flag set.
@@ -86,7 +94,9 @@ CLI `run` waits by default. Add `--bg` for an immediate launch reply. Ctrl-C det
 
 A workflow is a trusted TypeScript module with a default `defineWorkflow({...})` export. Its name must be kebab-case. `args` is a TypeBox schema, checked before a run is admitted; omitting it means an empty argument object. `run(ctx)` returns a JSON-serializable result.
 
-Files are resolved by explicit path, then project `.pi/workflows/`, then user `~/.pi/agent/workflows/`. A file that fails to load still appears in `catalog`, under its file name with an `error` field, so one broken file does not hide the others. `PI_CODING_AGENT_DIR` changes the user location. Catalog lookup also recognizes a definition's declared name in files such as `01-leader-worker.ts`. Project definitions take precedence over user definitions with the same name. Modules are freshly loaded after edits. The definition file's SHA-256 hash identifies the code used for a run; imported files are not snapshotted.
+`budget` (`maxAgents`, `maxCostUsd`, `maxTokens`, `maxDurationMs`) only sets limits that stop the run. The code in `run(ctx)` decides how many agents run.
+
+Files are resolved by explicit path, then project `.pi/workflows/`, then user `~/.pi/agent/workflows/`. An empty catalog names the directories it searched and points to `guide`. A file that fails to load still appears in `catalog`, under its file name with an `error` field, so one broken file does not hide the others. `PI_CODING_AGENT_DIR` changes the user location. Catalog lookup also recognizes a definition's declared name in files such as `01-leader-worker.ts`. Project definitions take precedence over user definitions with the same name. Modules are freshly loaded after edits. The definition file's SHA-256 hash identifies the code used for a run; imported files are not snapshotted.
 
 The loader resolves this package, its recipes, TypeBox and the durable tool API from the installation, so a project workflow does not need a second copy just to import them. Other project dependencies follow normal Node module resolution.
 
@@ -145,13 +155,13 @@ Structured agents must finish with a valid `submit_result` tool call. Prose alon
 | `key` | Explicit step key when a stable authored identity is needed. |
 | `schema` | TypeBox result schema; controls the return type. |
 
-Options merge in this order: worker defaults, definition `defaults`, named `agents[agentType]`, call options. The selected model then falls back to the model captured at launch. Pi launches capture the session model; shell launches should pass `--model` or specify `defaults.model`. There is no silent model substitution.
+Options merge in this order: worker defaults, definition `defaults`, named `agents[agentType]`, call options. An agent without a model then uses the run's model: the definition's `defaults.model` when set, otherwise the launch model. Launches from Pi use the session's model and thinking level. Shell launches need `--model` unless the definition sets `defaults.model`; as with `pi --model`, a suffix such as `openai/gpt-6.1-sol:high` (or `--thinking high`) sets the thinking level. A child started with `ctx.workflow()` gets its parent's run model as its launch model. The launch reply, every status line and Pi's launch confirmation name the run's model, for example `openai/gpt-6.1-sol:high`. There is no silent model substitution.
 
 ### Parallel, pipelines and recipes
 
 `parallel` starts indexed branches immediately. The worker-wide semaphore limits actual agent conversations, including children, background work and swarms. Use `{ concurrency: 3 }` to additionally limit active branch callbacks. Do not use a local branch limit around mutually dependent thunks; use the DAG recipe instead.
 
-Choose `{ failure: "failFast" }` to abort in-flight siblings when one fails, or `{ failure: "allSettled" }` for typed `{ status: "fulfilled", value }` / `{ status: "rejected", reason }` results. The default returns `null` in failed slots and allows siblings to complete.
+Choose `{ failure: "failFast" }` to abort in-flight siblings when one fails, or `{ failure: "allSettled" }` for typed `{ status: "fulfilled", value }` / `{ status: "rejected", reason }` results. The default, `"null"`, returns `null` in failed slots and allows siblings to complete. Failures it absorbs stay visible: the status line ends with `N failed steps`, and status lists each failed step with its error. The examples state their failure policy explicitly.
 
 Pipeline stage functions receive `(previousResult, originalItem, index)`. The first stage receives the original item as its previous result. Stages for one item are serial; different items progress independently. An item that fails contributes `null`.
 
@@ -233,7 +243,7 @@ await ctx.sleep(1_000);
 return ctx.workflow("verify-release", { version: ctx.args.version });
 ```
 
-Send the value with `pi-workflow signal <runId> approve-release '{"approved":true,"note":"Reviewed"}'`. The value is schema-checked before delivery. An expired signal fails with `signal_timeout`. Deadlines are persisted; a restarted worker waits only for the remaining time.
+Send the value with `workflow signal <runId> approve-release '{"approved":true,"note":"Reviewed"}'`. The value is schema-checked before delivery. An expired signal fails with `signal_timeout`. Deadlines are persisted; a restarted worker waits only for the remaining time.
 
 Child workflows have their own run records and ownership, use the shared concurrency cap, and charge agents/tokens/cost to ancestors. `list` shows roots; `list --all` includes children for a nested view. Cancellation and revert cascade through ownership. The default maximum depth is one: root → child. Set `PI_WORKFLOW_MAX_DEPTH=2` before worker startup to allow another authored level.
 
@@ -311,25 +321,31 @@ The guarantees have practical limits:
 
 ## Control surface
 
-All tool actions use the same protocol as the CLI: `run`, `status`, `list`, `result`, `cancel`, `retry`, `revert`, `signal`, `steer`, `agents`, `catalog`, `validate`. `run` accepts `wait: true` with `waitTimeoutMs` up to 600,000; timeout returns the current run state instead of cancelling it. Session tool calls use a stable session/tool-call launch request ID.
+The tool's actions are `catalog`, `guide`, `validate`, `run`, `status`, `result`, `list`, `cancel`, `retry`, `revert`, `signal`, `steer` and `agents`. Its description explains each action's fields, and `guide` returns the same text as `workflow guide`. `run` accepts `wait: true` with `waitTimeoutMs` up to 600,000; timeout returns the current run state instead of cancelling it. Session tool calls use a stable session/tool-call launch request ID.
+
+Tool results are compact. `status` returns the summary line, failed steps, any awaited signal and the result. `verbose: true` adds the step tree and each step's own result. `list` returns one line per run. Codemode scripts receive the same views as structured data. Neither the tool nor the worker returns journal bookkeeping such as fingerprints or sequence numbers.
+
+The shell command and `/workflow` share one interface:
 
 ```text
-pi-workflow run <path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR]
-  [--model PROVIDER/MODEL] [--bg] [--request-id ID]
+workflow guide
+workflow init <name> [--cwd DIR]
+workflow catalog [--cwd DIR]
+workflow validate <name-or-path> [--cwd DIR]
+workflow run <path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR]
+  [--model PROVIDER/MODEL[:THINKING]] [--thinking LEVEL] [--bg] [--request-id ID]
   [--max-agents N] [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
-pi-workflow status <runId> [--verbose]
-pi-workflow poll <runId> [--interval 5s] [--until done|signal] [--once]
-pi-workflow watch <runId> [--interval 1s]
-pi-workflow list [--status running,failed] [--all]
-pi-workflow result|cancel|revert <runId>
-pi-workflow revert <runId> --keep-worktrees
-pi-workflow retry <runId> [--from KEY] [--allow-changed]
-pi-workflow signal <runId> <key> '<json>'
-pi-workflow agents [--run ID]
-pi-workflow steer <runId> <agent> "message"
-pi-workflow catalog [--cwd DIR]
-pi-workflow validate <name-or-path> [--cwd DIR]
-pi-workflow worker start|stop|status
+workflow status <runId> [--verbose]
+workflow poll <runId> [--interval 5s] [--until done|signal] [--once]
+workflow watch <runId> [--interval 1s]
+workflow list [--status running,failed] [--all]
+workflow result|cancel|revert <runId>
+workflow revert <runId> --keep-worktrees
+workflow retry <runId> [--from KEY] [--allow-changed]
+workflow signal <runId> <key> '<json>'
+workflow agents [--run ID]
+workflow steer <runId> <agent> "message"
+workflow worker start|stop|status
 ```
 
 Every command accepts `--home DIR` and `--json`. Single actions emit one JSON document on stdout; `poll` and `watch` emit NDJSON. Progress/errors intended for humans stay off JSON stdout. Socket envelopes are `{ ok: true, data }` / `{ ok: false, error }`; CLI JSON unwraps successful data and prints `{ error: { code, message } }` for errors. The result action returns the complete workflow result directly.
@@ -370,6 +386,8 @@ No OS service is installed. A user-managed systemd/launchd service can supervise
 
 | Symptom | Check |
 |---|---|
+| `pi workflow` shows Pi's help | Pi packages cannot add `pi` subcommands. Use `workflow` in a shell or `/workflow` in Pi. |
+| `workflow: command not found` | Start a Pi session with the package installed so it can link the command. Check that `~/.local/bin` or `~/bin` is on PATH. Otherwise use the `node …/bin/workflow.mjs` command that `/workflow guide` prints. |
 | Worker will not start / exit 4 | Read `<home>/worker.log`; verify Node >=22.19, writable home, and a short Unix socket path. |
 | Unknown/no model | Use an exact configured provider/model ID. Pass `--model` in CLI launches or set workflow defaults. Session-only providers are not inherited. |
 | Headless launch refused | Set `PI_WORKFLOW_ALLOW_UNATTENDED=1` in the root caller environment after reviewing the workflow. |
@@ -458,8 +476,8 @@ No test needs provider credentials or makes a model request:
 |---|---|
 | `test/engine.test.ts` | An in-process worker over its socket with a scripted faux model: control flow, steps, retries, compensation, signals, child runs, budgets, structured output, worktrees, background agents, swarms and the inner-agent launch refusal. |
 | `test/process.test.ts` | The compiled CLI and detached worker: headless opt-in, exit codes, signals, cancel and SIGKILL recovery. |
-| `test/extension.test.ts` | The Pi tool and `/workflow` command against a fake host: launch authorization, completion messages and session restore. |
-| `test/unit.test.ts` | Determinism lint, command parsing, presentation, and loading every example. |
+| `test/extension.test.ts` | The Pi tool and `/workflow` command against a fake host: action descriptions, the empty catalog and guide, compact results, launch authorization, completion timing and session restore. |
+| `test/unit.test.ts` | Determinism lint, command parsing, presentation, the guide and starter template, `init`, PATH linking, and loading every example. |
 | `test/package.test.ts` | A source-only checkout whose `prepack` recreates the runtime files and usable compiled entry points. |
 
 The npm payload contains the thin Pi entry, source, compiled JavaScript and declarations, the binary, examples, this README and the MIT `LICENSE`. TypeScript configs and tests are development-only.

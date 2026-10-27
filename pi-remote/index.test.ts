@@ -1,14 +1,14 @@
 import { spawn } from "node:child_process";
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:net";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir, userInfo } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "bun:test";
-import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, ExtensionToolContext } from "@earendil-works/pi-coding-agent";
+import type { BashOperations, ExtensionAPI, ExtensionCommandContext, ExtensionContext, ExtensionToolContext } from "@earendil-works/pi-coding-agent";
 import { SshError } from "@earendil-works/pi-env";
 import remoteExtension from "./index.ts";
-import { hostId, parseRemoteTarget } from "./hosts.ts";
+import { hostId, parseRemoteTarget, resolveRemotePath } from "./hosts.ts";
 import { RemoteSession } from "./session.ts";
 
 // Loopback by default; set PI_REMOTE_TEST_ADDRESS to bind the disposable sshd elsewhere.
@@ -27,12 +27,39 @@ test("parses remote targets without treating cwd as an SSH option", () => {
 	});
 	expect(hostId(parseRemoteTarget("gpu.example"))).toBe("gpu.example");
 	expect(() => parseRemoteTarget("-oProxyCommand=evil")).toThrow("Invalid remote target");
+	expect(() => parseRemoteTarget("alice@-oProxyCommand=evil")).toThrow("Invalid SSH host");
+});
+
+test("accepts a cwd with or without a port, in path or scp form", () => {
+	const cases: Array<[string, ReturnType<typeof parseRemoteTarget>]> = [
+		["tomas@100.75.176.119/home/tomas", { user: "tomas", host: "100.75.176.119", cwd: "/home/tomas" }],
+		["tomas@100.75.176.119:22/home/tomas", { user: "tomas", host: "100.75.176.119", port: 22, cwd: "/home/tomas" }],
+		["tomas@100.75.176.119:/home/tomas", { user: "tomas", host: "100.75.176.119", cwd: "/home/tomas" }],
+		["tomas@100.75.176.119:22:/home/tomas", { user: "tomas", host: "100.75.176.119", port: 22, cwd: "/home/tomas" }],
+		["my-box:~/src/app", { host: "my-box", cwd: "~/src/app" }],
+		["my-box:src/app", { host: "my-box", cwd: "src/app" }],
+		["my-box:", { host: "my-box" }],
+		["first-last@my-box.tail1234.ts.net/srv/My Projects", { user: "first-last", host: "my-box.tail1234.ts.net", cwd: "/srv/My Projects" }],
+		["alice@corp.example@build:/work/a@b:c", { user: "alice@corp.example", host: "build", cwd: "/work/a@b:c" }],
+		["[fd7a:115c::1]:2222/srv", { host: "fd7a:115c::1", port: 2222, cwd: "/srv" }],
+		["[fd7a:115c::1]:~", { host: "fd7a:115c::1", cwd: "~" }],
+	];
+	for (const [target, expected] of cases) expect(parseRemoteTarget(target)).toEqual(expected);
+	expect(hostId(parseRemoteTarget("[fd7a:115c::1]:2222/srv"))).toBe("[fd7a:115c::1]:2222");
+	expect(() => parseRemoteTarget("host:0/srv")).toThrow("Invalid SSH port");
+	expect(() => parseRemoteTarget("host:70000")).toThrow("Invalid SSH port");
+	expect(() => parseRemoteTarget("[::1]x")).toThrow("Invalid remote target");
+	expect(resolveRemotePath("~", "/home/tomas")).toBe("/home/tomas");
+	expect(resolveRemotePath("~/src/", "/home/tomas")).toBe("/home/tomas/src");
+	expect(resolveRemotePath("src", "/home/tomas")).toBe("/home/tomas/src");
+	expect(resolveRemotePath("/srv/../opt", "/home/tomas")).toBe("/opt");
+	expect(resolveRemotePath("~/src", "C:\\Users\\tomas", true)).toBe("C:\\Users\\tomas\\src");
 });
 
 test("local remains active until a remote host is selected", async () => {
 	const session = new RemoteSession({ cwd: "/work" });
 	expect(session.current()).toEqual({ id: "local", cwd: "/work", remote: false });
-	expect(session.activeEnv()).toBeUndefined();
+	expect(session.activeRemote()).toBeUndefined();
 	session.close();
 });
 
@@ -42,7 +69,7 @@ test("invalid host flags cannot bypass blocking an explicitly requested remote",
 		await expect(session.loadConfiguredHosts({ initial: "requested.example", hostList: "-invalid" }))
 			.rejects.toThrow("Invalid remote target");
 		expect(session.unavailable?.target).toBe("requested.example");
-		expect(() => session.activeEnv()).toThrow("Execution is blocked");
+		expect(() => session.activeRemote()).toThrow("Execution is blocked");
 	} finally {
 		session.close();
 	}
@@ -204,13 +231,13 @@ test("explains authentication failure and allows a successful retry", async () =
 		expect(error.message).toContain("process running Pi");
 		expect(error.cause).toBeInstanceOf(SshError);
 		expect(session.unavailable?.target).toBe(target);
-		expect(() => session.activeEnv()).toThrow("Execution is blocked");
+		expect(() => session.activeRemote()).toThrow("Execution is blocked");
 
 		// The failed host remains addressable so authentication can be fixed and retried.
 		session.hosts.get(target)!.identityFile = server.identity;
 		expect((await session.use(target)).remote).toBe(true);
 		expect(session.unavailable).toBeUndefined();
-		expect(session.activeEnv()).toBeDefined();
+		expect(session.activeRemote()).toBeDefined();
 	} finally {
 		session.close();
 		server.process.kill();
@@ -222,39 +249,10 @@ test("startup authentication failure keeps the extension usable without falling 
 	const wrongIdentity = join(root, "wrong_client");
 	execFileSync("ssh-keygen", ["-q", "-t", "ed25519", "-N", "", "-f", wrongIdentity]);
 	const target = `${userInfo().username}@${address}:${server.port}`;
-	const tools = new Map<string, Parameters<ExtensionAPI["registerTool"]>[0]>();
-	const commands = new Map<string, Parameters<ExtensionAPI["registerCommand"]>[1]>();
-	// Event payloads differ by event name; the real extension supplies the typed handlers.
-	const handlers = new Map<string, (event: any, ctx: ExtensionContext) => unknown>();
-	const flags: Record<string, string> = { remote: target, "remote-identity": wrongIdentity };
-	const notifications: Array<{ message: string; level?: string }> = [];
-	const statuses = new Map<string, string | undefined>();
-	const ctx = {
-		hasUI: true,
-		ui: {
-			notify: (message: string, level?: string) => notifications.push({ message, level }),
-			setStatus: (key: string, value: string | undefined) => statuses.set(key, value),
-			theme: { fg: (_color: string, value: string) => value },
-		},
-	} as unknown as ExtensionCommandContext & ExtensionToolContext;
-	const previousKnownHosts = process.env.PI_REMOTE_KNOWN_HOSTS;
-	const previousSshConfig = process.env.PI_REMOTE_SSH_CONFIG;
-	try {
-		process.env.PI_REMOTE_KNOWN_HOSTS = join(root, "known_hosts");
-		process.env.PI_REMOTE_SSH_CONFIG = config.file;
-		remoteExtension({
-			registerFlag: () => {},
-			getFlag: (name: string) => flags[name],
-			registerTool: (tool: Parameters<ExtensionAPI["registerTool"]>[0]) => tools.set(tool.name, tool),
-			registerCommand: (name: string, command: Parameters<ExtensionAPI["registerCommand"]>[1]) => commands.set(name, command),
-			on: (name: string, handler: (event: any, ctx: ExtensionContext) => unknown) => handlers.set(name, handler),
-		} as unknown as ExtensionAPI);
-	} finally {
-		if (previousKnownHosts === undefined) delete process.env.PI_REMOTE_KNOWN_HOSTS;
-		else process.env.PI_REMOTE_KNOWN_HOSTS = previousKnownHosts;
-		if (previousSshConfig === undefined) delete process.env.PI_REMOTE_SSH_CONFIG;
-		else process.env.PI_REMOTE_SSH_CONFIG = previousSshConfig;
-	}
+	const { tools, commands, handlers, notifications, statuses, ctx } = loadExtension(
+		{ remote: target, "remote-identity": wrongIdentity },
+		{ knownHosts: join(root, "known_hosts"), sshConfig: config.file },
+	);
 	try {
 		// The handler reports the problem, not an unhandled extension error.
 		await handlers.get("session_start")!({}, ctx);
@@ -291,6 +289,90 @@ test("startup authentication failure keeps the extension usable without falling 
 		server.process.kill();
 	}
 }, 30_000);
+
+test("tools, ! commands and the system prompt use the remote cwd, not Pi's local one", async () => {
+	const { root, home, server, config } = await singleHost();
+	// A port-less, hyphenated alias, as with Tailscale MagicDNS names.
+	appendFileSync(config.file, `Host pi-test-box\n  HostName ${address}\n  Port ${server.port}\n`);
+	const target = `${userInfo().username}@pi-test-box`;
+	writeFileSync(join(home, "srv/one/note.txt"), "remote note");
+	const { tools, commands, handlers, ctx } = loadExtension(
+		{ remote: target, "remote-identity": server.identity },
+		{ knownHosts: join(root, "known_hosts"), sshConfig: config.file },
+		// Pi passes its local session directory to tools and `!` commands; it does not exist on the remote.
+		join(root, "local-only"),
+	);
+	const text = (result: { content: Array<{ type: string; text?: string }> }) => result.content.map((part) => part.text ?? "").join("");
+	const pwd = async () => text(await tools.get("bash")!.execute("pwd", { command: "pwd -P" }, undefined, undefined, ctx)).trim();
+	try {
+		await handlers.get("session_start")!({}, ctx);
+		// Without a cwd, the remote home is used once the connection reports it.
+		expect(await pwd()).toBe(realpathSync(home));
+
+		await commands.get("remote")!.handler(`use ${target}:~/srv/one`, ctx);
+		expect(await pwd()).toBe(realpathSync(join(home, "srv/one")));
+		const read = await tools.get("read")!.execute("read", { path: "note.txt" }, undefined, undefined, ctx);
+		expect(text(read)).toContain("remote note");
+		await tools.get("write")!.execute("write", { path: "~/srv/one/written.txt", content: "via tilde" }, undefined, undefined, ctx);
+		expect(readFileSync(join(home, "srv/one/written.txt"), "utf8")).toBe("via tilde");
+
+		const { operations } = handlers.get("user_bash")!({}, ctx) as { operations: BashOperations };
+		const output: string[] = [];
+		await operations.exec("pwd -P", ctx.cwd, { onData: (data) => output.push(data.toString()) });
+		expect(output.join("").trim()).toBe(realpathSync(join(home, "srv/one")));
+
+		const event = { systemPromptOptions: { sections: {} as Record<string, string> } };
+		await handlers.get("before_agent_start")!(event, ctx);
+		expect(event.systemPromptOptions.sections.cwd).toBe(join(home, "srv/one"));
+		expect(event.systemPromptOptions.sections.execution_host).toContain(`Working directory: ${join(home, "srv/one")}`);
+
+		// The absolute-path form, and a directory that does not exist yet.
+		await commands.get("remote")!.handler(`use ${target}${home}/srv/new`, ctx);
+		expect(await pwd()).toBe(realpathSync(join(home, "srv/new")));
+	} finally {
+		await handlers.get("session_shutdown")!({}, ctx);
+		server.process.kill();
+	}
+}, 30_000);
+
+/** Loads the extension against a minimal Pi API whose context reports `cwd` as Pi's local session directory. */
+function loadExtension(flags: Record<string, string>, files: { knownHosts: string; sshConfig: string }, cwd?: string) {
+	const tools = new Map<string, Parameters<ExtensionAPI["registerTool"]>[0]>();
+	const commands = new Map<string, Parameters<ExtensionAPI["registerCommand"]>[1]>();
+	// Event payloads differ by event name; the real extension supplies the typed handlers.
+	const handlers = new Map<string, (event: any, ctx: ExtensionContext) => unknown>();
+	const notifications: Array<{ message: string; level?: string }> = [];
+	const statuses = new Map<string, string | undefined>();
+	const ctx = {
+		hasUI: true,
+		...(cwd ? { cwd } : {}),
+		sessionManager: { getSessionId: () => "test", getSessionFile: () => undefined },
+		ui: {
+			notify: (message: string, level?: string) => notifications.push({ message, level }),
+			setStatus: (key: string, value: string | undefined) => statuses.set(key, value),
+			theme: { fg: (_color: string, value: string) => value },
+		},
+	} as unknown as ExtensionCommandContext & ExtensionToolContext;
+	const previousKnownHosts = process.env.PI_REMOTE_KNOWN_HOSTS;
+	const previousSshConfig = process.env.PI_REMOTE_SSH_CONFIG;
+	try {
+		process.env.PI_REMOTE_KNOWN_HOSTS = files.knownHosts;
+		process.env.PI_REMOTE_SSH_CONFIG = files.sshConfig;
+		remoteExtension({
+			registerFlag: () => {},
+			getFlag: (name: string) => flags[name],
+			registerTool: (tool: Parameters<ExtensionAPI["registerTool"]>[0]) => tools.set(tool.name, tool),
+			registerCommand: (name: string, command: Parameters<ExtensionAPI["registerCommand"]>[1]) => commands.set(name, command),
+			on: (name: string, handler: (event: any, ctx: ExtensionContext) => unknown) => handlers.set(name, handler),
+		} as unknown as ExtensionAPI);
+	} finally {
+		if (previousKnownHosts === undefined) delete process.env.PI_REMOTE_KNOWN_HOSTS;
+		else process.env.PI_REMOTE_KNOWN_HOSTS = previousKnownHosts;
+		if (previousSshConfig === undefined) delete process.env.PI_REMOTE_SSH_CONFIG;
+		else process.env.PI_REMOTE_SSH_CONFIG = previousSshConfig;
+	}
+	return { tools, commands, handlers, notifications, statuses, ctx };
+}
 
 async function singleHost() {
 	const sshd = execFileSync("sh", ["-c", "command -v sshd"], { encoding: "utf8" }).trim();

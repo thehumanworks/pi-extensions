@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-orchestration",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Durable multi-agent workflows for Pi and the command line",
   "type": "module",
   "license": "MIT",
@@ -35,7 +35,7 @@
     ]
   },
   "bin": {
-    "pi-workflow": "bin/pi-workflow.mjs"
+    "workflow": "bin/workflow.mjs"
   },
   "types": "./dist/index.d.ts",
   "exports": {

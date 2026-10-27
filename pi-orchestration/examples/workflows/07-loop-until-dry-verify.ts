@@ -31,6 +31,7 @@ export default defineWorkflow({
               schema: BUGS,
             }),
           ),
+          { failure: "null" }, // a failed lens yields null; filter(Boolean) drops it
         );
         return rounds.filter(Boolean).flatMap((r) => r!.bugs);
       },
@@ -49,9 +50,11 @@ export default defineWorkflow({
               schema: VERDICT,
             }),
           ),
+          { failure: "null" }, // a failed vote counts as "not real"
         );
         return { bug, real: votes.filter(Boolean).filter((v) => v!.real).length >= 2 };
       }),
+      { failure: "null" },
     );
 
     const confirmed = verdicts.filter(Boolean).filter((v) => v!.real).map((v) => v!.bug);

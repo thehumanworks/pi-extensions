@@ -22,7 +22,7 @@ import {
 	type SshTarget,
 } from "@earendil-works/pi-env";
 import { getOrThrow, type ExecutionEnv } from "@earendil-works/pi-durable/env";
-import { hostId, parseHostList, parseRemoteTarget, shellQuote, type RemoteHostSpec } from "./hosts.ts";
+import { hostId, parseHostList, parseRemoteTarget, resolveRemotePath, shellQuote, type RemoteHostSpec } from "./hosts.ts";
 
 export interface ConnectedRemote {
 	spec: RemoteHostSpec;
@@ -196,9 +196,9 @@ export class RemoteSession {
 		return { id: connected.spec.id, cwd: connected.cwd, remote: true };
 	}
 
-	activeEnv(): ExecutionEnv | undefined {
+	activeRemote(): ConnectedRemote | undefined {
 		this.assertReady();
-		return this.activeId === "local" ? undefined : this.connected.get(this.activeId)?.env;
+		return this.activeId === "local" ? undefined : this.connected.get(this.activeId);
 	}
 
 	async use(target: string, cwd?: string): Promise<{ id: string; cwd: string; remote: boolean }> {
@@ -209,22 +209,17 @@ export class RemoteSession {
 		}
 		const parsed = this.hosts.has(target) ? undefined : parseRemoteTarget(target);
 		const id = parsed ? hostId(parsed) : target;
-		const existing = this.hosts.get(id);
-		const spec: RemoteHostSpec = existing ?? {
-			id,
-			host: parsed!.host,
-			...(parsed?.user ? { user: parsed.user } : {}),
-			...(parsed?.port ? { port: parsed.port } : {}),
-			...(parsed?.cwd ? { cwd: parsed.cwd } : {}),
-			source: "agent",
-		};
-		if (cwd) spec.cwd = cwd;
+		const spec: RemoteHostSpec = this.hosts.get(id) ?? { id, ...parsed!, source: "agent" };
+		// A cwd in the target counts as much as an explicit one, also for a host that is already known or connected.
+		const requested = cwd ?? parsed?.cwd;
+		if (requested) spec.cwd = requested;
 		this.hosts.set(id, spec);
 		const connected = await this.connect(spec);
-		if (cwd) {
-			getOrThrow(await connected.env.createDir(cwd, { recursive: true }, BACKGROUND_CONTEXT));
-			connected.cwd = cwd;
-			connected.env.cwd = cwd;
+		if (requested) {
+			const resolved = resolveRemotePath(requested, connected.platform.home, connected.platform.platform === "windows");
+			getOrThrow(await connected.env.createDir(resolved, { recursive: true }, BACKGROUND_CONTEXT));
+			connected.cwd = resolved;
+			connected.env.cwd = resolved;
 		}
 		this.activeId = id;
 		this.startupFailure = undefined;
@@ -322,7 +317,8 @@ export class RemoteSession {
 			throw error;
 		}
 		const { connection, remote } = result;
-		const cwd = spec.cwd ?? remote.home;
+		// The remote home is only known once connected; it is the default cwd and the base of `~` and relative paths.
+		const cwd = resolveRemotePath(spec.cwd ?? "~", remote.home, remote.platform === "windows");
 		const env = new RemoteExecutionEnv({ connection, id: `pi-remote:${spec.id}`, cwd });
 		const connected = { spec, connection, env, platform: remote, cwd };
 		this.connected.set(spec.id, connected);

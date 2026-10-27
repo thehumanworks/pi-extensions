@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cp, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { access, cp, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -26,7 +26,7 @@ test("prepack builds a source-only checkout with usable compiled entry points", 
     const [pack] = JSON.parse(output) as Array<{ files: Array<{ path: string }> }>;
     const files = new Set(pack.files.map(file => file.path));
     for (const path of [
-      "index.ts", "src/extension.ts", "bin/pi-workflow.mjs", "README.md",
+      "index.ts", "src/extension.ts", "bin/workflow.mjs", "README.md",
       "dist/index.js", "dist/index.d.ts", "dist/recipes.js", "dist/recipes.d.ts",
       "dist/cli.js", "dist/worker.js", "dist/engine/index.js", "dist/engine/index.d.ts",
     ]) assert.ok(files.has(path), `missing runtime file: ${path}`);
@@ -38,9 +38,13 @@ test("prepack builds a source-only checkout with usable compiled entry points", 
       }
     }
 
-    const cli = execFileSync(process.execPath, [join(directory, "bin/pi-workflow.mjs"), "--help"], { encoding: "utf8", timeout: 10_000 });
-    assert.match(cli, /pi-workflow run/);
-    assert.match(cli, /pi-workflow worker start\|stop\|status/);
+    const cli = execFileSync(process.execPath, [join(directory, "bin/workflow.mjs"), "--help"], { encoding: "utf8", timeout: 10_000 });
+    assert.match(cli, /^workflow guide/m);
+    assert.match(cli, /workflow worker start\|stop\|status/);
+    // The compiled guide points at the README and examples that ship with the package.
+    const guide = execFileSync(process.execPath, [join(directory, "bin/workflow.mjs"), "guide"], { encoding: "utf8", timeout: 10_000 });
+    const pointers = [/ (\/\S+\/README\.md)$/m, / (\/\S+\/examples\/workflows\/)$/m].map(pattern => pattern.exec(guide)?.[1] ?? "missing");
+    for (const path of pointers) await access(path);
 
     await writeFile(join(directory, "smoke-workflow.ts"), `
       import { defineWorkflow } from "@nothumanwork/pi-orchestration";

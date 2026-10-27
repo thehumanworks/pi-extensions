@@ -3,6 +3,7 @@ import { access, readFile, realpath } from "node:fs/promises";
 import { join } from "node:path";
 import { test } from "node:test";
 import type { BackgroundAgentRecord, CatalogEntry, RunRecord, ValidationResult } from "../src/index.ts";
+import { runBrief, runSummary } from "../src/presentation.ts";
 import { CLI, fixture, git, workflow } from "./helpers.ts";
 
 const exists = (path: string) => access(path).then(() => true, () => false);
@@ -275,5 +276,39 @@ test("background agents keep context and swarms deduplicate their queue", async 
     const agents = await f.request<BackgroundAgentRecord[]>({ action: "agents", runId: run.id });
     assert.equal(agents.length, 3);
     assert.ok(agents.every(agent => agent.status === "stopped"));
+  } finally { await f.close(); }
+});
+
+test("status names the model, surfaces failed branches and hides journal bookkeeping", async () => {
+  const f = await fixture({ workflows: {
+    partial: workflow(`{
+      name: "partial",
+      async run(ctx) {
+        return ctx.parallel([() => ctx.step("bad", async () => { throw new Error("nope"); }), () => ctx.agent("ECHO fine")]);
+      },
+    }`),
+    pinned: workflow(`{ name: "pinned", defaults: { model: "faux/faux-1" }, async run(ctx) { return ctx.agent("ECHO pinned"); } }`),
+  } });
+  try {
+    const run = await f.run("partial", {}, { thinkingLevel: "low" });
+    assert.equal(run.status, "completed", JSON.stringify(run.error));
+    assert.deepEqual(run.result, [null, "fine"]);
+    for (const field of ["requestId", "taskId", "helpers", "positions", "nextSequence", "signals", "limits"]) assert.ok(!(field in run), field);
+    for (const item of run.steps) for (const field of ["fingerprint", "sequence", "generation", "taskId"]) assert.ok(!(field in item), `${item.key}.${field}`);
+    assert.match(runSummary(run), / · faux\/faux-1:low · .* · 1 failed step$/);
+    const brief = runBrief(run);
+    const bad = run.steps.find(item => item.status === "failed")!;
+    assert.deepEqual(brief.view.failedSteps, [{ key: bad.key, error: "nope" }]);
+    assert.deepEqual(brief.view.result, [null, "fine"]);
+    assert.ok(!("steps" in brief.view));
+
+    // Definition defaults outrank the launch model for every agent, so the run reports them.
+    const pinned = await f.request<{ runId: string; model?: string }>({
+      action: "run", requestId: "pinned", workflow: { name: "pinned" }, args: {}, cwd: f.project, model: "faux/other", origin: { kind: "cli" },
+    });
+    assert.equal(pinned.model, "faux/faux-1");
+    const done = await f.wait(pinned.runId);
+    assert.equal(done.status, "completed", JSON.stringify(done.error));
+    assert.equal(done.model, "faux/faux-1");
   } finally { await f.close(); }
 });

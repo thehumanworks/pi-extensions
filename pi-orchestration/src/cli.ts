@@ -1,33 +1,42 @@
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import { assertRootLaunch, assertUnattended, ensureWorker, requestWorker, rpc } from "./client.ts";
-import type { ModelRef, RunRecord, RunStatus, ThinkingLevel } from "./index.ts";
+import { guide, template } from "./guide.ts";
+import type { CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
+import { shellCommand } from "./link.ts";
+import { agentDirectory } from "./paths.ts";
 import type { ControlRequest } from "./protocol.ts";
-import { json, runList, runSummary, runTree, statusExitCode, TERMINAL_STATUSES } from "./presentation.ts";
+import { catalogText, json, modelLabel, runList, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText } from "./presentation.ts";
 
-export const HELP = `pi-workflow run <path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR] [--model PROVIDER/MODEL]
+export function help(program = "workflow"): string {
+  return `${program} guide                    how to write a workflow: template, ctx API, model rules
+${program} init <name> [--cwd DIR]  write a starter .pi/workflows/<name>.ts
+${program} catalog [--cwd DIR]
+${program} validate <path.ts|name> [--cwd DIR]
+${program} run <path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR] [--model PROVIDER/MODEL[:THINKING]] [--thinking LEVEL]
   [--bg|--background] [--request-id ID] [--max-agents N] [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
-pi-workflow status <runId> [--verbose]
-pi-workflow poll <runId> [--interval 5s] [--until done|signal] [--once]
-pi-workflow watch <runId> [--interval 1s]
-pi-workflow list [--status running,failed] [--all]
-pi-workflow result|cancel <runId>
-pi-workflow revert <runId> [--keep-worktrees]
-pi-workflow retry <runId> [--from KEY] [--allow-changed]
-pi-workflow signal <runId> <key> '<json>'
-pi-workflow agents [--run ID]
-pi-workflow steer <runId> <agent> "message"
-pi-workflow catalog [--cwd DIR]
-pi-workflow validate <path.ts|name> [--cwd DIR]
-pi-workflow worker start|stop|status
+${program} status <runId> [--verbose]
+${program} poll <runId> [--interval 5s] [--until done|signal] [--once]
+${program} watch <runId> [--interval 1s]
+${program} list [--status running,failed] [--all]
+${program} result|cancel <runId>
+${program} revert <runId> [--keep-worktrees]
+${program} retry <runId> [--from KEY] [--allow-changed]
+${program} signal <runId> <key> '<json>'
+${program} agents [--run ID]
+${program} steer <runId> <agent> "message"
+${program} worker start|stop|status
 
 Every command accepts --json and --home DIR. poll/watch emit NDJSON.
 run attaches by default; Ctrl-C detaches without cancelling the durable run.
 Headless launches require PI_WORKFLOW_ALLOW_UNATTENDED=1.
 Exit codes: 0 success, 1 usage/validation, 2 failed, 3 cancelled, 4 worker unavailable.`;
+}
+
+export const HELP = help();
 
 export interface ClientOptions {
   home?: string;
@@ -65,6 +74,10 @@ export interface CliContext {
    * callback runs when the client stops waiting, with whether it saw the end.
    */
   onLaunch?: (runId: string, home: string | undefined, attached: boolean) => ((terminal: boolean) => void) | void;
+  /** Called when a command has shown a run's final outcome. */
+  onSettled?: (runId: string) => void;
+  /** How the user invokes commands, for help and hints: "workflow" in a shell, "/workflow" in Pi. */
+  program?: string;
 }
 
 class CliError extends Error {
@@ -135,6 +148,17 @@ function numberOption(value: string | undefined, name: string, integer = false):
   return n;
 }
 
+const THINKING_LEVELS: readonly string[] = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+
+/** `provider/model:high` selects a thinking level as `pi --model` does; other colons stay part of the model ID. */
+export function modelOption(value: string): { model: ModelRef; thinkingLevel?: ThinkingLevel } {
+  const at = value.lastIndexOf(":");
+  const level = at > 0 ? value.slice(at + 1) : "";
+  return THINKING_LEVELS.includes(level)
+    ? { model: value.slice(0, at) as ModelRef, thinkingLevel: level as ThinkingLevel }
+    : { model: value as ModelRef };
+}
+
 export function workflowReference(value: string, cwd: string): { path: string } | { name: string } {
   return value.includes("/") || value.includes("\\") || /\.[cm]?[jt]s$/.test(value)
     ? { path: resolve(cwd, value) }
@@ -158,6 +182,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
   const write = context.stdout ?? (text => process.stdout.write(text));
   const warn = context.stderr ?? (text => process.stderr.write(text));
   const client = context.client ?? defaultClient;
+  const program = context.program ?? "workflow";
   let jsonMode = argv.includes("--json");
   const emit = (value: unknown, human?: string) => write((jsonMode ? JSON.stringify(value ?? null) : human ?? json(value)) + "\n");
   try {
@@ -165,7 +190,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       args: argv, allowPositionals: true, strict: true,
       options: {
         json: { type: "boolean" }, home: { type: "string" }, cwd: { type: "string" }, help: { type: "boolean", short: "h" },
-        args: { type: "string" }, "args-file": { type: "string" }, model: { type: "string" },
+        args: { type: "string" }, "args-file": { type: "string" }, model: { type: "string" }, thinking: { type: "string" },
         "request-id": { type: "string" }, "keep-worktrees": { type: "boolean" },
         bg: { type: "boolean" }, background: { type: "boolean" }, "max-agents": { type: "string" },
         "max-cost-usd": { type: "string" }, "max-tokens": { type: "string" }, "budget-tokens": { type: "string" },
@@ -176,13 +201,13 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
     });
     jsonMode = values.json ?? false;
     const [action, ...args] = positionals;
-    if (values.help || !action || action === "help") { emit({ help: HELP }, HELP); return 0; }
+    if (values.help || !action || action === "help") { const text = help(program); emit({ help: text }, text); return 0; }
     const cwd = resolve(context.cwd ?? process.cwd(), values.cwd ?? ".");
     const home = values.home ? resolve(context.cwd ?? process.cwd(), values.home) : undefined;
     const options: ClientOptions = { home, signal: context.signal };
     const request = <T = unknown>(value: ControlRequest) => client.request(value, options) as Promise<T>;
     const count = (n: number, usage: string) => {
-      if (args.length !== n) throw new CliError(`Usage: pi-workflow ${usage}`);
+      if (args.length !== n) throw new CliError(`Usage: ${program} ${usage}`);
     };
     const status = (runId: string) => request<RunRecord>({ action: "status", runId, verbose: true });
     const poll = async (runId: string, foreground = false): Promise<number> => {
@@ -194,11 +219,16 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           context.signal?.throwIfAborted();
           const run = await status(runId);
           const terminal = TERMINAL_STATUSES.has(run.status);
+          if (terminal) context.onSettled?.(run.id);
           if (foreground) {
-            if (terminal) { emit({ ...run, runId: run.id }, runTree(run)); return statusExitCode(run.status); }
-            if (!jsonMode) warn(runTree(run) + "\n");
+            if (terminal) {
+              const outcome = run.result === undefined ? "" : `\n\n${typeof run.result === "string" ? run.result : json(run.result)}`;
+              emit({ ...run, runId: run.id }, runTree(run, Date.now(), program) + outcome);
+              return statusExitCode(run.status);
+            }
+            if (!jsonMode) warn(runTree(run, Date.now(), program) + "\n");
           } else {
-            emit(run, action === "watch" ? runTree(run) : runSummary(run));
+            emit(run, action === "watch" ? runTree(run, Date.now(), program) : runSummary(run));
             if (values.once) return 0;
             if (terminal) return statusExitCode(run.status);
             if (until === "signal" && run.status === "waiting_signal") return 0;
@@ -228,20 +258,25 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           maxTokens: numberOption(values["max-tokens"] ?? values["budget-tokens"], "max-tokens", true),
           maxDurationMs: numberOption(values["max-duration-ms"], "max-duration-ms", true),
         };
+        if (values.thinking !== undefined && !THINKING_LEVELS.includes(values.thinking))
+          throw new CliError(`--thinking must be one of ${THINKING_LEVELS.join(", ")}.`);
+        const selected = values.model === undefined ? undefined : modelOption(values.model);
         const launch: LaunchRequest = {
           action: "run", requestId: values["request-id"] ?? randomUUID(), workflow: workflowReference(args[0], cwd), args: workflowArgs, cwd,
-          origin: context.origin ?? { kind: "cli" }, model: values.model as ModelRef | undefined ?? context.model,
-          thinkingLevel: context.thinkingLevel, budget,
+          origin: context.origin ?? { kind: "cli" }, model: selected?.model ?? context.model,
+          thinkingLevel: values.thinking as ThinkingLevel | undefined ?? selected?.thinkingLevel ?? context.thinkingLevel, budget,
         };
         if (context.authorizeRun) await context.authorizeRun(launch); else assertUnattended(context.env ?? process.env);
         context.signal?.throwIfAborted();
-        const result = await request<{ runId: string; status: RunStatus }>(launch);
+        const result = await request<{ runId: string; status: RunStatus; model?: ModelRef }>(launch);
         const attached = !(values.bg || values.background);
         const release = context.onLaunch?.(result.runId, home, attached);
+        if (!result.model && !jsonMode) warn(`No model is set for run ${result.runId}: agents fail unless the workflow chooses one. Pass --model provider/model.\n`);
         if (!attached) {
-          emit(result, `run ${result.runId} ${result.status}\npoll: pi-workflow poll ${result.runId}\ncancel: pi-workflow cancel ${result.runId}`);
+          emit(result, `run ${result.runId} ${result.status} · ${modelLabel(result.model, launch.thinkingLevel)}\npoll: ${program} poll ${result.runId}\ncancel: ${program} cancel ${result.runId}`);
           return 0;
         }
+        if (!jsonMode) warn(`run ${result.runId} started · ${modelLabel(result.model, launch.thinkingLevel)}\n`);
         let terminal = false;
         try {
           const code = await poll(result.runId, true);
@@ -255,7 +290,8 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       case "status": {
         count(1, "status <runId> [--verbose]");
         const run = await request<RunRecord>({ action, runId: args[0], verbose: values.verbose });
-        emit(run, values.verbose ? runTree(run) : runSummary(run));
+        if (TERMINAL_STATUSES.has(run.status)) context.onSettled?.(run.id);
+        emit(run, values.verbose ? runTree(run, Date.now(), program) : runSummary(run));
         return 0;
       }
       case "list": {
@@ -270,6 +306,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       case "result": case "cancel": case "revert": {
         count(1, `${action} <runId>`);
         const result = await request(action === "revert" ? { action, runId: args[0], keepWorktrees: values["keep-worktrees"] } : { action, runId: args[0] });
+        if (action === "result") context.onSettled?.(args[0]);
         emit(result, typeof result === "string" ? result : undefined);
         return 0;
       }
@@ -289,30 +326,59 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         count(0, "agents [--run ID]");
         emit(await request({ action, runId: values.run }));
         return 0;
-      case "catalog":
+      case "catalog": {
         count(0, "catalog [--cwd DIR]");
-        emit(await request({ action, cwd }));
+        const entries = await request<CatalogEntry[]>({ action, cwd });
+        const searched = [join(cwd, ".pi", "workflows"), join(agentDirectory(context.env ?? process.env), "workflows")];
+        emit(entries, entries.length ? catalogText(entries)
+          : `No workflows in ${searched.join(" or ")}.\nStart one with: ${program} init <name>   (${program} guide explains the API)`);
         return 0;
+      }
+      case "guide": {
+        count(0, "guide");
+        const text = guide({
+          shell: program.startsWith("/") ? await shellCommand(context.env ?? process.env) : program,
+          sessionModel: context.model ? modelLabel(context.model, context.thinkingLevel) : undefined,
+        });
+        emit({ guide: text }, text);
+        return 0;
+      }
+      case "init": {
+        count(1, "init <name> [--cwd DIR]");
+        const name = args[0];
+        if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) throw new CliError("Workflow names are kebab-case, for example review-file.");
+        const directory = join(cwd, ".pi", "workflows");
+        const path = join(directory, `${name}.ts`);
+        await mkdir(directory, { recursive: true });
+        try { await writeFile(path, template(name), { flag: "wx" }); }
+        catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new CliError(`${path} already exists; edit it or choose another name.`);
+          throw error;
+        }
+        const model = program.startsWith("/") ? "" : " --model provider/model";
+        emit({ path, name }, `Created ${path}\nNext: ${program} validate ${name}\n      ${program} run ${name} --args '{"path":"README.md"}'${model}`);
+        return 0;
+      }
       case "validate": {
         count(1, "validate <path.ts|name>");
-        const result = await request<{ valid?: boolean; ok?: boolean }>({ action, workflow: workflowReference(args[0], cwd), cwd });
-        emit(result);
-        return result.valid === false || result.ok === false ? 1 : 0;
+        const result = await request<ValidationResult>({ action, workflow: workflowReference(args[0], cwd), cwd });
+        emit(result, validationText(result));
+        return result.valid === false ? 1 : 0;
       }
       case "worker": {
         count(1, "worker start|stop|status");
         if (args[0] === "start") emit(await client.ensure(options));
         else if (args[0] === "stop") emit(await client.rpc({ action: "stop" }, options));
         else if (args[0] === "status") emit(await client.rpc({ action: "ping" }, options));
-        else throw new CliError("Usage: pi-workflow worker start|stop|status");
+        else throw new CliError(`Usage: ${program} worker start|stop|status`);
         return 0;
       }
-      default: throw new CliError(`Unknown command ${JSON.stringify(action)}. Run pi-workflow --help.`);
+      default: throw new CliError(`Unknown command ${JSON.stringify(action)}. Run ${program} help.`);
     }
   } catch (error) {
     if (error instanceof DetachedError) {
       if (jsonMode) emit({ runId: error.runId, status: "detached" });
-      warn(`${error.message}\npoll: pi-workflow poll ${error.runId}\ncancel: pi-workflow cancel ${error.runId}\n`);
+      warn(`${error.message}\npoll: ${program} poll ${error.runId}\ncancel: ${program} cancel ${error.runId}\n`);
       return 0;
     }
     const info = errorInfo(error);

@@ -4,6 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { WorkflowClient } from "../src/cli.ts";
 import { registerOrchestration } from "../src/extension.ts";
+import { BIN_PATH, README_PATH } from "../src/guide.ts";
 import type { RunRecord, RunStatus } from "../src/index.ts";
 import type { ControlRequest } from "../src/protocol.ts";
 
@@ -21,7 +22,7 @@ function runRecord(id: string, status: RunStatus): RunRecord {
 /** A fake Pi host and worker client that record what the extension does. */
 function harness(statuses: Record<string, RunStatus[]>) {
   const handlers = new Map<string, Handler>();
-  const tools = new Map<string, { execute: (...args: unknown[]) => Promise<unknown> }>();
+  const tools = new Map<string, { description: string; promptGuidelines?: string[]; parameters: { properties: Record<string, any> }; execute: (...args: unknown[]) => Promise<unknown> }>();
   const commands = new Map<string, { handler: (args: string, ctx: ExtensionContext) => Promise<void> }>();
   const messages: Array<{ message: { content: string; details: { kind: string; runId?: string } }; options?: { triggerTurn?: boolean } }> = [];
   const entries: Entry[] = [];
@@ -29,7 +30,7 @@ function harness(statuses: Record<string, RunStatus[]>) {
   let launches = 0;
   const pi = {
     on: (name: string, handler: Handler) => { handlers.set(name, handler); },
-    registerTool: (tool: { name: string; execute: (...args: unknown[]) => Promise<unknown> }) => { tools.set(tool.name, tool); },
+    registerTool: (tool: Parameters<typeof tools.set>[1] & { name: string }) => { tools.set(tool.name, tool); },
     registerCommand: (name: string, command: { handler: (args: string, ctx: ExtensionContext) => Promise<void> }) => { commands.set(name, command); },
     sendMessage: (message: (typeof messages)[number]["message"], options?: (typeof messages)[number]["options"]) => { messages.push({ message, options }); },
     appendEntry: (customType: string, data: unknown) => { entries.push({ type: "custom", customType, data }); },
@@ -43,20 +44,24 @@ function harness(statuses: Record<string, RunStatus[]>) {
         const queue = statuses[request.runId] ?? ["completed"];
         return runRecord(request.runId, queue.length > 1 ? queue.shift()! : queue[0]);
       }
+      // The run finishes just as the agent asks for its result.
+      if (request.action === "result") { statuses[request.runId] = ["completed"]; return "done"; }
+      if (request.action === "catalog") return [];
       throw new Error(`unexpected ${request.action}`);
     },
     rpc: async () => ({}),
     ensure: async () => ({}),
   };
   const notices: string[] = [];
+  const agent = { busy: false };
   const context = (sessionId = "s1", branch: Entry[] = entries) => ({
-    cwd: "/w", mode: "rpc", hasUI: true, model: { provider: "faux", id: "faux-1" },
+    cwd: "/w", mode: "rpc", hasUI: true, model: { provider: "faux", id: "faux-1" }, isIdle: () => !agent.busy,
     sessionManager: { getSessionId: () => sessionId, getBranch: () => branch },
     ui: { confirm: async () => true, notify: (text: string) => { notices.push(text); }, setWidget: () => {} },
   }) as unknown as ExtensionContext;
   registerOrchestration(pi, { client, pollIntervalMs: 5, env: {} });
   const completions = () => messages.filter(item => item.message.details.kind === "completion");
-  return { handlers, tools, commands, messages, entries, requests, context, completions, notices };
+  return { handlers, tools, commands, messages, entries, requests, context, completions, notices, agent, statuses };
 }
 
 test("wait:true returns the outcome without a second completion turn", async () => {
@@ -109,7 +114,7 @@ test("a foreground /workflow run does not trigger a completion turn", async () =
   const ctx = h.context();
   await h.handlers.get("session_start")!({}, ctx);
   await h.commands.get("workflow")!.handler("run flow --interval 10ms", ctx);
-  assert.ok(h.messages.some(item => item.message.details.kind === "command" && /completed/.test(item.message.content)));
+  assert.ok(h.messages.some(item => item.message.details.kind === "command" && /completed[^]*\n\ndone$/.test(item.message.content)));
   await h.handlers.get("agent_settled")!({}, ctx);
   await delay(30);
   assert.deepEqual(h.completions(), []);
@@ -126,5 +131,74 @@ test("headless sessions need the unattended opt-in to launch", async () => {
   await assert.rejects(h.tools.get("workflow")!.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx),
     (error: { code?: string }) => error.code === "unattended_forbidden");
   assert.equal(h.requests.length, 0);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
+type ToolReply = { content: Array<{ text: string }>; details: any };
+
+test("the tool explains every action and an empty catalog teaches authoring", async () => {
+  const h = harness({});
+  const ctx = h.context();
+  const tool = h.tools.get("workflow")!;
+  for (const action of tool.parameters.properties.action.anyOf.map((item: { const: string }) => item.const))
+    assert.match(tool.description, new RegExp(`\\b${action}\\b`), action);
+  assert.ok(tool.promptGuidelines?.some(line => /`pi workflow` is not a command/.test(line)));
+  assert.match(tool.parameters.properties.budget.properties.maxAgents.description, /Cap only/);
+
+  const catalog = await tool.execute("call-1", { action: "catalog" }, undefined, undefined, ctx) as ToolReply;
+  assert.match(catalog.content[0].text, /^No saved workflows \(searched \/w\/\.pi\/workflows and .*\)\. To write one, call guide/);
+  assert.deepEqual(catalog.details.workflows, []);
+  assert.equal(catalog.details.searched[0], "/w/.pi/workflows");
+
+  // Without `workflow` on PATH, the guide gives a shell command that works anyway.
+  const guide = await tool.execute("call-2", { action: "guide" }, undefined, undefined, ctx) as ToolReply;
+  assert.match(guide.content[0].text, /defineWorkflow\(/);
+  assert.ok(guide.content[0].text.includes(README_PATH));
+  assert.ok(guide.content[0].text.includes(`node ${BIN_PATH} run review-file`));
+  assert.ok(guide.content[0].text.includes("This session's model is faux/faux-1:medium."));
+});
+
+test("reading a finished run's outcome replaces the completion turn, and status stays brief", async () => {
+  const h = harness({ "run-1": ["running"], "run-2": ["completed"] });
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  const tool = h.tools.get("workflow")!;
+  const launched = await tool.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx) as ToolReply;
+  assert.match(launched.content[0].text, /^Run run-1 queued\. No model is set/);
+  await delay(20);
+  const result = await tool.execute("call-2", { action: "result", runId: "run-1" }, undefined, undefined, ctx) as ToolReply;
+  assert.equal(result.details, "done");
+  await h.handlers.get("agent_settled")!({}, ctx);
+  await delay(30);
+  assert.deepEqual(h.completions(), []);
+  assert.ok(h.entries.some(entry => entry.type === "custom" && (entry.data as { done?: boolean }).done && (entry.data as { runId: string }).runId === "run-1"));
+
+  const status = await tool.execute("call-3", { action: "status", runId: "run-2" }, undefined, undefined, ctx) as ToolReply;
+  assert.deepEqual(Object.keys(status.details).sort(), ["result", "runId", "status", "summary", "workflow"]);
+  assert.equal(status.content[0].text, `${status.details.summary}\ndone`);
+  const verbose = await tool.execute("call-4", { action: "status", runId: "run-2", verbose: true }, undefined, undefined, ctx) as ToolReply;
+  assert.ok(Array.isArray(verbose.details.steps));
+  assert.match(verbose.content[0].text, /\n\nResult:\ndone$/);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
+test("a run that ends mid-turn waits for the turn, in case the agent reads it first", async () => {
+  const h = harness({ "run-1": ["running"], "run-2": ["running"] });
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  const tool = h.tools.get("workflow")!;
+  h.agent.busy = true;
+  await tool.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx);
+  await tool.execute("call-2", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx);
+  h.statuses["run-1"] = ["completed"];
+  h.statuses["run-2"] = ["completed"];
+  await delay(30);
+  assert.deepEqual(h.completions(), []);
+  // The agent checks run-1 itself during the turn; run-2 is left for the notification.
+  await tool.execute("call-3", { action: "status", runId: "run-1" }, undefined, undefined, ctx);
+  h.agent.busy = false;
+  await h.handlers.get("agent_settled")!({}, ctx);
+  await delay(30);
+  assert.deepEqual(h.completions().map(item => item.message.details.runId), ["run-2"]);
   await h.handlers.get("session_shutdown")!({}, ctx);
 });

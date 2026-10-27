@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { writeSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -8,15 +8,30 @@ import { Type } from "typebox";
 import { assertRootLaunch, assertUnattended } from "./client.ts";
 import { defaultClient, runCli, splitCommand, type WorkflowClient } from "./cli.ts";
 import { WorkflowError } from "./errors.ts";
-import type { ModelRef, RunRecord, RunStatus, ThinkingLevel } from "./index.ts";
+import { EXAMPLES_DIR, guide } from "./guide.ts";
+import type { CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
+import { linkCli, shellCommand } from "./link.ts";
+import { agentDirectory, workflowPaths } from "./paths.ts";
 import type { ControlRequest } from "./protocol.ts";
-import { json, modelResult, runSummary, TERMINAL_STATUSES } from "./presentation.ts";
+import { catalogText, json, modelLabel, modelResult, runBrief, runDetail, runList, runSummary, TERMINAL_STATUSES, validationText } from "./presentation.ts";
 
-export const TOOL_DESCRIPTION = `Define and run durable multi-agent workflows, and manage their progress.
-Agents run in a separate durable worker with read/write/edit/bash in the workflow cwd, NOT this session's extensions, MCP tools or skills.
-run returns immediately with a runId unless wait:true; the worker continues after this session closes. Use status, result or cancel to manage it.
-catalog lists workflows with descriptions and argument schemas. You may author a TypeScript workflow with defineWorkflow under .pi/workflows/, validate it, then launch it by path.
-Workflows are trusted code with the user's host permissions. Inner agents cannot launch workflows; compose scripts with ctx.workflow().`;
+export const TOOL_DESCRIPTION = `Run and manage durable multi-agent workflows. A workflow is a TypeScript file whose run(ctx) calls ctx.agent(), ctx.parallel() and similar; a separate worker runs it, so it outlives this session.
+Start with catalog. Before writing a workflow, call guide: it gives a starter file, the ctx API and which model runs. Save workflows as .pi/workflows/<name>.ts.
+Actions:
+- catalog: saved workflows with descriptions and args schemas.
+- guide: how to write a workflow.
+- validate: workflow. Checks that the file loads; flags code that breaks replay.
+- run: workflow, args, optional model, budget, cwd. Returns a runId at once, and this session gets a message when the run ends. wait:true returns the outcome instead (waitTimeoutMs, default 60000).
+- status: runId. A one-line summary, failed steps and the result; verbose:true lists every step.
+- result: runId, the full return value. list: recent runs; optional filter.
+- cancel, revert (undo ctx.step effects and worktrees), retry (optional from: step key): runId.
+- signal: runId, key, value; answers ctx.signal(). agents: background agents, optional runId. steer: runId, agent, message.
+Agents get read/write/edit/bash in the run's cwd, not this session's extensions, MCP tools or skills. Workflows are trusted code that runs with the user's permissions.`;
+
+export const PROMPT_GUIDELINES = [
+  "Use the workflow tool when the user asks for a workflow, or for work that splits across several agents in parallel or in stages. Call its guide action before writing a workflow file.",
+  "Users run workflows from a terminal with the `workflow` command (the guide action shows the exact command for this machine) and inside Pi with /workflow. `pi workflow` is not a command.",
+];
 
 function widgetLine(run: RunRecord, otherRuns: number, width: number): string {
   const phase = run.phases.findLast(item => item.done < item.agents) ?? run.phases.at(-1);
@@ -31,34 +46,42 @@ function widgetLine(run: RunRecord, otherRuns: number, width: number): string {
     truncateToWidth(title, available - nameWidth) + suffix, Math.max(0, width));
 }
 
-const actions = ["run", "status", "list", "result", "cancel", "retry", "revert", "signal", "steer", "agents", "catalog", "validate"] as const;
+const actions = ["catalog", "guide", "validate", "run", "status", "result", "list", "cancel", "retry", "revert", "signal", "steer", "agents"] as const;
 const statuses: RunStatus[] = ["queued", "running", "waiting_signal", "completed", "failed", "cancelled", "reverted", "outdated"];
-const workflowSchema = Type.Union([Type.Object({ path: Type.String() }), Type.Object({ name: Type.String() })]);
+const workflowSchema = Type.Union([
+  Type.Object({ path: Type.String({ description: "Workflow file, relative to cwd." }) }),
+  Type.Object({ name: Type.String({ description: "Name from catalog." }) }),
+], { description: "For run and validate: { name } from catalog, or { path } to a .ts file." });
 const parameters = Type.Object({
   action: Type.Union(actions.map(value => Type.Literal(value))),
   workflow: Type.Optional(workflowSchema),
-  args: Type.Optional(Type.Unknown()),
-  cwd: Type.Optional(Type.String()),
-  model: Type.Optional(Type.Union([Type.String(), Type.Object({ provider: Type.String(), modelId: Type.String() })])),
-  budget: Type.Optional(Type.Object({
-    maxAgents: Type.Optional(Type.Integer({ minimum: 1 })), maxCostUsd: Type.Optional(Type.Number({ minimum: 0 })),
-    maxTokens: Type.Optional(Type.Integer({ minimum: 1 })), maxDurationMs: Type.Optional(Type.Integer({ minimum: 1 })),
+  args: Type.Optional(Type.Unknown({ description: "For run: arguments matching the workflow's args schema (see catalog). Default {}." })),
+  cwd: Type.Optional(Type.String({ description: "Project directory for run, catalog and validate; agents work here. Default: this session's cwd." })),
+  model: Type.Optional(Type.Union([Type.String(), Type.Object({ provider: Type.String(), modelId: Type.String() })], {
+    description: "For run: \"provider/model\" for agents that choose none. Default: this session's model. The workflow's defaults.model takes precedence.",
   })),
-  runId: Type.Optional(Type.String()),
-  verbose: Type.Optional(Type.Boolean()),
-  wait: Type.Optional(Type.Boolean()),
-  waitTimeoutMs: Type.Optional(Type.Integer({ minimum: 1, maximum: 600_000 })),
-  from: Type.Optional(Type.String()),
-  allowChanged: Type.Optional(Type.Boolean()),
-  keepWorktrees: Type.Optional(Type.Boolean()),
-  key: Type.Optional(Type.String()),
-  value: Type.Optional(Type.Unknown()),
-  agent: Type.Optional(Type.String()),
-  message: Type.Optional(Type.String()),
+  budget: Type.Optional(Type.Object({
+    maxAgents: Type.Optional(Type.Integer({ minimum: 1, description: "Cap only; the workflow code decides how many agents run." })),
+    maxCostUsd: Type.Optional(Type.Number({ minimum: 0 })),
+    maxTokens: Type.Optional(Type.Integer({ minimum: 1 })), maxDurationMs: Type.Optional(Type.Integer({ minimum: 1 })),
+  }, { description: "For run: limits that stop the run when reached, merged over the workflow's own budget." })),
+  runId: Type.Optional(Type.String({ description: "Run to act on, from run or list." })),
+  verbose: Type.Optional(Type.Boolean({ description: "For status: every step with its result, usage and journal details." })),
+  wait: Type.Optional(Type.Boolean({ description: "For run: wait for the outcome instead of returning at once." })),
+  waitTimeoutMs: Type.Optional(Type.Integer({ minimum: 1, maximum: 600_000, description: "For run with wait: give up waiting after this long; the run continues. Default 60000." })),
+  from: Type.Optional(Type.String({ description: "For retry: step key to restart from; earlier steps keep their results." })),
+  allowChanged: Type.Optional(Type.Boolean({ description: "For retry: allow the workflow file to have changed since launch." })),
+  keepWorktrees: Type.Optional(Type.Boolean({ description: "For revert: keep agent worktrees." })),
+  key: Type.Optional(Type.String({ description: "For signal: the key the run waits on (status shows it)." })),
+  value: Type.Optional(Type.Unknown({ description: "For signal: JSON value to deliver, including null." })),
+  agent: Type.Optional(Type.String({ description: "For steer: background agent name." })),
+  message: Type.Optional(Type.String({ description: "For steer: message to send." })),
   filter: Type.Optional(Type.Object({
     status: Type.Optional(Type.Array(Type.Union(statuses.map(value => Type.Literal(value))))),
-    workflow: Type.Optional(Type.String()), all: Type.Optional(Type.Boolean()), limit: Type.Optional(Type.Integer({ minimum: 1 })),
-  })),
+    workflow: Type.Optional(Type.String()),
+    all: Type.Optional(Type.Boolean({ description: "Include child runs started by ctx.workflow()." })),
+    limit: Type.Optional(Type.Integer({ minimum: 1 })),
+  }, { description: "For list." })),
 });
 
 /** attached counts foreground waiters that report the outcome themselves. */
@@ -85,13 +108,18 @@ function modelName(value: ModelRef | undefined): string {
   return value === undefined ? "workflow default" : typeof value === "string" ? value : `${value.provider}/${value.modelId}`;
 }
 
-function toolResult(value: unknown, runId?: string) {
-  const view = modelResult(value, runId);
+/** text is what the model reads; structured is what codemode scripts receive. */
+function toolResult(value: unknown, runId?: string, text?: string) {
   return {
-    content: [{ type: "text" as const, text: view.text }],
+    content: [{ type: "text" as const, text: text ?? modelResult(value, runId).text }],
     details: value,
     structuredContent: JSON.parse(JSON.stringify(value ?? null)) as JsonValue,
   };
+}
+
+function briefResult(run: RunRecord, note?: string) {
+  const brief = runBrief(run);
+  return toolResult(brief.view, run.id, note ? `${brief.text}\n${note}` : brief.text);
 }
 
 export interface ExtensionOptions {
@@ -137,13 +165,16 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
             home: tracked.home, signal: session.controller.signal,
           }) as RunRecord;
           if (active !== session || session.controller.signal.aborted) return;
+          // Settled while this request was in flight: the caller already showed the outcome.
+          if (session.runs.get(tracked.runId) !== tracked) continue;
           if (TERMINAL_STATUSES.has(run.status)) {
             // A foreground wait already returns this outcome; a second message would trigger a redundant turn.
             if (tracked.attached) continue;
-            const result = modelResult(run.result ?? run.error ?? run.status, run.id);
+            // Mid-turn, the agent may still read the outcome itself; agent_settled polls again.
+            if (!session.context.isIdle()) continue;
             pi.sendMessage({
               customType: "workflow", display: true,
-              content: `[workflow] ${runSummary(run)}\n${result.text}`,
+              content: `[workflow] ${runBrief(run).text}`,
               details: { kind: "completion", runId: run.id, status: run.status },
             }, { triggerTurn: true, deliverAs: "followUp" });
             session.runs.delete(run.id);
@@ -201,6 +232,24 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     };
   }
 
+  /** A tool call or command showed this run's outcome, so the completion message would repeat it. */
+  function settle(ctx: ExtensionContext, runId: string) {
+    const session = active;
+    if (!session || session.id !== ctx.sessionManager.getSessionId()) return;
+    const tracked = session.runs.get(runId);
+    if (!tracked || tracked.attached) return;
+    session.runs.delete(runId);
+    pi.appendEntry("workflow_run", { runId, home: tracked.home, done: true });
+  }
+
+  /** Put the CLI on PATH once; Pi installs packages without linking their binaries. */
+  async function link(ctx: ExtensionContext) {
+    try {
+      const linked = await linkCli({ env, stateDir: workflowPaths(env.PI_WORKFLOW_HOME).home });
+      if (linked && ctx.hasUI) ctx.ui.notify(`Linked the workflow command at ${linked}. Delete it to opt out.`, "info");
+    } catch { /* Linking is a convenience; the guide falls back to an explicit node command. */ }
+  }
+
   async function restore(ctx: ExtensionContext) {
     dispose();
     const session = sessionFor(ctx);
@@ -226,13 +275,14 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     const workflow = "path" in launch.workflow ? launch.workflow.path : launch.workflow.name;
     const accepted = await ctx.ui.confirm("Run durable workflow?", [
       `Workflow: ${workflow}`, `Args: ${json(launch.args ?? {})}`, `Cwd: ${launch.cwd}`,
-      `Model: ${modelName(launch.model)}`, `Budget overrides: ${json(launch.budget ?? {})}; workflow/worker limits also apply.`,
+      `Model: ${modelName(launch.model)}${launch.thinkingLevel ? `:${launch.thinkingLevel}` : ""}, unless the workflow sets defaults.model`,
+      `Budget overrides: ${json(launch.budget ?? {})}; workflow/worker limits also apply.`,
       "Runs trusted code and agents with shell/file access after this session closes.",
     ].join("\n"));
     if (!accepted) throw new WorkflowError("cancelled", "Workflow launch cancelled.");
   }
 
-  pi.on("session_start", async (_event, ctx) => { await restore(ctx); });
+  pi.on("session_start", async (_event, ctx) => { await restore(ctx); await link(ctx); });
   pi.on("session_tree", async (_event, ctx) => { await restore(ctx); });
   pi.on("session_shutdown", async () => { dispose(); });
   pi.on("agent_settled", async (_event, ctx) => {
@@ -241,7 +291,8 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
 
   pi.registerTool({
     name: "workflow", label: "Workflow", description: TOOL_DESCRIPTION,
-    promptSnippet: "Run durable multi-agent workflows, inspect progress, deliver signals, or cancel work.",
+    promptSnippet: "Write and run durable multi-agent workflows (TypeScript); inspect progress, deliver signals, cancel. Its guide action explains authoring.",
+    promptGuidelines: PROMPT_GUIDELINES,
     parameters, outputSchema: Type.Unknown(), annotations: { readOnlyHint: false, openWorldHint: true },
     async execute(toolCallId, args, signal, onUpdate, ctx) {
       signal?.throwIfAborted();
@@ -257,6 +308,10 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
           thinkingLevel: pi.getThinkingLevel() as ThinkingLevel, budget: args.budget,
         };
         await authorize(ctx, request);
+      } else if (args.action === "guide") {
+        const sessionModel = ctx.model ? modelLabel({ provider: ctx.model.provider, modelId: ctx.model.id }, pi.getThinkingLevel()) : undefined;
+        const text = guide({ shell: await shellCommand(env), sessionModel });
+        return toolResult({ guide: text }, undefined, text);
       } else if (args.action === "catalog") request = { action: "catalog", cwd };
       else if (args.action === "validate") {
         if (!args.workflow) throw new WorkflowError("invalid_request", "validate requires workflow.path or workflow.name.");
@@ -277,12 +332,16 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
         }
       }
       signal?.throwIfAborted();
-      let result = await client.request(request, { signal });
+      const result = await client.request(request, { signal });
       if (request.action === "run") {
-        const launched = result as { runId: string; status: RunStatus };
+        const launched = result as { runId: string; status: RunStatus; model?: ModelRef };
+        const model = launched.model
+          ? `Agents use ${modelLabel(launched.model, request.thinkingLevel)} unless the workflow chooses another model.`
+          : "No model is set: agents fail unless the workflow chooses one. Pass model.";
         if (!args.wait) {
           track(ctx, launched.runId);
-          return toolResult(result, launched.runId);
+          return toolResult(result, launched.runId, `Run ${launched.runId} ${launched.status}. ${model}\n` +
+            "This session gets a message when it ends; status and result take this runId.");
         }
         const release = attach(ctx, launched.runId);
         let terminal = false;
@@ -290,24 +349,56 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
         const deadline = Date.now() + timeout;
         const timeoutSignal = AbortSignal.timeout(timeout);
         const waitSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+        let last: RunRecord | undefined;
         try {
           do {
             waitSignal.throwIfAborted();
-            const run = await client.request({ action: "status", runId: launched.runId, verbose: true }, {
+            last = await client.request({ action: "status", runId: launched.runId }, {
               signal: waitSignal, timeoutMs: Math.max(1, deadline - Date.now()),
             }) as RunRecord;
-            result = { ...run, runId: run.id };
-            terminal = TERMINAL_STATUSES.has(run.status);
+            terminal = TERMINAL_STATUSES.has(last.status);
             if (terminal || Date.now() >= deadline) break;
-            onUpdate?.(toolResult({ runId: run.id, status: run.status, progress: runSummary(run) }, run.id));
+            onUpdate?.(toolResult({ runId: last.id, status: last.status, progress: runSummary(last) }, last.id));
             await delay(Math.min(pollInterval, Math.max(1, deadline - Date.now())), undefined, { signal: waitSignal });
           } while (Date.now() < deadline);
         } catch (error) {
           if (signal?.aborted || !timeoutSignal.aborted) throw error;
         } finally { release(terminal); }
-        return toolResult(result, launched.runId);
+        if (!last) return toolResult(result, launched.runId, `Run ${launched.runId} ${launched.status}. ${model}\n` +
+          "Stopped waiting; the run continues and this session gets a message when it ends.");
+        return briefResult(last, terminal ? undefined : "Stopped waiting; the run continues and this session gets a message when it ends.");
       }
-      return toolResult(result, args.runId);
+      switch (request.action) {
+        case "status": {
+          const run = result as RunRecord;
+          if (TERMINAL_STATUSES.has(run.status)) settle(ctx, run.id);
+          return args.verbose ? toolResult(run, run.id, runDetail(run)) : briefResult(run);
+        }
+        case "result":
+          settle(ctx, request.runId);
+          return toolResult(result, request.runId);
+        case "cancel": case "retry": case "revert":
+          return briefResult(result as RunRecord);
+        case "list": {
+          const runs = result as RunRecord[];
+          const view = runs.map(run => ({
+            runId: run.id, workflow: run.workflow.name, status: run.status, summary: runSummary(run),
+            ...(run.origin.kind === "workflow" ? { parentRunId: run.origin.parentRunId } : {}),
+          }));
+          return toolResult(view, undefined, runList(runs));
+        }
+        case "catalog": {
+          const entries = result as CatalogEntry[];
+          const searched = [join(cwd, ".pi", "workflows"), join(agentDirectory(env), "workflows")];
+          const view = { workflows: entries, searched, examples: EXAMPLES_DIR };
+          return toolResult(view, undefined, entries.length ? `${catalogText(entries)}\nTo write a new workflow, call guide.`
+            : `No saved workflows (searched ${searched.join(" and ")}). To write one, call guide: it has a starter file to adapt.`);
+        }
+        case "validate":
+          return toolResult(result, undefined, validationText(result as ValidationResult));
+        default:
+          return toolResult(result, args.runId);
+      }
     },
   });
 
@@ -321,8 +412,10 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
           model: ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined,
           thinkingLevel: pi.getThinkingLevel() as ThinkingLevel,
           origin: { kind: "tool", sessionId: ctx.sessionManager.getSessionId() },
+          program: "/workflow",
           authorizeRun: launch => authorize(ctx, launch),
           onLaunch: (runId, home, attached) => attached ? attach(ctx, runId, home) : void track(ctx, runId, home),
+          onSettled: runId => settle(ctx, runId),
           stdout: text => {
             if (active !== session) return;
             pi.sendMessage({ customType: "workflow", content: text.trimEnd(), display: true, details: { kind: "command" } });

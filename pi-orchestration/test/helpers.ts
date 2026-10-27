@@ -14,7 +14,7 @@ import { TERMINAL_STATUSES } from "../src/protocol.ts";
 import { startWorker, type WorkerOptions } from "../src/worker.ts";
 
 export const MODEL = "faux/faux-1";
-export const CLI = new URL("../bin/pi-workflow.mjs", import.meta.url).pathname;
+export const CLI = new URL("../bin/workflow.mjs", import.meta.url).pathname;
 
 function text(message: Message | undefined): string {
   if (!message || message.role === "assistant") return "";
