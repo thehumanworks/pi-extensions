@@ -6,7 +6,7 @@ import { join } from "node:path";
 // Set PI_CANARY_SDK to the installed Pi dist/index.js when this standalone
 // extension is not in a package with @earendil-works/pi-coding-agent installed.
 const sdk = await import(process.env.PI_CANARY_SDK || "@earendil-works/pi-coding-agent");
-mock.module("@earendil-works/pi-coding-agent", () => sdk);
+await mock.module("@earendil-works/pi-coding-agent", () => sdk);
 // An absolute override lets the same tests measure a saved baseline version.
 const extensionPath = process.env.PI_CANARY_EXTENSION || join(import.meta.dir, "canary.ts");
 const canary = (await import(extensionPath)).default;
@@ -26,7 +26,7 @@ const assistant = (content: string | any[], stopReason = "stop") => ({
 });
 
 function harness(settings: Record<string, unknown> = { canary: "chirp" }) {
-  const handlers = new Map<string, Function>();
+  const handlers = new Map<string, (event: unknown, ctx: unknown) => unknown>();
   const commands = new Map<string, any>();
   const notifications: any[] = [];
   const summaryCalls: any[] = [];
@@ -52,7 +52,7 @@ function harness(settings: Record<string, unknown> = { canary: "chirp" }) {
   };
   let initialized = false;
   const pi: any = {
-    on: (name: string, fn: Function) => handlers.set(name, fn),
+    on: (name: string, fn: (event: unknown, ctx: unknown) => unknown) => handlers.set(name, fn),
     registerCommand: (name: string, command: any) => commands.set(name, command),
     getSettings: () => {
       if (!initialized) throw new Error("Settings are not available during extension loading");
@@ -400,7 +400,7 @@ describe("prefix detection", () => {
     await h.reply("chirp: Planning", "toolUse");
     const result = await h.reply(midRun("Bad commentary"), "toolUse");
     expect(result.entries[0].customType).toBe("canary-handover-request");
-    expect((await h.emit("tool_call", { toolName: "test_tool" })).block).toBe(true);
+    expect(await h.emit("tool_call", { toolName: "test_tool" })).toMatchObject({ block: true });
   });
   for (const reason of ["stop", "length"]) {
     test(`a miss on the final message (${reason}) does not request a handover, block, or compact`, async () => {
@@ -427,7 +427,7 @@ describe("handover, compaction, and fresh-context continuation", () => {
     expect(request.continue).toBe(true);
     expect(request.entries[0].content).toContain("CANARY FAILURE");
     expect(request.entries[0].content).toContain("Do not call tools");
-    expect((await h.emit("tool_call", { toolName: "test_tool" })).block).toBe(true);
+    expect(await h.emit("tool_call", { toolName: "test_tool" })).toMatchObject({ block: true });
     const result = await h.reply([thinking, { type: "text", text: handover }]);
     expect(result.continue).toBe(true);
     expect(result.entries.map((entry: any) => entry.type)).toEqual(["compaction", "custom_message"]);
@@ -464,7 +464,7 @@ describe("handover, compaction, and fresh-context continuation", () => {
   test("repeated blocked handover tool calls cannot loop forever", async () => {
     const h = harness(); await h.fail();
     for (let i = 0; i < 2; i++) {
-      expect((await h.emit("tool_call", { toolName: "test_tool" })).block).toBe(true);
+      expect(await h.emit("tool_call", { toolName: "test_tool" })).toMatchObject({ block: true });
       await h.reply([toolCall], "toolUse");
     }
     expect(h.abortCount()).toBe(1);
@@ -593,6 +593,10 @@ async function realSession(responses: any[], options: { fileSettings?: boolean; 
           } else {
             stream.push({ type: "done", reason: response.stopReason, message: response });
           }
+          stream.end();
+        }).catch((error: unknown) => {
+          const failure = assistant("", "error");
+          stream.push({ type: "error", reason: "error", error: { ...failure, errorMessage: String(error) } });
           stream.end();
         });
         return stream;

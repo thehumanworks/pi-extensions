@@ -100,7 +100,7 @@ test('Pi factory is offline without credentials and registers one direct tool pl
   const mock = mockFetch(() => assert.fail('factory/discovery must not fetch'));
   await isolated({}, mock.fetch, async () => {
     const pi = fakePi();
-    await extension(pi.api);
+    extension(pi.api);
     try {
       assert.deepEqual([...pi.tools.keys()].sort(), ['apply', 'discover', 'get', 'list', 'plan', 'read', 'request', 'schema', 'search'].map(name => `atlassian_${name}`).sort());
       const direct = [...pi.tools.values()].filter(tool => !tool.exposure || tool.exposure === 'direct' || tool.exposure === 'model-only');
@@ -142,7 +142,7 @@ test('discover activates only selected already-registered tools without replacin
   const mock = mockFetch(() => assert.fail('tool discovery must be local'));
   await isolated(DUMMY, mock.fetch, async () => {
     const pi = fakePi();
-    await extension(pi.api);
+    extension(pi.api);
     try {
       const before = [...pi.tools.keys()];
       const result = await pi.invoke('atlassian_discover', { kind: 'tools', query: 'get read' });
@@ -161,7 +161,7 @@ test('Pi tools expose matching structured results, bounded source recovery, and 
   const mock = mockFetch(() => json(largeIssue));
   await isolated(DUMMY, mock.fetch, async () => {
     const pi = fakePi();
-    await extension(pi.api);
+    extension(pi.api);
     try {
       await pi.emit('session_start');
       const result = await pi.invoke('atlassian_get', { product: 'jira', kind: 'issue', id: 'TEST-1' });
@@ -188,7 +188,7 @@ test('write opt-in authorizes adapter writes in TUI, RPC, print and JSON without
   const mock = mockFetch(() => new Response(null, { status: 204 }));
   await isolated({ ...DUMMY, ATLASSIAN_ALLOW_WRITES: '1' }, mock.fetch, async () => {
     const pi = fakePi();
-    await extension(pi.api);
+    extension(pi.api);
     try {
       // Discover current generated operation IDs rather than pinning historic names.
       let op: Record<string, unknown> | undefined;
@@ -359,7 +359,7 @@ test('discovery can explicitly activate registered codemode without eagerly acti
   const mock = mockFetch(() => assert.fail('loadout activation is offline'));
   await isolated(DUMMY, mock.fetch, async () => {
     const pi = fakePi();
-    await extension(pi.api);
+    extension(pi.api);
     const prototype = pi.tools.get('atlassian_discover')!;
     // Stand-in for the already-registered host builtin; never invoke this clone.
     pi.tools.set('codemode', { ...prototype, name: 'codemode' });

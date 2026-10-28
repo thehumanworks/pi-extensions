@@ -42,7 +42,7 @@ Local installs reference the checkout rather than copying it. If you previously 
 
 ## Develop
 
-Requires Node.js 22.19+ and npm; Bun is also required for the advisor, canary, fast, and remote tests. Run dependency installation from the repository root. `.npmrc` suppresses automatic peer installation because Pi provides the host SDK at runtime; explicit development dependencies provide the SDK for tests. All workspaces test against Pi 1.4.0. Pi Loop intentionally retains its separate, pinned worker runtime. The standalone `@nothumanwork/bot` SDK owns pinned Pi runtime dependencies; `pi-bot` uses that SDK rather than implementing another bot runtime.
+Requires Node.js 22.19+ and npm; Bun is also required for the advisor, canary, fast, and remote tests. Remote integration tests require OpenSSH client/server (`ssh`, `sshd`, `ssh-keygen`) and permission to bind local sockets. Run dependency installation from the repository root. `.npmrc` suppresses automatic peer installation because Pi provides the host SDK at runtime; explicit development dependencies provide the SDK for tests. All workspaces test against Pi 1.4.0. Pi Loop intentionally retains its separate, pinned worker runtime. The standalone `@nothumanwork/bot` SDK owns pinned Pi runtime dependencies; `pi-bot` uses that SDK rather than implementing another bot runtime.
 
 ```sh
 npm ci --ignore-scripts
@@ -54,6 +54,47 @@ npm run pack:check
 # Work on one extension
 npm test --workspace @nothumanwork/pi-voice
 ```
+
+### Correctness gate
+
+Run `npm run verify` before opening a PR: build → strict workspace typechecks →
+ESLint → rule regression fixtures → tooling/example formatting → all offline tests
+→ package-content checks. CI runs the same command on pull requests and pushes to
+`main` with Node 24 and Bun 1.4.4. Branch protection must be configured separately
+by a repository administrator if passing CI is to be required for merging.
+
+```sh
+npm run lint                        # typed async + AST correctness checks
+npm run test:quality                 # good/bad extension fixtures; no model calls
+npm run format:tools                 # format quality tooling and example only
+npx prettier --write path/to/file.ts # explicitly format the file you are editing
+pi -e ./examples/quality/hello.ts     # minimal interactive extension (no LLM call)
+```
+
+The lint project covers live TypeScript sources, tests, scripts, and examples,
+including newly registered workspaces. Generated `dist`, dependency trees, and
+historical memory evaluation output are not source; they are excluded. Negative
+rule fixtures are excluded from ordinary lint and linted explicitly by their tests.
+JavaScript receives the non-type-dependent AST checks too. `npm run typecheck`
+requires every workspace to expose a check script (no silent `--if-present`).
+
+The rules reject dropped promises (including `void promise`), async callbacks
+where a void return would lose failures, awaiting non-promises, async Promise
+executors, finally blocks that mask completion, unreachable/constant expressions,
+unsafe `Function` types/declaration merging, and unchecked TypeScript suppression.
+Node's `test`, `it`, and `describe` registrations are the narrow exception: the test
+runner owns those promises. Assertions and other async work still need awaiting
+or explicit rejection handling. Pi lifecycle callbacks may return promises; timers
+and event-emitter callbacks must handle their own rejections.
+
+These are bounded static checks, not proof of behavior. `any`, type assertions,
+SDK typing defects, external JSON, event races, cancellation and cleanup semantics
+still require runtime validation and regression tests. Broad `no-unsafe-*` rules
+are not enabled over the legacy boundary/mocking code without a separate audited
+migration; no blanket suppression or `void` escape hatch was added. Prettier is
+configured for all files but CI formatting is deliberately limited to the new
+quality tooling/example to avoid unrelated source-wide cosmetic churn. Neither
+`verify` nor the CI workflow runs paid/live evaluation commands.
 
 `package-lock.json` is the shared lockfile. Workspace-local npm/Bun/pnpm lockfiles have been removed. Older package-specific setup notes may describe standalone workflows; use the root commands above for this monorepo.
 

@@ -109,7 +109,10 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
       if (!signal.aborted && selected === slot) persist();
       if (signal.aborted) return;
       const work = watchReply(slot, handle, accepted, ctx, signal);
-      jobs.add(work); void work.finally(() => jobs.delete(work));
+      jobs.add(work);
+      work.finally(() => jobs.delete(work)).catch(error => {
+        if (!signal.aborted) notify(ctx, errorText(error), "error");
+      });
     }).catch(error => { if (!signal.aborted) notify(ctx, errorText(error), "error"); });
   }
   async function shutdown() {

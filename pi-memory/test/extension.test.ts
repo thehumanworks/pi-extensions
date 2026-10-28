@@ -15,13 +15,17 @@ import { autocomplete } from "../src/ui.ts";
 import { ProposalManager } from "../src/maintenance.ts";
 import { CapturePipeline } from "../src/capture.ts";
 
+// Harness events intentionally use partial payloads; the context and callback arity
+// still match Pi, while each test asserts its event-specific result shape.
+type HarnessEventHandler = (event: Record<string, unknown>, ctx: ExtensionContext) => any;
+
 async function harness(t: TestContext, mode = "inject", enabled = true, captureEnabled = false) {
   const cwd = await mkdtemp(join(tmpdir(), "pi-memory-extension-")), root = join(cwd, "memory");
-  const events = new Map<string, Function>(), tools = new Map<string, any>(), commands = new Map<string, any>();
+  const events = new Map<string, HarnessEventHandler>(), tools = new Map<string, any>(), commands = new Map<string, any>();
   let entries: any[] = [];
   const notifications: string[] = [];
   const pi = {
-    on: (event: string, handler: Function) => { events.set(event, handler); return () => events.delete(event); },
+    on: (event: string, handler: HarnessEventHandler) => { events.set(event, handler); return () => events.delete(event); },
     registerFlag: () => {}, getFlag: () => undefined,
     appendEntry: (customType: string, data: unknown) => entries.push({ type: "custom", customType, data }),
     getSettings: () => ({ memory: { enabled, dir: root, mode, capture: { enabled: captureEnabled, ...(captureEnabled ? { model: "test/test" } : {}) } } }),

@@ -123,7 +123,7 @@ async function waitForWork(engine: Engine, id: string, ctx: Context): Promise<vo
       inspect(watch.value);
       void watch.closed.then(result => {
         if (!finished) reject(new WorkflowError("swarm_interrupted", `Swarm queue watch ended: ${result.reason}.`));
-      });
+      }).catch(reject);
     });
   } finally { await watch.stop(); }
 }

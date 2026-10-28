@@ -347,21 +347,29 @@ test("separate CLI processes refresh a rotating credential exactly once", async 
       expiresAt: Date.now() - 400_000,
     });
     let requests = 0;
-    const server = createServer(async (request, response) => {
-      const chunks: Buffer[] = [];
-      for await (const chunk of request) chunks.push(Buffer.from(chunk));
-      const form = new URLSearchParams(Buffer.concat(chunks).toString());
-      assert.equal(form.get("refresh_token"), "old-refresh");
-      requests++;
-      await new Promise((resolve) => setTimeout(resolve, 60));
-      response.setHeader("content-type", "application/json");
-      response.end(
-        JSON.stringify({
-          access_token: "shared-access",
-          refresh_token: "rotated-refresh",
-          expires_in: 3600,
-        }),
-      );
+    const requestFailures: unknown[] = [];
+    const server = createServer((request, response) => {
+      void (async () => {
+        const chunks: Buffer[] = [];
+        for await (const chunk of request) chunks.push(Buffer.from(chunk));
+        const form = new URLSearchParams(Buffer.concat(chunks).toString());
+        assert.equal(form.get("refresh_token"), "old-refresh");
+        requests++;
+        await new Promise((resolve) => setTimeout(resolve, 60));
+        response.setHeader("content-type", "application/json");
+        response.end(
+          JSON.stringify({
+            access_token: "shared-access",
+            refresh_token: "rotated-refresh",
+            expires_in: 3600,
+          }),
+        );
+      })().catch((error: unknown) => {
+        requestFailures.push(error);
+        response.destroy(
+          error instanceof Error ? error : new Error(String(error)),
+        );
+      });
     });
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve),
@@ -376,6 +384,7 @@ test("separate CLI processes refresh a rotating credential exactly once", async 
         await Promise.all(Array.from({ length: 4 }, () => child(source))),
         Array(4).fill("shared-access"),
       );
+      assert.deepEqual(requestFailures, []);
       assert.equal(requests, 1);
       assert.equal(
         JSON.parse(await readFile(authPath, "utf8")).token.refresh_token,
@@ -388,3 +397,37 @@ test("separate CLI processes refresh a rotating credential exactly once", async 
     }
   });
 });
+
+for (const successfulRefresh of [false, true]) {
+  test(`lock cleanup failure ${successfulRefresh ? "is reported after success" : "does not mask the refresh failure"}`, async () => {
+    await fixture(async (_directory, authPath) => {
+      await seed(authPath);
+      const auth = createLocalAuth({
+        authPath,
+        fetch: async () => {
+          // Force lock-directory removal to fail without modifying another process's lock.
+          await writeFile(join(`${authPath}.lock`, "fixture"), "prevent rmdir");
+          return new Response(
+            JSON.stringify(
+              successfulRefresh
+                ? {
+                    access_token: "fresh",
+                    refresh_token: "next",
+                    expires_in: 3600,
+                  }
+                : { error: "invalid_grant" },
+            ),
+            {
+              status: successfulRefresh ? 200 : 400,
+              headers: { "content-type": "application/json" },
+            },
+          );
+        },
+      });
+      await assert.rejects(
+        auth.refresh(),
+        successfulRefresh ? /Unable to release/ : /session has expired/,
+      );
+    });
+  });
+}

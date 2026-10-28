@@ -82,7 +82,12 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   if (options === "help") { console.log(HELP); return 0; }
   const running = await serve(options);
   console.log(`pi-bot-server ${VERSION} listening on ${running.url} (OpenAPI: ${running.url}/openapi.json; bots in ${botsRoot()})`);
-  const stop = () => { void running.close().then(() => process.exit(0)); };
+  const stop = () => {
+    void running.close().then(() => process.exit(0)).catch(error => {
+      console.error("pi-bot-server: shutdown failed:", error);
+      process.exit(1);
+    });
+  };
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
   return new Promise(() => {}); // runs until a signal arrives

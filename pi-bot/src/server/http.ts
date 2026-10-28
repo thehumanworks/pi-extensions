@@ -177,7 +177,11 @@ export function createApp(deps: AppDependencies): RequestListener & { routes: re
   });
 
   const listener: RequestListener = (req, res) => {
-    void dispatch(routes, req, res);
+    void dispatch(routes, req, res).catch(error => {
+      // dispatch normally sends an error response; writing that response can fail too.
+      console.error("pi-bot-server: request dispatch failed:", error);
+      res.destroy();
+    });
   };
   return Object.assign(listener, { routes: routes as readonly Route[] });
 }

@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node", "bun"]
+  },
+  "include": [
+    "bot/**/*.ts",
+    "bot/**/*.mts",
+    "bot/**/*.cts",
+    "pi-*/**/*.ts",
+    "pi-*/**/*.mts",
+    "pi-*/**/*.cts",
+    "scripts/**/*.ts",
+    "scripts/**/*.mts",
+    "scripts/**/*.cts",
+    "examples/**/*.ts",
+    "examples/**/*.mts",
+    "examples/**/*.cts"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/dist",
+    "**/eval/results",
+    "**/eval/long/results",
+    "**/eval/long/repair-templates*",
+    "**/eval/long/state-*"
+  ]
+}

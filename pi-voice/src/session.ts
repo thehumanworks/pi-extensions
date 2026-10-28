@@ -192,7 +192,7 @@ export class VoiceSession {
     if (this.stopped || this.failed) return;
     this.failed = true;
     try { this.options.onFailure(error); } catch { /* Do not throw through native callbacks. */ }
-    finally { void this.stop(); }
+    finally { void this.stop().catch(() => { console.error("[voice] Failed to release the voice session."); }); }
   }
 
   stop(): Promise<void> {

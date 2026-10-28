@@ -44,11 +44,11 @@ try {
           if (shuttingDown) throw new Error("Worker is stopping.");
           const result = await scheduler.request(request);
           socket.end(JSON.stringify({ ok: true, result }) + "\n");
-          if (request.action === "stop") socket.once("close", () => { void shutdown(); });
+          if (request.action === "stop") socket.once("close", () => { void shutdown().catch(error => { console.error("[loop shutdown]", error); process.exitCode = 1; }); });
         } catch (error) {
           socket.end(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }) + "\n");
         }
-      })();
+      })().catch(error => { console.error("[loop request]", error); socket.destroy(); });
     });
   });
   async function shutdown() {
@@ -57,7 +57,7 @@ try {
     server.close();
     await scheduler.close();
     await rm(paths.socket, { force: true });
-    await release();
+    release();
   }
   await rm(paths.socket, { force: true });
   await new Promise<void>((resolve, reject) => {
@@ -69,8 +69,8 @@ try {
   for (const signal of ["SIGTERM", "SIGINT"] as const) process.on(signal, () => { void shutdown().catch(error => { console.error(error); process.exit(1); }); });
   scheduler.harness.closed.then(end => {
     if (end.reason === "failed") { console.error("[loop] Storage failed:", end.error); process.exit(1); }
-  });
+  }).catch(error => { console.error("[loop storage]", error); process.exit(1); });
 } catch (error) {
-  await release();
+  release();
   throw error;
 }

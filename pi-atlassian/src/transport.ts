@@ -111,7 +111,7 @@ export class Transport {
     const reader = response.body.getReader();
     const parts: Uint8Array[] = [];
     let bytes = 0;
-    const abort = (): void => { void reader.cancel(); };
+    const abort = (): void => { void reader.cancel().catch(() => { /* Abort is reported by throwIfAborted; cancellation is best effort. */ }); };
     signal.addEventListener('abort', abort, { once: true });
     try {
       for (;;) {

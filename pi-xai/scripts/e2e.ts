@@ -207,7 +207,10 @@ try {
   });
   timeout = setTimeout(() => {
     timedOut = true;
-    void session?.abort();
+    if (session)
+      void session.abort().catch((error: unknown) => {
+        record.error = error instanceof Error ? error.message : String(error);
+      });
   }, 120000);
   await session.prompt(
     `Run a short genuine end-to-end test of this xAI extension using code mode. Only read-only metadata tools are available. All bridge helpers are asynchronous and MUST be awaited. Start the codemode script with const namespace = await describeNamespace("xai_models"); const matches = await searchTools("models", {namespace:"xai_models",limit:10}); use matches.some(tool => tool.name === "xai_models_list") for discovery_found; await tools.xai_meta_capabilities({}); await tools.xai_meta_describe_tool({name:"xai_models_list"}); then await tools.xai_models_list({request:{maxRetries:0,timeout:20000}}). Print one compact JSON object using text() with EXACT fields: namespace: namespace.name, discovery_found: whether search found xai_models_list, sdk_version: capabilities.sdk.version, modules: capabilities.modules.map(m=>m.name), schema_type: description.parameters.type, live_status: live.http.status, model_count: live.data.length, first_models: first three model IDs from live.data. If live metadata fails, still print the successful local discovery/capabilities/schema results and the exact error. Do not print full model metadata or headers. Return a compact final JSON summary based only on these real tool results. Do not perform generation, file access, other API calls, or invent results.`,

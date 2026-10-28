@@ -1,0 +1,2 @@
+export {};
+await 42;

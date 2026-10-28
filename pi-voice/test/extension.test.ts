@@ -21,11 +21,12 @@ async function fixture() {
   let dictationOptions: DictationOptions | undefined;
   let starts = 0, stops = 0, mutes = 0, widget = false, toggles = 0, dictationStops = 0, status: string | undefined;
   let startError: Error | undefined;
+  let stopError: Error | undefined;
   let editor = "";
   const fakeSession = {
     state: { phase: "listening" },
     async start() { starts++; if (startError) throw startError; },
-    async stop() { stops++; },
+    async stop() { stops++; if (stopError) throw stopError; },
     toggleMute() { mutes++; },
     backendDelegationStarted() {}, backendMessage() {}, backendSettled() {},
   } as unknown as VoiceSession;
@@ -65,6 +66,7 @@ async function fixture() {
     counts: () => ({ starts, stops, mutes, widget }),
     dictation: () => ({ options: dictationOptions, toggles, stops: dictationStops, status }),
     failStart: (error: Error) => { startError = error; },
+    failStop: (error: Error) => { stopError = error; },
     get editor() { return editor; }, set editor(value: string) { editor = value; },
     cleanup: () => rm(directory, { recursive: true }),
   };
@@ -172,4 +174,18 @@ test("/voice dictate skips realtime and inserts transcripts into the editor", as
     options.onText("late");
     assert.ok(!editor().endsWith("late"));
   } finally { await f.command("off"); await f.cleanup(); }
+});
+
+
+test("stop rejection reaches its caller without an unhandled cleanup promise", async () => {
+  const f = await fixture();
+  try {
+    await f.command("on");
+    f.failStop(new Error("stop failed"));
+    await assert.rejects(f.command("off"), /stop failed/);
+    // A finally() chain used only for cleanup used to reject independently here.
+    await new Promise<void>(resolve => { setImmediate(resolve); });
+    await f.command("off");
+    assert.equal(f.counts().stops, 1);
+  } finally { await f.cleanup(); }
 });

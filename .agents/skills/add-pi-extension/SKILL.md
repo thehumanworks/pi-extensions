@@ -99,13 +99,15 @@ Use the installed Pi extension API documentation before implementing behavior. E
 
 ```sh
 npm run check --workspace @nothumanwork/pi-example
+npm run lint
+npm run test:quality
 npm test --workspace @nothumanwork/pi-example
 npm run pack:check
 npm run test:scripts
 npm run publish:package -- pi-example --dry-run
 ```
 
-The dry run runs npm packaging lifecycle scripts but does not upload or require login. Review its file list for missing runtime files and accidental sensitive data. For a significant change also run the full root checks and tests. Verify reproducibility with `npm ci --ignore-scripts` when appropriate.
+The dry run runs npm packaging lifecycle scripts but does not upload or require login. Review its file list for missing runtime files and accidental sensitive data. Before handoff run `npm run verify`, the same correctness gate as CI. Every workspace must expose a `check` script; the root typecheck fails if one is missing. Return/await lifecycle promises and handle detached work rejections; `void` alone is not rejection handling. Use `examples/quality/hello.ts` as a runnable minimal example. For a significant change also run the full root checks and tests. Verify reproducibility with `npm ci --ignore-scripts` when appropriate.
 
 ## Release handoff
 

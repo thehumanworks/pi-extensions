@@ -61,9 +61,9 @@ export async function startWorker(options: WorkerOptions = {}) {
               default: data = await engine.request(request);
             }
             reply({ ok: true, data });
-            if (request.action === "stop") socket.once("close", () => { void close(); });
+            if (request.action === "stop") socket.once("close", () => { void close().catch(error => { console.error("[workflow shutdown]", error); process.exitCode = 1; }); });
           } catch (error) { reply({ ok: false, error: errorDetails(error) }); }
-        })();
+        })().catch(error => { console.error("[workflow request]", error); socket.destroy(); });
       });
     });
     const close = (): Promise<void> => stopping ??= (async () => {
@@ -95,7 +95,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       });
       void worker.engine.harness.closed.then(end => {
         if (end.reason === "failed") { console.error("[workflow] Storage failed:", end.error); process.exit(1); }
-      });
+      }).catch(error => { console.error("[workflow storage]", error); process.exit(1); });
     }
   } catch (error) { console.error(`[workflow] ${error instanceof Error ? error.message : String(error)}`); process.exitCode = 1; }
 }

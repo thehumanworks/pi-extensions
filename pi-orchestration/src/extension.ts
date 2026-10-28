@@ -152,7 +152,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     if (active !== session || session.controller.signal.aborted || !session.runs.size || session.timer) return;
     session.timer = setTimeout(() => {
       session.timer = undefined;
-      void pollSession(session);
+      void pollSession(session).catch(error => { console.error("[workflow poll]", error); });
     }, pollInterval);
     session.timer.unref();
   }
