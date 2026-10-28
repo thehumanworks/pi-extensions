@@ -19,6 +19,9 @@ export interface BotPatch {
   thinking?: ThinkingLevel | null;
   inherit?: "none" | "global";
   tools?: string[] | null;
+  excludeTools?: string[] | null;
+  excludeExtensions?: string[] | null;
+  excludeMcpServers?: string[] | null;
   builtinTools?: string[] | null;
   skills?: string[] | null;
   maintenance?: boolean;
@@ -81,7 +84,7 @@ export async function editBot(source: string, patch: BotPatch): Promise<{ source
     } else {
       if (patch.prompt !== undefined && patch.edits !== undefined) throw new BotError("INVALID_INPUT", "Use prompt or edits, not both.");
       const { frontmatter, body } = parseFrontmatter<Record<string, unknown>>(current);
-      for (const key of ["description", "model", "thinking", "inherit", "tools", "builtinTools", "skills", "maintenance"] as const) {
+      for (const key of ["description", "model", "thinking", "inherit", "tools", "excludeTools", "excludeExtensions", "excludeMcpServers", "builtinTools", "skills", "maintenance"] as const) {
         if (patch[key] === null) delete frontmatter[key];
         else if (patch[key] !== undefined) frontmatter[key] = patch[key];
       }

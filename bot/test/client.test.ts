@@ -41,7 +41,7 @@ test("observed run reads its own NDJSON stream until run_settled, without a sess
   const events: BotEvent[] = [];
   const pending = client.run("work", { requestId: "one", onEvent: event => events.push(event) });
   await eventually(() => events.length > 0); assert.equal(events[0].type, "run_accepted"); assert.equal(events[0].runId, "run-1");
-  f.emitRun("run-1", { type: "message_update", sessionId: "session-1", data: { changes: [{ type: "text_delta", delta: "do" }] } });
+  f.emitRun("run-1", { type: "message_update", sessionId: "session-1", data: { changes: [{ type: "text_delta", contentIndex: 0, delta: "do" }] } });
   await eventually(() => events.length === 2);
   f.complete("run-1");
   const result = await pending; assert.equal(result.status, "completed"); assert.equal(result.output, "done");
@@ -50,18 +50,10 @@ test("observed run reads its own NDJSON stream until run_settled, without a sess
   const existing = await client.run("work", { requestId: "one" }); assert.equal(existing.runId, "run-1");
 });
 
-test("observed run falls back to session watch and polling on a server without run streams", async t => {
-  const f = fixture(); const server = await serve("ignored", { bot: f.bot, port: 0 }); t.after(() => server.close());
-  // An older server ignores Accept and answers 202 JSON.
-  const older: typeof fetch = (input, init) => fetch(input, { ...init, headers: Object.fromEntries(Object.entries(init?.headers ?? {}).filter(([key]) => key !== "Accept")) });
-  const client = connectBot(server.url, { pollIntervalMs: 5, fetch: older }); t.after(() => client.close());
-  const events: BotEvent[] = [];
-  const pending = client.run("work", { onEvent: event => events.push(event) });
-  await eventually(() => events.length > 0); assert.equal(events[0].type, "snapshot");
-  f.complete("run-1");
-  const result = await pending; assert.equal(result.status, "completed"); assert.equal(result.output, "done");
-  assert.ok(events.some(event => event.type === "run"));
-  await eventually(() => f.unsubscribed === 1); assert.deepEqual(f.cancelled, []);
+test("observed runs require the canonical NDJSON contract rather than a legacy fallback", async t => {
+  const client = connectBot("http://invalid.test", { fetch: async () => new Response("{}", { headers: { "Content-Type": "application/json" } }) });
+  t.after(() => client.close());
+  await assert.rejects(client.run("work", { onEvent() {} }), /Expected an NDJSON run stream/);
 });
 
 test("explicit run AbortSignal cancels the admitted remote run and closes its event stream", async t => {
@@ -114,7 +106,7 @@ test("idle watch unsubscribe/abort/reconnect closes cleanly without cancelling a
   const controller = new AbortController();
   const stop2 = await client.watch("session-1", event => events.push(event), { signal: controller.signal });
   await eventually(() => events.length === 2);
-  assert.equal((events[1].data as { runs: Array<{ status: string }> }).runs[0].status, "completed");
+  assert.equal((events[1].data as { run: { status: string } }).run.status, "completed");
   controller.abort(); await stop2(); await eventually(() => f.unsubscribed === 2);
   assert.deepEqual(errors, []); assert.deepEqual(f.cancelled, []);
 });

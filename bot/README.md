@@ -2,9 +2,9 @@
 
 Directory-defined, self-improving **bots**, powered by Pi. Embed a bot in a Node application, run it from the shell, or serve it as a long-running HTTP process. No Pi extension or global `pi` executable is needed for execution.
 
-This package uses Pi's `pi-durable` conversation/model loop, `pi-ai` providers, and `pi-coding-agent` model configuration and built-in tools. It does not implement another model loop or credential store. The separate [`@nothumanwork/pi-bot`](../pi-bot/README.md) package supplies Pi commands and rendering.
+Bots use the user's global Pi extensions, MCP servers, skills and tool defaults unless explicitly excluded. The default executor is Pi's native `AgentSession`; `pi-durable` owns the persistent run queue and records. Bots with `inherit: none` and no native Pi extension factories use the durable conversation executor. Neither path implements another model loop or credential store. The separate [`@nothumanwork/pi-bot`](../pi-bot/README.md) package supplies Pi commands and rendering.
 
-**Requirements:** Node **22.19+**, a Unix-like host with **`flock(1)`**, and Pi provider configuration or a supplied `Models` collection. Worker lifecycle tests run on Linux. The current BOT format is **`format: 2`**; unversioned/other formats and native Pi conversation files are not supported or imported.
+**Requirements:** Node **22.19+**, a Unix-like host with **`flock(1)`**, and Pi provider configuration or a supplied `Models` collection. Worker lifecycle tests run on Linux. `BOT.md` needs a name, description and persona—no format or version field. Global Pi extensions and MCP are inherited by default.
 
 ## Quick start
 
@@ -98,7 +98,7 @@ A `BotHandle` exposes `info`, `submit`, `run`, `getRun`, `listSessions`, `watch`
 
 Sessions bind their cwd at creation. `session: "new"` creates one; `"last"` selects the latest for the effective cwd; an explicit `dconv:…` resumes its original cwd. An explicit conflicting cwd is rejected, never silently forked. To work elsewhere, start a new conversation. Watches deliver a current snapshot followed by events, **not** a replayable event log. Resubscribe for a fresh snapshot after disconnect.
 
-`run`/`submit` signals explicitly cancel admitted work. Disconnecting a watch or closing an HTTP client does not cancel accepted work. Closing an owning local runtime suspends accepted work for recovery; it is not a blanket cancellation. `callTool` validates and serializes a direct call but is not a durable submitted run.
+`run`/`submit` signals explicitly cancel admitted work. Disconnecting a watch or closing an HTTP client does not cancel accepted work. Closing an owning local runtime is not a blanket cancellation of queued work. Interrupted native Pi requests fail closed rather than replaying possibly completed external effects; the isolated durable executor can suspend work for recovery. `callTool` validates and serializes a direct call but is not a durable submitted run.
 
 ## Bot layout and capabilities
 
@@ -129,12 +129,13 @@ The default scaffold is intentionally open to newly authored capabilities:
 
 ```yaml
 ---
-format: 2
 name: reviewer
 description: Reviews code and improves its own review procedures.
-inherit: none
-builtinTools: [read, bash, edit, write]
+# Global Pi extensions, MCP, skills and tool defaults are inherited automatically.
 maintenance: true
+# excludeTools: [bash, "mcp__internal__*"]
+# excludeExtensions: ["some-extension"]
+# excludeMcpServers: [internal]
 # model: provider/model-id     # optional: use Pi's saved default
 # No tools/skills allowlist: discover authored capabilities automatically.
 ---
@@ -142,13 +143,15 @@ You are a precise reviewer. Cite files and verify claims with tests.
 Improve your own tools, skills and persona when useful.
 ```
 
-- `inherit: none` is the default. No workspace `.pi` resources are inherited.
-- `builtinTools` selects Pi built-ins alongside discovered authored tools. Available built-ins: `read`, `bash`, `edit`, `write`, `find`, `grep`, `ls`.
+- Omitted `inherit` means `global`: installed user-global extensions, MCP servers, skills, instructions and tool defaults are available. Workspace `.pi` resources are not inherited. `inherit: none` explicitly opts out of all global capabilities; provider credentials are independent.
+- `excludeTools`, `excludeExtensions`, and `excludeMcpServers` remove individual capabilities using exact names or `*` patterns. Excluded MCP servers are not connected. Tool exclusions apply to nested calls too. Extension exclusions match entry paths, filenames/stems, index-directory names, or `builtin:mcp` / `builtin:codemode` / `builtin:tool_search`.
+- Bot-local `tools/` and `extensions/` are additive. Local tool/skill definitions override the global layer; duplicate authored definitions within a layer fail.
+- `builtinTools` optionally overrides the initial built-in selection; otherwise the user's `defaultTools` applies (fallback: `read`, `bash`, `edit`, `write`). Available built-ins also include `find`, `grep`, `ls`. `builtinTools: []` does not remove inherited extension/MCP tools.
 - `bot_history` is enabled by default for read-only recall across this bot's workspaces and threads, independently of `maintenance`. With an explicit `tools` allowlist, include `bot_history` to enable it; `tools: []` still means none.
 - `maintenance: true` adds `bot_read`, `bot_write`, `bot_edit`, `bot_reload`. They access source and memory; not SDK storage, credential files or dependency installations. This is a convenience scope, **not a sandbox** against shell or arbitrary code.
-- An explicit `tools` array restricts **all** tools, including maintenance and built-ins. `tools: []` means **none**. Unknown names fail validation.
+- An explicit `tools` array remains a restrictive allowlist for **all** tools, including maintenance and built-ins. `tools: []` means **none**. Usually omit it and use exclusions instead. Global extension/MCP tools are discovered at session startup, not during offline validation.
 - Skills are discovered locally. An explicit `skills` array restricts them by name/path; `skills: []` means **none**.
-- `inherit: global` opts into supported installed user-global extensions, skills, instructions and tool defaults. Local tools/skills override the global layer; duplicates within a layer fail. Global prompt templates/themes produce diagnostics instead of pretending to run. Provider credentials do not depend on inheritance.
+- Global prompt templates/themes produce diagnostics instead of pretending to run a UI. Inspection/validation does not execute global extension factories or connect MCP servers. Runtime `info()` includes discovered tools after sessions initialize.
 
 ### Recall across chats
 
@@ -169,7 +172,7 @@ bot tool call reviewer bot_history --input '{"action":"read","session":"dconv:2"
 
 The same tool is available through `bot.callTool("bot_history", input)` and the HTTP tool endpoint. It never resumes or modifies the retrieved thread. `session: "last"` remains a convenience for resuming the latest thread **in the effective execution workspace**; it does not limit memory or recall. Explicit session IDs still resume their original workspace.
 
-Existing conversations in the selected home are immediately searchable; no re-indexing or migration is required. Separate bots, explicitly separate state directories and ephemeral copies do not share history. Native Pi sessions and old-format bot histories are not imported.
+Both native Pi execution and the isolated durable executor expose the same history result contract. Entry IDs are immutable positive integers scoped to a session; do not interpret them as timestamps or array offsets. Search and read results have `{ sessionId, cwd, entryId, kind: "message", text, offset, totalChars, nextOffset? }`; list results contain session metadata only. Pages are `{ items, nextCursor? }`. Separate bots, explicitly separate state directories and ephemeral copies do not share history. No legacy-history import or migration is provided.
 
 ### Typed tools
 
@@ -197,13 +200,13 @@ Context contains `cwd`, `sourceDir`, `stateDir`, `sessionId`, optional `runId`, 
 
 Top-level `.ts`, `.js`, `.mjs`, `.cjs` files in `tools/` are entry points. A child capability directory needs an `index.ts`, `index.js` or `index.mjs`. Keep shared imports in `lib/`; do not put helper modules beside auto-discovered tool entry points. SDK root imports expose the public API, including `openBot` for explicitly authored peer-delegation tools. Use ESM imports for SDK subpaths; first-load synchronous `require()` of those lazy subpaths is not guaranteed. Never recursively open the same owned source; delegate to another source or its daemon.
 
-`extensions/review.ts` can default-export `defineExtension({ name: "review", tools: [tool], instructions: "…" })`. It is a common bot capability bundle, not a raw `pi-durable` extension. A limited classic Pi factory bridge supports **`pi.registerTool` only**, with a minimal execution context (`cwd`, `signal`, `hasUI: false`, `mode: "print"`). Other Pi lifecycle/provider/UI APIs, delegated-tool exposure and unsupported result fields fail explicitly. Consequently, `inherit: global` is not compatible with every installed Pi package. Provider extensions requiring registration hooks also need a dedicated adapter; built-in providers and `models.json` do not.
+`extensions/review.ts` can default-export `defineExtension({ name: "review", tools: [tool], instructions: "…" })`, or a native Pi extension factory. Native factories use Pi's real extension runtime, including lifecycle handlers, tool hooks, nested calls and MCP registration—not a registerTool-only bridge. Native execution is headless: interactive UI and session-replacement commands are not a complete Pi CLI embedding. Initial model selection still requires a configured model catalog or supplied `Models`; a model defined only by an extension's provider registration cannot yet be selected initially.
 
-MCP/connections, hooks, channels and schedules are not implemented. Declaring unsupported executable capabilities is an error, not a silent partial load. Source code is trusted and may run side effects while being inspected. Loading never installs packages automatically.
+MCP uses the user's Pi `mcp.json`, OAuth storage and native stdio/HTTP transports, with codemode/tool-search exposure. There is no separate bot MCP configuration or credential copy. Bot-specific `connections/`, `hooks/`, `channels/` declarations and schedules remain unsupported; use native Pi extension lifecycle hooks and user MCP configuration. Local source is trusted and may run side effects during validation. Loading never installs packages automatically.
 
 ### Autonomous improvement and recovery
 
-The bot may change its persona, skills, scripts, tools and bundles without approval, promotion or deployment. After a tool batch, and before a queued request, the SDK validates a complete capability generation and swaps it coherently. A new tool can be used **within the same run** without editing the scaffold's allowlist. Invalid drafts remain on disk; the previous valid revision stays active, with repair diagnostics in the next model context. Checkpoints are recovery aids, not human gates.
+The bot may change its persona, skills, scripts, tools and bundles without approval, promotion or deployment. After a tool batch, and before a queued request, the SDK validates a complete capability generation and swaps it coherently. Native extension, MCP and tool-selection changes activate at an idle request boundary; authored tool/persona changes can activate after a tool batch. A new tool can be used **within the same run** without editing the scaffold's allowlist. Invalid drafts remain on disk; the previous valid revision stays active, with repair diagnostics in the next model context. Checkpoints are recovery aids, not human gates.
 
 Memory is live writable context, separate from capability revisions: a bounded `MEMORY.md` index, linked memories, resumable task notes and journal entries. Task notes do not automatically schedule work. SDK `editBot` and BOT.md maintenance edits share a definition lock; arbitrary editors/shell writes remain outside that cooperative protocol.
 
@@ -271,7 +274,7 @@ curl -N http://127.0.0.1:3000/v1/runs \
   -d '{"message":"Review the staged diff"}'
 ```
 
-The response is `200 application/x-ndjson`, one event per line, each shaped `{ type, sessionId?, runId?, data? }`:
+The response is `200 application/x-ndjson`, one event per line, each shaped `{ type, sessionId?, runId?, data }`:
 
 1. `run_accepted`: `data` is the accepted run record, the same as the 202 body. Its `runId` is what you cancel.
 2. That run's events as they happen (table below). The prior conversation is not repeated.
@@ -290,29 +293,47 @@ Events for rendering a reply:
 | Event | `data` |
 | --- | --- |
 | `message_start` | `message`. For `role: "assistant"`, `content` can already hold partial blocks |
-| `message_update` | `changes`: ordered edits to the in-flight assistant message. `text_start`/`thinking_start`/`toolcall_start` carry `{ contentIndex, block }`; `text_delta`/`thinking_delta` carry `{ contentIndex, delta }`. Also `toolcall_delta`, `block` (replace one block) and `message` (replace all) |
-| `message_end` | `entry.model[0]`: the complete message. Content blocks are `text`, `thinking` (`redacted` when withheld) and `toolCall` |
-| `tool_execution_start` | `toolCallId`, `toolName`, `args`; nested calls add `parentToolCallId` |
-| `tool_execution_end` | `toolCallId`, `toolName`, and `entry.model[0]`: the `toolResult` message (`content`, `isError`, `durationMs`); nested calls carry `result` instead |
-| `usage_changed` | `usage.models`: running token and cost totals keyed by `provider/model` |
-| `run_start`, `turn_start`, `turn_end`, `run_end`, `auto_retry_start`, `compaction_start`, `compaction_end`, `task_failed` | Progress and notices |
+| `message_update` | `changes`: ordered updates. `message` carries a full replacement `message`; `block`/`text_start`/`thinking_start`/`toolcall_start` carry `{ contentIndex, block }`; `text_delta`/`thinking_delta` carry `{ contentIndex, delta }` |
+| `message_end` | `entry: { id, kind: "message", model: BotMessage[] }`: authoritative completed messages; `id` is the same session-scoped ID used by history |
+| `tool_execution_start` | `toolCallId`, `toolName`, optional `args` and `parentToolCallId` |
+| `tool_execution_update` | The tool identity and a bounded `summary` of real partial output |
+| `tool_execution_end` | The tool identity, `isError`, bounded `summary`, and optional completed `entry`; identical shape for nested and direct calls |
+| `snapshot` | Recent `entries`, optional current `run`, optional `generation.message`, `tools` with running/completed/failed status, and optional retry/compaction `notice` |
+| `auto_retry_start` / `auto_retry_end` | `{ attempt, errorMessage }` / `{ success, errorMessage? }` |
+| `compaction_start` / `compaction_end` | `{}` / `{ error? }` |
+| `task_failed` / `error` | `{ message }` / `{ code, message }` |
+| `run_start`, `turn_start`, `turn_end`, `run_end` | `{}`; execution activity, not a terminal run record |
 
-Updates are batched per durable commit. One `message_update` can carry many changes, and a fast reply can arrive whole in `message_start` or `message_end` with no update at all. Render from the latest message state; do not assume every token arrives as a delta.
+The exported `BotEvent`, `BotTranscriptEntry`, `BotMessage`, and `BotHistoryPage` types in [`src/types.ts`](src/types.ts) define the bot-owned contract. Both executors normalize their private events before SDK callbacks, worker IPC or HTTP delivery. Provider signatures, raw native session entries, system prompts and internal scheduler documents are not wire fields. Messages have `user`, `assistant` or `toolResult` roles; content contains text, thinking (empty when redacted), tool calls or image metadata without binary data.
 
-`BotClient.run(message, { onEvent })` and `bot chat --url` use this stream. Against an older server that ignores the `Accept` header, they fall back to a session watch plus polling.
+One `message_update` can carry many changes; a fast reply may arrive whole with no deltas. Always reconcile with `message_end`, and use `run_settled` (or a terminal `snapshot.run`) as the authoritative final status/output/usage. Once a run is terminal, ignore buffered partial updates for that run ID. Pi widgets, `bot_run` updates and the CLI show assistant text, tool names/arguments, results/failures and actual retry/compaction notices—not synthetic progress.
 
-To observe a whole session rather than one run, use `GET /v1/sessions/:id/stream`. It sends a `snapshot` event with the current conversation state, then every event for that session until the client disconnects. It is not a replayable log; reconnect to get a fresh snapshot.
+`BotClient.run(message, { onEvent })` and `bot chat --url` require this NDJSON contract. An interrupted stream can still recover the final status by polling; there is no older-server compatibility mode.
+
+To observe a whole session rather than one run, use `GET /v1/sessions/:id/stream`. It sends a `snapshot` event with the current conversation state, then every event for that session until the client disconnects. It is not a replayable log; reconnect to get a fresh snapshot. Snapshots restore in-flight text and tool activity, with a bounded recent transcript window (up to 50 entries / 100,000 characters); use `bot_history` for complete paged history. Historical entries are not presented as newly generated reply text.
+
+## Examples
+
+[Two persistent Exa web researchers](examples/web-researcher/README.md) demonstrate
+standalone CLI/service execution and a separate Pi `/bot` specialist, both using
+the inherited global Exa MCP server without bot-specific adapters. The accompanying [layout review](examples/web-researcher/LAYOUT-REVIEW.md)
+distinguishes curated memory, task state and conversation history, and documents
+current maintenance and long-running-operation gaps. Examples live in the repository,
+not the published npm tarball.
 
 ## Operational limits
 
 - **One owner, serialized execution.** Kernel `flock` locks protect state and canonical source. A daemon and local invocation cannot simultaneously own the same source—even with separate state directories. Use its URL, or a source copy, instead. Lock files stay in place to avoid unlink races.
-- **No exactly-once external effects.** Interrupted calls replay only when explicitly safe; unsafe calls report interruption. Cancellation cannot undo a tool's side effects.
+- **No exactly-once external effects.** Native Pi requests interrupted by shutdown/crash fail closed and are not automatically replayed. Inspect potential external effects before retrying. The isolated durable executor replays interrupted tools only when explicitly safe. Cancellation cannot undo side effects.
+- **Executor changes.** Existing durable conversations require a new conversation when enabling native Pi execution. Native conversations retain their native transcript if inheritance is later disabled; they are not converted to durable tool-replay conversations.
 - **No sandbox.** Tools/modules/shell use host permissions. Worker process-tree cleanup is best effort, not containment against deliberate escape. Embedded noncooperative tools can delay close indefinitely.
 - **Checkpoints are not full environments.** Installed dependencies, transitive global imports and files outside snapshot scope are not pinned. Changed external entry fingerprints can prevent recovery. Restored modules run from checkpoint paths, so `import.meta.url`-relative runtime I/O may see that location. Missing/corrupt referenced checkpoints fail closed.
 - **Trusted module loading.** Module top-level side effects have no general disposal lifecycle. Arbitrary package globals/side effects may survive a reload inside a worker. Keep capability modules declarative. Restart for full process isolation when changing such dependencies.
-- **Scope.** One bot per service, text requests, no session fork/import/migration API, no multi-tenant isolation, TLS termination, cron, MCP or native Pi lifecycle compatibility. Model/retry defaults are read at open; supported capability changes reload at boundaries.
+- **Scope.** One bot per service, text requests, no session fork/import/migration API, no multi-tenant isolation, TLS termination or cron. Model/retry defaults are read at open; supported capability changes reload at boundaries. Pi config/loader/OAuth integration uses version-pinned Pi 1.4 helpers.
 
 ## Development
+
+**Contract policy:** this project has no bot-definition or public event-schema version discriminator. Keep the documented output contract stable and covered by contract tests. Do not add backwards-compatibility layers, migration paths or versioning changes unless the user explicitly authorizes them.
 
 For a pinned Node/npm and runtime-tool environment, run `nix develop ./bot`
 from the repository root, then `npm ci`. See [the Nix guide](nix/README.md)

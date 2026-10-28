@@ -131,7 +131,7 @@ test("bot selection survives Pi reload as a reference, never copying native Pi h
   assert.equal(f.opens(), 2);
 });
 
-test("manage uses new-format SDK definitions; [] disables tools and null restores discovery", async t => {
+test("manage uses SDK definitions without a format/version field; [] disables tools and null restores discovery", async t => {
   const f = await setup(t);
   const call = (params: unknown) => f.tools.bot_manage.execute("id", params, undefined, undefined, f.ctx);
   await call({ action: "create", name: "scout", description: "Explore", prompt: "Be direct.", model: "faux/faux-1" });
@@ -139,7 +139,9 @@ test("manage uses new-format SDK definitions; [] disables tools and null restore
   const info = await call({ action: "show", name: "scout" }); assert.deepEqual(info.details.tools, []);
   await call({ action: "edit", name: "scout", tools: null });
   assert((await call({ action: "show", name: "scout" })).details.tools.some((tool: any) => tool.name === "bot_write"));
-  assert.match(await readFile(join(f.root, "scout", "BOT.md"), "utf8"), /Cite files/);
+  const definition = await readFile(join(f.root, "scout", "BOT.md"), "utf8");
+  assert.match(definition, /Cite files/);
+  assert.doesNotMatch(definition, /^"?(format|version)"?:/m);
   await f.commands.bot.handler("delete scout", f.ctx);
   assert(f.notices.some(message => message.includes("Archived to")));
   const actions = f.tools.bot_manage.parameters.properties.action.anyOf.map((value: any) => value.const);
@@ -171,4 +173,38 @@ test("cancellation flows to the SDK and headless direct mode is explicit", async
   assert.equal(f.faux.state.callCount, 0);
   await f.commands.bot.handler("reviewer", f.ctx);
   assert.deepEqual(f.events.input({ text: "no UI" }, { ...f.ctx, hasUI: false }), { action: "handled" });
+});
+
+test("tool-only canonical activity reaches both bot_run updates and the direct-chat widget", async t => {
+  const root = await mkdtemp(join(tmpdir(), "pi-bot-activity-")); t.after(() => rm(root, { recursive: true, force: true }));
+  const source = join(root, "reviewer");
+  await initBot(source, { name: "reviewer", inherit: "none" });
+  const { fixture } = await import("../../bot/test/interface-fixtures.js");
+  const fake = fixture();
+  const original = fake.bot.submit;
+  fake.bot.submit = async (message, options) => {
+    const accepted = await original(message, options);
+    const events: import("../../bot/src/types.js").BotEvent[] = [
+      { type: "tool_execution_start", data: { toolCallId: "a", toolName: "read", args: { path: "notes.md" } } },
+      { type: "tool_execution_update", data: { toolCallId: "a", toolName: "read", summary: "Reading header" } },
+      { type: "tool_execution_end", data: { toolCallId: "a", toolName: "read", isError: true, summary: "Permission denied" } },
+      { type: "auto_retry_start", data: { attempt: 2, errorMessage: "Busy" } },
+      { type: "compaction_start", data: {} },
+    ];
+    for (const event of events) options?.onEvent?.({ ...event, runId: accepted.runId, sessionId: accepted.sessionId });
+    fake.complete(accepted.runId);
+    return fake.bot.getRun(accepted.runId);
+  };
+  const f = harness(root, async () => fake.bot); t.after(() => f.events.session_shutdown());
+  const updates: any[] = [];
+  await f.tools.bot_run.execute("id", { bot: "reviewer", task: "Read" }, undefined, (update: any) => updates.push(update), f.ctx);
+  const shown = updates.map(update => update.content[0].text).join("\n");
+  assert.match(shown, /⏺ read notes.md/); assert.match(shown, /Reading header/);
+  assert.match(shown, /✗ read notes.md — Permission denied/); assert.match(shown, /Retrying \(attempt 2\): Busy/); assert.match(shown, /Compacting context/);
+  await f.commands.bot.handler("reviewer", f.ctx);
+  f.events.input({ text: "Read", source: "interactive" }, f.ctx);
+  await until(() => f.messages.some(message => message.customType === "bot-reply"));
+  const widgets = f.widgets.flatMap(widget => widget.lines ?? []).join("\n");
+  assert.match(widgets, /⏺ read notes.md/); assert.match(widgets, /Reading header/);
+  assert.match(widgets, /Permission denied/); assert.match(widgets, /Retrying/); assert.match(widgets, /Compacting context/);
 });

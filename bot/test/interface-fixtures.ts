@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import type { BotEvent, BotHandle, BotInfo, BotRunRecord, BotSessionInfo, RunOptions } from "../src/types.js";
 
 export const INFO: BotInfo = {
-  name: "fixture", description: "offline fixture", sourceDir: "/source", stateDir: "/state", format: 2,
+  name: "fixture", description: "offline fixture", sourceDir: "/source", stateDir: "/state",
   inherit: "none", revision: "revision-1", tools: [{ name: "echo", source: "/source/tools/echo.ts" }], skills: [], diagnostics: [],
 };
 export function fixture() {
@@ -18,11 +18,11 @@ export function fixture() {
   const complete = (id: string, status: BotRunRecord["status"] = "completed") => {
     const run = runs.get(id); if (!run) throw missing();
     run.status = status; run.output = status === "completed" ? "done" : ""; run.updatedAt = new Date().toISOString();
-    emit(run.sessionId, { type: "run", sessionId: run.sessionId, runId: run.runId, data: { ...run } });
+    emit(run.sessionId, { type: "run_settled", sessionId: run.sessionId, runId: run.runId, data: { ...run } });
     const observer = observers.get(id); observers.delete(id);
     observer?.({ type: "run_settled", sessionId: run.sessionId, runId: id, data: { ...run } });
   };
-  const emitRun = (id: string, event: Omit<BotEvent, "runId">) => observers.get(id)?.({ ...event, runId: id });
+  const emitRun = (id: string, event: BotEvent) => observers.get(id)?.({ ...event, runId: id });
   const bot: BotHandle = {
     sourceDir: INFO.sourceDir, stateDir: INFO.stateDir,
     async info() { return INFO; },
@@ -41,7 +41,7 @@ export function fixture() {
         createdAt: date, updatedAt: date,
       };
       runs.set(id, run);
-      if (options?.onEvent) { observers.set(id, options.onEvent); options.onEvent({ type: "snapshot", sessionId, runId: id, data: { history: true } }); }
+      if (options?.onEvent) { observers.set(id, options.onEvent); options.onEvent({ type: "snapshot", sessionId, runId: id, data: { entries: [], tools: [] } }); }
       return { ...run };
     },
     async run(message, options) { const accepted = await bot.submit(message, options); complete(accepted.runId); return bot.getRun(accepted.runId); },
@@ -53,7 +53,8 @@ export function fixture() {
     },
     async watch(session, listener) {
       const set = listeners.get(session) ?? new Set(); listeners.set(session, set); set.add(listener);
-      listener({ type: "snapshot", sessionId: session, data: { runs: [...runs.values()].filter(run => run.sessionId === session).map(run => ({ ...run })) } });
+      const run = [...runs.values()].findLast(run => run.sessionId === session);
+      listener({ type: "snapshot", sessionId: session, data: { entries: [], tools: [], ...(run ? { run: { ...run } } : {}) } });
       let stopped = false;
       return async () => { if (stopped) return; stopped = true; set.delete(listener); unsubscribed++; };
     },

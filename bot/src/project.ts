@@ -10,12 +10,13 @@ import { Compile } from "typebox/compile";
 import { validateToolArguments } from "@earendil-works/pi-ai";
 import {
   getAgentDir, parseFrontmatter, DefaultPackageManager, SettingsManager,
-  loadSkills, formatSkillsForPrompt, type Skill,
+  loadSkills, formatSkillsForPrompt, type Skill, type LoadedMcpConfig,
   createReadTool, createWriteTool, createEditTool, createBashTool,
   createFindTool, createGrepTool, createLsTool,
 } from "@earendil-works/pi-coding-agent";
 import { expandHome, isInside, resolveSource, canonicalPath } from "./paths.js";
 import { snapshotSource, excludedSourceName } from "./snapshot.js";
+import { matches, readUserMcp } from "./pi-internals.js";
 import { readSettings } from "./settings.js";
 import { memoryExcerpt, openTasks } from "./memory.js";
 import { historyTool } from "./history.js";
@@ -28,10 +29,13 @@ export { defineTool, defineExtension } from "./definitions.js";
 export type { BotToolDefinition, BotToolContext, BotExtensionDefinition } from "./definitions.js";
 
 export interface ProjectDefinition {
-  format: 2; name: string; description: string; prompt: string;
+  name: string; description: string; prompt: string;
   inherit: "none" | "global"; model?: string; thinking?: ThinkingLevel;
   /** Explicit restrictive selection of ALL tools. Omit to discover authored tools automatically. */
   tools?: string[];
+  excludeTools?: string[];
+  excludeExtensions?: string[];
+  excludeMcpServers?: string[];
   /** Built-ins to add to automatic authored-tool discovery; never widens an explicit tools list. */
   builtinTools?: string[];
   /** Explicit declaration of the bot-owned source/memory maintenance capability. */
@@ -51,6 +55,13 @@ export interface BotProject {
   /** Fingerprint of explicitly inherited/selected external resource entry files, not their dependencies. */
   externalRevision: string;
   agentDir: string;
+  /** Native factories are loaded only when a session starts, never during inspection. */
+  extensionPaths: string[];
+  extensionHashes: Record<string, string>;
+  mcpConfig: LoadedMcpConfig;
+  native: boolean;
+  disabledPiBuiltins: string[];
+  initialTools: string[];
 }
 export type LoadProjectOptions = Pick<OpenBotOptions, "stateDir" | "agentDir">;
 
@@ -61,20 +72,20 @@ function strings(value: unknown, field: string): string[] | undefined {
 }
 export function parseDefinition(content: string, sourceDir: string): ProjectDefinition {
   const { frontmatter: f, body } = parseFrontmatter<Record<string, unknown>>(content);
-  if (f.format !== 2) throw new BotError("INVALID_INPUT", `Unsupported BOT.md format ${String(f.format)}; expected 2.`);
   if (typeof f.name !== "string" || !f.name.trim()) throw new BotError("INVALID_INPUT", "BOT.md needs a name.");
   if (typeof f.description !== "string" || !f.description.trim()) throw new BotError("INVALID_INPUT", "BOT.md needs a description.");
   if (!body.trim()) throw new BotError("INVALID_INPUT", "BOT.md needs a persona body.");
   if (f.inherit !== undefined && f.inherit !== "none" && f.inherit !== "global") throw new BotError("INVALID_INPUT", "inherit must be none or global.");
   if (f.model !== undefined && (typeof f.model !== "string" || !f.model.trim())) throw new BotError("INVALID_INPUT", "model must be a non-empty provider/model string.");
-  const { format, name, description, model, thinking, tools, builtinTools, maintenance, skills, inherit, ...extra } = f;
+  const { name, description, model, thinking, tools, builtinTools, maintenance, skills, inherit, excludeTools, excludeExtensions, excludeMcpServers, ...extra } = f;
   if (maintenance !== undefined && typeof maintenance !== "boolean") throw new BotError("INVALID_INPUT", "maintenance must be a boolean.");
   const levels = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
   if (thinking !== undefined && !levels.includes(String(thinking))) throw new BotError("INVALID_INPUT", `Invalid thinking level: ${String(thinking)}.`);
   if (extra.connections !== undefined || extra.hooks !== undefined || extra.channels !== undefined) throw new BotError("UNAVAILABLE", "connections, hooks and channels declarations are not supported by this SDK runtime.");
-  return { format: 2, name: name.trim(), description: description.trim(), prompt: body.trim(),
-    inherit: inherit === "global" ? "global" : "none", model: model as string | undefined,
+  return { name: name.trim(), description: description.trim(), prompt: body.trim(),
+    inherit: inherit === "none" ? "none" : "global", model: model as string | undefined,
     thinking: thinking as ThinkingLevel | undefined,
+    excludeTools: strings(excludeTools, "excludeTools"), excludeExtensions: strings(excludeExtensions, "excludeExtensions"), excludeMcpServers: strings(excludeMcpServers, "excludeMcpServers"),
     tools: strings(tools, "tools"), builtinTools: strings(builtinTools, "builtinTools"), maintenance: maintenance as boolean | undefined, skills: strings(skills, "skills"), extra };
 }
 async function entries(path: string) {
@@ -160,33 +171,6 @@ function maintenanceTools(): LoadedTool[] {
   ];
   return result.map(tool => validateTool(tool, "bot:maintenance"));
 }
-/** Strict bridge: only registerTool is supported. Any other API use rejects the entire factory. */
-async function classicExtension(factory: Function, source: string): Promise<BotExtensionDefinition> {
-  const tools: BotToolDefinition[] = [];
-  const unsupported: string[] = [];
-  const api = new Proxy({ registerTool(tool: Record<string, any>) {
-    const incompatible = ["prepareLoadout", "reachesTools", "outputSchema", "namespace", "exposure"].filter(key => tool[key] !== undefined && !(key === "exposure" && tool[key] === "direct"));
-    if (incompatible.length) { const message = `Unsupported classic Pi tool APIs in ${source}: ${incompatible.join(", ")}`; unsupported.push(message); throw new BotError("UNAVAILABLE", message); }
-    tools.push({ name: tool.name, description: [tool.description, tool.promptSnippet, ...(tool.promptGuidelines ?? [])].filter(Boolean).join("\n"), parameters: tool.parameters, replay: tool.replay,
-      execute: async (args, ctx) => {
-        const runtimeContext = new Proxy({ cwd: ctx.cwd, signal: ctx.signal, hasUI: false, mode: "print" }, {
-          get(target, key) { if (key in target) return Reflect.get(target, key); throw new BotError("UNAVAILABLE", `Unsupported classic Pi context API ctx.${String(key)} in ${source}; use the common BotToolContext.`); },
-        });
-        const result = await tool.execute(randomUUID(), args, ctx.signal, undefined, runtimeContext);
-        const unsupportedResult = Object.keys(result).filter(key => !["content", "details", "isError"].includes(key) && result[key] !== undefined);
-        if (unsupportedResult.length) throw new BotError("UNAVAILABLE", `Unsupported classic Pi tool result APIs in ${source}: ${unsupportedResult.join(", ")}. Use a native Pi runtime for these semantics.`);
-        return { content: result.content, ...(result.details === undefined ? {} : { details: result.details }), ...(result.isError === undefined ? {} : { isError: result.isError }) };
-      } });
-  } }, { get(target, key) {
-    if (key in target) return Reflect.get(target, key);
-    const message = `Unsupported classic Pi extension API pi.${String(key)} in ${source}. This bridge supports registerTool only; lifecycle, providers, MCP and UI require an explicit adapter.`;
-    unsupported.push(message); throw new BotError("UNAVAILABLE", message);
-  } });
-  await factory(api);
-  if (unsupported.length) throw new BotError("UNAVAILABLE", unsupported.join("\n"));
-  return { name: basename(source), tools };
-}
-
 type NativeNamespace = Record<string, unknown>;
 const sdkModules = new Map<string, { value?: NativeNamespace; pending: Promise<NativeNamespace> }>();
 function nativeSdkModule(file: string): NativeNamespace | Promise<NativeNamespace> {
@@ -274,8 +258,11 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
   if (!files["BOT.md"]) throw new BotError("NOT_FOUND", `BOT.md is missing in ${sourceDir}.`);
   const definition = parseDefinition(Buffer.from(files["BOT.md"], "base64").toString("utf8"), sourceDir);
   const diagnostics: string[] = [];
-  for (const folder of ["connections", "hooks", "channels"]) if ((await entries(join(sourceDir, folder))).length) throw new BotError("UNAVAILABLE", `Unsupported ${folder}/ in ${sourceDir}; connections/MCP and hook/channel lifecycles are not implemented. Nothing in this directory was loaded.`);
+  for (const folder of ["connections", "hooks", "channels"]) if ((await entries(join(sourceDir, folder))).length) throw new BotError("UNAVAILABLE", `Unsupported ${folder}/ in ${sourceDir}; use Pi user mcp.json or native Pi lifecycle extensions instead. Nothing in this directory was loaded.`);
   let globalExtensions: string[] = [], globalSkills: string[] = [];
+  let mcpConfig: LoadedMcpConfig = { servers: [], errors: [] };
+  let mcpContents = "";
+  const excludedExtension = (file: string) => [file, basename(file), basename(file).replace(/\.[cm]?[jt]s$/, ""), ...(file.startsWith("builtin:") ? [file.slice(8)] : []), ...(/^index\.[cm]?[jt]s$/.test(basename(file)) ? [basename(dirname(file))] : [])].some(name => matches(name, definition.excludeExtensions));
   const globalInstructions: Array<{ path: string; content: string }> = [];
   let globalSettings: Record<string, any> = {};
   if (definition.inherit === "global") {
@@ -283,8 +270,7 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
     const manager = new DefaultPackageManager({ cwd: agentDir, agentDir, settingsManager: SettingsManager.inMemory(globalSettings) });
     const resources = await manager.resolve(async missing => { throw new BotError("UNAVAILABLE", `Global Pi package ${missing} is not installed. Install it explicitly with Pi; loading a bot never installs packages.`); });
     globalExtensions = resources.extensions.filter(item => item.enabled && item.metadata.scope === "user").map(item => item.path);
-    const unsupportedBuiltins = globalExtensions.filter(path => path.startsWith("builtin:"));
-    if (unsupportedBuiltins.length) throw new BotError("UNAVAILABLE", `Unsupported global Pi builtin extension adapters: ${unsupportedBuiltins.join(", ")}. Declare common bot tools instead.`);
+    globalExtensions = globalExtensions.filter(file => !file.startsWith("builtin:") && !excludedExtension(file));
     globalSkills = resources.skills.filter(item => item.enabled && item.metadata.scope === "user").map(item => item.path);
     const contextFile = ["AGENTS.override.md", "AGENTS.md", "AGENTS.MD", "CLAUDE.md", "CLAUDE.MD"].map(name => join(agentDir, name)).find(existsSync);
     for (const path of [contextFile, join(agentDir, "SYSTEM.md"), join(agentDir, "APPEND_SYSTEM.md")]) {
@@ -293,16 +279,18 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
     if (resources.prompts.some(item => item.enabled && item.metadata.scope === "user")) diagnostics.push("Global Pi prompt templates are discovered but not expanded by the standalone SDK; send their text explicitly.");
     if (resources.themes.some(item => item.enabled && item.metadata.scope === "user")) diagnostics.push("Global Pi themes are UI-only and are not applied by the standalone SDK.");
     const mcpFile = join(agentDir, "mcp.json");
-    if (existsSync(mcpFile)) {
-      const config = JSON.parse(await readFile(mcpFile, "utf8"));
-      if (Object.values(config.mcpServers ?? {}).some(server => (server as { enabled?: boolean }).enabled !== false)) throw new BotError("UNAVAILABLE", `Global MCP connections in ${mcpFile} are not supported by the standalone SDK. Disable inheritance or provide common tool definitions.`);
-    }
+    if (existsSync(mcpFile)) mcpContents = await readFile(mcpFile, "utf8");
+    mcpConfig = await readUserMcp(agentDir);
+    mcpConfig.servers = mcpConfig.servers.filter(server => !matches(server.name, definition.excludeMcpServers));
+    diagnostics.push(...mcpConfig.errors);
+
   }
   const globalEntryContents = new Map(await Promise.all(globalExtensions.map(async file => [file, await readFile(file)] as const)));
   const importAuthored = await authoringLoader();
   const tools = new Map<string, LoadedTool>();
   const instructions: string[] = [];
-  async function layer(toolPaths: string[], extensionPaths: string[], local: boolean) {
+  const extensionPaths = [...globalExtensions];
+  async function layer(toolPaths: string[], extensionFiles: string[], local: boolean) {
     const own = new Set<string>();
     const extensionNames = new Set<string>();
     function add(tool: BotToolDefinition, file: string) {
@@ -311,9 +299,10 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
       own.add(tool.name); tools.set(tool.name, normalized);
     }
     for (const file of toolPaths) add(await importAuthored<BotToolDefinition>(file), file);
-    for (const file of extensionPaths) {
+    for (const file of extensionFiles) {
       const exported = await importAuthored<BotExtensionDefinition | Function>(file);
-      const bundle = typeof exported === "function" ? await classicExtension(exported, file) : exported;
+      if (typeof exported === "function") { extensionPaths.push(file); continue; }
+      const bundle = exported;
       if (!bundle || typeof bundle.name !== "string" || !bundle.name.trim() || (bundle.tools !== undefined && !Array.isArray(bundle.tools)) || (bundle.instructions !== undefined && typeof bundle.instructions !== "string") || Object.keys(bundle).some(key => !["name", "tools", "instructions"].includes(key))) throw new BotError("INVALID_INPUT", `Invalid common extension in ${file}; supported fields are name, tools, instructions. Durable and classic Pi extensions are distinct.`);
       if (extensionNames.has(bundle.name)) throw new BotError("INVALID_INPUT", `Duplicate extension ${bundle.name} in ${local ? "bot" : "global"} layer (${file}).`);
       extensionNames.add(bundle.name);
@@ -321,17 +310,19 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
       if (bundle.instructions) instructions.push(bundle.instructions);
     }
   }
-  await layer([], globalExtensions, false);
-  const toolEntries = await modules(join(sourceDir, "tools")); const extensionEntries = await modules(join(sourceDir, "extensions"));
+  // User Pi extensions run in AgentSession, not a registerTool-only bridge.
+  const toolEntries = await modules(join(sourceDir, "tools")); const extensionEntries = (await modules(join(sourceDir, "extensions"))).filter(file => !excludedExtension(file));
   for (const file of [...toolEntries, ...extensionEntries]) if (!(relative(sourceDir, file) in files)) throw new BotError("INVALID_INPUT", `Executable entry is excluded from capability snapshots: ${file}.`);
   await layer(toolEntries, extensionEntries, true);
   const ownedNames = new Set(tools.keys());
   const available = new Map([...builtinTools(), ...maintenanceTools(), validateTool(historyTool, "bot:history"), ...tools.values()].map(tool => [tool.name, tool]));
   let selected: LoadedTool[];
+  let initialTools: string[];
   if (definition.tools !== undefined) {
     const unknown = definition.tools.filter(name => !available.has(name));
-    if (unknown.length) throw new BotError("INVALID_INPUT", `Unknown required selected tools: ${unknown.join(", ")}.`);
-    selected = definition.tools.map(name => available.get(name)!);
+    if (unknown.length && !extensionPaths.length && !mcpConfig.servers.length) throw new BotError("INVALID_INPUT", `Unknown required selected tools: ${unknown.join(", ")}.`);
+    initialTools = definition.tools;
+    selected = definition.tools.filter(name => available.has(name)).map(name => available.get(name)!);
   } else {
     const inherited = definition.builtinTools ?? (definition.inherit === "global" ? (globalSettings.defaultTools ?? ["read", "bash", "edit", "write"]) as string[] : []);
     const builtinNames = inherited.length === 0 ? [] : inherited.some(name => !name.startsWith("+") && !name.startsWith("-")) ? inherited.filter(name => !name.startsWith("+") && !name.startsWith("-")) : ["read", "bash", "edit", "write"];
@@ -340,10 +331,14 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
     names.add(historyTool.name); // Recall is bot-wide and independent of source/memory write access.
     if (definition.maintenance) for (const tool of maintenanceTools()) names.add(tool.name);
     for (const name of ownedNames) names.add(name);
-    const unknown = [...names].filter(name => !available.has(name));
-    if (unknown.length) throw new BotError("UNAVAILABLE", `Unsupported inherited selected tools: ${unknown.join(", ")}.`);
-    selected = [...names].map(name => available.get(name)!);
+    const unknown = [...names].filter(name => !available.has(name) && !["codemode", "tool_search"].includes(name));
+    if (unknown.length && !extensionPaths.length) throw new BotError("UNAVAILABLE", `Unsupported inherited selected tools: ${unknown.join(", ")}.`);
+    initialTools = [...names];
+    selected = [...names].filter(name => available.has(name)).map(name => available.get(name)!);
   }
+  initialTools = initialTools.filter(name => !matches(name, definition.excludeTools));
+  selected = selected.filter(tool => !matches(tool.name, definition.excludeTools));
+  if (extensionPaths.length || mcpConfig.servers.length) diagnostics.push("Pi extension and MCP tools are discovered at session startup; offline inspection does not run global factories or connect servers.");
   const skillsByName = new Map<string, Skill>();
   const localSkillPaths = [join(sourceDir, "skills"), ...(definition.skills ?? []).filter(path => path.includes("/") || path.endsWith(".md")).map(path => resolve(sourceDir, expandHome(path)))];
   const loadSkillLayer = (paths: string[], local: boolean) => {
@@ -370,7 +365,7 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
   // Include inherited executable resource content in the revision, including package-local imports where practical.
   const hash = createHash("sha256").update(JSON.stringify(files));
   const externalHash = createHash("sha256");
-  if (definition.inherit === "global") externalHash.update(JSON.stringify({ defaultTools: globalSettings.defaultTools ?? null }));
+  if (definition.inherit === "global") externalHash.update(JSON.stringify(globalSettings)).update(mcpContents);
   for (const file of globalExtensions) { const content = globalEntryContents.get(file)!; if (!(await readFile(file)).equals(content)) throw new BotError("CONFLICT", `Global extension changed during compilation: ${file}.`); hash.update(file); hash.update(content); externalHash.update(file).update(content); }
   for (const instruction of globalInstructions) { hash.update(instruction.path); hash.update(instruction.content); externalHash.update(instruction.path).update(instruction.content); }
   for (const skill of skills) { const content = await readFile(skill.filePath); hash.update(isInside(skill.filePath, sourceDir) ? relative(sourceDir, skill.filePath) : skill.filePath); hash.update(content); if (!isInside(skill.filePath, sourceDir)) externalHash.update(skill.filePath).update(content); }
@@ -381,10 +376,13 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
   if (JSON.stringify(await snapshotSource(sourceDir, stateDir, agentDir)) !== JSON.stringify(files)) throw new BotError("CONFLICT", "Bot source changed during compilation; retry once its file batch is complete.");
   if (definition.inherit === "global" && JSON.stringify(await readSettings(agentDir)) !== JSON.stringify(globalSettings)) throw new BotError("CONFLICT", "Global Pi settings changed during compilation.");
   const info: BotInfo = { name: definition.name, description: definition.description, sourceDir, stateDir,
-    format: definition.format, inherit: definition.inherit, model: definition.model, thinking: definition.thinking,
+    inherit: definition.inherit, model: definition.model, thinking: definition.thinking,
     revision, tools: selected.map(({ name, description, source }) => ({ name, description, source })),
     skills: skills.map(skill => ({ name: skill.name, description: skill.description, source: skill.filePath })), diagnostics };
-  return { info, definition, tools: selected, skills, prompt, files, externalRevision, agentDir };
+  if (definition.inherit === "global" && (existsSync(join(agentDir, "mcp.json")) ? await readFile(join(agentDir, "mcp.json"), "utf8") : "") !== mcpContents) throw new BotError("CONFLICT", "Global MCP config changed during compilation.");
+  const extensionHashes = Object.fromEntries(await Promise.all(extensionPaths.map(async file => [file, createHash("sha256").update(globalEntryContents.get(file) ?? Buffer.from(files[relative(sourceDir, file)]!, "base64")).digest("hex")])));
+  const disabledPiBuiltins = ["mcp", "codemode", "tool_search"].filter(name => excludedExtension(`builtin:${name}`) || (globalSettings.extensions ?? []).includes(`-builtin:${name}`));
+  return { info, definition, tools: selected, skills, prompt, files, externalRevision, agentDir, extensionPaths, extensionHashes, mcpConfig, native: definition.inherit === "global" || extensionPaths.length > 0, disabledPiBuiltins, initialTools };
 }
 export const loadBot = loadProject;
 export async function inspectBot(source: string, options: LoadProjectOptions = {}): Promise<BotInfo> { return (await loadProject(source, options)).info; }
@@ -397,7 +395,15 @@ async function scaffoldBot(source: string, options: InitBotOptions): Promise<Bot
   const sourceDir = resolve(expandHome(source));
   for (const folder of ["tools", "extensions", "skills", "scripts", "lib", "evals", ".bot/memory", ".bot/tasks", ".bot/journal", ".bot/revisions"]) await mkdir(join(sourceDir, folder), { recursive: true });
   const name = options.name ?? basename(sourceDir);
-  const fields = { format: 2, name, description: options.description ?? `A self-improving ${name} bot.`, inherit: options.inherit ?? "none", ...(options.model ? { model: options.model } : {}), builtinTools: ["read", "bash", "edit", "write"], maintenance: true };
+  const fields = { name, description: options.description ?? `A self-improving ${name} bot.`,
+    ...(options.inherit !== undefined ? { inherit: options.inherit } : {}),
+    // Isolated scaffolds retain their explicit standalone tool baseline. Default
+    // scaffolds leave selection to the user-global defaultTools setting.
+    ...(options.inherit === "none" ? { builtinTools: ["read", "bash", "edit", "write"] } : {}),
+    ...(options.model ? { model: options.model } : {}),
+    ...(options.excludeTools ? { excludeTools: options.excludeTools } : {}),
+    ...(options.excludeExtensions ? { excludeExtensions: options.excludeExtensions } : {}),
+    ...(options.excludeMcpServers ? { excludeMcpServers: options.excludeMcpServers } : {}), maintenance: true };
   const definition = `---\n${Object.entries(fields).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join("\n")}\n---\n\n${options.prompt ?? "You are a capable, autonomous bot. Improve your own persona, tools, skills and scripts when useful. Keep durable notes and finish the user's task."}\n`;
   for (const [file, content] of [["BOT.md", definition], [".bot/MEMORY.md", "# Memory index\n\n<!-- Keep under 200 lines. Link memory/<file>.md with a one-line hook. -->\n"], ["scripts/README.md", "# Scripts\n\nIndex reusable scripts and their usage here.\n"], [".gitignore", ".bot/\n.sdk-*.lock\n"]]) {
     await writeFile(join(sourceDir, file!), content!, { flag: "wx" }).catch(error => { if (error.code !== "EEXIST") throw error; });

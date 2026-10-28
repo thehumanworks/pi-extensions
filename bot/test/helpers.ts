@@ -8,7 +8,7 @@ export async function fixture(fields: Record<string, unknown> = {}, files: Recor
   const root = await mkdtemp(join(tmpdir(), "bot-sdk-test-"));
   const source = join(root, "bot"); const agentDir = join(root, "agent"); const cwd = join(root, "workspace");
   await Promise.all([mkdir(source), mkdir(agentDir), mkdir(cwd)]);
-  const definition = { format: 2, name: "tester", description: "Test bot", model: "faux/faux-1", ...fields };
+  const definition = { inherit: "none", name: "tester", description: "Test bot", model: "faux/faux-1", ...fields };
   await writeFile(join(source, "BOT.md"), `---\n${Object.entries(definition).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join("\n")}\n---\n\nTest persona.\n`);
   for (const [path, content] of Object.entries(files)) { const target = join(source, path); await mkdir(dirname(target), { recursive: true }); await writeFile(target, content); }
   return { root, source, agentDir, cwd, cleanup: () => rm(root, { recursive: true, force: true }) };

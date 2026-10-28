@@ -46,7 +46,7 @@ async function importFixture() {
   await writeFile(join(f.source, "tools/esm_root.mjs"), `import {defineTool,Type,inspectBot} from '@nothumanwork/bot';export default defineTool({name:'esm_root',description:'ESM root',parameters:Type.Object({peer:Type.String(),agentDir:Type.String()}),execute:async args=>(await inspectBot(args.peer,{agentDir:args.agentDir})).name});`);
   await writeFile(join(f.source, "tools/cjs_root.cjs"), `const {defineTool,Type,inspectBot}=require('@nothumanwork/bot');module.exports=defineTool({name:'cjs_root',description:'CJS root',parameters:Type.Object({peer:Type.String(),agentDir:Type.String()}),execute:async args=>(await inspectBot(args.peer,{agentDir:args.agentDir})).name});`);
   const peer = join(f.root, "peer"); await mkdir(peer);
-  await writeFile(join(peer, "BOT.md"), '---\nformat: 2\nname: peer\ndescription: Scripted peer\nmodel: faux/faux-1\ntools: []\nskills: []\n---\n\nPeer persona.\n');
+  await writeFile(join(peer, "BOT.md"), '---\nname: peer\ndescription: Scripted peer\nmodel: faux/faux-1\ntools: []\nskills: []\n---\n\nPeer persona.\n');
   return { ...f, peer, key, cleanup: async () => { Reflect.deleteProperty(globalThis, Symbol.for(key)); await f.cleanup(); } };
 }
 

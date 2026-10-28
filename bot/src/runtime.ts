@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { BACKGROUND_CONTEXT as C, awaitWithContext, withAbortSignal, type Context } from "@earendil-works/chord/context";
 import type { JsonValue } from "@earendil-works/chord";
 import type { Models, Model, Api } from "@earendil-works/pi-ai";
-import { ModelRuntime, getAgentDir } from "@earendil-works/pi-coding-agent";
+import { ModelRuntime, getAgentDir, type FileEntry } from "@earendil-works/pi-coding-agent";
 import {
   Harness, createRegistry, defineExtension, defineTool, defineDoc, defineTask, hook, section,
   GenerationTask, watchEvents, type ConversationId, type TaskId, type Conversation,
@@ -14,12 +14,14 @@ import {
 } from "@earendil-works/pi-durable";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { loadProject, resolveSource, composePrompt, invokeTool, type BotProject } from "./project.js";
+import { createNativeSession, validatePiFactories, type NativeSession } from "./native-session.js";
 import { acquireLock } from "./lock.js";
 import { BotError, botError } from "./errors.js";
 import { expandHome, canonicalPath, isInside } from "./paths.js";
 import { snapshotSource, materializeSource } from "./snapshot.js";
 import { readSettings } from "./settings.js";
-import { readHistory } from "./history.js";
+import { readHistory, type HistoryReader } from "./history.js";
+import { createLiveState, durableEntry, durableEvent, nativeEvent, nativeTranscript, publicEntry } from "./events.js";
 import type { BotHandle, BotInfo, BotRunRecord, BotSessionInfo, BotEvent, BotHistoryQuery, OpenBotOptions, ReloadResult, RunOptions, Usage } from "./types.js";
 
 const zero = (): Usage => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 });
@@ -31,8 +33,8 @@ function numeric(id: string, prefix: "drun" | "dconv"): number {
   if (!new RegExp(`^${prefix}:[1-9][0-9]*$`).test(id) || !Number.isSafeInteger(Number(id.split(":")[1]))) throw new BotError("INVALID_INPUT", `Invalid ${prefix === "drun" ? "durable run" : "durable session"} ID: ${id}.`);
   return Number(id.split(":")[1]);
 }
-type SessionMeta = { sessionId: string; cwd: string; createdAt: string; updatedAt: string; title?: string };
-type RunMeta = { record: JsonValue; taskId: number; conversationId: number; message: string; requestId?: string; requestInput?: string; submissionId?: number; baseline?: JsonValue; revision: string };
+type SessionMeta = { sessionId: string; cwd: string; createdAt: string; updatedAt: string; title?: string; nativeEntries?: JsonValue };
+type RunMeta = { record: JsonValue; taskId: number; conversationId: number; message: string; requestId?: string; requestInput?: string; submissionId?: number; baseline?: JsonValue; revision: string; native?: boolean };
 type InstanceState = { sourceDir: string; activeRevision?: string; sessions: Record<string, SessionMeta>; runs: Record<string, RunMeta>; requests: Record<string, string>; tail?: number };
 const Instance = defineDoc<InstanceState>({ kind: "bot.instance", version: 1, scope: "session", initial: () => ({ sourceDir: "", sessions: {}, runs: {}, requests: {} }), checkpointWhen: () => true });
 type DispatchInput = { session: number; previous?: number };
@@ -101,6 +103,9 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
   if (isInside(sourceDir, originalState)) throw new BotError("INVALID_INPUT", "stateDir must not equal or contain sourceDir.");
   stateDir = originalState;
   const releases: Array<() => Promise<void>> = [];
+  const nativeSessions = new Map<number | string, { revision: string; runtime: NativeSession }>();
+  const nativeListeners = new Map<number, Set<(event: BotEvent) => void>>();
+  const liveNative = new Map<number, { runId: string; state: ReturnType<typeof createLiveState> }>();
   let harness: Harness | undefined;
   let storage: Awaited<ReturnType<typeof openNodeSqliteStorage>> | undefined;
   const shortOperations = new Set<Promise<unknown>>();
@@ -148,6 +153,8 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
     if (prior?.sourceDir && prior.sourceDir !== sourceDir) throw new BotError("CONFLICT", `State belongs to ${prior.sourceDir}, not ${sourceDir}.`);
     let project: BotProject;
     let diagnostics: string[] = [];
+    const nativeDiagnostics: string[] = [];
+    const onNativeDiagnostic = (message: string) => { nativeDiagnostics.push(message.slice(0, 4000)); if (nativeDiagnostics.length > 50) nativeDiagnostics.shift(); };
     const projectOptions = { stateDir, agentDir };
     const defaults = await readSettings(agentDir);
     const models = options.models ?? await ModelRuntime.create(modelRuntimeOptions(agentDir));
@@ -171,6 +178,7 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
     } else {
       try {
         project = await loadProject(sourceDir, projectOptions);
+        if (project.native) await validatePiFactories(project, defaultCwd);
         selectedModel = overrideModel ?? await resolveModel(models, project.definition.model, defaults);
       } catch (error) {
         let revision = prior?.activeRevision;
@@ -195,7 +203,55 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
       if (!value) throw new BotError("NOT_FOUND", `Unknown durable conversation ${sessionId(id)}.`);
       return value;
     };
-    const history = async (query: BotHistoryQuery, signal: AbortSignal) => readHistory(storage!, Object.values((await state()).sessions), stateDir, query, signal);
+    const history = async (query: BotHistoryQuery, signal: AbortSignal) => {
+      const sessions = (await state()).sessions;
+      const read: HistoryReader = async (sid, bounds, limit, signal) => {
+        signal.throwIfAborted();
+        const native = nativeSessions.get(numeric(sid, "dconv"))?.runtime.entries() ?? sessions[sid]?.nativeEntries as FileEntry[] | undefined;
+        if (native) {
+          // Slice before projection; a history request never scans/projects the whole native transcript.
+          const low = Math.max(0, (bounds.minEntryId ?? 1) - 1), high = Math.min(native.length, bounds.maxEntryId ?? native.length);
+          const count = Math.max(0, high - low), length = Math.min(limit, count);
+          const start = bounds.order === "ascending" ? low : high - length;
+          const items = native.slice(start, start + length).map((entry, i) => publicEntry(start + i + 1, entry.type === "message" ? [entry.message] : []));
+          if (bounds.order === "descending") items.reverse();
+          return { items, hasMore: count > length };
+        }
+        const page = await storage!.scanEntries({ conversationId: numeric(sid, "dconv") as ConversationId, ...bounds as { order: "ascending" | "descending"; minEntryId?: EntryRecord["id"]; maxEntryId?: EntryRecord["id"] } }, limit, undefined, withAbortSignal(signal, C));
+        return { items: page.items.map(durableEntry), hasMore: !!page.next };
+      };
+      // Never leak private native session entries through history's list metadata.
+      const metadata = Object.values(sessions).map(({ nativeEntries: _entries, ...meta }) => meta);
+      return readHistory(read, metadata, stateDir, query, signal);
+    };
+    async function saveNativeEntries() {
+      if (activeSession === undefined) return;
+      const native = nativeSessions.get(activeSession)?.runtime;
+      if (native) await H().commit(async tx => { (await tx.doc(Instance)).sessions[sessionId(activeSession!)]!.nativeEntries = json(native.entries()) as unknown as JsonValue; }, C);
+    }
+    async function nativeSession(id: number | string, cwd: string): Promise<NativeSession> {
+      let cached = nativeSessions.get(id);
+      if (cached && cached.revision !== project.info.revision) {
+        // Construct the replacement before releasing the old generation's resources.
+        // A failed factory/startup leaves the old session available for repair.
+        const saved = cached.runtime.entries();
+        const replacement = await createNativeSession({ project, cwd, sourceDir, stateDir,
+          sessionId: typeof id === "number" ? sessionId(id) : id, models, model: selectedModel, thinking: thinking(), defaults, history,
+          entries: saved, onBoundary: async () => { await saveNativeEntries(); await reloadAtBoundary(true); return project; }, onDiagnostic: onNativeDiagnostic, runId: () => activeRun,
+        });
+        await cached.runtime.close("reload");
+        nativeSessions.set(id, { revision: project.info.revision, runtime: replacement });
+        return replacement;
+      }
+      if (cached) return cached.runtime;
+      const saved = typeof id === "number" ? (await state()).sessions[sessionId(id)]?.nativeEntries : undefined;
+      const runtime = await createNativeSession({ project, cwd, sourceDir, stateDir,
+        sessionId: typeof id === "number" ? sessionId(id) : id, models, model: selectedModel, thinking: thinking(), defaults, history,
+        entries: saved as unknown as FileEntry[] | undefined, onBoundary: async () => { await saveNativeEntries(); await reloadAtBoundary(true); return project; }, onDiagnostic: onNativeDiagnostic, runId: () => activeRun,
+      });
+      nativeSessions.set(id, { revision: project.info.revision, runtime });
+      return runtime;
+    }
     async function checkpoint(next: BotProject) {
       const root = join(stateDir, "revisions");
       const base = join(root, next.info.revision);
@@ -233,12 +289,25 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
         }
       } })] });
     }
-    async function reloadAtBoundary(): Promise<ReloadResult> {
+    async function reloadAtBoundary(nativeTurn = false): Promise<ReloadResult> {
       try {
         const next = await loadProject(sourceDir, projectOptions);
         const nextModel = await resolveModel(models, options.model ?? next.definition.model, defaults);
         const changed = next.info.revision !== project.info.revision;
         if (changed) {
+          const selection = (p: BotProject) => [p.definition.tools, p.definition.excludeTools, p.definition.excludeExtensions,
+            p.definition.excludeMcpServers, p.definition.builtinTools, p.definition.inherit];
+          const requiresSessionReplacement = nextModel.provider !== selectedModel.provider || nextModel.id !== selectedModel.id ||
+            next.definition.thinking !== project.definition.thinking || next.externalRevision !== project.externalRevision ||
+            JSON.stringify(next.extensionHashes) !== JSON.stringify(project.extensionHashes) ||
+            JSON.stringify(selection(next)) !== JSON.stringify(selection(project)) ||
+            (project.extensionPaths.some(path => isInside(path, project.info.sourceDir)) &&
+              Object.keys({ ...next.files, ...project.files }).some(file => file !== "BOT.md" && !file.startsWith("skills/") && next.files[file] !== project.files[file]));
+          if (nativeTurn && requiresSessionReplacement) {
+            diagnostics = ["Pi extension/MCP/selection changes activate at the next request boundary."];
+            return { changed: false, revision: project.info.revision, diagnostics: diagnostics.slice() };
+          }
+          if (next.native && !nativeTurn) await validatePiFactories(next, defaultCwd);
           const extension = compile(next); // build everything before the single registry publication
           const validation = createRegistry(); validation.install(extension);
           await checkpoint(next);
@@ -252,6 +321,17 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
           }, C);
           registry.install(extension);
           project = next; selectedModel = nextModel;
+          if (!nativeTurn) {
+            for (const [id, cached] of nativeSessions) {
+              try { await cached.runtime.close("reload"); } catch (error) { onNativeDiagnostic(`Pi shutdown: ${String(error)}`); }
+              if (typeof id === "number") await H().commit(async tx => { (await tx.doc(Instance)).sessions[sessionId(id)]!.nativeEntries = json(cached.runtime.entries()) as unknown as JsonValue; }, C);
+              nativeSessions.delete(id);
+            }
+          }
+          if (nativeTurn && activeSession !== undefined) {
+            const cached = nativeSessions.get(activeSession);
+            if (cached) cached.revision = next.info.revision;
+          }
         }
         diagnostics = next.info.diagnostics.slice();
         return { changed, revision: project.info.revision, diagnostics: diagnostics.slice() };
@@ -282,6 +362,74 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
         m.record = json(record) as unknown as JsonValue; s.sessions[record.sessionId]!.updatedAt = record.updatedAt;
       }, C);
     }
+    async function executeNative(id: string, meta: RunMeta, context: Context) {
+      // Pi sessions do not implement durable tool replay. Never repeat an interrupted request:
+      // even a missing tool result could represent a completed external side effect.
+      if (getRecord(meta).status === "running") {
+        await H().commit(async tx => {
+          const m = (await tx.doc(Instance)).runs[id]!; const record = getRecord(m as RunMeta);
+          record.status = "failed"; record.error = "Interrupted native Pi request was not replayed; external effects may have completed. Inspect before retrying.";
+          record.updatedAt = new Date().toISOString(); m.record = json(record) as unknown as JsonValue;
+        }, C);
+        return;
+      }
+      const record = getRecord(meta);
+      await H().commit(async tx => {
+        const m = (await tx.doc(Instance)).runs[id]!;
+        record.status = "running"; record.model = `${selectedModel.provider}/${selectedModel.id}`;
+        m.record = json(record) as unknown as JsonValue; m.native = true; m.revision = project.info.revision;
+      }, context);
+      let native: NativeSession | undefined;
+      let unsubscribe: (() => void) | undefined;
+      let abort: (() => void) | undefined;
+      const usage = zero(); let toolCalls = 0; let output = "";
+      let error: unknown;
+      let baseline: ReturnType<NativeSession["session"]["getSessionStats"]> | undefined;
+      try {
+        native = await nativeSession(meta.conversationId, record.cwd);
+        baseline = native.session.getSessionStats();
+        abort = () => { void native!.session.abort(); };
+        context.abortSignal?.addEventListener("abort", abort, { once: true });
+        context.abortSignal?.throwIfAborted();
+        const live = createLiveState(); liveNative.set(meta.conversationId, { runId: id, state: live });
+        unsubscribe = native.session.subscribe(event => {
+          if (event.type === "message_end" && event.message.role === "assistant") {
+            const message = event.message;
+            error = message.stopReason === "error" || message.stopReason === "aborted" ? new Error(message.errorMessage ?? message.stopReason) : undefined;
+            output = message.content.filter(part => part.type === "text").map(part => part.text).join("\n");
+            usage.input += message.usage.input; usage.output += message.usage.output;
+            usage.cacheRead += message.usage.cacheRead; usage.cacheWrite += message.usage.cacheWrite;
+            usage.cost += message.usage.cost.total; usage.turns++;
+          }
+          if (event.type === "tool_execution_start" && !event.parentToolCallId) toolCalls++;
+          const normalized = nativeEvent(event, native!.entries());
+          if (normalized) {
+            live.apply(normalized);
+            for (const listener of nativeListeners.get(meta.conversationId) ?? []) {
+              try { listener({ ...normalized, sessionId: record.sessionId, runId: id }); } catch {}
+            }
+          }
+        });
+        await native.session.prompt(meta.message);
+      } catch (caught) { error = caught; }
+      finally { unsubscribe?.(); if (abort) context.abortSignal?.removeEventListener("abort", abort); }
+      if (native && baseline) {
+        const totals = native.session.getSessionStats();
+        for (const key of ["input", "output", "cacheRead", "cacheWrite"] as const) usage[key] = Math.max(0, totals.tokens[key] - baseline.tokens[key]);
+        usage.cost = Math.max(0, totals.cost - baseline.cost); usage.turns = totals.assistantMessages - baseline.assistantMessages;
+      }
+      await H().commit(async tx => {
+        const s = await tx.doc(Instance), m = s.runs[id]!;
+        const current = getRecord(m as RunMeta);
+        current.status = context.abortSignal?.aborted ? (closing ? "failed" : "cancelled") : error ? "failed" : "completed";
+        if (closing && context.abortSignal?.aborted) error = new Error("Native Pi request interrupted by shutdown; external effects may have completed and the request will not be replayed.");
+        current.output = output; current.usage = usage; current.toolCalls = toolCalls;
+        if (error) current.error = String(error);
+        current.updatedAt = new Date().toISOString(); m.record = json(current) as unknown as JsonValue;
+        s.sessions[record.sessionId]!.updatedAt = current.updatedAt;
+        if (native) s.sessions[record.sessionId]!.nativeEntries = json(native.entries()) as unknown as JsonValue;
+      }, C);
+    }
     const Dispatch = defineTask<DispatchInput, DispatchCheckpoint, null>({ name: "bot.dispatch", version: 1,
       initial: () => ({ phase: "queue" }), phases: {
         queue: async (task, runtime, context) => {
@@ -299,6 +447,12 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
           try {
             // Keep interrupted calls on their recorded code until the tool batch finishes.
             if (getRecord(meta).status !== "running") await reloadAtBoundary();
+            if (meta.native || project.native || (await state()).sessions[sessionId(task.input.session)]?.nativeEntries) {
+              if ((await allEntries(conv)).length) throw new BotError("UNAVAILABLE", "Switching an existing durable conversation to native Pi requires a new conversation.");
+              await executeNative(id, meta, context);
+              await runtime.commit(() => ({ status: "terminal", outcome: { status: "completed", result: null } }), context);
+              return;
+            }
             await conv.configure({ cwd: getRecord(meta).cwd, model: { provider: selectedModel.provider, modelId: selectedModel.id }, thinkingLevel: thinking() }, context);
             const baseline = await usageOf(conv);
             await runtime.commit(async tx => {
@@ -324,6 +478,14 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
         }, context),
       }, abort: async (task, runtime, context) => {
         const meta = (await state()).runs[runId(task.id)]!;
+        if (meta.native) {
+          if (getRecord(meta).status === "running") await nativeSessions.get(task.input.session)?.runtime.session.abort();
+          await H().commit(async tx => {
+            const m = (await tx.doc(Instance)).runs[runId(task.id)]!; const record = getRecord(m as RunMeta);
+            if (record.status === "running" || record.status === "queued") { record.status = "cancelled"; record.error = "aborted"; record.updatedAt = new Date().toISOString(); m.record = json(record) as unknown as JsonValue; }
+          }, C);
+          await runtime.commit(() => ({ status: "terminal", outcome: { status: "aborted" } }), context); return;
+        }
         if (getRecord(meta).status === "running") await (await conversation(task.input.session)).abort(C);
         const sub = meta.submissionId ? await H().submission(meta.submissionId as never, C) : undefined;
         await finish(task.id, "cancelled", "aborted", await sub?.status(C));
@@ -368,13 +530,66 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
     async function watch(id: string, listener: (event: BotEvent) => void): Promise<() => Promise<void>> {
       assertOpen(); const convId = numeric(id, "dconv");
       if (!(await state()).sessions[id]) throw new BotError("NOT_FOUND", `Unknown session ${id}.`);
-      const stream = await watchEvents(H(), convId as ConversationId, C);
-      const emit = (event: { type: string }) => listener({ type: event.type, sessionId: id, ...(activeSession === convId && activeRun ? { runId: activeRun } : {}), data: clone(event) });
+      let ready = false;
+      const relay = (event: BotEvent) => { if (ready) listener(event); };
+      const listeners = nativeListeners.get(convId) ?? new Set<(event: BotEvent) => void>();
+      nativeListeners.set(convId, listeners); listeners.add(relay);
+      let stream: Awaited<ReturnType<typeof watchEvents>> | undefined;
       let stopped = false;
-      const stop = async () => { if (!stopped) { stopped = true; stops.delete(stop); await stream.stop(); } };
+      const stop = async () => { if (!stopped) { stopped = true; stops.delete(stop); listeners.delete(relay); if (!listeners.size) nativeListeners.delete(convId); await stream?.stop(); } };
       stops.add(stop);
-      try { emit(stream.snapshot); stream.start(async events => { for (const event of events) emit(event); }); }
-      catch (error) { await stop(); throw error; }
+      try {
+        stream = await watchEvents(H(), convId as ConversationId, C);
+        const stored = await state();
+        const nativeEntries = nativeSessions.get(convId)?.runtime.entries() ?? stored.sessions[id]?.nativeEntries as FileEntry[] | undefined;
+        const nativeMode = !!nativeEntries || project.native;
+        const live = liveNative.get(convId);
+        const latest = Object.values(stored.runs).findLast(meta => meta.conversationId === convId);
+        // Durable delivery can lag execution. Bind to immutable submission identities,
+        // never whichever run happens to be active when a buffered event is delivered.
+        const submissionRun = async (inputs: readonly number[]): Promise<string | undefined> => {
+          for (const input of inputs) {
+            const submission = await storage!.submission(input as SubmissionRecord["id"], C);
+            if (submission?.conversationId !== convId) continue;
+            const task = /^bot:([1-9][0-9]*)$/.exec(submission.requestId ?? "")?.[1];
+            if (task) return `drun:${task}`;
+          }
+          return undefined;
+        };
+        let boundRun: string | undefined;
+        if (nativeMode) boundRun = (activeSession === convId ? activeRun : undefined) ?? (latest ? getRecord(latest).runId : undefined);
+        else if (stream.snapshot.run) boundRun = await submissionRun(stream.snapshot.run.inputs);
+        else {
+          // An idle snapshot must not borrow a later run admitted while watch setup awaited IO.
+          const head = Math.max(0, ...stream.snapshot.entries.map(entry => entry.id));
+          for (const meta of Object.values(stored.runs).reverse()) {
+            if (meta.conversationId !== convId) continue;
+            const submission = await storage!.submissionByRequest(convId as ConversationId, `bot:${meta.taskId}`, C);
+            if (submission && "entry" in submission && submission.entry && submission.entry <= head) { boundRun = getRecord(meta).runId; break; }
+          }
+        }
+        const currentRun = boundRun && stored.runs[boundRun] ? getRecord(stored.runs[boundRun]!) : undefined;
+        const emit = (event: BotEvent) => listener({ ...event, sessionId: id, ...(boundRun ? { runId: boundRun } : {}) });
+        // Capture live native state synchronously after awaiting persistence. No partials can race ahead of this snapshot.
+        if (nativeMode) emit({ type: "snapshot", data: { ...(live && live.runId === boundRun ? live.state : createLiveState()).snapshot(nativeTranscript(nativeEntries ?? [])), ...(currentRun ? { run: currentRun } : {}) } });
+        else {
+          const snapshot = durableEvent(stream.snapshot)!;
+          if (snapshot.type === "snapshot" && currentRun) snapshot.data.run = currentRun;
+          emit(snapshot);
+        }
+        ready = true;
+        stream.start(async events => {
+          if (nativeMode || liveNative.has(convId)) return;
+          // The durable engine can publish a new input before run_start in the same batch.
+          const start = events.find(event => event.type === "run_start");
+          if (start?.type === "run_start" && !events.some(event => event.type === "run_end")) boundRun = await submissionRun(start.inputs);
+          for (const event of events) {
+            if (event.type === "run_start" || event.type === "run_end") boundRun = await submissionRun(event.inputs);
+            if (event.type === "snapshot" && event.run) boundRun = await submissionRun(event.run.inputs);
+            const normalized = durableEvent(event); if (normalized) emit(normalized);
+          }
+        });
+      } catch (error) { await stop(); throw error; }
       return stop;
     }
     async function cancel(id: string) {
@@ -432,7 +647,7 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
           const task = await tx.createTask(Dispatch, { session: convId, ...(draft.tail ? { previous: draft.tail } : {}) }, { conversationId: 1 as ConversationId, ownership: { kind: "conversation" } });
           const id = runId(task);
           const record: BotRunRecord = { runId: id, sessionId: sessionId(convId), bot: project.info.name, cwd, status: "queued", output: "", model: `${selectedModel.provider}/${selectedModel.id}`, usage: zero(), toolCalls: 0, createdAt: now, updatedAt: now };
-          draft.runs[id] = { record: json(record) as unknown as JsonValue, taskId: task, conversationId: convId, message, revision: project.info.revision, ...(opts.requestId ? { requestId: opts.requestId, requestInput } : {}) };
+          draft.runs[id] = { record: json(record) as unknown as JsonValue, taskId: task, conversationId: convId, message, revision: project.info.revision, ...(project.native ? { native: true } : {}), ...(opts.requestId ? { requestId: opts.requestId, requestInput } : {}) };
           draft.tail = task;
           if (requestKey) draft.requests[requestKey] = id;
           opts.signal?.throwIfAborted();
@@ -446,21 +661,34 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
       let stop: (() => Promise<void>) | undefined;
       const emit = (event: BotEvent) => { try { opts.onEvent?.(event); } catch {} };
       if (opts.onEvent && !closing) {
-        try { stop = await watch(accepted.sessionId, event => emit({ ...event, runId: id })); } catch { /* Observer failure never undoes durable admission. */ }
+        try { stop = await watch(accepted.sessionId, event => { if (!event.runId || event.runId === id) emit({ ...event, runId: id }); }); } catch { /* Observer failure never undoes durable admission. */ }
       }
       if (opts.signal?.aborted) abort();
       H().resume();
       const observation = H().waitForTask(numeric(id, "drun") as TaskId, C).then(async () => {
         if (closing) return;
         const record = await track(getRun(id));
-        if (!closing) emit({ type: "run_settled", sessionId: record.sessionId, runId: id, data: record });
+        if (!closing) {
+          const event: BotEvent = { type: "run_settled", sessionId: record.sessionId, runId: id, data: record };
+          const live = liveNative.get(numeric(record.sessionId, "dconv"));
+          if (live?.runId === id) live.state.apply(event);
+          for (const listener of nativeListeners.get(numeric(record.sessionId, "dconv")) ?? []) { try { listener(event); } catch {} }
+          if (!stop) emit(event);
+        }
       }).catch(() => {}).finally(async () => { cleanupSignal(); await stop?.(); observers.delete(observation); });
       observers.add(observation); void observation.catch(() => {});
       return accepted;
     }
     const handle: BotHandle = {
       sourceDir, stateDir,
-      async info(): Promise<BotInfo> { assertOpen(); return clone({ ...project.info, model: `${selectedModel.provider}/${selectedModel.id}`, thinking: thinking(), diagnostics }); },
+      async info(): Promise<BotInfo> {
+        assertOpen();
+        // No discovery side effects: before a session starts this remains offline metadata.
+        // Afterwards report the union of reachable tools in current-generation sessions.
+        const initialized = [...nativeSessions.values()].filter(item => item.revision === project.info.revision);
+        const tools = initialized.length ? [...new Map(initialized.flatMap(item => item.runtime.tools()).map(tool => [tool.name, tool])).values()] : project.info.tools;
+        return clone({ ...project.info, tools, model: `${selectedModel.provider}/${selectedModel.id}`, thinking: thinking(), diagnostics: [...diagnostics, ...nativeDiagnostics] });
+      },
       submit,
       async run(message, opts = {}) {
         const accepted = await submit(message, opts);
@@ -468,16 +696,26 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
         assertOpen(); return track(getRun(accepted.runId));
       },
       async getRun(id) { assertOpen(); return getRun(id); },
-      async listSessions(): Promise<BotSessionInfo[]> { assertOpen(); return clone(Object.values((await state()).sessions).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))); },
+      async listSessions(): Promise<BotSessionInfo[]> { assertOpen(); return clone(Object.values((await state()).sessions).map(({ nativeEntries: _entries, ...metadata }) => metadata).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))); },
       watch, async cancel(id) { assertOpen(); return cancel(id); },
       async callTool(name, input, opts = {}) {
         assertOpen(); const controller = new AbortController(); directControllers.add(controller);
         const abort = () => controller.abort(opts.signal?.reason); opts.signal?.addEventListener("abort", abort, { once: true }); if (opts.signal?.aborted) abort();
         try { return await exclusive(async () => {
           assertOpen(); await reloadAtBoundary();
-          const tool = project.tools.find(tool => tool.name === name); if (!tool) throw new BotError("NOT_FOUND", `Tool ${name} is not enabled for this bot.`);
+          const tool = project.tools.find(tool => tool.name === name);
           let cwd = defaultCwd; let sid = opts.session ?? "direct";
           if (opts.session) { const meta = (await state()).sessions[opts.session]; if (!meta) throw new BotError("NOT_FOUND", `Unknown session ${opts.session}.`); cwd = meta.cwd; }
+          if (project.native || (opts.session && (await state()).sessions[opts.session]?.nativeEntries)) {
+            const native = await nativeSession(opts.session ? numeric(opts.session, "dconv") : "direct", cwd);
+            // executeTool is Pi's public nested-call pipeline: validation, gates, result hooks,
+            // exposure and cancellation are identical to model-issued tool calls.
+            const result = await native.callTool(name, input, controller.signal);
+            if (opts.session) await H().commit(async tx => { (await tx.doc(Instance)).sessions[opts.session!]!.nativeEntries = json(native.entries()) as unknown as JsonValue; }, C);
+            await reloadAtBoundary();
+            return json({ content: result.result.content, ...(result.result.details === undefined ? {} : { details: result.result.details }), isError: result.isError });
+          }
+          if (!tool) throw new BotError("NOT_FOUND", `Tool ${name} is not enabled for this bot.`);
           const result = await invokeTool(tool, input, { cwd, sourceDir, stateDir, history, sessionId: sid, signal: controller.signal });
           await reloadAtBoundary(); return result;
         }, withAbortSignal(controller.signal, C)); }
@@ -496,9 +734,10 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
             try { await H().close(C); await Promise.allSettled([...observers]); }
             finally {
               await gate;
+              const cleaned = await Promise.allSettled([...nativeSessions.values()].map(item => item.runtime.close())); nativeSessions.clear();
               try {
                 const released = await Promise.allSettled(releases.reverse().map(release => release()));
-                const failed = released.find(result => result.status === "rejected");
+                const failed = [...released, ...cleaned].find(result => result.status === "rejected");
                 if (failed?.status === "rejected") throw failed.reason;
               } finally { if (temporary) await rm(temporary, { recursive: true, force: true }); }
             }
@@ -519,6 +758,7 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
     }
     return handle;
   } catch (error) {
+    await Promise.allSettled([...nativeSessions.values()].map(item => item.runtime.close()));
     if (harness) await harness.close(C).catch(() => {}); else await storage?.close(C).catch(() => {});
     for (const release of releases.reverse()) await release().catch(() => {});
     if (temporary) await rm(temporary, { recursive: true, force: true });
