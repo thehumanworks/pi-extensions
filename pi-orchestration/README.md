@@ -88,7 +88,21 @@ export PI_WORKFLOW_ALLOW_UNATTENDED=1
 workflow run review --cwd ./project --args '{"path":"src"}' --model openai/gpt-6.1-sol
 ```
 
-CLI `run` waits by default. Add `--bg` for an immediate launch reply. Ctrl-C detaches the client and leaves the run active; use `cancel` to stop it. The same commands work through `pi -p "/workflow …"` with the extension loaded and the unattended flag set.
+CLI `run` waits by default. Add `--bg` for an immediate launch reply. Ctrl-C detaches the client and leaves the run active; use `cancel` to stop it. The same commands work through `pi -p "/workflow …"` with the extension loaded and the unattended flag set, or with approval set to `auto`.
+
+### Launch approval
+
+By default, Pi asks you to confirm each launch, whether from the agent or `/workflow run`. To let workflows launch without asking, so the agent is not blocked, set `workflow.approval` to `auto` in a Pi settings file:
+
+```json
+{ "workflow": { "approval": "auto" } }
+```
+
+Put it in `~/.pi/agent/settings.json` for every project, or in the project's `.pi/settings.json` for one workspace. As with Pi's own settings, the project value wins, and project settings load only after you trust the project. `"ask"` is the default. Any other value refuses launches with `invalid_setting` until you fix it.
+
+To change it for one session only, use `/workflow approval auto` or `/workflow approval ask`. This overrides both settings files. The choice is saved with the session, so resuming the session restores it, and moving to an earlier point in the session tree uses the choice made on that branch. `/workflow approval reset` goes back to settings. `/workflow approval` shows the current mode and where it comes from. Only you can change the mode: the agent cannot run slash commands. In TUI mode, the footer shows `workflows auto-approved` while launches skip confirmation.
+
+`auto` also lets headless Pi sessions (`pi -p`, or no UI) launch without `PI_WORKFLOW_ALLOW_UNATTENDED=1`. The standalone `workflow` command still needs that variable. No approval mode lets an inner agent launch a workflow (see [Signals, sleep and composition](#signals-sleep-and-composition)).
 
 ## Authoring workflows
 
@@ -247,7 +261,7 @@ Send the value with `workflow signal <runId> approve-release '{"approved":true,"
 
 Child workflows have their own run records and ownership, use the shared concurrency cap, and charge agents/tokens/cost to ancestors. `list` shows roots; `list --all` includes children for a nested view. Cancellation and revert cascade through ownership. The default maximum depth is one: root → child. Set `PI_WORKFLOW_MAX_DEPTH=2` before worker startup to allow another authored level.
 
-Only a person or the root Pi session may launch a workflow. Inner agents must never call the CLI or Pi to create runs. Their execution environments carry the run/step markers and omit the unattended flag; both entry points refuse those launches with `not_from_root`. Worktree-root launches are also refused by the worker. Compose in TypeScript with `ctx.workflow()` so budgets and cancellation remain accountable. These controls prevent accidental recursion; trusted same-user code can bypass environment policy and is not treated as hostile sandboxed code.
+Only a person or the root Pi session may launch a workflow. Inner agents must never call the CLI or Pi to create runs. Their execution environments carry the run/step markers and omit the unattended flag; both entry points refuse those launches with `not_from_root`, even when approval is `auto`. Worktree-root launches are also refused by the worker. Compose in TypeScript with `ctx.workflow()` so budgets and cancellation remain accountable. These controls prevent accidental recursion; trusted same-user code can bypass environment policy and is not treated as hostile sandboxed code.
 
 ### Background agents and swarms
 
@@ -348,6 +362,8 @@ workflow steer <runId> <agent> "message"
 workflow worker start|stop|status
 ```
 
+Inside Pi, `/workflow approval [ask|auto|reset]` also sets [launch approval](#launch-approval) for the session.
+
 Every command accepts `--home DIR` and `--json`. Single actions emit one JSON document on stdout; `poll` and `watch` emit NDJSON. Progress/errors intended for humans stay off JSON stdout. Socket envelopes are `{ ok: true, data }` / `{ ok: false, error }`; CLI JSON unwraps successful data and prints `{ error: { code, message } }` for errors. The result action returns the complete workflow result directly.
 
 | Exit | Meaning |
@@ -369,7 +385,7 @@ The worker starts lazily on the first action that needs it, runs compiled `dist/
 | Environment variable | Default / purpose |
 |---|---|
 | `PI_WORKFLOW_HOME` | Home described above. |
-| `PI_WORKFLOW_ALLOW_UNATTENDED` | Must equal `1` for headless launch; read/status/cancel do not require it. |
+| `PI_WORKFLOW_ALLOW_UNATTENDED` | Must equal `1` for headless launch, unless a Pi session's approval is `auto`; read/status/cancel do not require it. |
 | `PI_WORKFLOW_NODE` | `node`; absolute Node executable for detached startup when needed. |
 | `PI_WORKFLOW_MAX_CONCURRENT_AGENTS` | `min(availableParallelism(), 8)` across the whole worker. |
 | `PI_WORKFLOW_MAX_DEPTH` | `1`. |
@@ -390,7 +406,9 @@ No OS service is installed. A user-managed systemd/launchd service can supervise
 | `workflow: command not found` | Start a Pi session with the package installed so it can link the command. Check that `~/.local/bin` or `~/bin` is on PATH. Otherwise use the `node …/bin/workflow.mjs` command that `/workflow guide` prints. |
 | Worker will not start / exit 4 | Read `<home>/worker.log`; verify Node >=22.19, writable home, and a short Unix socket path. |
 | Unknown/no model | Use an exact configured provider/model ID. Pass `--model` in CLI launches or set workflow defaults. Session-only providers are not inherited. |
-| Headless launch refused | Set `PI_WORKFLOW_ALLOW_UNATTENDED=1` in the root caller environment after reviewing the workflow. |
+| Headless launch refused | Set `PI_WORKFLOW_ALLOW_UNATTENDED=1` in the root caller environment after reviewing the workflow. Headless Pi sessions can instead use `"workflow": { "approval": "auto" }` in settings. |
+| Every launch asks for confirmation | Set [launch approval](#launch-approval) to `auto` in settings, or run `/workflow approval auto` for the session. |
+| `invalid_setting` on launch | `workflow.approval` in `~/.pi/agent/settings.json` or `.pi/settings.json` must be `"ask"` or `"auto"`. |
 | `not_from_root` | Move composition into `ctx.workflow()`. Do not recursively launch through an inner agent's shell. |
 | `outdated` / hash mismatch | Restore the original file to finish the run, or inspect state before `retry --allow-changed`. |
 | `journal_mismatch` | Inspect the named key and changed control flow, prompts or options; do not reuse a key for different operations. |

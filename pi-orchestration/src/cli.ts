@@ -12,6 +12,7 @@ import type { ControlRequest } from "./protocol.ts";
 import { catalogText, json, modelLabel, runList, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText } from "./presentation.ts";
 
 export function help(program = "workflow"): string {
+  const inPi = program.startsWith("/");
   return `${program} guide                    how to write a workflow: template, ctx API, model rules
 ${program} init <name> [--cwd DIR]  write a starter .pi/workflows/<name>.ts
 ${program} catalog [--cwd DIR]
@@ -28,11 +29,12 @@ ${program} retry <runId> [--from KEY] [--allow-changed]
 ${program} signal <runId> <key> '<json>'
 ${program} agents [--run ID]
 ${program} steer <runId> <agent> "message"
-${program} worker start|stop|status
+${program} worker start|stop|status${inPi ? `
+${program} approval [ask|auto|reset]  ask before launches or not, for this session; reset follows settings.json workflow.approval` : ""}
 
 Every command accepts --json and --home DIR. poll/watch emit NDJSON.
 run attaches by default; Ctrl-C detaches without cancelling the durable run.
-Headless launches require PI_WORKFLOW_ALLOW_UNATTENDED=1.
+Headless launches require PI_WORKFLOW_ALLOW_UNATTENDED=1${inPi ? " or approval auto" : ""}.
 Exit codes: 0 success, 1 usage/validation, 2 failed, 3 cancelled, 4 worker unavailable.`;
 }
 

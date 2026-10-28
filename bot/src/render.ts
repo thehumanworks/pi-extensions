@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { styleText } from "node:util";
+import { applyChanges, assistantContent, type ReplyBlock } from "./reply.js";
 import type { BotEvent, BotRunRecord } from "./types.js";
 
 /** A writable stream; TTY fields enable live previews and width-aware rendering. */
@@ -65,8 +66,7 @@ export async function loadMarkdown(): Promise<MarkdownRenderer> {
 }
 
 type Style = Parameters<typeof styleText>[0];
-type Block = { type: string; text?: string; thinking?: string; redacted?: boolean };
-type Content = { role?: string; content?: Block[] };
+type Block = ReplyBlock;
 type ToolResult = { role?: string; content?: Array<{ type: string; text?: string }>; isError?: boolean; durationMs?: number };
 interface Stream { out: TerminalOutput; color: boolean; atLineStart: boolean; used: boolean }
 interface BlockState { started: boolean; shown: string; committed: number; chunks: number }
@@ -202,7 +202,7 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
       cursor = index + 1;
     }
   }
-  function open(content: Block[] = []) { close(); message = { content: content.map(block => ({ ...block })) }; }
+  function open(content: Block[] = []) { close(); message = { content }; }
   function close() {
     if (!message) return;
     sync(true);
@@ -212,15 +212,7 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
   function apply(changes: unknown) {
     if (!Array.isArray(changes)) return;
     if (!message) open();
-    const content = message!.content;
-    for (const change of changes as Array<{ type?: string; contentIndex?: number; block?: Block; delta?: string; message?: Content }>) {
-      const index = change.contentIndex ?? -1;
-      const block = content[index];
-      if (["text_start", "thinking_start", "toolcall_start", "block"].includes(change.type ?? "") && change.block) content[index] = { ...change.block };
-      else if (change.type === "text_delta" && block?.type === "text") block.text = (block.text ?? "") + (change.delta ?? "");
-      else if (change.type === "thinking_delta" && block?.type === "thinking") block.thinking = (block.thinking ?? "") + (change.delta ?? "");
-      else if (change.type === "message" && Array.isArray(change.message?.content)) message!.content = change.message.content.map(item => ({ ...item }));
-    }
+    message!.content = applyChanges(message!.content, changes);
   }
 
   function toolStart(id: string, name: string, args: unknown, nested: boolean) {
@@ -255,12 +247,12 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
   function handle(event: BotEvent) {
     const data = (event.data ?? {}) as Record<string, any>;
     switch (event.type) {
-      case "message_start": if (data.message?.role === "assistant") open(data.message.content); sync(false); break;
+      case "message_start": { const content = assistantContent(event); if (content) open(content); sync(false); break; }
       case "message_update": apply(data.changes); sync(false); break;
       case "message_end": {
-        const final = (data.entry?.model as Content[] | undefined)?.find(item => item.role === "assistant");
+        const final = assistantContent(event);
         if (!final) break;
-        if (message) message.content = (final.content ?? []).map(block => ({ ...block })); else open(final.content);
+        if (message) message.content = final; else open(final);
         close(); break;
       }
       case "tool_execution_start": toolStart(data.toolCallId ?? "", data.toolName ?? "tool", data.args, !!data.parentToolCallId); break;

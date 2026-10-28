@@ -18,7 +18,7 @@ async function until(predicate: () => boolean) {
 }
 function harness(root: string, open: (source: string, options: any) => Promise<BotHandle>, flag?: string) {
   const tools: Record<string, any> = {}, commands: Record<string, any> = {}, events: Record<string, any> = {};
-  const notices: string[] = [], messages: any[] = [], branch: any[] = [], statuses: any[] = [];
+  const notices: string[] = [], messages: any[] = [], branch: any[] = [], statuses: any[] = [], widgets: Array<{ key: string; lines?: string[] }> = [];
   const pi = {
     registerFlag() {}, getFlag: () => flag,
     registerTool: (tool: any) => { tools[tool.name] = tool; },
@@ -28,19 +28,19 @@ function harness(root: string, open: (source: string, options: any) => Promise<B
     sendMessage: (message: any, options: unknown) => { messages.push({ ...message, options }); },
   };
   const ctx = { cwd: root, hasUI: true, sessionManager: { getBranch: () => branch }, ui: {
-    notify: (message: string) => { notices.push(message); }, setStatus: (...args: unknown[]) => statuses.push(args), setWidget() {},
+    notify: (message: string) => { notices.push(message); }, setStatus: (...args: unknown[]) => statuses.push(args), setWidget: (key: string, lines?: string[]) => { widgets.push({ key, lines }); },
     select: async (_title: string, choices: string[]) => choices[0], confirm: async () => true,
     input: async () => undefined, editor: async () => undefined,
   } };
   registerPiBot(pi as unknown as ExtensionAPI, { root: () => root, openBot: open });
   events.session_start({}, ctx);
-  return { tools, commands, events, ctx, notices, messages, branch, statuses };
+  return { tools, commands, events, ctx, notices, messages, branch, statuses, widgets };
 }
-async function setup(t: TestContext, responses = [answer("SDK reply"), answer("Continued")]) {
+async function setup(t: TestContext, responses = [answer("SDK reply"), answer("Continued")], tokensPerSecond = 100000) {
   const root = await mkdtemp(join(tmpdir(), "pi-bot-ui-")); t.after(() => rm(root, { recursive: true, force: true }));
   const source = join(root, "reviewer"), agentDir = join(root, "user");
   await initBot(source, { name: "reviewer", model: "faux/faux-1" });
-  const faux = fauxProvider({ tokensPerSecond: 100000 }); const models = createModels(); models.setProvider(faux.provider); faux.setResponses(responses);
+  const faux = fauxProvider({ tokensPerSecond }); const models = createModels(); models.setProvider(faux.provider); faux.setResponses(responses);
   let opens = 0;
   const f = harness(root, async (source, options) => { opens++; return openBot(source, { ...options, models, agentDir }); });
   t.after(() => f.events.session_shutdown());
@@ -74,6 +74,31 @@ test("bot_run uses SDK-owned durable conversations, resumes and reports usage wi
   const continued = await f.tools.bot_run.execute("id2", { bot: f.source, task: "Continue", session: record.sessionId }, undefined, undefined, f.ctx);
   assert.equal(continued.details.output, "Continued"); assert.equal(continued.details.sessionId, record.sessionId); assert.equal(f.opens(), 1);
   await assert.rejects(f.tools.bot_run.execute("bad", { bot: "http://localhost:1234", task: "x", cwd: "/etc" }, undefined, undefined, f.ctx), /server's workspace/);
+});
+
+test("bot_run partial updates show the reply text as it is generated", async t => {
+  const f = await setup(t, [answer("Streamed SDK reply")]);
+  const updates: any[] = [];
+  const result = await f.tools.bot_run.execute("id", { bot: "reviewer", task: "Review" }, undefined, (update: any) => updates.push(update), f.ctx);
+  assert.equal(result.details.output, "Streamed SDK reply");
+  assert.equal(updates[0].content[0].text, "reviewer: working…");
+  const partial = updates.filter(update => update.details.output);
+  assert(partial.length > 0, "the preview is rebuilt from run events");
+  assert.equal(partial.at(-1).details.output, "Streamed SDK reply"); assert.equal(partial.at(-1).content[0].text, "Streamed SDK reply");
+});
+
+test("direct chat shows the streaming reply in the progress widget, then clears it", async t => {
+  const reply = "Live widget reply streamed while the bot is still answering.";
+  const f = await setup(t, [answer(reply)], 100);
+  await f.commands.bot.handler("reviewer", f.ctx);
+  f.events.input({ text: "first" }, f.ctx);
+  await until(() => f.messages.some(m => m.customType === "bot-reply"));
+  const progress = f.widgets.filter(widget => widget.key === "pi-bot-progress");
+  const shown = progress.filter(widget => widget.lines).map(widget => widget.lines!.slice(1).join("\n"));
+  assert.match(progress.find(widget => widget.lines)!.lines![0], /^reviewer · drun:/);
+  assert(shown.some(text => text && reply.startsWith(text) && text !== reply), `a partial reply was shown: ${JSON.stringify(shown)}`);
+  assert.equal(shown.at(-1), reply);
+  await until(() => f.widgets.at(-1)?.key === "pi-bot-progress" && f.widgets.at(-1)?.lines === undefined);
 });
 
 test("direct chat handles input without running a second Pi model loop and queues followups in one durable session", async t => {

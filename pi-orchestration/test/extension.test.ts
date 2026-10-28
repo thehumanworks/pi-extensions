@@ -20,13 +20,14 @@ function runRecord(id: string, status: RunStatus): RunRecord {
 }
 
 /** A fake Pi host and worker client that record what the extension does. */
-function harness(statuses: Record<string, RunStatus[]>) {
+function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv = {}) {
   const handlers = new Map<string, Handler>();
   const tools = new Map<string, { description: string; promptGuidelines?: string[]; parameters: { properties: Record<string, any> }; execute: (...args: unknown[]) => Promise<unknown> }>();
   const commands = new Map<string, { handler: (args: string, ctx: ExtensionContext) => Promise<void> }>();
   const messages: Array<{ message: { content: string; details: { kind: string; runId?: string } }; options?: { triggerTurn?: boolean } }> = [];
   const entries: Entry[] = [];
   const requests: ControlRequest[] = [];
+  const settings: Record<string, unknown> = {};
   let launches = 0;
   const pi = {
     on: (name: string, handler: Handler) => { handlers.set(name, handler); },
@@ -35,6 +36,7 @@ function harness(statuses: Record<string, RunStatus[]>) {
     sendMessage: (message: (typeof messages)[number]["message"], options?: (typeof messages)[number]["options"]) => { messages.push({ message, options }); },
     appendEntry: (customType: string, data: unknown) => { entries.push({ type: "custom", customType, data }); },
     getThinkingLevel: () => "medium",
+    getSettings: () => structuredClone(settings),
   } as unknown as ExtensionAPI;
   const client: WorkflowClient = {
     async request(request) {
@@ -53,15 +55,21 @@ function harness(statuses: Record<string, RunStatus[]>) {
     ensure: async () => ({}),
   };
   const notices: string[] = [];
+  const statusBar = new Map<string, string>();
+  const prompts = { confirms: 0, accept: true };
   const agent = { busy: false };
   const context = (sessionId = "s1", branch: Entry[] = entries) => ({
     cwd: "/w", mode: "rpc", hasUI: true, model: { provider: "faux", id: "faux-1" }, isIdle: () => !agent.busy,
     sessionManager: { getSessionId: () => sessionId, getBranch: () => branch },
-    ui: { confirm: async () => true, notify: (text: string) => { notices.push(text); }, setWidget: () => {} },
+    ui: {
+      confirm: async () => { prompts.confirms++; return prompts.accept; },
+      notify: (text: string) => { notices.push(text); }, setWidget: () => {},
+      setStatus: (key: string, text: string | undefined) => { if (text === undefined) statusBar.delete(key); else statusBar.set(key, text); },
+    },
   }) as unknown as ExtensionContext;
-  registerOrchestration(pi, { client, pollIntervalMs: 5, env: {} });
+  registerOrchestration(pi, { client, pollIntervalMs: 5, env });
   const completions = () => messages.filter(item => item.message.details.kind === "completion");
-  return { handlers, tools, commands, messages, entries, requests, context, completions, notices, agent, statuses };
+  return { handlers, tools, commands, messages, entries, requests, context, completions, notices, agent, statuses, settings, statusBar, prompts };
 }
 
 test("wait:true returns the outcome without a second completion turn", async () => {
@@ -130,6 +138,93 @@ test("headless sessions need the unattended opt-in to launch", async () => {
   await h.handlers.get("session_start")!({}, ctx);
   await assert.rejects(h.tools.get("workflow")!.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx),
     (error: { code?: string }) => error.code === "unattended_forbidden");
+  assert.equal(h.requests.length, 0);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
+test("launches ask by default, and a declined launch never reaches the worker", async () => {
+  const h = harness({});
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  h.prompts.accept = false;
+  await assert.rejects(h.tools.get("workflow")!.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx),
+    (error: { code?: string }) => error.code === "cancelled");
+  assert.equal(h.prompts.confirms, 1);
+  assert.equal(h.requests.length, 0);
+  assert.equal(h.statusBar.size, 0);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
+test("settings approval auto launches without asking, headless included, but never from inside a run", async () => {
+  const h = harness({ "run-1": ["running"], "run-2": ["running"] });
+  h.settings.workflow = { approval: "auto" };
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  assert.equal(h.statusBar.get("workflow-approval"), "workflows auto-approved");
+  const tool = h.tools.get("workflow")!;
+  await tool.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx);
+  // Without a UI, auto stands in for PI_WORKFLOW_ALLOW_UNATTENDED.
+  await tool.execute("call-2", { action: "run", workflow: { name: "flow" } }, undefined, undefined, { ...ctx, hasUI: false } as ExtensionContext);
+  assert.equal(h.prompts.confirms, 0);
+  assert.equal(h.requests.filter(request => request.action === "run").length, 2);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+
+  const nested = harness({}, { PI_WORKFLOW_RUN_ID: "parent" });
+  nested.settings.workflow = { approval: "auto" };
+  const inner = nested.context();
+  await nested.handlers.get("session_start")!({}, inner);
+  await assert.rejects(nested.tools.get("workflow")!.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, inner),
+    (error: { code?: string }) => error.code === "not_from_root");
+  assert.equal(nested.requests.length, 0);
+  await nested.handlers.get("session_shutdown")!({}, inner);
+});
+
+test("/workflow approval overrides settings for one session and survives a restore", async () => {
+  const h = harness({ "run-1": ["running"], "run-2": ["running"] });
+  h.settings.workflow = { approval: "auto" };
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  const command = h.commands.get("workflow")!;
+  const lastOutput = () => h.messages.filter(item => item.message.details.kind === "command").at(-1)?.message.content;
+  await command.handler("approval", ctx);
+  assert.equal(lastOutput(), "Workflow launches start without asking (settings.json workflow.approval).");
+
+  await command.handler("approval ask", ctx);
+  assert.match(lastOutput()!, /^Workflow launches ask for approval \(this session;/);
+  assert.equal(h.statusBar.size, 0);
+  await h.tools.get("workflow")!.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx);
+  assert.equal(h.prompts.confirms, 1);
+
+  // The choice is part of the session: another session starts from settings, and resuming restores it.
+  await h.handlers.get("session_start")!({}, h.context("s2", []));
+  assert.equal(h.statusBar.get("workflow-approval"), "workflows auto-approved");
+  await h.handlers.get("session_start")!({}, ctx);
+  assert.equal(h.statusBar.size, 0);
+  await h.tools.get("workflow")!.execute("call-2", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx);
+  assert.equal(h.prompts.confirms, 2);
+
+  delete h.settings.workflow;
+  await command.handler("approval auto", ctx);
+  assert.equal(h.statusBar.get("workflow-approval"), "workflows auto-approved");
+  await command.handler("approval reset", ctx);
+  assert.equal(lastOutput(), "Workflow launches ask for approval (default).");
+  assert.deepEqual(h.entries.filter(entry => entry.type === "custom" && entry.customType === "workflow_approval")
+    .map(entry => (entry as { data: unknown }).data), [{ mode: "ask" }, { mode: "auto" }, {}]);
+
+  await command.handler("approval yolo", ctx);
+  assert.ok(h.notices.includes("Usage: /workflow approval [ask|auto|reset]"));
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
+test("an invalid approval setting refuses launches instead of guessing", async () => {
+  const h = harness({});
+  h.settings.workflow = { approval: "yes" };
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  assert.ok(h.notices.some(text => /workflow\.approval must be "ask" or "auto", not "yes"/.test(text)));
+  await assert.rejects(h.tools.get("workflow")!.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx),
+    (error: { code?: string }) => error.code === "invalid_setting");
+  assert.equal(h.prompts.confirms, 0);
   assert.equal(h.requests.length, 0);
   await h.handlers.get("session_shutdown")!({}, ctx);
 });

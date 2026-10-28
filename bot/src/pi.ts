@@ -7,7 +7,8 @@ import { connectBot, type BotClient } from "./client.js";
 import { createBot, editBot, archiveBot, listBots } from "./catalog.js";
 import { botsRoot, expandHome, resolveSource } from "./paths.js";
 import { inspectBot } from "./project.js";
-import type { BotHandle, BotEvent, BotInfo, BotRunRecord, OpenBotOptions, ThinkingLevel } from "./types.js";
+import { createReplyPreview } from "./reply.js";
+import type { BotHandle, BotInfo, BotRunRecord, OpenBotOptions, ThinkingLevel } from "./types.js";
 
 /** All conversations belong to the SDK; the surrounding Pi session is a UI, not a second model loop. */
 type Target = Pick<BotHandle, "info" | "submit" | "run" | "getRun" | "listSessions" | "watch" | "cancel" | "close">;
@@ -23,10 +24,6 @@ const text = (content: string) => [{ type: "text" as const, text: content }];
 const terminal = (run: BotRunRecord) => ["completed", "failed", "cancelled"].includes(run.status);
 function describe(info: BotInfo): string {
   return `${info.name}: ${info.description}\nsource: ${info.sourceDir}\nstate: ${info.stateDir}\nmodel: ${info.model ?? "Pi user default"}\ninherit: ${info.inherit}\nrevision: ${info.revision}\ntools: ${info.tools.map(tool => tool.name).join(", ") || "none"}${info.diagnostics.length ? `\n${info.diagnostics.join("\n")}` : ""}`;
-}
-function preview(event: BotEvent): string | undefined {
-  const data = event.data as { assistantMessageEvent?: { type?: string; delta?: string } } | undefined;
-  return data?.assistantMessageEvent?.type === "text_delta" ? data.assistantMessageEvent.delta : undefined;
 }
 
 /** Register the transport-independent Pi UI adapter. Rendering belongs to the pi-bot package. */
@@ -85,12 +82,12 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
     const key = `${slot.source}\n${initial.runId}`;
     pending.set(key, { target: handle, runId: initial.runId, selection: slot });
     let stop: (() => Promise<void>) | undefined;
-    let streamed = "";
+    const reply = createReplyPreview();
     try {
+      // A session watch also sees other runs of the conversation; their events carry their own runId.
       if (ctx.hasUI) stop = await handle.watch(initial.sessionId, event => {
-        if (signal.aborted || selected !== slot) return;
-        const delta = preview(event);
-        if (delta) { streamed = (streamed + delta).slice(-2_000); ctx.ui.setWidget("pi-bot-progress", [`${slot.name} · ${initial.runId}`, ...streamed.split("\n").slice(-6)]); }
+        if (signal.aborted || selected !== slot || (event.runId && event.runId !== initial.runId)) return;
+        if (reply.apply(event)) ctx.ui.setWidget("pi-bot-progress", [`${slot.name} · ${initial.runId}`, ...reply.text.slice(-2_000).split("\n").slice(-6)]);
       });
       let result = initial;
       while (!terminal(result)) {
@@ -204,9 +201,9 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
       if (remote(params.bot) && params.cwd !== undefined) throw new Error("A remote bot uses the server's workspace; cwd cannot be overridden.");
       const handle = await target(params.bot, ctx.cwd, params.authTokenEnv);
       const cwd = remote(params.bot) ? undefined : params.cwd ? resolve(ctx.cwd, expandHome(params.cwd)) : (!params.session || params.session === "new" || params.session === "last") ? ctx.cwd : undefined;
-      let output = "";
+      const reply = createReplyPreview();
       const record = await handle.run(params.task, { session: params.session, ...(cwd ? { cwd } : {}), signal, onEvent: event => {
-        const delta = preview(event); if (delta) output = (output + delta).slice(-50_000);
+        reply.apply(event); const output = reply.text.slice(-50_000);
         onUpdate?.({ content: text(output || `${params.bot}: working…`), details: { bot: params.bot, output, event } });
       } });
       const body = record.output || record.error || "(no output)";

@@ -86,6 +86,8 @@ const parameters = Type.Object({
 
 /** attached counts foreground waiters that report the outcome themselves. */
 interface TrackedRun { runId: string; home?: string; attached: number }
+/** ask confirms each launch; auto launches without asking, including from headless Pi sessions. */
+type Approval = "ask" | "auto";
 interface SessionWatch {
   id: string;
   context: ExtensionContext;
@@ -93,6 +95,8 @@ interface SessionWatch {
   controller: AbortController;
   timer?: ReturnType<typeof setTimeout>;
   polling: boolean;
+  /** Set by /workflow approval; overrides settings for this session. */
+  approval?: Approval;
 }
 
 function nonempty(value: string | undefined, name: string): string {
@@ -254,7 +258,10 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     dispose();
     const session = sessionFor(ctx);
     for (const entry of ctx.sessionManager.getBranch()) {
-      if (entry.type === "custom" && entry.customType === "workflow_run") {
+      if (entry.type === "custom" && entry.customType === "workflow_approval") {
+        const mode = record(entry.data)?.mode;
+        session.approval = mode === "ask" || mode === "auto" ? mode : undefined;
+      } else if (entry.type === "custom" && entry.customType === "workflow_run") {
         const data = record(entry.data);
         if (typeof data?.runId !== "string") continue;
         if (data.done === true) session.runs.delete(data.runId);
@@ -266,11 +273,45 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
         if (data?.kind === "completion" && typeof data.runId === "string") session.runs.delete(data.runId);
       }
     }
+    showApproval(ctx);
     if (session.runs.size) await pollSession(session);
+  }
+
+  /** The session's choice wins; Pi merges trusted project settings over agent-directory settings. */
+  function approval(ctx: ExtensionContext): { mode: Approval; source: "session" | "settings" | "default" } {
+    const override = active?.id === ctx.sessionManager.getSessionId() ? active.approval : undefined;
+    if (override) return { mode: override, source: "session" };
+    const value = record(record(pi.getSettings())?.workflow)?.approval;
+    if (value === undefined) return { mode: "ask", source: "default" };
+    if (value !== "ask" && value !== "auto") throw new WorkflowError("invalid_setting", `settings.json workflow.approval must be "ask" or "auto", not ${JSON.stringify(value)}.`);
+    return { mode: value, source: "settings" };
+  }
+
+  function showApproval(ctx: ExtensionContext) {
+    if (!ctx.hasUI) return;
+    let mode: Approval = "ask";
+    try { mode = approval(ctx).mode; } catch (error) { ctx.ui.notify((error as Error).message, "warning"); }
+    ctx.ui.setStatus("workflow-approval", mode === "auto" ? "workflows auto-approved" : undefined);
+  }
+
+  function approvalCommand(ctx: ExtensionContext, session: SessionWatch, args: string[]): string {
+    const [choice, ...rest] = args;
+    if (rest.length || (choice !== undefined && choice !== "ask" && choice !== "auto" && choice !== "reset"))
+      throw new WorkflowError("invalid_request", "Usage: /workflow approval [ask|auto|reset]");
+    if (choice) {
+      session.approval = choice === "reset" ? undefined : choice;
+      pi.appendEntry("workflow_approval", session.approval ? { mode: session.approval } : {});
+      showApproval(ctx);
+    }
+    const { mode, source } = approval(ctx);
+    const from = source === "session" ? "this session; /workflow approval reset follows settings"
+      : source === "settings" ? "settings.json workflow.approval" : "default";
+    return `Workflow launches ${mode === "auto" ? "start without asking" : "ask for approval"} (${from}).`;
   }
 
   async function authorize(ctx: ExtensionContext, launch: Extract<ControlRequest, { action: "run" }>) {
     assertRootLaunch(env);
+    if (approval(ctx).mode === "auto") return;
     if (!ctx.hasUI) { assertUnattended(env); return; }
     const workflow = "path" in launch.workflow ? launch.workflow.path : launch.workflow.name;
     const accepted = await ctx.ui.confirm("Run durable workflow?", [
@@ -278,6 +319,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
       `Model: ${modelName(launch.model)}${launch.thinkingLevel ? `:${launch.thinkingLevel}` : ""}, unless the workflow sets defaults.model`,
       `Budget overrides: ${json(launch.budget ?? {})}; workflow/worker limits also apply.`,
       "Runs trusted code and agents with shell/file access after this session closes.",
+      `To stop asking: /workflow approval auto for this session, or "workflow": { "approval": "auto" } in settings.json.`,
     ].join("\n"));
     if (!accepted) throw new WorkflowError("cancelled", "Workflow launch cancelled.");
   }
@@ -407,7 +449,16 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     handler: async (args, ctx) => {
       try {
         const session = sessionFor(ctx);
-        const exitCode = await runCli(splitCommand(args), {
+        const stdout = (text: string) => {
+          if (active !== session) return;
+          pi.sendMessage({ customType: "workflow", content: text.trimEnd(), display: true, details: { kind: "command" } });
+          // Pi 1.4 print mode renders assistant messages only and redirects stdout.write to stderr.
+          if (ctx.mode === "print") (options.printOutput ?? (value => { writeSync(1, value); }))(text);
+        };
+        const argv = splitCommand(args);
+        // Pi-only: the shell command has no session or settings to change.
+        if (argv[0] === "approval") { stdout(approvalCommand(ctx, session, argv.slice(1)) + "\n"); return; }
+        const exitCode = await runCli(argv, {
           cwd: ctx.cwd, env, client, signal: session.controller.signal,
           model: ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined,
           thinkingLevel: pi.getThinkingLevel() as ThinkingLevel,
@@ -416,12 +467,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
           authorizeRun: launch => authorize(ctx, launch),
           onLaunch: (runId, home, attached) => attached ? attach(ctx, runId, home) : void track(ctx, runId, home),
           onSettled: runId => settle(ctx, runId),
-          stdout: text => {
-            if (active !== session) return;
-            pi.sendMessage({ customType: "workflow", content: text.trimEnd(), display: true, details: { kind: "command" } });
-            // Pi 1.4 print mode renders assistant messages only and redirects stdout.write to stderr.
-            if (ctx.mode === "print") (options.printOutput ?? (value => { writeSync(1, value); }))(text);
-          },
+          stdout,
           stderr: text => {
             if (active !== session) return;
             if (ctx.mode === "print") process.stderr.write(text);
