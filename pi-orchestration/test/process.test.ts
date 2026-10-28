@@ -73,6 +73,8 @@ test("a SIGKILLed worker resumes runs without repeating committed steps", { time
       async run(ctx) {
         const before = await ctx.step("before", async () => process.pid);
         await ctx.sleep(1500);
+        // Keep both runs pending even if worker restart outlasts the sleep.
+        await ctx.signal("finish");
         return { before, after: await ctx.step("after", async () => process.pid) };
       },
     }`));
@@ -92,6 +94,9 @@ test("a SIGKILLed worker resumes runs without repeating committed steps", { time
     const cancelled = await s.cli(["cancel", doomed.json.runId]);
     assert.equal(cancelled.json.status, "cancelled");
     assert.equal((await s.cli(["poll", doomed.json.runId, "--interval", "20ms"])).code, 3);
+    const waiting = await s.cli(["poll", runId, "--until", "signal", "--interval", "50ms"]);
+    assert.equal(waiting.json.status, "waiting_signal");
+    assert.equal((await s.cli(["signal", runId, "finish", "null"])).code, 0);
     const done = await s.cli(["poll", runId, "--interval", "50ms"]);
     assert.equal(done.code, 0, done.stderr);
     const run = done.json as RunRecord;
