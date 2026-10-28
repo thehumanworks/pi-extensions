@@ -24,6 +24,24 @@ Use the run's actual session ID; IDs are scoped to one bot's state. `run` persis
 
 `bot --help` lists all commands and flags. A bare reference resolves under `$PI_BOT_HOME` or Pi's user `bots/` directory. Use `./reviewer`, an absolute directory, or a `BOT.md` path for an explicit project.
 
+### Nix
+
+A flake in this package provides the CLI, a development shell, and an optional
+Nixpkgs overlay for `x86_64-linux` and `aarch64-linux`:
+
+```sh
+nix run 'github:thehumanworks/pi-extensions?dir=bot' -- --help
+nix profile add 'github:thehumanworks/pi-extensions?dir=bot#bot'
+# From the repository root:
+nix develop ./bot
+```
+
+The CLI includes Node and its runtime command-line tools; a separate global
+`pi` installation is not needed. See [the Nix guide](nix/README.md) for local
+builds, flake inputs, NixOS `environment.systemPackages`, Home Manager
+`home.packages`, and dependency updates. Bot sources/state must remain outside
+the read-only Nix store, and provider configuration is still per-user.
+
 ### Existing Pi provider access
 
 Provider access uses the current OS user's Pi setup automatically, including the built-in catalog, API keys, environment/ambient credentials, custom `models.json`, and OAuth refresh. `PI_CODING_AGENT_DIR` selects the Pi user configuration directory. There is **no bot login**, and credentials are not copied into bot source or state.
@@ -221,6 +239,10 @@ Optional token protection uses `Authorization: Bearer …` on `/v1/*`. HTTP erro
 - **Scope.** One bot per service, text requests, no session fork/import/migration API, no multi-tenant isolation, TLS termination, cron, MCP or native Pi lifecycle compatibility. Model/retry defaults are read at open; supported capability changes reload at boundaries.
 
 ## Development
+
+For a pinned Node/npm and runtime-tool environment, run `nix develop ./bot`
+from the repository root, then `npm ci`. See [the Nix guide](nix/README.md)
+for flake checks and lockfile maintenance.
 
 From the repository root:
 
