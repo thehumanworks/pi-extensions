@@ -58,6 +58,34 @@ function runRecord(value: unknown): BotRunRecord {
   }
   return record;
 }
+const isNdjson = (response: Response) => !!response.body && !!response.headers.get("content-type")?.toLowerCase().startsWith("application/x-ndjson");
+/** Bounded, validated NDJSON events. Cancel the reader to stop a pending read. */
+async function* ndjson(reader: ReadableStreamDefaultReader<Uint8Array>, limit: number): AsyncGenerator<BotEvent> {
+  const decoder = new TextDecoder();
+  let pending = "";
+  const parse = (line: string): BotEvent => {
+    if (Buffer.byteLength(line) > limit) throw new BotClientError(502, "EVENT_TOO_LARGE", "Stream event exceeds the configured limit");
+    let value: BotEvent;
+    try { value = JSON.parse(line) as BotEvent; }
+    catch { throw new BotClientError(502, "INVALID_EVENT", "Server returned malformed NDJSON"); }
+    if (!value || typeof value !== "object" || typeof value.type !== "string") throw new BotClientError(502, "INVALID_EVENT", "Server returned an invalid event");
+    return value;
+  };
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      pending += done ? decoder.decode() : decoder.decode(value, { stream: true });
+      let index: number;
+      while ((index = pending.indexOf("\n")) >= 0) {
+        const line = pending.slice(0, index); pending = pending.slice(index + 1);
+        if (line.trim()) yield parse(line);
+      }
+      if (Buffer.byteLength(pending) > limit) throw new BotClientError(502, "EVENT_TOO_LARGE", "Stream event exceeds the configured limit");
+      if (done) { if (pending.trim()) yield parse(pending); return; }
+    }
+  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+}
+interface Acceptance { record: BotRunRecord; first?: BotEvent; events?: AsyncGenerator<BotEvent>; close(): void }
 async function boundedText(response: Response, limit: number): Promise<string> {
   if (!response.body) return "";
   const reader = response.body.getReader();
@@ -107,9 +135,9 @@ export class BotClient {
   private signal(signal?: AbortSignal): AbortSignal {
     return signal ? AbortSignal.any([this.lifetime.signal, signal]) : this.lifetime.signal;
   }
-  private async response(path: string, method: string, body?: unknown, signal?: AbortSignal): Promise<Response> {
+  private async response(path: string, method: string, body?: unknown, signal?: AbortSignal, accept?: string): Promise<Response> {
     const response = await this.fetcher(`${this.url}${path}`, {
-      method, headers: { ...this.headers, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+      method, headers: { ...this.headers, ...(body === undefined ? {} : { "Content-Type": "application/json" }), ...(accept ? { Accept: accept } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body), signal: this.signal(signal), redirect: "error",
     });
     if (!response.ok) {
@@ -150,11 +178,12 @@ export class BotClient {
     const controller = new AbortController();
     const signal = this.signal(options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal);
     const response = await this.response(`/v1/sessions/${segment(sessionId)}/stream`, "GET", undefined, signal);
-    if (!response.body || !response.headers.get("content-type")?.toLowerCase().startsWith("application/x-ndjson")) {
+    if (!isNdjson(response)) {
       await response.body?.cancel();
       throw new BotClientError(502, "INVALID_RESPONSE", "Expected an NDJSON event stream");
     }
-    const reader = response.body.getReader();
+    const reader = response.body!.getReader();
+    const events = ndjson(reader, this.eventLimit);
     let task: Promise<void>;
     let stopPromise: Promise<void> | undefined;
     const stop = (): Promise<void> => stopPromise ??= (async () => {
@@ -164,51 +193,75 @@ export class BotClient {
     })();
     this.watchers.add(stop);
     task = (async () => {
-      const decoder = new TextDecoder();
-      let pending = "";
-      const event = (line: string) => {
-        if (!line.trim()) return;
-        if (Buffer.byteLength(line) > this.eventLimit) throw new BotClientError(502, "EVENT_TOO_LARGE", "Stream event exceeds the configured limit");
-        let value: BotEvent;
-        try { value = JSON.parse(line) as BotEvent; }
-        catch { throw new BotClientError(502, "INVALID_EVENT", "Server returned malformed NDJSON"); }
-        if (!value || typeof value !== "object" || typeof value.type !== "string") throw new BotClientError(502, "INVALID_EVENT", "Server returned an invalid event");
-        listener(value);
-      };
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          pending += done ? decoder.decode() : decoder.decode(value, { stream: true });
-          let index: number;
-          while ((index = pending.indexOf("\n")) >= 0) {
-            const line = pending.slice(0, index); pending = pending.slice(index + 1); event(line);
-          }
-          if (Buffer.byteLength(pending) > this.eventLimit) throw new BotClientError(502, "EVENT_TOO_LARGE", "Stream event exceeds the configured limit");
-          if (done) { if (pending) event(pending); return; }
-        }
+        for await (const event of events) listener(event);
       } catch (error) {
         if (!signal.aborted) { try { options.onError?.(error instanceof Error ? error : new Error(String(error))); } catch { /* observer errors do not escape background tasks */ } }
-      } finally {
-        await reader.cancel().catch(() => {}); reader.releaseLock(); this.watchers.delete(stop);
-      }
+      } finally { this.watchers.delete(stop); }
     })();
     return stop;
   }
 
-  /** Submit then wait for a terminal record. Only an explicit run signal abort cancels the admitted run. */
+  /**
+   * Admission for run(). With an observer, ask for the run's NDJSON stream (Accept: application/x-ndjson) and read
+   * its run_accepted line; a server that only answers JSON is still accepted. Acceptance is bounded by
+   * requestTimeoutMs and deliberately ignores the caller's signal, so an abort can still learn the ID to cancel.
+   */
+  private async accept(message: string, options: Pick<RunOptions, "session" | "requestId" | "onEvent">): Promise<Acceptance> {
+    if (!options.onEvent) return { record: await this.submit(message, { session: options.session, requestId: options.requestId }), close() {} };
+    if (typeof message !== "string" || !message.trim()) throw new Error("message must be a non-empty string");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(new DOMException("The operation timed out", "TimeoutError")), this.requestTimeout);
+    try {
+      const response = await this.response("/v1/runs", "POST", { message, session: options.session, requestId: options.requestId }, controller.signal, "application/x-ndjson");
+      if (!isNdjson(response)) {
+        let value: unknown;
+        try { value = JSON.parse(await boundedText(response, this.responseLimit)); }
+        catch (error) { throw error instanceof BotClientError ? error : new BotClientError(502, "INVALID_RESPONSE", "Server returned malformed JSON"); }
+        return { record: runRecord(value), close() {} };
+      }
+      const reader = response.body!.getReader();
+      const events = ndjson(reader, this.eventLimit);
+      const first = await events.next();
+      try {
+        if (first.done || first.value.type !== "run_accepted") throw new BotClientError(502, "INVALID_RESPONSE", "Expected a run_accepted event");
+        return { record: runRecord(first.value.data), first: first.value, events, close: () => { controller.abort(); void reader.cancel().catch(() => {}); } };
+      } catch (error) { await events.return(undefined); throw error; }
+    } catch (error) { controller.abort(); throw error; }
+    finally { clearTimeout(timer); }
+  }
+  /** Forward a run stream until run_settled. Undefined means the stream ended early; the run itself continues. */
+  private async forward(opened: Acceptance, listener: (event: BotEvent) => void): Promise<BotRunRecord | undefined> {
+    const notify = (event: BotEvent) => { try { listener(event); } catch { /* observer failures never fail the run, as with local handles */ } };
+    try {
+      if (opened.first) notify(opened.first);
+      for await (const event of opened.events!) {
+        notify(event);
+        if (event.type === "run_settled") return runRecord(event.data);
+      }
+    } catch { /* fall back to polling */ }
+    return undefined;
+  }
+
+  /**
+   * Submit then wait for a terminal record. With onEvent, the run's own event stream is read from the same request
+   * (falling back to a session watch on servers without run streams). Only an explicit run signal abort cancels
+   * the admitted run.
+   */
   async run(message: string, options: Pick<RunOptions, "session" | "requestId" | "signal" | "onEvent"> = {}): Promise<BotRunRecord> {
     const signal = this.signal(options.signal);
     signal.throwIfAborted();
     // Keep bounded acceptance IO alive to learn the ID, but reject the caller promptly on abort.
     // If the reply arrives later, cancel that run in the background. A lost acceptance reply is
     // inherently ambiguous; use requestId to retry safely. Closing the client alone never cancels.
-    const acceptance = this.submit(message, { session: options.session, requestId: options.requestId });
+    const acceptance = this.accept(message, options);
+    let opened: Acceptance | undefined;
     let accepted: BotRunRecord | undefined;
     let stop: (() => Promise<void>) | undefined;
     let cancelPromise: Promise<void> | undefined;
     const onAbort = () => {
       if (cancelPromise) return;
-      cancelPromise = acceptance.then(run => this.cancel(run.runId, { signal: AbortSignal.timeout(5_000) }));
+      cancelPromise = acceptance.then(({ record }) => this.cancel(record.runId, { signal: AbortSignal.timeout(5_000) }));
       this.cancellations.add(cancelPromise);
       const cleanup = () => this.cancellations.delete(cancelPromise!);
       void cancelPromise.then(cleanup, cleanup);
@@ -216,10 +269,14 @@ export class BotClient {
     options.signal?.addEventListener("abort", onAbort, { once: true });
     try {
       if (options.signal?.aborted) { onAbort(); throw options.signal.reason ?? abortError(); }
-      accepted = await abortable(acceptance, signal);
+      opened = await abortable(acceptance, signal);
+      accepted = opened.record;
       signal.throwIfAborted();
-      if (terminal(accepted)) return accepted;
-      if (options.onEvent) stop = await this.watch(accepted.sessionId, options.onEvent, { signal });
+      if (opened.events) {
+        const settled = await abortable(this.forward(opened, options.onEvent!), signal);
+        if (settled) return settled;
+      } else if (terminal(accepted)) return accepted;
+      else if (options.onEvent) stop = await this.watch(accepted.sessionId, options.onEvent, { signal });
       while (true) {
         signal.throwIfAborted();
         const current = await this.getRun(accepted.runId, { signal });
@@ -228,6 +285,7 @@ export class BotClient {
       }
     } finally {
       options.signal?.removeEventListener("abort", onAbort);
+      if (opened) opened.close(); else void acceptance.then(late => late.close(), () => {});
       await stop?.();
       // An unobserved acceptance must not delay cancellation of the caller's wait.
       if (accepted) await cancelPromise?.catch(() => {});

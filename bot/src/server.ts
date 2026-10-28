@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Socket } from "node:net";
-import type { BotEvent, BotHandle, OpenBotOptions } from "./types.js";
+import type { BotEvent, BotHandle, BotRunRecord, OpenBotOptions } from "./types.js";
 
 export interface ServeOptions extends OpenBotOptions {
   host?: string;
@@ -38,6 +38,19 @@ function positive(value: number | undefined, fallback: number, name: string): nu
   return result;
 }
 function digest(value: string): Buffer { return createHash("sha256").update(value).digest(); }
+const terminal = (run: BotRunRecord) => ["completed", "failed", "cancelled"].includes(run.status);
+function delay(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise(resolve => {
+    if (signal.aborted) { resolve(); return; }
+    const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve(); };
+    const timer = setTimeout(done, ms);
+    signal.addEventListener("abort", done, { once: true });
+  });
+}
+/** Content negotiation for POST /v1/runs: NDJSON streams the run; anything else waits for acceptance only. */
+function wantsStream(req: IncomingMessage): boolean {
+  return (req.headers.accept ?? "").split(",").some(type => type.split(";", 1)[0].trim().toLowerCase() === "application/x-ndjson");
+}
 
 function readBody(req: IncomingMessage, limit: number): Promise<unknown> {
   const length = req.headers["content-length"];
@@ -153,9 +166,9 @@ export async function serve(source: string, options: ServeOptions = {}): Promise
     res.writeHead(e.status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...(e.status === 401 ? { "WWW-Authenticate": "Bearer" } : {}), ...(e.status === 413 ? { Connection: "close" } : {}) });
     res.end(text);
   };
-  const stream = async (res: ServerResponse, session: string) => {
+  /** Bounded NDJSON writer. Lines sent before open() wait in the same bounded queue. */
+  const ndjson = (res: ServerResponse, release: () => Promise<void> | void) => {
     if (streams.size >= maxStreams) throw new HttpError(503, "STREAM_LIMIT", "Too many active streams");
-    let unsubscribe: (() => Promise<void>) | undefined;
     let done = false;
     let cleanupPromise: Promise<void> | undefined;
     let ready = false;
@@ -169,7 +182,7 @@ export async function serve(source: string, options: ServeOptions = {}): Promise
       res.off("drain", drain);
       res.off("close", onClose);
       res.off("error", onClose);
-      cleanupPromise = Promise.resolve().then(() => unsubscribe?.()).then(() => undefined);
+      cleanupPromise = Promise.resolve().then(release).then(() => undefined);
       return cleanupPromise;
     };
     const onClose = () => { void cleanup().catch(() => {}); };
@@ -180,24 +193,82 @@ export async function serve(source: string, options: ServeOptions = {}): Promise
         if (!res.write(line)) break;
       }
     };
-    const listener = (event: BotEvent) => {
-      if (done) return;
+    const serialize = (event: unknown): string | undefined => {
       let line: string;
-      try { line = JSON.stringify(event) + "\n"; } catch { res.destroy(); onClose(); return; }
-      const bytes = Buffer.byteLength(line);
-      if (bytes + queuedBytes + res.writableLength > streamLimit) { res.destroy(); onClose(); return; }
-      if (!ready || queued.length || res.writableNeedDrain) { queued.push(line); queuedBytes += bytes; }
-      else res.write(line);
+      try { line = JSON.stringify(event) + "\n"; } catch { res.destroy(); onClose(); return undefined; }
+      if (Buffer.byteLength(line) + queuedBytes + res.writableLength > streamLimit) { res.destroy(); onClose(); return undefined; }
+      return line;
     };
     streams.add(cleanup);
     res.on("close", onClose); res.on("error", onClose); res.on("drain", drain);
+    return {
+      get done() { return done; },
+      cleanup,
+      send(event: unknown) {
+        if (done) return;
+        const line = serialize(event); if (line === undefined) return;
+        if (!ready || queued.length || res.writableNeedDrain) { queued.push(line); queuedBytes += Buffer.byteLength(line); }
+        else res.write(line);
+      },
+      open(first?: unknown) {
+        if (done) return;
+        const line = first === undefined ? undefined : serialize(first);
+        if (first !== undefined && line === undefined) return;
+        res.writeHead(200, { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+        res.flushHeaders(); ready = true;
+        if (line) res.write(line);
+        drain();
+      },
+      /** Flush the bounded queue regardless of backpressure, then finish the response. */
+      end() {
+        if (done) return;
+        for (const line of queued) res.write(line);
+        queued = []; queuedBytes = 0;
+        res.end(); void cleanup().catch(() => {});
+      },
+    };
+  };
+  const stream = async (res: ServerResponse, session: string) => {
+    let unsubscribe: (() => Promise<void>) | undefined;
+    const out = ndjson(res, () => unsubscribe?.());
     try {
       // watch owns snapshot semantics. Events may arrive before its asynchronous unsubscribe handle.
-      unsubscribe = await bot.watch(session, listener);
-      if (done || closing) { await unsubscribe(); await cleanup(); return; }
-      res.writeHead(200, { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
-      res.flushHeaders(); ready = true; drain();
-    } catch (error) { await cleanup(); throw error; }
+      unsubscribe = await bot.watch(session, event => out.send(event));
+      if (out.done || closing) { await unsubscribe(); await out.cleanup(); return; }
+      out.open();
+    } catch (error) { await out.cleanup(); throw error; }
+  };
+  /**
+   * One run as NDJSON: run_accepted, then its post-admission events, then run_settled with the terminal record.
+   * Snapshots (prior conversation state) are omitted. Disconnecting never cancels the run.
+   */
+  const runStream = async (res: ServerResponse, message: string, session?: string, requestId?: string) => {
+    const stopped = new AbortController();
+    const out = ndjson(res, () => stopped.abort());
+    let settle!: (record: BotRunRecord) => void;
+    const settled = new Promise<BotRunRecord>(resolve => settle = resolve);
+    let forwarded = false;
+    const listener = (event: BotEvent) => {
+      if (event.type === "snapshot" || out.done || forwarded) return;
+      out.send(event);
+      if (event.type === "run_settled") { forwarded = true; settle(event.data as BotRunRecord); }
+    };
+    try {
+      const accepted = await bot.submit(message, { session, requestId, onEvent: listener });
+      if (out.done || closing) { await out.cleanup(); return; }
+      out.open({ type: "run_accepted", sessionId: accepted.sessionId, runId: accepted.runId, data: accepted });
+      // run_settled is authoritative. Polling only covers handles that never emit it.
+      let record = terminal(accepted) ? accepted : undefined;
+      while (!record && !stopped.signal.aborted) {
+        record = await Promise.race([settled, delay(1_000, stopped.signal).then(() => undefined)]);
+        if (record || stopped.signal.aborted) break;
+        const current = await bot.getRun(accepted.runId);
+        if (terminal(current)) record = await Promise.race([settled, delay(250, stopped.signal).then(() => current)]);
+      }
+      if (!record || out.done) return;
+      if (!forwarded) out.send({ type: "run_settled", sessionId: record.sessionId, runId: record.runId, data: record });
+      out.end();
+    } catch (error) { await out.cleanup(); throw error; }
   };
   const route = async (req: IncomingMessage, res: ServerResponse) => {
     if (closing) throw new HttpError(503, "CLOSING", "Server is shutting down");
@@ -215,6 +286,7 @@ export async function serve(source: string, options: ServeOptions = {}): Promise
       const body = object(await readBody(req, bodyLimit), ["message", "session", "requestId"]);
       const message = stringField(body, "message", true)!;
       const session = stringField(body, "session"); const requestId = stringField(body, "requestId");
+      if (wantsStream(req)) { await runStream(res, message, session, requestId); return; }
       json(res, 202, await bot.submit(message, { session, requestId })); return;
     }
     if (method === "POST" && resource === "runs" && id && action === "cancel" && parts.length === 4) {

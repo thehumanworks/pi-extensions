@@ -35,27 +35,47 @@ test("optional client token, meaningful remote status/code, invalid config/IDs",
   assert.throws(() => connectBot(server.url, { pollIntervalMs: 0 }), /positive/);
 });
 
-test("run polls to terminal and optionally watches typed events", async t => {
+test("observed run reads its own NDJSON stream until run_settled, without a session watch", async t => {
   const f = fixture(); const server = await serve("ignored", { bot: f.bot, port: 0 }); t.after(() => server.close());
   const client = connectBot(server.url, { pollIntervalMs: 5 }); t.after(() => client.close());
   const events: BotEvent[] = [];
   const pending = client.run("work", { requestId: "one", onEvent: event => events.push(event) });
+  await eventually(() => events.length > 0); assert.equal(events[0].type, "run_accepted"); assert.equal(events[0].runId, "run-1");
+  f.emitRun("run-1", { type: "message_update", sessionId: "session-1", data: { changes: [{ type: "text_delta", delta: "do" }] } });
+  await eventually(() => events.length === 2);
+  f.complete("run-1");
+  const result = await pending; assert.equal(result.status, "completed"); assert.equal(result.output, "done");
+  assert.deepEqual(events.map(event => event.type), ["run_accepted", "message_update", "run_settled"]);
+  assert.equal(f.listeners.get("session-1")?.size ?? 0, 0); assert.deepEqual(f.cancelled, []);
+  const existing = await client.run("work", { requestId: "one" }); assert.equal(existing.runId, "run-1");
+});
+
+test("observed run falls back to session watch and polling on a server without run streams", async t => {
+  const f = fixture(); const server = await serve("ignored", { bot: f.bot, port: 0 }); t.after(() => server.close());
+  // An older server ignores Accept and answers 202 JSON.
+  const older: typeof fetch = (input, init) => fetch(input, { ...init, headers: Object.fromEntries(Object.entries(init?.headers ?? {}).filter(([key]) => key !== "Accept")) });
+  const client = connectBot(server.url, { pollIntervalMs: 5, fetch: older }); t.after(() => client.close());
+  const events: BotEvent[] = [];
+  const pending = client.run("work", { onEvent: event => events.push(event) });
   await eventually(() => events.length > 0); assert.equal(events[0].type, "snapshot");
   f.complete("run-1");
   const result = await pending; assert.equal(result.status, "completed"); assert.equal(result.output, "done");
   assert.ok(events.some(event => event.type === "run"));
   await eventually(() => f.unsubscribed === 1); assert.deepEqual(f.cancelled, []);
-  const existing = await client.run("work", { requestId: "one" }); assert.equal(existing.runId, "run-1");
 });
 
-test("explicit run AbortSignal cancels the admitted remote run and closes event subscription", async t => {
-  const f = fixture(); const server = await serve("ignored", { bot: f.bot, port: 0 }); t.after(() => server.close());
+test("explicit run AbortSignal cancels the admitted remote run and closes its event stream", async t => {
+  const f = fixture(); const server = await serve("ignored", { bot: f.bot, port: 0, maxStreams: 1 }); t.after(() => server.close());
   const client = connectBot(server.url, { pollIntervalMs: 5 }); t.after(() => client.close());
-  const controller = new AbortController();
-  const pending = client.run("wait", { signal: controller.signal, onEvent: () => {} });
-  await eventually(() => (f.listeners.get("session-1")?.size ?? 0) > 0);
+  const controller = new AbortController(); const events: BotEvent[] = [];
+  const pending = client.run("wait", { signal: controller.signal, onEvent: event => events.push(event) });
+  await eventually(() => events.length > 0);
   controller.abort(); await assert.rejects(pending, { name: "AbortError" });
-  assert.deepEqual(f.cancelled, ["run-1"]); await eventually(() => f.unsubscribed === 1);
+  assert.deepEqual(f.cancelled, ["run-1"]);
+  // The single stream slot is released, so another observed run can stream.
+  const next = client.run("next", { onEvent: () => {} });
+  await eventually(() => f.observers.has("run-2")); f.complete("run-2");
+  assert.equal((await next).status, "completed");
 });
 
 test("aborting during acceptance still cancels the identified owned run", async t => {

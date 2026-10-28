@@ -8,6 +8,8 @@ export const INFO: BotInfo = {
 export function fixture() {
   const runs = new Map<string, BotRunRecord>();
   const listeners = new Map<string, Set<(event: BotEvent) => void>>();
+  // Like the runtime, submit({ onEvent }) observes one run until run_settled.
+  const observers = new Map<string, (event: BotEvent) => void>();
   const submitted: Array<{ message: string; options?: RunOptions }> = [];
   const cancelled: string[] = [];
   let closed = 0; let unsubscribed = 0;
@@ -17,7 +19,10 @@ export function fixture() {
     const run = runs.get(id); if (!run) throw missing();
     run.status = status; run.output = status === "completed" ? "done" : ""; run.updatedAt = new Date().toISOString();
     emit(run.sessionId, { type: "run", sessionId: run.sessionId, runId: run.runId, data: { ...run } });
+    const observer = observers.get(id); observers.delete(id);
+    observer?.({ type: "run_settled", sessionId: run.sessionId, runId: id, data: { ...run } });
   };
+  const emitRun = (id: string, event: Omit<BotEvent, "runId">) => observers.get(id)?.({ ...event, runId: id });
   const bot: BotHandle = {
     sourceDir: INFO.sourceDir, stateDir: INFO.stateDir,
     async info() { return INFO; },
@@ -35,7 +40,9 @@ export function fixture() {
         usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 }, toolCalls: 0,
         createdAt: date, updatedAt: date,
       };
-      runs.set(id, run); return { ...run };
+      runs.set(id, run);
+      if (options?.onEvent) { observers.set(id, options.onEvent); options.onEvent({ type: "snapshot", sessionId, runId: id, data: { history: true } }); }
+      return { ...run };
     },
     async run(message, options) { const accepted = await bot.submit(message, options); complete(accepted.runId); return bot.getRun(accepted.runId); },
     async getRun(id) { const run = runs.get(id); if (!run) throw missing(); return { ...run }; },
@@ -58,7 +65,7 @@ export function fixture() {
     async reload() { return { changed: false, revision: INFO.revision, diagnostics: [] }; },
     async close() { closed++; },
   };
-  return { bot, runs, submitted, cancelled, listeners, emit, complete, get closed() { return closed; }, get unsubscribed() { return unsubscribed; } };
+  return { bot, runs, submitted, cancelled, listeners, observers, emit, emitRun, complete, get closed() { return closed; }, get unsubscribed() { return unsubscribed; } };
 }
 export async function eventually(predicate: () => boolean, message = "condition did not settle"): Promise<void> {
   for (let i = 0; i < 200; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 5)); }

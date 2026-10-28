@@ -22,6 +22,14 @@ bot chat ./reviewer --session dconv:1
 
 Use the run's actual session ID; IDs are scoped to one bot's state. `run` persists its conversation by default. `--json` writes final structured results to stdout; diagnostics go to stderr. `--request-id KEY` deduplicates identical run submissions across restarts; reusing a key with different input returns a conflict.
 
+`bot chat` streams each reply as it is generated, both for a local bot and with `--url`. The answer goes to stdout as terminal-formatted markdown, using Pi's renderer and theme. Everything else goes to stderr:
+
+- thinking, dimmed
+- each tool call with a one-line result
+- a usage footer: status, duration, turns, tool calls, input/output/cache tokens, cost, model, and session/run IDs
+
+Styling is on for terminals. `--no-color` or `NO_COLOR` prints plain text; output redirected to a file or pipe is plain unless `FORCE_COLOR` is set. `--no-stream` waits for each complete reply, and `--json` writes only final records.
+
 `bot --help` lists all commands and flags. A bare reference resolves under `$PI_BOT_HOME` or Pi's user `bots/` directory. Use `./reviewer`, an absolute directory, or a `BOT.md` path for an explicit project.
 
 ### Nix
@@ -219,15 +227,57 @@ The server owns its factory-created runtime; an explicitly injected `bot` handle
 | --- | --- | --- |
 | GET | `/health` | Health (public even when a token is configured) |
 | GET | `/v1/info` | Active configuration/capabilities |
-| POST | `/v1/runs` | Submit `{ message, session?, requestId? }`, returns 202 + run record |
+| POST | `/v1/runs` | Submit `{ message, session?, requestId? }`, returns 202 + run record; with `Accept: application/x-ndjson`, streams the run (below) |
 | GET | `/v1/runs/:id` | Current run record |
 | POST | `/v1/runs/:id/cancel` | Cancel a run |
 | GET | `/v1/sessions` | Conversation metadata |
-| GET | `/v1/sessions/:id/stream` | Snapshot + NDJSON events |
+| GET | `/v1/sessions/:id/stream` | Session snapshot, then NDJSON events (below) |
 | POST | `/v1/tools/:name` | Direct `{ input, session? }` tool call |
 | POST | `/v1/reload` | Validate/activate a source revision |
 
 Optional token protection uses `Authorization: Bearer …` on `/v1/*`. HTTP errors are `{ error: { code, message } }`; domain errors map to 400/404/409/503, unknown failures to sanitized 500. Request/response/stream buffers and stream counts are bounded. Closing a watch disconnects only that observer. Direct HTTP tool calls do not have durable run IDs; use submitted runs when cancellation/recovery must survive a connection loss.
+
+### Streaming a run
+
+A plain `POST /v1/runs` returns as soon as the run is durably accepted; poll `GET /v1/runs/:id` for the result. To receive the reply while it is generated, send the same request with `Accept: application/x-ndjson`. Streaming is chosen by the client per request; the server needs no option.
+
+```sh
+curl -N http://127.0.0.1:3000/v1/runs \
+  -H 'Content-Type: application/json' -H 'Accept: application/x-ndjson' \
+  -d '{"message":"Review the staged diff"}'
+```
+
+The response is `200 application/x-ndjson`, one event per line, each shaped `{ type, sessionId?, runId?, data? }`:
+
+1. `run_accepted`: `data` is the accepted run record, the same as the 202 body. Its `runId` is what you cancel.
+2. That run's events as they happen (table below). The prior conversation is not repeated.
+3. `run_settled`: `data` is the terminal run record (`status`, `output`, `error?`, `usage`, `toolCalls`, `model`). The response ends after this line.
+
+Validation, authentication and admission errors, including `STREAM_LIMIT` (503), are ordinary JSON error responses sent before any stream starts. Ignore unknown event types; more may be added. Disconnecting stops delivery only and never cancels the run:
+
+- `GET /v1/runs/:id` fetches the result later.
+- `POST /v1/runs/:id/cancel` stops the run.
+- A `requestId` makes a retried submission safe.
+
+A client that reads too slowly to stay under `maxStreamBufferBytes` is disconnected the same way. Run streams count towards `maxStreams`.
+
+Events for rendering a reply:
+
+| Event | `data` |
+| --- | --- |
+| `message_start` | `message`. For `role: "assistant"`, `content` can already hold partial blocks |
+| `message_update` | `changes`: ordered edits to the in-flight assistant message. `text_start`/`thinking_start`/`toolcall_start` carry `{ contentIndex, block }`; `text_delta`/`thinking_delta` carry `{ contentIndex, delta }`. Also `toolcall_delta`, `block` (replace one block) and `message` (replace all) |
+| `message_end` | `entry.model[0]`: the complete message. Content blocks are `text`, `thinking` (`redacted` when withheld) and `toolCall` |
+| `tool_execution_start` | `toolCallId`, `toolName`, `args`; nested calls add `parentToolCallId` |
+| `tool_execution_end` | `toolCallId`, `toolName`, and `entry.model[0]`: the `toolResult` message (`content`, `isError`, `durationMs`); nested calls carry `result` instead |
+| `usage_changed` | `usage.models`: running token and cost totals keyed by `provider/model` |
+| `run_start`, `turn_start`, `turn_end`, `run_end`, `auto_retry_start`, `compaction_start`, `compaction_end`, `task_failed` | Progress and notices |
+
+Updates are batched per durable commit. One `message_update` can carry many changes, and a fast reply can arrive whole in `message_start` or `message_end` with no update at all. Render from the latest message state; do not assume every token arrives as a delta.
+
+`BotClient.run(message, { onEvent })` and `bot chat --url` use this stream. Against an older server that ignores the `Accept` header, they fall back to a session watch plus polling.
+
+To observe a whole session rather than one run, use `GET /v1/sessions/:id/stream`. It sends a `snapshot` event with the current conversation state, then every event for that session until the client disconnects. It is not a replayable log; reconnect to get a fresh snapshot.
 
 ## Operational limits
 

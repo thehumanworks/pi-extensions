@@ -40,6 +40,7 @@ test("invalid options, combinations, positional args and JSON fail before starti
     ["serve", "ref", "--allow-anonymous"], ["serve", "ref", "--ephemeral"], ["info", "ref", "--cwd", "x"],
     ["tool", "wrong"], ["tool", "call", "ref", "echo"], ["tool", "call", "ref", "echo", "--input", "{"],
     ["sessions", "wrong"], ["run", "--message", "a", "--json=true"],
+    ["run", "ref", "--message", "a", "--no-stream"], ["run", "ref", "--message", "a", "--no-color"], ["chat", "ref", "--no-color=false"],
   ];
   for (const args of invalid) {
     let started = false;
@@ -128,6 +129,75 @@ test("interactive chat continues the accepted session and prompts only stderr", 
   assert.equal(out.stdout.trim().split("\n").length, 2);
   for (const line of out.stdout.trim().split("\n")) assert.equal(JSON.parse(line).status, "completed");
   assert.match(out.stderr, /Chat ready/); assert.equal(f.closed, 1);
+});
+
+/** A handle whose runs emit a thinking block, a tool call and a final answer, like the runtime. */
+function streaming() {
+  const f = fixture(); const options: Array<RunOptions | undefined> = [];
+  f.bot.run = async (message, runOptions) => {
+    options.push(runOptions);
+    const accepted = await f.bot.submit(message, { session: runOptions?.session });
+    for (const event of [
+      { type: "message_start", data: { message: { role: "assistant", content: [{ type: "thinking", thinking: "Considering" }] } } },
+      { type: "tool_execution_start", data: { toolCallId: "t1", toolName: "echo", args: { n: 2 } } },
+      { type: "tool_execution_end", data: { toolCallId: "t1", toolName: "echo", entry: { model: [{ role: "toolResult", content: [{ type: "text", text: "v1:2" }], isError: false }] } } },
+      { type: "message_end", data: { entry: { model: [{ role: "assistant", content: [{ type: "text", text: "**done**" }] }] } } },
+    ]) runOptions?.onEvent?.({ ...event, sessionId: accepted.sessionId, runId: accepted.runId });
+    f.complete(accepted.runId);
+    return { ...(await f.bot.getRun(accepted.runId)), output: "**done**", toolCalls: 1, model: "faux/model",
+      usage: { input: 1234, output: 34, cacheRead: 0, cacheWrite: 0, cost: 0.01, turns: 2 } };
+  };
+  return Object.assign(f, { options });
+}
+
+test("chat streams thinking, tools, answer and usage by default in local and remote forms", async () => {
+  for (const remote of [false, true]) {
+    const f = streaming(); const target = remote ? ["--url", "http://remote"] : ["ref"];
+    const out = io({ stdin: Readable.from(["hello\nagain\n/exit\n"]), openBot: async () => f.bot, connectBot: () => f.bot });
+    assert.equal(await main(["chat", ...target], out.dependencies), 0);
+    assert.equal(typeof f.options[0]?.onEvent, "function"); assert.equal(f.options[1]?.session, "session-1");
+    assert.equal(out.stdout, "**done**\n\n**done**\n", "answers alone on stdout, plain when not a terminal");
+    assert.match(out.stderr, /^Chat ready.*\n> \n✻ Considering\n\n⏺ echo \{"n":2\}\n  ⎿ v1:2\n\n✓ completed · [\d.]+s · 2 turns · 1 tool call · ↑1\.2k ↓34 · \$0\.0100 · faux\/model\nSession: session-1 · Run: run-1\n> \n/);
+    assert.ok(!out.stdout.includes("\x1b[") && !out.stderr.includes("\x1b["));
+    assert.equal(f.closed, 1);
+  }
+});
+
+test("chat --no-stream and --json wait for final records without an event observer", async () => {
+  const f = streaming();
+  const waited = io({ stdin: Readable.from(["hello\n"]), openBot: async () => f.bot });
+  assert.equal(await main(["chat", "ref", "--no-stream"], waited.dependencies), 0);
+  assert.equal(f.options[0]?.onEvent, undefined);
+  assert.equal(waited.stdout, "**done**\n"); assert.match(waited.stderr, /✓ completed .*\nSession: session-1 · Run: run-1\n/);
+  assert.doesNotMatch(waited.stderr, /⏺|✻/);
+  const json = io({ stdin: Readable.from(["hello\n"]), openBot: async () => f.bot });
+  assert.equal(await main(["chat", "ref", "--json"], json.dependencies), 0);
+  assert.equal(f.options[1]?.onEvent, undefined); assert.equal(JSON.parse(json.stdout).output, "**done**");
+});
+
+test("terminal chat formats markdown and styles diagnostics; --no-color and NO_COLOR print plain text", async () => {
+  const tty = (extra: CliDependencies) => {
+    const out = io({ stdin: Readable.from(["hello\n"]), env: { TERM: "xterm-256color" }, ...extra });
+    Object.assign(out.dependencies.stdout!, { isTTY: true, columns: 80, rows: 24 });
+    Object.assign(out.dependencies.stderr!, { isTTY: true, columns: 80, rows: 24 });
+    return out;
+  };
+  let loads = 0;
+  const loadMarkdown = async () => { loads++; return { render: (text: string) => [`\x1b[1m${text.trim().replaceAll("**", "")}\x1b[22m`], complete: () => 0 }; };
+  const f = streaming();
+  const styled = tty({ openBot: async () => f.bot, loadMarkdown });
+  assert.equal(await main(["chat", "ref"], styled.dependencies), 0);
+  assert.equal(loads, 1); assert.match(styled.stdout, /\x1b\[1mdone\x1b\[22m\n/); assert.match(styled.stderr, /\x1b\[32m✓ completed/);
+  for (const [args, env] of [[["--no-color"], { TERM: "xterm-256color" }], [[], { TERM: "xterm-256color", NO_COLOR: "1" }]] as const) {
+    const plain = tty({ openBot: async () => f.bot, loadMarkdown, env });
+    assert.equal(await main(["chat", "ref", ...args], plain.dependencies), 0);
+    assert.equal(plain.stdout, "**done**\n"); assert.match(plain.stderr, /⏺ echo/);
+    assert.ok(!plain.stdout.includes("\x1b[") && !plain.stderr.includes("\x1b["));
+  }
+  assert.equal(loads, 1, "plain output never loads the formatter");
+  const broken = tty({ openBot: async () => f.bot, loadMarkdown: async () => { throw new Error("no theme"); } });
+  assert.equal(await main(["chat", "ref"], broken.dependencies), 0);
+  assert.match(broken.stderr, /markdown formatting unavailable: no theme/); assert.match(broken.stdout, /\*\*done\*\*/);
 });
 
 test("tool call and sessions support local and remote forms", async () => {

@@ -27,6 +27,8 @@ let messageLimit = DEFAULT_MESSAGE_LIMIT;
 let queuedBytes = 0;
 const controllers = new Map<number, AbortController>();
 const subscriptions = new Map<number, Promise<() => Promise<void>>>();
+// Observed submissions: resolved once run_settled has been forwarded, so the channel outlives it.
+const reported = new Map<number, Promise<void>>();
 const active = new Set<number>();
 const terminal = (run: BotRunRecord) => ["completed", "failed", "cancelled"].includes(run.status);
 function wireError(error: unknown): WorkerError {
@@ -82,9 +84,15 @@ async function settled(id: number, initial: BotRunRecord) {
       await new Promise(resolve => setTimeout(resolve, 100));
       if (!closing) current = await bot!.getRun(initial.runId);
     }
+    const forwarded = reported.get(id);
+    if (forwarded && !closing) {
+      let timer: NodeJS.Timeout | undefined;
+      await Promise.race([forwarded, new Promise(resolve => { timer = setTimeout(resolve, 1_000); })]);
+      clearTimeout(timer);
+    }
   } catch { /* runtime closure/exit is reported by transport lifecycle */ }
   finally {
-    controllers.delete(id);
+    controllers.delete(id); reported.delete(id);
     if (!closing) await send({ type: "settled", id }).catch(() => { void shutdown(); });
   }
 }
@@ -133,8 +141,10 @@ async function dispatch(request: WorkerRequest): Promise<unknown> {
     }
     case "run": case "submit": {
       const controller = new AbortController(); controllers.set(request.id, controller);
+      let forwarded = () => {};
+      if (request.method === "submit" && request.params.events) reported.set(request.id, new Promise<void>(resolve => forwarded = resolve));
       const options = { ...request.params.options, signal: controller.signal,
-        ...(request.params.events ? { onEvent: (value: Parameters<typeof event>[1]) => event(request.id, value) } : {}) };
+        ...(request.params.events ? { onEvent: (value: Parameters<typeof event>[1]) => { event(request.id, value); if (value.type === "run_settled") forwarded(); } } : {}) };
       try {
         const record = await bot[request.method](request.params.message, options);
         return record;
@@ -157,7 +167,7 @@ process.on("message", (raw: unknown) => {
       if (request.method !== "close") await send({ type: "reply", id: request.id, ok: true, value: value ?? null });
       if (request.method === "submit") void settled(request.id, value as BotRunRecord);
     } catch (error) {
-      controllers.delete(request.id);
+      controllers.delete(request.id); reported.delete(request.id);
       await send({ type: "reply", id: request.id, ok: false, error: wireError(error) }).catch(() => { void shutdown(); });
     } finally { active.delete(request.id); }
   })();

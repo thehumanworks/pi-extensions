@@ -3,10 +3,11 @@ import { resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import type { Readable, Writable } from "node:stream";
 import { connectBot, type BotClient } from "./client.js";
+import { colorEnabled, createChatRenderer, loadMarkdown, type ChatRenderer, type MarkdownRenderer } from "./render.js";
 import type { BotServer, ServeOptions } from "./server.js";
 import type { BotHandle, BotInfo, InitBotOptions, OpenBotOptions } from "./types.js";
 
-type Output = Pick<Writable, "write">;
+type Output = Pick<Writable, "write"> & { isTTY?: boolean; columns?: number; rows?: number };
 type Remote = Pick<BotClient, "info" | "run" | "callTool" | "listSessions" | "close">;
 export interface CliDependencies {
   stdin?: Readable;
@@ -22,6 +23,7 @@ export interface CliDependencies {
   validateBot?: (source: string, options: { stateDir?: string }) => Promise<BotInfo>;
   serve?: (source: string, options: ServeOptions) => Promise<BotServer>;
   connectBot?: (url: string, options: { authToken?: string }) => Remote;
+  loadMarkdown?: () => Promise<MarkdownRenderer>;
 }
 
 const HELP = `Usage: bot <command> [options]
@@ -31,7 +33,7 @@ Commands:
   validate <ref> [--state-dir DIR]
   info <ref> [--state-dir DIR] [--json]
   run [ref] --message TEXT [--session ID] [--request-id KEY] [--json]
-  chat [ref] [--session ID] [--json]
+  chat [ref] [--session ID] [--no-stream] [--no-color] [--json]
   serve <ref> [--host HOST] [--port PORT] [--auth-token-env NAME]
   tool call <ref> <name> --input JSON [--session ID] [--json]
   sessions list [ref] [--json]
@@ -44,6 +46,9 @@ Remote tool syntax: bot tool call --url URL <name> --input JSON
 Default source for run/chat/sessions: .  Default serve address: 127.0.0.1:3000.
 Caller authentication is OFF unless --auth-token-env is explicitly supplied, on every host.
 Provider access uses the serving/local user's existing Pi credentials. No bot login is needed.
+chat streams replies as they are generated: the answer goes to stdout as terminal markdown;
+thinking, tool calls and usage go to stderr. --no-stream waits for each complete reply.
+--no-color or NO_COLOR prints plain text. Styling is off when output is not a terminal (FORCE_COLOR overrides).
 --json writes final records to stdout. Diagnostics and prompts use stderr.
 --help, -h   Show help     --version, -v   Show version
 `;
@@ -52,12 +57,12 @@ const REMOTE = ["url", "auth-token-env"];
 const ALLOWED: Record<string, string[]> = {
   init: ["name", "description", "model"], validate: ["state-dir"], info: ["state-dir", "json"],
   run: [...LOCAL, ...REMOTE, "message", "session", "request-id", "json"],
-  chat: [...LOCAL, ...REMOTE, "session", "json"],
+  chat: [...LOCAL, ...REMOTE, "session", "json", "no-stream", "no-color"],
   serve: ["cwd", "state-dir", "model", "host", "port", "auth-token-env"],
   tool: [...LOCAL, ...REMOTE, "input", "session", "json"],
   sessions: [...LOCAL, ...REMOTE, "json"],
 };
-const BOOLEAN = new Set(["json", "ephemeral"]);
+const BOOLEAN = new Set(["json", "ephemeral", "no-stream", "no-color"]);
 interface Parsed { command: string; positionals: string[]; flags: Map<string, string | true> }
 function parse(args: string[]): Parsed {
   const [command, ...rest] = args;
@@ -183,6 +188,11 @@ export async function main(args = process.argv.slice(2), dependencies: CliDepend
     }
     count(positionals, 0, url ? 0 : 1);
     if (command === "run" && !flags.has("message")) throw new Error("run requires --message TEXT");
+    const color = { stdout: colorEnabled(stdout, env, flags.has("no-color")), stderr: colorEnabled(stderr, env, flags.has("no-color")) };
+    // Load the formatter while the bot opens; a failure falls back to plain answers.
+    const markdown = command === "chat" && !json && color.stdout ? (dependencies.loadMarkdown ?? loadMarkdown)().catch((error: unknown) => {
+      stderr.write(`bot: markdown formatting unavailable: ${error instanceof Error ? error.message : String(error)}\n`); return undefined;
+    }) : undefined;
     signal.throwIfAborted();
     const bot = url ? remote() : await open(positionals[0] ?? ".");
     try {
@@ -202,16 +212,23 @@ export async function main(args = process.argv.slice(2), dependencies: CliDepend
       const onAbort = () => readline.close();
       signal.addEventListener("abort", onAbort, { once: true });
       let session = value("session"); let code = 0;
+      const echoed = (stdin as { isTTY?: boolean }).isTTY === true;
+      let renderer: ChatRenderer | undefined;
       try {
         stderr.write("Chat ready. Send a line; /exit or Ctrl-D to quit.\n> ");
         for await (const line of readline) {
           if (signal.aborted || line.trim() === "/exit") break;
           if (!line.trim()) { stderr.write("> "); continue; }
-          const result = await bot.run(line, { session, signal });
+          let result;
+          if (json) { result = await bot.run(line, { session, signal }); emit(result); }
+          else {
+            renderer ??= createChatRenderer({ stdout, stderr, color, markdown: await markdown });
+            renderer.begin(echoed);
+            try { result = await bot.run(line, { session, signal, ...(flags.has("no-stream") ? {} : { onEvent: renderer.onEvent }) }); }
+            catch (error) { renderer.stop(); throw error; }
+            renderer.finish(result);
+          }
           session = result.sessionId;
-          if (json) emit(result);
-          else { stdout.write(`${result.output}\n`); stderr.write(`Session: ${result.sessionId} · Run: ${result.runId} · ${result.status}\n`); }
-          if (result.error && !json) stderr.write(`${result.error}\n`);
           if (result.status !== "completed") code = result.status === "cancelled" ? 130 : 1;
           stderr.write("> ");
         }

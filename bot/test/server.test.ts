@@ -142,6 +142,65 @@ test("watch streams snapshot then updates, reconnects current state, and disconn
   await third.close().catch(() => {});
 });
 
+const NDJSON = { Accept: "application/x-ndjson" };
+const parseLines = (text: string) => text.trim().split("\n").map(line => JSON.parse(line) as Record<string, any>);
+
+test("POST /v1/runs negotiates a run stream: accepted, post-admission events, settled, then EOF", async t => {
+  const f = fixture(); const server = await serve("ignored", { bot: f.bot, port: 0 }); t.after(() => server.close());
+  const response = await post(`${server.url}/v1/runs`, { message: "hello" }, NDJSON);
+  assert.equal(response.status, 200); assert.match(response.headers.get("content-type")!, /application\/x-ndjson/);
+  const body = response.text();
+  await eventually(() => f.observers.has("run-1"));
+  f.emitRun("run-1", { type: "message_update", sessionId: "session-1", data: { changes: [] } });
+  f.complete("run-1");
+  const events = parseLines(await body);
+  assert.deepEqual(events.map(event => event.type), ["run_accepted", "message_update", "run_settled"], "snapshots are not part of a run stream");
+  assert.equal(events[0].runId, "run-1"); assert.equal(events[0].data.status, "queued");
+  assert.equal(events[2].data.status, "completed"); assert.equal(events[2].data.output, "done");
+  // Clients that do not ask for NDJSON keep the acceptance-only contract.
+  for (const accept of [undefined, "application/json"]) {
+    assert.equal((await post(`${server.url}/v1/runs`, { message: "plain" }, accept ? { Accept: accept } : {})).status, 202);
+  }
+  const invalid = await post(`${server.url}/v1/runs`, { message: "" }, NDJSON);
+  assert.equal(invalid.status, 400); assert.equal((await invalid.json()).error.code, "INVALID_BODY");
+});
+
+test("run stream disconnect never cancels; handles without run_settled settle by polling", async t => {
+  const f = fixture(); const submit = f.bot.submit;
+  f.bot.submit = (message, options) => submit(message, { ...options, onEvent: undefined });
+  const server = await serve("ignored", { bot: f.bot, port: 0 }); t.after(() => server.close());
+  const settled = post(`${server.url}/v1/runs`, { message: "quiet handle" }, NDJSON).then(response => response.text());
+  await eventually(() => f.runs.has("run-1")); f.complete("run-1");
+  assert.deepEqual(parseLines(await settled).map(event => event.type), ["run_accepted", "run_settled"]);
+  const controller = new AbortController();
+  const response = await fetch(`${server.url}/v1/runs`, { method: "POST", headers: { "Content-Type": "application/json", ...NDJSON }, body: JSON.stringify({ message: "keep running" }), signal: controller.signal });
+  const reader = response.body!.getReader(); await reader.read(); controller.abort();
+  await reader.cancel().catch(() => {});
+  f.complete("run-2");
+  assert.equal((await (await fetch(`${server.url}/v1/runs/run-2`)).json()).status, "completed");
+  assert.deepEqual(f.cancelled, []);
+});
+
+test("run streams share stream limits and buffer bounds, and end on shutdown", async t => {
+  const f = fixture(); const server = await serve("ignored", { bot: f.bot, port: 0, maxStreams: 1, maxStreamBufferBytes: 512 });
+  t.after(() => server.close());
+  const watching = await stream(`${server.url}/v1/sessions/s/stream`); await watching.next();
+  const limited = await post(`${server.url}/v1/runs`, { message: "no slot" }, NDJSON);
+  assert.equal(limited.status, 503); assert.equal((await limited.json()).error.code, "STREAM_LIMIT");
+  await watching.close(); await eventually(() => f.unsubscribed === 1);
+  const overflow = await post(`${server.url}/v1/runs`, { message: "huge" }, NDJSON);
+  const overflowBody = overflow.text().catch(() => "");
+  await eventually(() => f.observers.has("run-1"));
+  f.emitRun("run-1", { type: "huge", data: "x".repeat(1024) });
+  assert.ok(!(await overflowBody).includes("run_settled"), "an overflowing observer is disconnected");
+  assert.deepEqual(f.cancelled, []);
+  const open = await post(`${server.url}/v1/runs`, { message: "open at shutdown" }, NDJSON);
+  const openBody = open.text().catch(() => "");
+  await eventually(() => f.observers.has("run-2"));
+  await server.close(); await openBody;
+  assert.deepEqual(f.cancelled, []);
+});
+
 test("stream count and buffer bounds clean up watchers", async t => {
   const f = fixture(); const server = await serve("ignored", { bot: f.bot, port: 0, maxStreams: 1, maxStreamBufferBytes: 512 });
   t.after(() => server.close());
