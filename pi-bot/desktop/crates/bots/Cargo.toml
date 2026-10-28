@@ -1,0 +1,13 @@
+[package]
+name = "pi-bot-bots"
+description = "Bot roster and bot editor views"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+gpui-kit.workspace = true
+pi-bot-api.workspace = true
+
+[dev-dependencies]
+gpui-kit = { workspace = true, features = ["test-support"] }

@@ -1,0 +1,23 @@
+[package]
+name = "pi-bot-desktop"
+description = "Desktop app for pi-bot: talk to persistent Pi bots through pi-bot-server"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "pi-bot-desktop"
+path = "src/main.rs"
+
+[dependencies]
+gpui-kit.workspace = true
+pi-bot-api.workspace = true
+pi-bot-bots.workspace = true
+pi-bot-conversation.workspace = true
+
+[dev-dependencies]
+gpui-kit = { workspace = true, features = ["test-support"] }
+serde_json.workspace = true
+
+[lib]
+path = "src/lib.rs"

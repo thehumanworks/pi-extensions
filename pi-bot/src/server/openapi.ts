@@ -1,0 +1,149 @@
+/**
+ * The OpenAPI 3.1.0 description of the pi-bot server. Kept by hand next to the routes so the
+ * two change together; `test/server.test.ts` checks that every route is documented and vice versa.
+ */
+export function openapiDocument(version: string): Record<string, unknown> {
+  const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
+  const json = (schema: unknown) => ({ "application/json": { schema } });
+  const error = (description: string) => ({ description, content: json(ref("Error")) });
+  const botParam = { name: "bot", in: "path", required: true, description: "Bot name.", schema: { type: "string", pattern: "^[a-z0-9][a-z0-9_-]{0,62}$" } };
+  const idParam = { name: "id", in: "path", required: true, description: "Conversation id chosen by the client. Also the Pi session id.", schema: ref("ConversationId") };
+  const nullable = (schema: Record<string, unknown>) => ({ oneOf: [schema, { type: "null" }] });
+
+  return {
+    openapi: "3.1.0",
+    info: {
+      title: "pi-bot server",
+      version,
+      summary: "Persistent Pi bots over HTTP",
+      description: [
+        "Bots are directories under the bots root (`PI_BOT_HOME`, default `~/.pi/agent/bots/<name>/`) with a `BOT.md` definition,",
+        "memory, skills, scripts and conversation history. A conversation is a Pi session stored in the bot's home;",
+        "its id is chosen by the client and it exists once it is created with PUT or receives its first message with POST.",
+        "Updates stream as server-sent events with an offset per event, so a client takes a snapshot and follows from its offset.",
+        "The server listens on the IPv6 loopback by default and has no authentication: keep it on the local machine.",
+      ].join(" "),
+    },
+    servers: [{ url: "http://[::1]:7733", description: "Default local address" }],
+    tags: [
+      { name: "bots", description: "Definitions and homes" },
+      { name: "conversations", description: "Sessions, messages and live updates" },
+      { name: "server", description: "Status and catalogues" },
+    ],
+    paths: {
+      "/": { get: { tags: ["server"], operationId: "root", summary: "Server identity", responses: { 200: { description: "Name, version and the OpenAPI document location.", content: json({ type: "object", required: ["name", "version", "openapi"], properties: { name: { const: "pi-bot" }, version: { type: "string" }, openapi: { type: "string" } } }) } } } },
+      "/openapi.json": { get: { tags: ["server"], operationId: "openapi", summary: "This document", responses: { 200: { description: "The OpenAPI 3.1.0 document.", content: json({ type: "object" }) } } } },
+      "/health": { get: { tags: ["server"], operationId: "health", summary: "Liveness", responses: { 200: { description: "The server answers.", content: json({ type: "object", required: ["status"], properties: { status: { const: "ok" } } }) } } } },
+      "/models": { get: { tags: ["server"], operationId: "listModels", summary: "Models the host can use", description: "Models with credentials in Pi's auth store. Use `id` as a bot's `model`.", responses: { 200: { description: "Available models.", content: json({ type: "object", required: ["models"], properties: { models: { type: "array", items: ref("Model") } } }) } } } },
+      "/bots": {
+        get: { tags: ["bots"], operationId: "listBots", summary: "List bots", responses: { 200: { description: "Valid bots, plus one message per definition that failed to parse.", content: json({ type: "object", required: ["bots", "errors"], properties: { bots: { type: "array", items: ref("Bot") }, errors: { type: "array", items: { type: "string" } } } }) } } },
+        post: { tags: ["bots"], operationId: "createBot", summary: "Create a bot", requestBody: { required: true, content: json(ref("BotCreate")) }, responses: { 201: { description: "The new bot. Its home is scaffolded.", content: json(ref("Bot")) }, 400: error("Invalid name, missing fields or unknown model."), 409: error("A bot with that name exists.") } },
+      },
+      "/bots/{bot}": {
+        parameters: [botParam],
+        get: { tags: ["bots"], operationId: "getBot", summary: "One bot with its BOT.md", responses: { 200: { description: "The bot and the raw definition file.", content: json({ allOf: [ref("Bot"), { type: "object", required: ["definition"], properties: { definition: { type: "string", description: "The complete BOT.md." } } }] }) }, 404: error("Unknown bot.") } },
+        patch: { tags: ["bots"], operationId: "updateBot", summary: "Change a bot", description: "Changes only what is sent. `null` clears model, thinking, tools or skills. Send either `prompt`, `edits` or `definition`.", requestBody: { required: true, content: json(ref("BotPatch")) }, responses: { 200: { description: "The updated bot.", content: json(ref("Bot")) }, 400: error("Invalid change."), 404: error("Unknown bot.") } },
+        delete: { tags: ["bots"], operationId: "archiveBot", summary: "Archive a bot", description: "Stops its conversations and moves the home into `<root>/.archive/<name>-<timestamp>`. Nothing is deleted.", responses: { 200: { description: "Where the home went.", content: json({ type: "object", required: ["archived"], properties: { archived: { type: "string" } } }) }, 404: error("Unknown bot.") } },
+      },
+      "/bots/{bot}/conversations": {
+        parameters: [botParam],
+        get: { tags: ["conversations"], operationId: "listConversations", summary: "List conversations, newest first", responses: { 200: { description: "Every session in the bot's home.", content: json({ type: "object", required: ["conversations"], properties: { conversations: { type: "array", items: ref("ConversationSummary") } } }) }, 404: error("Unknown bot.") } },
+      },
+      "/bots/{bot}/conversations/{id}": {
+        parameters: [botParam, idParam],
+        put: { tags: ["conversations"], operationId: "createConversation", summary: "Create an empty conversation", description: "Idempotent: an existing conversation is returned unchanged with 200.", requestBody: { required: false, content: json({ type: "object", properties: { cwd: { type: "string", description: "Working directory for the bot's tools. Defaults to the server's default." } } }) }, responses: { 201: { description: "Created.", content: json(ref("Conversation")) }, 200: { description: "Already existed.", content: json(ref("Conversation")) }, 400: error("Invalid id or missing directory."), 404: error("Unknown bot.") } },
+        get: {
+          tags: ["conversations"], operationId: "getConversation", summary: "Snapshot, or live updates",
+          description: "Without `view`, the transcript and state. With `view=updates`, a `text/event-stream` of updates from `offset` (default: now). Each event has `id` (its offset), `event` (its type) and JSON `data`; see `StreamEvent`. A `gap` event means the requested offset is older than the server keeps: take a new snapshot.",
+          parameters: [{ name: "view", in: "query", schema: { type: "string", enum: ["updates"] } }, { name: "offset", in: "query", schema: { type: "integer", minimum: 0 } }],
+          responses: { 200: { description: "The snapshot, or the event stream.", content: { ...json(ref("Conversation")), "text/event-stream": { schema: { type: "string" } } } }, 404: error("Unknown bot or conversation.") },
+        },
+        post: { tags: ["conversations"], operationId: "sendMessage", summary: "Send a message", description: "Creates the conversation when it does not exist. The bot starts working; follow `streamUrl` for the reply. While the bot is busy the message is queued as a follow-up unless `behavior` is `steer`.", requestBody: { required: true, content: json(ref("MessageInput")) }, responses: { 202: { description: "Accepted.", content: json(ref("Submission")) }, 400: error("Missing message or invalid id."), 404: error("Unknown bot."), 502: error("Pi could not start for this bot.") } },
+        delete: { tags: ["conversations"], operationId: "deleteConversation", summary: "Delete a conversation", description: "Stops the bot's work on it and removes the session file.", responses: { 200: { description: "Deleted.", content: json({ type: "object", required: ["deleted"], properties: { deleted: { const: true } } }) }, 404: error("Unknown bot or conversation.") } },
+      },
+      "/bots/{bot}/conversations/{id}/abort": {
+        parameters: [botParam, idParam],
+        post: { tags: ["conversations"], operationId: "abortConversation", summary: "Stop the current work", responses: { 202: { description: "Abort requested; a `settled` event follows.", content: json({ type: "object", required: ["state"], properties: { state: ref("ConversationState") } }) }, 404: error("Unknown bot or conversation.") } },
+      },
+      "/bots/{bot}/conversations/{id}/responses": {
+        parameters: [botParam, idParam],
+        post: { tags: ["conversations"], operationId: "answerRequest", summary: "Answer a request from the bot", description: "Resolves a pending `request` event (an approval, choice or input asked by an extension).", requestBody: { required: true, content: json(ref("RequestAnswer")) }, responses: { 200: { description: "Answered.", content: json({ type: "object", required: ["requestId", "closed"], properties: { requestId: { type: "string" }, closed: { const: true } } }) }, 400: error("No answer given."), 404: error("Nothing waits for that request id.") } },
+      },
+    },
+    components: {
+      schemas: {
+        Error: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["status", "message"], properties: { status: { type: "integer" }, message: { type: "string" } } } } },
+        ThinkingLevel: { type: "string", enum: ["off", "minimal", "low", "medium", "high", "xhigh", "max"] },
+        ConversationId: { type: "string", pattern: "^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$", description: "Letters, digits, '.', '_' and '-'; starts and ends with a letter or digit." },
+        ConversationState: { type: "string", enum: ["idle", "starting", "running"] },
+        Model: { type: "object", required: ["id", "provider", "modelId", "name", "reasoning", "contextWindow"], properties: { id: { type: "string", description: "`provider/model-id`" }, provider: { type: "string" }, modelId: { type: "string" }, name: { type: "string" }, reasoning: { type: "boolean" }, contextWindow: { type: "integer" } } },
+        Bot: {
+          type: "object", required: ["name", "description", "model", "thinking", "tools", "skills", "prompt", "home", "file"],
+          properties: {
+            name: { type: "string" }, description: { type: "string" },
+            model: nullable({ type: "string", description: "`provider/model-id`; null inherits the host's model." }),
+            thinking: nullable(ref("ThinkingLevel")),
+            tools: { type: "array", items: { type: "string" }, description: "Tool allowlist (names or `*` globs); empty means the host's default tools." },
+            skills: { type: "array", items: { type: "string" }, description: "Skill allowlist (names or paths); empty means all skills. The bot's own skills always load." },
+            prompt: { type: "string", description: "The persona: the body of BOT.md." },
+            home: { type: "string" }, file: { type: "string" },
+          },
+        },
+        BotCreate: { type: "object", required: ["name", "description", "prompt"], properties: { name: { type: "string" }, description: { type: "string" }, prompt: { type: "string" }, model: nullable({ type: "string" }), thinking: nullable(ref("ThinkingLevel")), tools: { type: "array", items: { type: "string" } }, skills: { type: "array", items: { type: "string" } } } },
+        BotPatch: {
+          type: "object",
+          properties: {
+            description: { type: "string" }, prompt: { type: "string", description: "Replaces the persona." },
+            edits: { type: "array", description: "Targeted persona edits; each `oldText` must match exactly once.", items: { type: "object", required: ["oldText", "newText"], properties: { oldText: { type: "string" }, newText: { type: "string" } } } },
+            definition: { type: "string", description: "Replaces BOT.md as a whole. Cannot be combined with other fields." },
+            model: nullable({ type: "string" }), thinking: nullable(ref("ThinkingLevel")),
+            tools: nullable({ type: "array", items: { type: "string" } }), skills: nullable({ type: "array", items: { type: "string" } }),
+          },
+        },
+        ConversationSummary: { type: "object", required: ["id", "bot", "cwd", "modified", "state"], properties: { id: ref("ConversationId"), bot: { type: "string" }, cwd: { type: "string" }, name: { type: "string" }, firstMessage: { type: "string" }, modified: { type: "string", format: "date-time" }, state: ref("ConversationState") } },
+        Conversation: {
+          allOf: [ref("ConversationSummary"), {
+            type: "object", required: ["offset", "messages", "pendingRequests"],
+            properties: {
+              offset: { type: "integer", description: "Subscribe from here to miss nothing after this snapshot." },
+              model: { type: "string" }, thinking: ref("ThinkingLevel"),
+              messages: { type: "array", items: ref("Message") },
+              partial: { type: "object", required: ["text", "thinking"], properties: { text: { type: "string" }, thinking: { type: "string" } }, description: "The assistant message being streamed right now." },
+              pendingRequests: { type: "array", items: ref("Request") },
+            },
+          }],
+        },
+        Message: {
+          type: "object", required: ["role", "text"],
+          properties: {
+            id: { type: "string" }, role: { type: "string", enum: ["user", "assistant", "toolResult"] }, timestamp: { type: "integer", description: "Milliseconds since the epoch." },
+            text: { type: "string" }, thinking: { type: "string" },
+            toolCalls: { type: "array", items: { type: "object", required: ["id", "name"], properties: { id: { type: "string" }, name: { type: "string" }, arguments: {} } } },
+            toolCallId: { type: "string" }, toolName: { type: "string" }, isError: { type: "boolean" },
+            model: { type: "string" }, stopReason: { type: "string" }, errorMessage: { type: "string" },
+            usage: { type: "object", required: ["input", "output", "cacheRead", "cacheWrite", "cost"], properties: { input: { type: "integer" }, output: { type: "integer" }, cacheRead: { type: "integer" }, cacheWrite: { type: "integer" }, cost: { type: "number" } } },
+          },
+        },
+        MessageInput: { type: "object", required: ["message"], properties: { message: { type: "string" }, cwd: { type: "string", description: "Working directory when this message creates the conversation." }, behavior: { type: "string", enum: ["steer", "followUp"], description: "How to deliver while the bot is busy. Default: followUp." } } },
+        Submission: { type: "object", required: ["submissionId", "disposition", "offset", "streamUrl"], properties: { submissionId: { type: "string" }, disposition: { type: "string", enum: ["started", "queued", "handled"] }, offset: { type: "integer" }, streamUrl: { type: "string", description: "Relative URL of the update stream starting just before this message." } } },
+        Request: { type: "object", required: ["id", "method", "title"], properties: { id: { type: "string" }, method: { type: "string", enum: ["select", "confirm", "input", "editor"] }, title: { type: "string" }, message: { type: "string" }, options: { type: "array", items: { type: "string" } }, placeholder: { type: "string" }, prefill: { type: "string" } } },
+        RequestAnswer: { type: "object", required: ["requestId"], properties: { requestId: { type: "string" }, value: { type: "string", description: "For select, input and editor." }, confirmed: { type: "boolean", description: "For confirm." }, cancelled: { const: true, description: "Dismiss any request." } } },
+        StreamEvent: {
+          description: "The `data` of each server-sent event, by `event` name.",
+          oneOf: [
+            { title: "status", type: "object", required: ["state"], properties: { state: ref("ConversationState"), model: { type: "string" }, thinking: ref("ThinkingLevel") } },
+            { title: "delta", type: "object", required: ["kind", "text"], properties: { kind: { type: "string", enum: ["text", "thinking"] }, text: { type: "string" } } },
+            { title: "message", type: "object", required: ["message"], properties: { message: ref("Message") } },
+            { title: "tool", type: "object", required: ["phase", "toolCallId", "toolName"], properties: { phase: { type: "string", enum: ["start", "end"] }, toolCallId: { type: "string" }, toolName: { type: "string" }, args: {}, isError: { type: "boolean" }, durationMs: { type: "number" }, summary: { type: "string" } } },
+            { title: "request", ...ref("Request") },
+            { title: "request_closed", type: "object", required: ["requestId"], properties: { requestId: { type: "string" } } },
+            { title: "notice", type: "object", required: ["level", "message"], properties: { level: { type: "string", enum: ["info", "warning", "error"] }, message: { type: "string" } } },
+            { title: "error", type: "object", required: ["message"], properties: { message: { type: "string" } } },
+            { title: "settled", type: "object", required: ["aborted"], properties: { aborted: { type: "boolean" } } },
+            { title: "gap", type: "object", required: ["from", "firstOffset"], properties: { from: { type: "integer" }, firstOffset: { type: "integer" } } },
+          ],
+        },
+      },
+    },
+  };
+}

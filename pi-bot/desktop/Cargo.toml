@@ -1,0 +1,28 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2024"
+publish = false
+
+[workspace.dependencies]
+# The UI framework. Every crate depends on this single crate and reaches
+# components through `gpui_kit::component::…`.
+gpui-kit = "0.8.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Plain HTTP to the local pi-bot server; no TLS is needed on loopback.
+ureq = { version = "3.4", default-features = false, features = ["json"] }
+
+pi-bot-api = { path = "crates/api" }
+pi-bot-bots = { path = "crates/bots" }
+pi-bot-conversation = { path = "crates/conversation" }
+
+[profile.dev]
+# GPUI renders every frame; an unoptimised framework is painful to use.
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
