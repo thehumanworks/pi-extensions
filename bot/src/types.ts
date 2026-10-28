@@ -41,6 +41,32 @@ export interface BotSessionInfo {
   updatedAt: string;
   title?: string;
 }
+/** Read-only recall over one bot home's persisted conversations, regardless of cwd. */
+export interface BotHistoryQuery {
+  action: "list" | "search" | "read";
+  session?: string;
+  query?: string;
+  entryId?: number;
+  /** UTF-16 character offset in the readable entry projection; requires entryId. */
+  offset?: number;
+  limit?: number;
+  cursor?: string;
+}
+export interface BotHistoryEntry {
+  sessionId: string;
+  cwd: string;
+  entryId: number;
+  kind: string;
+  text: string;
+  offset: number;
+  totalChars: number;
+  nextOffset?: number;
+}
+export interface BotHistoryPage {
+  items: Array<BotSessionInfo | BotHistoryEntry>;
+  /** Continue even when items is empty: search work is bounded per call. */
+  nextCursor?: string;
+}
 export interface BotEvent {
   type: string;
   sessionId?: string;
@@ -56,7 +82,9 @@ export interface RunOptions {
   onEvent?: (event: BotEvent) => void;
 }
 export interface OpenBotOptions {
+  /** Execution workspace only; never selects the bot's memory/history. */
   cwd?: string;
+  /** Explicit alternate persistence home; default <canonical source>/.bot. */
   stateDir?: string;
   model?: string;
   thinking?: ThinkingLevel;

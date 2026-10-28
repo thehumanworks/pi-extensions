@@ -77,9 +77,9 @@ test("global defaultTools changes affect fingerprint and activate on reload", as
   const f = await fixture({ inherit: "global" }); t.after(f.cleanup);
   await writeFile(join(f.agentDir, "settings.json"), JSON.stringify({ defaultTools: ["read"] }));
   const { models } = scripted([]); const bot = await openBot(f.source, { models, agentDir: f.agentDir }); t.after(() => bot.close());
-  const old = (await bot.info()).revision; assert.deepEqual((await bot.info()).tools.map(t => t.name), ["read"]);
+  const old = (await bot.info()).revision; assert.deepEqual((await bot.info()).tools.map(t => t.name), ["read", "bot_history"]);
   await writeFile(join(f.agentDir, "settings.json"), JSON.stringify({ defaultTools: ["read", "bash"] }));
-  assert((await bot.reload()).changed); assert.notEqual((await bot.info()).revision, old); assert.deepEqual((await bot.info()).tools.map(t => t.name), ["read", "bash"]);
+  assert((await bot.reload()).changed); assert.notEqual((await bot.info()).revision, old); assert.deepEqual((await bot.info()).tools.map(t => t.name), ["read", "bash", "bot_history"]);
 });
 
 test("invalid settings/model catalog values fail quickly without provider calls or leaked locks", async t => {

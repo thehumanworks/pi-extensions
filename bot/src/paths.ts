@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from "node:fs";
+import { realpathSync } from "node:fs";
 import { realpath } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
@@ -29,8 +29,10 @@ export function isInside(path: string, dir: string): boolean {
 }
 export async function resolveSource(source: string): Promise<string> {
   if (typeof source !== "string" || !source.trim()) throw new BotError("INVALID_INPUT", "A bot source path or name is required.");
-  let path = resolve(expandHome(source));
-  if (!existsSync(path) && !source.includes("/") && !source.includes("\\")) path = join(botsRoot(), source);
+  // Names always identify roster bots; local directories require an explicit path.
+  // A same-named directory in the caller's workspace must never shadow the home.
+  const named = !source.includes("/") && !source.includes("\\") && !source.startsWith(".") && source !== "~" && source !== "BOT.md";
+  let path = named ? join(botsRoot(), source) : resolve(expandHome(source));
   if (basename(path) === "BOT.md") path = dirname(path);
   try { return await realpath(path); } catch (error) { throw new BotError("NOT_FOUND", `Unknown bot source ${source} (looked in ${path}).`, { cause: error }); }
 }

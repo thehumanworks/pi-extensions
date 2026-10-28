@@ -44,6 +44,9 @@ Remote run/chat/tool/sessions: --url URL [--auth-token-env NAME] (no local ref/o
 Remote tool syntax: bot tool call --url URL <name> --input JSON
 
 Default source for run/chat/sessions: .  Default serve address: 127.0.0.1:3000.
+Bare refs always name roster bots; use ./name for a local source directory.
+--cwd changes execution only; memory and all chats stay in <source>/.bot (or --state-dir).
+Use bot_history via tool call to list/search/read chats across workspaces and threads.
 Caller authentication is OFF unless --auth-token-env is explicitly supplied, on every host.
 Provider access uses the serving/local user's existing Pi credentials. No bot login is needed.
 chat streams replies as they are generated: the answer goes to stdout as terminal markdown;
