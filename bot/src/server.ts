@@ -315,7 +315,10 @@ export async function serve(source: string, options: ServeOptions = {}): Promise
   const server = createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (req, res) => {
     const operation = route(req, res).catch(error => { req.resume(); if (!res.destroyed) fail(res, error); });
     operations.add(operation);
-    void operation.finally(() => operations.delete(operation));
+    operation.finally(() => operations.delete(operation)).catch(() => {
+      // A failed error response must terminate the connection, not escape the HTTP callback.
+      res.destroy();
+    });
   });
   server.maxHeadersCount = 100;
   server.on("connection", socket => { sockets.add(socket); socket.on("close", () => sockets.delete(socket)); });

@@ -60,6 +60,7 @@ test('live public-service read-only Jira and Confluence journeys', {
     }
     assert.fail('raw source recovery exceeded bounded range count');
   }
+  let assertionsSucceeded = false;
   try {
     await t.test('Jira authenticated myself and project list assertions', async () => {
       let operationId: unknown;
@@ -127,9 +128,12 @@ test('live public-service read-only Jira and Confluence journeys', {
       const outline = await call('read', { handle: sourceHandle, pointer, mode: 'outline' });
       assert.ok(/derived/i.test(JSON.stringify(outline)), 'outline must be explicitly labeled derived');
     });
+    assertionsSucceeded = true;
   } finally {
-    try { await service.close(); }
-    catch { throw new Error('Live source cleanup assertion failed (diagnostics suppressed)'); }
+    try { await service.close().catch(() => {
+      if (assertionsSucceeded) throw new Error('Live source cleanup assertion failed (diagnostics suppressed)');
+      // Preserve the original assertion failure rather than replacing it during cleanup.
+    }); }
     finally { await rm(parent, { recursive: true, force: true }); }
   }
 });

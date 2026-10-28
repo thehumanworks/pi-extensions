@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { Transport } from '../src/transport.ts';
+import { loadConfig } from '../src/config.ts';
+import { DUMMY } from './helpers.ts';
 import { fixture, json, operation, record, string, items, stitch, issue, page } from './helpers.ts';
 
 test('read network retries are bounded and transient success remains recoverable', async t => {
@@ -201,4 +204,22 @@ test('cursor IDs are runtime-scoped and replay an immutable continuation request
   assert.equal(record(first.calls[2].body).nextPageToken, 'remote-cursor-token');
   const original = await stitch(first.service, string(start.handle));
   assert.equal(record(JSON.parse(original) as unknown).nextPageToken, 'remote-cursor-token', 'later pages must not mutate the first source');
+});
+
+test('a rejecting stream cancellation does not escape as an unhandled rejection', { timeout: 2000 }, async () => {
+  const controller = new AbortController();
+  let cancellations = 0;
+  const transport = new Transport(loadConfig(DUMMY), async () => new Response(new ReadableStream<Uint8Array>({
+    cancel() {
+      cancellations++;
+      throw new Error('fixture cancellation failure');
+    },
+  }), { headers: { 'content-type': 'application/json' } }), true);
+  const pending = transport.send({ product: 'jira', method: 'GET', url: transport.url('jira', '/rest/api/3/project'), read: true }, controller.signal);
+  const rejection = assert.rejects(pending, /cancel/i);
+  await new Promise<void>(resolve => { setImmediate(resolve); });
+  controller.abort();
+  await rejection;
+  await new Promise<void>(resolve => { setImmediate(resolve); });
+  assert.equal(cancellations, 1);
 });

@@ -140,7 +140,7 @@ test('disjoint early entries do not consume the complete-group model budget', as
   const { items } = await fixture(t);
   const singletons = Array.from({ length: 20 }, (_value, index) => ({ ...items[0]!, id: `singleton-${index}`, title: `uniquetopic${index}`, keywords: [`uniquetopic${index}`], triggers: [], importance: 10 }));
   const grouped = dreamGroups([...singletons, ...items], 3);
-  assert.equal(grouped.length, 1); assert.deepEqual(grouped[0]!.map(item => item.id), items.map(item => item.id));
+  assert.equal(grouped.length, 1); assert.deepEqual(grouped[0]!.map(item => item.id), items.map(item => item.id).sort((a, b) => a.localeCompare(b)));
 });
 
 test('processed group ledger advances later passes to new groups without copying source text into reports', async t => {
@@ -149,9 +149,11 @@ test('processed group ledger advances later passes to new groups without copying
   for (const detail of ['Set the invoice limit to 2.', 'Set the invoice timeout to 30.', 'Set the invoice workers to 1.']) other.push(await store.save({ title: `Orion invoice allocation ${other.length}`, body: `For Orion invoice allocation, always validate the complete invoice before reserving a budget. Never allocate invalid invoices. ${detail}`, keywords: ['orion', 'invoice', 'allocation'], importance: 7, source: { session: 'invoices', entries: ['u2'], origin: 'user_statement' } }));
   const pipeline = new DreamPipeline(store, { root, maxSourceItems: 3 });
   const first = await pipeline.run(context(output(items)).ctx, new AbortController().signal, { force: true });
-  assert.deepEqual(first.sourceIds, items.map(item => item.id));
+  // Equal-importance sources are ordered by ID, not save order; IDs may share
+  // a timestamp prefix and differ only in their random suffix.
+  assert.deepEqual(first.sourceIds, items.map(item => item.id).sort((a, b) => a.localeCompare(b)));
   const second = await pipeline.run(context(output(other)).ctx, new AbortController().signal, { force: true });
-  assert.deepEqual(second.sourceIds, other.map(item => item.id));
+  assert.deepEqual(second.sourceIds, other.map(item => item.id).sort((a, b) => a.localeCompare(b)));
   const third = context({ groups: [], declined: [] });
   assert.equal((await pipeline.run(third.ctx, new AbortController().signal, { force: true })).status, 'skipped');
   assert.equal(third.requests.length, 0);

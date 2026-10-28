@@ -160,8 +160,10 @@ function maintenanceTools(): LoadedTool[] {
   ];
   return result.map(tool => validateTool(tool, "bot:maintenance"));
 }
+type ClassicExtensionFactory = (api: { registerTool(tool: Record<string, any>): void }) => unknown | Promise<unknown>;
+
 /** Strict bridge: only registerTool is supported. Any other API use rejects the entire factory. */
-async function classicExtension(factory: Function, source: string): Promise<BotExtensionDefinition> {
+async function classicExtension(factory: ClassicExtensionFactory, source: string): Promise<BotExtensionDefinition> {
   const tools: BotToolDefinition[] = [];
   const unsupported: string[] = [];
   const api = new Proxy({ registerTool(tool: Record<string, any>) {
@@ -312,7 +314,7 @@ async function compileProject(source: string, options: LoadProjectOptions): Prom
     }
     for (const file of toolPaths) add(await importAuthored<BotToolDefinition>(file), file);
     for (const file of extensionPaths) {
-      const exported = await importAuthored<BotExtensionDefinition | Function>(file);
+      const exported = await importAuthored<BotExtensionDefinition | ClassicExtensionFactory>(file);
       const bundle = typeof exported === "function" ? await classicExtension(exported, file) : exported;
       if (!bundle || typeof bundle.name !== "string" || !bundle.name.trim() || (bundle.tools !== undefined && !Array.isArray(bundle.tools)) || (bundle.instructions !== undefined && typeof bundle.instructions !== "string") || Object.keys(bundle).some(key => !["name", "tools", "instructions"].includes(key))) throw new BotError("INVALID_INPUT", `Invalid common extension in ${file}; supported fields are name, tools, instructions. Durable and classic Pi extensions are distinct.`);
       if (extensionNames.has(bundle.name)) throw new BotError("INVALID_INPUT", `Duplicate extension ${bundle.name} in ${local ? "bot" : "global"} layer (${file}).`);

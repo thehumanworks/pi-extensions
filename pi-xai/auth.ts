@@ -202,17 +202,19 @@ export function createLocalAuth(options: LocalAuthOptions = {}) {
         }
       }
     }
+    let operationSucceeded = false;
     try {
       combined.throwIfAborted();
       await ensureRegularPath();
-      return await operation(combined);
+      const result = await operation(combined);
+      operationSucceeded = true;
+      return result;
     } finally {
-      try {
-        await release();
-      } catch {
-        if (!combined.aborted)
+      // Never replace the operation's failure with a secondary cleanup error.
+      await release().catch(() => {
+        if (operationSucceeded && !combined.aborted)
           throw new LocalAuthError("Unable to release the xAI cache lock.");
-      }
+      });
     }
   }
 

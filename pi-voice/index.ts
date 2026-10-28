@@ -52,7 +52,10 @@ export function registerVoice(pi: ExtensionAPI, dependencies?: ExtensionDependen
     // partial transcripts before session replacement can change Pi's active branch.
     const operation = run.session?.stop() ?? run.dictation?.stop() ?? Promise.resolve();
     stopping = operation;
-    void operation.finally(() => { if (stopping === operation) stopping = undefined; });
+    // Observe both outcomes without creating a second rejected promise. The caller
+    // still receives the original rejection.
+    const clearStopping = () => { if (stopping === operation) stopping = undefined; };
+    void operation.then(clearStopping, clearStopping);
     return operation;
   };
 
@@ -177,7 +180,7 @@ export function registerVoice(pi: ExtensionAPI, dependencies?: ExtensionDependen
             if (active !== run) return;
             run.reported = true;
             ctx.ui.notify(safeText(error.message), "error");
-            void stop();
+            void stop().catch(() => { console.error("[voice] Failed to stop the voice session."); });
           },
         };
         const session = dependencies?.session(options) ?? new VoiceSession(options);

@@ -49,7 +49,7 @@ async function send(message: WorkerOutput): Promise<void> {
 }
 function event(id: number, value: Parameters<Parameters<BotHandle["watch"]>[1]>[0]) {
   if (closing) return;
-  void send({ type: "event", id, event: value }).catch(() => { void shutdown(); });
+  void send({ type: "event", id, event: value }).catch(() => { shutdown().catch(forceExit); });
 }
 function forceExit(): never {
   // Only our own PID's group is targeted. A direct (non-group-leader) invocation cannot hit its parent group.
@@ -93,7 +93,7 @@ async function settled(id: number, initial: BotRunRecord) {
   } catch { /* runtime closure/exit is reported by transport lifecycle */ }
   finally {
     controllers.delete(id); reported.delete(id);
-    if (!closing) await send({ type: "settled", id }).catch(() => { void shutdown(); });
+    if (!closing) await send({ type: "settled", id }).catch(() => { shutdown().catch(forceExit); });
   }
 }
 async function dispatch(request: WorkerRequest): Promise<unknown> {
@@ -154,25 +154,25 @@ async function dispatch(request: WorkerRequest): Promise<unknown> {
 }
 process.on("message", (raw: unknown) => {
   const request = raw as WorkerInput;
-  if (!request || !validId(request.id) || messageBytes(request) > messageLimit) { void shutdown(); return; }
+  if (!request || !validId(request.id) || messageBytes(request) > messageLimit) { shutdown().catch(forceExit); return; }
   if (request.type === "abort") { controllers.get(request.id)?.abort(new DOMException("The operation was aborted", "AbortError")); return; }
-  if (request.type !== "request" || !WORKER_METHODS.has(request.method) || active.has(request.id)) { void shutdown(); return; }
+  if (request.type !== "request" || !WORKER_METHODS.has(request.method) || active.has(request.id)) { shutdown().catch(forceExit); return; }
   if (active.size >= 256 && request.method !== "close") {
-    void send({ type: "reply", id: request.id, ok: false, error: { name: "BotError", code: "UNAVAILABLE", message: "Too many worker operations" } }).catch(() => { void shutdown(); }); return;
+    void send({ type: "reply", id: request.id, ok: false, error: { name: "BotError", code: "UNAVAILABLE", message: "Too many worker operations" } }).catch(() => { shutdown().catch(forceExit); }); return;
   }
   active.add(request.id);
   void (async () => {
     try {
       const value = await dispatch(request);
       if (request.method !== "close") await send({ type: "reply", id: request.id, ok: true, value: value ?? null });
-      if (request.method === "submit") void settled(request.id, value as BotRunRecord);
+      if (request.method === "submit") settled(request.id, value as BotRunRecord).catch(() => shutdown()).catch(forceExit);
     } catch (error) {
       controllers.delete(request.id); reported.delete(request.id);
-      await send({ type: "reply", id: request.id, ok: false, error: wireError(error) }).catch(() => { void shutdown(); });
+      await send({ type: "reply", id: request.id, ok: false, error: wireError(error) }).catch(() => { shutdown().catch(forceExit); });
     } finally { active.delete(request.id); }
-  })();
+  })().catch(() => shutdown()).catch(forceExit);
 });
-process.once("disconnect", () => { void shutdown(); });
-process.once("SIGTERM", () => { void shutdown(); });
-process.once("SIGINT", () => { void shutdown(); });
+process.once("disconnect", () => { shutdown().catch(forceExit); });
+process.once("SIGTERM", () => { shutdown().catch(forceExit); });
+process.once("SIGINT", () => { shutdown().catch(forceExit); });
 if (!process.send) process.exitCode = 1;

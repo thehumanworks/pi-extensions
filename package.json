@@ -27,11 +27,24 @@
     "test:scripts": "node --test scripts/publish.test.mjs scripts/publish-updated.test.mjs",
     "publish:package": "node scripts/publish.mjs",
     "publish:updated": "node scripts/publish-updated.mjs",
-    "check": "npm run check --workspaces --if-present",
+    "check": "npm run typecheck && npm run lint && npm run test:quality && npm run format:check",
     "build": "npm run build --workspaces --if-present",
-    "pack:check": "npm run build && npm run test:packages"
+    "pack:check": "npm run build && npm run test:packages",
+    "typecheck": "npm run check --workspaces && tsc -p examples/quality/tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "test:quality": "node --test scripts/quality/*.test.mjs",
+    "format:check": "prettier --check eslint.config.mjs tsconfig.lint.json .prettierrc.json \"scripts/quality/**/*.mjs\" \"examples/quality/**/*.{ts,json}\" .github/workflows/quality.yml",
+    "format:tools": "npm run format:check -- --write",
+    "verify": "npm run build && npm run check && npm test && npm run test:packages"
   },
   "devDependencies": {
-    "semver": "^7.8.5"
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/bun": "1.4.4",
+    "@types/node": "22.20.5",
+    "eslint": "10.13.0",
+    "prettier": "3.9.10",
+    "semver": "^7.8.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1"
   }
 }

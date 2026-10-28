@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { chmodSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -7,8 +8,8 @@ import { join } from "node:path";
 const sdkPath = process.env.PI_ADVISOR_SDK || "@earendil-works/pi-coding-agent";
 const sdk = await import(sdkPath);
 const ai = await import(import.meta.resolve("@earendil-works/pi-ai", process.env.PI_ADVISOR_SDK || import.meta.url));
-mock.module("@earendil-works/pi-coding-agent", () => sdk);
-mock.module("@earendil-works/pi-ai", () => ai);
+await mock.module("@earendil-works/pi-coding-agent", () => sdk);
+await mock.module("@earendil-works/pi-ai", () => ai);
 const advisor = (await import("./pi-advisor.ts")).default;
 
 const usage = { input: 10, output: 20, cacheRead: 0, cacheWrite: 0, totalTokens: 30,
@@ -36,7 +37,7 @@ afterEach(() => {
 });
 
 function harness(settings: Record<string, unknown> = {}, flag?: string) {
-  const handlers = new Map<string, Function>();
+  const handlers = new Map<string, (event: unknown, ctx: unknown) => unknown>();
   const commands = new Map<string, any>();
   const tools = new Map<string, any>();
   const flags = new Map<string, any>();
@@ -60,7 +61,7 @@ function harness(settings: Record<string, unknown> = {}, flag?: string) {
     },
   };
   advisor({
-    on: (name: string, fn: Function) => handlers.set(name, fn),
+    on: (name: string, fn: (event: unknown, ctx: unknown) => unknown) => handlers.set(name, fn),
     registerCommand: (name: string, command: any) => commands.set(name, command),
     registerFlag: (name: string, definition: any) => flags.set(name, definition),
     registerTool: (tool: any) => tools.set(tool.name, tool),
@@ -86,7 +87,7 @@ test("registers flag, command, and valid tool schema even when unconfigured", as
   expect(h.commands.has("advisor")).toBe(true);
   expect(h.tools.get("ask_advisor").parameters.required).toEqual(["question"]);
   expect(h.statuses.at(-1)).toEqual(["advisor", undefined]);
-  await expect(h.ask()).rejects.toThrow("No advisor configured");
+  await assert.rejects(h.ask(), /No advisor configured/);
 });
 
 describe("configuration precedence", () => {
@@ -110,13 +111,13 @@ describe("configuration precedence", () => {
     expect((await h.ask()).details.model).toBe("settings/model");
     const disabled = harness({ advisorModel: "settings/model" }, "off");
     disabled.start();
-    await expect(disabled.ask()).rejects.toThrow("No advisor configured");
+    await assert.rejects(disabled.ask(), /No advisor configured/);
   });
   test.each(["", "model", "/model", "provider/", "provider/model extra", "provider/\u001bmodel", 42])("rejects malformed configuration %j without falling back", async (value) => {
     const h = harness({ advisorModel: value });
     h.start();
     expect(h.statuses.at(-1)[1]).toContain("configuration error");
-    await expect(h.ask()).rejects.toThrow();
+    await assert.rejects(h.ask());
     expect(h.calls).toHaveLength(0);
   });
 });
@@ -136,7 +137,7 @@ test("commands parse the whole argument, preserve settings, and override startup
   await h.command("off");
   expect(JSON.parse(readFileSync(path, "utf8")).advisorModel).toBe("off");
   expect(h.statuses.at(-1)).toEqual(["advisor", undefined]);
-  await expect(h.ask()).rejects.toThrow("No advisor configured");
+  await assert.rejects(h.ask(), /No advisor configured/);
   expect(readdirSync(directory)).toEqual(["settings.json"]);
 });
 
@@ -199,19 +200,19 @@ test("does not replace dangling settings symlinks", async () => {
   await h.command("custom/model");
   expect(lstatSync(path).isSymbolicLink()).toBe(true);
   expect(readdirSync(directory)).toEqual(["settings.json"]);
-  await expect(h.ask()).rejects.toThrow("No advisor configured");
+  await assert.rejects(h.ask(), /No advisor configured/);
 });
 
 test("unknown models and missing credentials fail before requests or settings writes", async () => {
   const h = harness({ advisorModel: "good/model" });
   h.known(false);
   h.start();
-  await expect(h.ask()).rejects.toThrow("not found");
+  await assert.rejects(h.ask(), /not found/);
   await h.command("missing/model");
   h.known(true);
   h.auth(false);
   h.start();
-  await expect(h.ask()).rejects.toThrow("authentication");
+  await assert.rejects(h.ask(), /authentication/);
   await h.command("good/model");
   expect(readdirSync(directory)).toEqual([]);
   expect(h.calls).toHaveLength(0);
@@ -219,7 +220,7 @@ test("unknown models and missing credentials fail before requests or settings wr
   await h.command("good/model");
   expect((await h.ask()).isError).toBeUndefined();
   h.auth(false);
-  await expect(h.ask()).rejects.toThrow("authentication");
+  await assert.rejects(h.ask(), /authentication/);
 });
 
 test("headless calls use configured registry, bounded output, cancellation signal, and isolated context", async () => {
@@ -255,7 +256,7 @@ test.each(["error", "aborted", "length", "toolUse"])("marks %s responses as erro
 test("empty output and blank questions cannot be reported as successful advice", async () => {
   const h = harness({ advisorModel: "custom/model" });
   h.start();
-  await expect(h.ask(" \n ")).rejects.toThrow("must not be empty");
+  await assert.rejects(h.ask(" \n "), /must not be empty/);
   expect(h.calls).toHaveLength(0);
   h.respond(assistant(" "));
   expect((await h.ask()).isError).toBe(true);
@@ -266,13 +267,13 @@ test("propagates thrown provider errors and cancellation before and during reque
   h.start();
   const controller = new AbortController();
   controller.abort();
-  await expect(h.ask("Question", undefined, controller.signal)).rejects.toThrow();
+  await assert.rejects(h.ask("Question", undefined, controller.signal));
   expect(h.calls).toHaveLength(0);
   h.respond(() => { throw new Error("Network unavailable"); });
-  await expect(h.ask()).rejects.toThrow("Network unavailable");
+  await assert.rejects(h.ask(), /Network unavailable/);
   const active = new AbortController();
   h.respond(() => { active.abort(); return assistant(); });
-  await expect(h.ask("Question", undefined, active.signal)).rejects.toThrow();
+  await assert.rejects(h.ask("Question", undefined, active.signal));
 });
 
 test("in-flight requests keep their selected model when the advisor is disabled", async () => {
@@ -284,7 +285,7 @@ test("in-flight requests keep their selected model when the advisor is disabled"
   await h.command("off");
   finish(assistant());
   expect((await pending).details.model).toBe("custom/model");
-  await expect(h.ask()).rejects.toThrow("No advisor configured");
+  await assert.rejects(h.ask(), /No advisor configured/);
 });
 
 test("real Pi file loader and tool lifecycle call an authenticated offline advisor and account for usage", async () => {

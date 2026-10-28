@@ -195,8 +195,8 @@ export class ChatGPTVoiceTransport implements VoiceTransport {
   private fail(error: Error): void {
     if (this.closed || this.failed) return;
     this.failed = true;
-    this.options.onFailure(error);
-    void this.close();
+    try { this.options.onFailure(error); } catch { /* Do not throw through socket callbacks. */ }
+    finally { void this.close().catch(() => { console.error("[voice] Failed to release the voice transport."); }); }
   }
 
   send(message: ClientMessage): Promise<void> {

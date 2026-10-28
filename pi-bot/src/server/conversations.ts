@@ -218,7 +218,9 @@ export class Conversation {
       case "agent_settled":
         this.setState("idle");
         this.emit("settled", { aborted: event.aborted });
-        this.idleTimer = setTimeout(() => void this.close(), this.options.idleMs ?? IDLE_MS);
+        this.idleTimer = setTimeout(() => {
+          void this.close().catch(error => { console.error("pi-bot-server: idle conversation shutdown failed:", error); });
+        }, this.options.idleMs ?? IDLE_MS);
         this.idleTimer.unref();
         break;
       case "thinking_level_changed":

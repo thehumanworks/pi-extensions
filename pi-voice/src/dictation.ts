@@ -107,7 +107,7 @@ export class DictationSession {
   /** Start recording, or stop and transcribe. Ignored while a transcription is running. */
   toggle(): void {
     if (this.state.phase === "ready") this.record();
-    else if (this.state.phase === "recording") void this.finish();
+    else if (this.state.phase === "recording") void this.finish().catch(error => this.fail(error instanceof Error ? error : new Error("Dictation failed.")));
   }
 
   private record(): void {
@@ -123,7 +123,7 @@ export class DictationSession {
         this.samples += samples.length;
         if (this.samples >= MAX_SECONDS * SAMPLE_RATE) {
           this.options.onNotice(`Dictation reached ${MAX_SECONDS / 60} minutes; transcribing.`);
-          void this.finish();
+          void this.finish().catch(error => this.fail(error instanceof Error ? error : new Error("Dictation failed.")));
         }
       });
     } catch (error) {

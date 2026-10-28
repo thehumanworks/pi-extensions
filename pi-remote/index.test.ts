@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:net";
@@ -66,8 +67,7 @@ test("local remains active until a remote host is selected", async () => {
 test("invalid host flags cannot bypass blocking an explicitly requested remote", async () => {
 	const session = new RemoteSession({ cwd: "/work" });
 	try {
-		await expect(session.loadConfiguredHosts({ initial: "requested.example", hostList: "-invalid" }))
-			.rejects.toThrow("Invalid remote target");
+		await assert.rejects(session.loadConfiguredHosts({ initial: "requested.example", hostList: "-invalid" }), /Invalid remote target/);
 		expect(session.unavailable?.target).toBe("requested.example");
 		expect(() => session.activeRemote()).toThrow("Execution is blocked");
 	} finally {
@@ -168,7 +168,7 @@ test("refuses a host whose key differs from the one ssh trusts", async () => {
 		sshConfigFile: config.file,
 	});
 	try {
-		await expect(session.use(`${userInfo().username}@${address}:${server.port}`, `${home}/srv/one`)).rejects.toThrow(/changed.*ssh-keygen -R/);
+		await assert.rejects(session.use(`${userInfo().username}@${address}:${server.port}`, `${home}/srv/one`), /changed.*ssh-keygen -R/);
 		expect(readFileSync(join(root, "known_hosts"), "utf8")).not.toContain(readFileSync(server.hostKey, "utf8").split(/\s+/)[1]!);
 		expect(session.current().remote).toBe(false);
 	} finally {
@@ -262,8 +262,7 @@ test("startup authentication failure keeps the extension usable without falling 
 		const status = await tools.get("remote_host")!.execute("status", { action: "status" }, undefined, undefined, ctx);
 		expect(JSON.parse(status.content[0]!.type === "text" ? status.content[0]!.text : "{}").unavailable.target).toBe(target);
 		for (const name of ["read", "write", "edit", "bash", "ls", "find", "grep"]) {
-			await expect(Promise.resolve().then(() => tools.get(name)!.execute("blocked", {}, undefined, undefined, ctx)))
-				.rejects.toThrow("Execution is blocked");
+			await assert.rejects(Promise.resolve().then(() => tools.get(name)!.execute("blocked", {}, undefined, undefined, ctx)), /Execution is blocked/);
 		}
 		expect(() => handlers.get("user_bash")!({}, ctx)).toThrow("Execution is blocked");
 		const event = { systemPromptOptions: { sections: {} as Record<string, string> } };

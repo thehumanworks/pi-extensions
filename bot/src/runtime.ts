@@ -493,15 +493,19 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
             while (shortOperations.size) await Promise.allSettled([...shortOperations]);
             for (const cleanup of [...signalCleanups]) cleanup();
             await Promise.allSettled([...stops].map(stop => stop()));
+            const failures: unknown[] = [];
             try { await H().close(C); await Promise.allSettled([...observers]); }
-            finally {
-              await gate;
-              try {
-                const released = await Promise.allSettled(releases.reverse().map(release => release()));
-                const failed = released.find(result => result.status === "rejected");
-                if (failed?.status === "rejected") throw failed.reason;
-              } finally { if (temporary) await rm(temporary, { recursive: true, force: true }); }
+            catch (error) { failures.push(error); }
+            // Attempt every cleanup while preserving the original close failure.
+            try { await gate; } catch (error) { failures.push(error); }
+            const released = await Promise.allSettled(releases.reverse().map(async release => release()));
+            for (const result of released) if (result.status === "rejected") failures.push(result.reason);
+            if (temporary) {
+              try { await rm(temporary, { recursive: true, force: true }); }
+              catch (error) { failures.push(error); }
             }
+            if (failures.length === 1) throw failures[0];
+            if (failures.length > 1) throw new AggregateError(failures, "Bot close and cleanup failed");
           })();
         }
         return closePromise;

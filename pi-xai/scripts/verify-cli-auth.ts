@@ -14,48 +14,58 @@ const cliPath = fileURLToPath(new URL("../cli.ts", import.meta.url));
 let refreshes = 0;
 let apiCalls = 0;
 const failures: string[] = [];
-const server = createServer(async (request, response) => {
-  response.setHeader("content-type", "application/json");
-  if (request.url === "/oauth2/token" && request.method === "POST") {
-    const chunks: Buffer[] = [];
-    for await (const chunk of request) chunks.push(Buffer.from(chunk));
-    const form = new URLSearchParams(Buffer.concat(chunks).toString());
-    if (
-      form.get("grant_type") !== "refresh_token" ||
-      form.get("refresh_token") !== "fixture-refresh"
-    ) {
-      failures.push("unexpected refresh grant");
-      response.writeHead(400).end(JSON.stringify({ error: "invalid_grant" }));
-      return;
+const server = createServer((request, response) => {
+  void (async () => {
+    response.setHeader("content-type", "application/json");
+    if (request.url === "/oauth2/token" && request.method === "POST") {
+      const chunks: Buffer[] = [];
+      for await (const chunk of request) chunks.push(Buffer.from(chunk));
+      const form = new URLSearchParams(Buffer.concat(chunks).toString());
+      if (
+        form.get("grant_type") !== "refresh_token" ||
+        form.get("refresh_token") !== "fixture-refresh"
+      ) {
+        failures.push("unexpected refresh grant");
+        response.writeHead(400).end(JSON.stringify({ error: "invalid_grant" }));
+        return;
+      }
+      refreshes++;
+      response.end(
+        JSON.stringify({
+          access_token: "fixture-fresh-access",
+          refresh_token: "fixture-rotated-refresh",
+          expires_in: 3600,
+          extra_field: "retained",
+        }),
+      );
+    } else if (request.url === "/v1/models" && request.method === "GET") {
+      apiCalls++;
+      if (request.headers.authorization !== "Bearer fixture-fresh-access") {
+        failures.push("API did not receive the refreshed token");
+        response.writeHead(401).end(JSON.stringify({ error: "unauthorized" }));
+        return;
+      }
+      response.end(
+        JSON.stringify({
+          object: "list",
+          data: [
+            {
+              id: "fixture-model",
+              object: "model",
+              created: 0,
+              owned_by: "xai",
+            },
+          ],
+        }),
+      );
+    } else {
+      failures.push(`unexpected request ${request.method} ${request.url}`);
+      response.writeHead(404).end("{}");
     }
-    refreshes++;
-    response.end(
-      JSON.stringify({
-        access_token: "fixture-fresh-access",
-        refresh_token: "fixture-rotated-refresh",
-        expires_in: 3600,
-        extra_field: "retained",
-      }),
-    );
-  } else if (request.url === "/v1/models" && request.method === "GET") {
-    apiCalls++;
-    if (request.headers.authorization !== "Bearer fixture-fresh-access") {
-      failures.push("API did not receive the refreshed token");
-      response.writeHead(401).end(JSON.stringify({ error: "unauthorized" }));
-      return;
-    }
-    response.end(
-      JSON.stringify({
-        object: "list",
-        data: [
-          { id: "fixture-model", object: "model", created: 0, owned_by: "xai" },
-        ],
-      }),
-    );
-  } else {
-    failures.push(`unexpected request ${request.method} ${request.url}`);
-    response.writeHead(404).end("{}");
-  }
+  })().catch((error: unknown) => {
+    failures.push(`fixture request failed: ${String(error)}`);
+    response.destroy(error instanceof Error ? error : new Error(String(error)));
+  });
 });
 
 function quote(value: string): string {
