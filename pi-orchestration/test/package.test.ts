@@ -1,13 +1,46 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { access, cp, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+
+/** npm installs may be package-local or hoisted to any enclosing workspace. */
+async function installedNodeModules(root: string): Promise<string> {
+  for (let directory = root; ; directory = dirname(directory)) {
+    const candidate = join(directory, "node_modules");
+    try {
+      if ((await stat(candidate)).isDirectory()) return candidate;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    if (dirname(directory) === directory) break;
+  }
+  throw new Error(`No installed node_modules found at or above ${root}; install the package's dependencies before testing prepack.`);
+}
+
+test("package fixtures select an existing local or hoisted dependency directory", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-package-layout-"));
+  try {
+    const project = join(root, "packages", "orchestration");
+    const local = join(project, "node_modules");
+    const hoisted = join(root, "node_modules");
+    await mkdir(project, { recursive: true });
+    // A dangling symlink must not be selected merely because symlink() accepts it.
+    await symlink(join(root, "missing"), local, "junction");
+    await mkdir(hoisted);
+    assert.equal(await installedNodeModules(project), hoisted);
+    await rm(local);
+    await mkdir(local);
+    assert.equal(await installedNodeModules(project), local);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 test("prepack builds a source-only checkout with usable compiled entry points", { timeout: 60_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), "pi-orchestration-package-"));
@@ -16,7 +49,7 @@ test("prepack builds a source-only checkout with usable compiled entry points", 
     for (const path of ["package.json", "tsconfig.json", "tsconfig.build.json", "index.ts", "src", "bin", "examples", "README.md"]) {
       await cp(join(packageRoot, path), join(directory, path), { recursive: true });
     }
-    await symlink(fileURLToPath(new URL("../../node_modules", import.meta.url)), join(directory, "node_modules"), "junction");
+    await symlink(await installedNodeModules(packageRoot), join(directory, "node_modules"), "junction");
     execFileSync(npm, ["run", "check"], {
       cwd: directory, encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "pipe"],
     });

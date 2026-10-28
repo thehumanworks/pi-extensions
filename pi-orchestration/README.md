@@ -14,6 +14,19 @@ Requires Node **22.19 or newer**, Git for worktree isolation, and Linux or macOS
 pi install npm:@nothumanwork/pi-orchestration
 ```
 
+For the standalone CLI on NixOS/Linux (`x86_64-linux` or `aarch64-linux`):
+
+```sh
+nix run 'github:thehumanworks/pi-extensions?dir=pi-orchestration' -- --help
+nix profile add 'github:thehumanworks/pi-extensions?dir=pi-orchestration#workflow'
+```
+
+The Nix package supplies Node 24 and runtime tools while preserving your PATH.
+It does not install Pi, register the extension, start a worker/service, or change
+unattended-launch approval. Keep state and credentials outside the Nix store.
+See [Nix installation and maintenance](https://github.com/thehumanworks/pi-extensions/blob/main/pi-orchestration/nix/README.md)
+for NixOS/Home Manager examples, configuration, checks and lockfile updates.
+
 There are three ways in. Pi packages cannot add `pi` subcommands, so `pi workflow` is not one of them.
 
 | Where | How |
@@ -497,5 +510,6 @@ No test needs provider credentials or makes a model request:
 | `test/extension.test.ts` | The Pi tool and `/workflow` command against a fake host: action descriptions, the empty catalog and guide, compact results, launch authorization, completion timing and session restore. |
 | `test/unit.test.ts` | Determinism lint, command parsing, presentation, the guide and starter template, `init`, PATH linking, and loading every example. |
 | `test/package.test.ts` | A source-only checkout whose `prepack` recreates the runtime files and usable compiled entry points. |
+| `test/nix-lock.test.ts` | The standalone Nix lock matches the manifest, including peer dependencies, and contains only pinned registry dependencies rather than workspace links. |
 
 The npm payload contains the thin Pi entry, source, compiled JavaScript and declarations, the binary, examples, this README and the MIT `LICENSE`. TypeScript configs and tests are development-only.
