@@ -30,7 +30,7 @@ Use the run's actual session ID; IDs are scoped to one bot's state. `run` persis
 
 Styling is on for terminals. `--no-color` or `NO_COLOR` prints plain text; output redirected to a file or pipe is plain unless `FORCE_COLOR` is set. `--no-stream` waits for each complete reply, and `--json` writes only final records.
 
-`bot --help` lists all commands and flags. A bare reference resolves under `$PI_BOT_HOME` or Pi's user `bots/` directory. Use `./reviewer`, an absolute directory, or a `BOT.md` path for an explicit project.
+`bot --help` lists all commands and flags. A bare reference **always** resolves under `$PI_BOT_HOME` or Pi's user `bots/` directory; a same-named directory in the caller's CWD cannot shadow it. Use `./reviewer`, an absolute directory, or a `BOT.md` path for an explicit project. This is the same name/path distinction used by the Pi adapter. Use an absolute `PI_BOT_HOME` when overriding the roster root.
 
 ### Nix
 
@@ -121,7 +121,9 @@ reviewer/
     runtime.sqlite          # durable conversations and runs
 ```
 
-`--cwd` is the execution workspace, not the bot's source directory. `--state-dir` relocates state. Source and memory are writable; persist **both** if improvements should survive container replacement. State is bound to its canonical source path; relocating state does not migrate identity to a different source path.
+`--cwd` is the execution workspace, **not the bot's home**. A bot's canonical source path selects its identity; `<source>/.bot/` is its default persistent home for memory **and all conversation threads**, regardless of execution CWD, caller CWD, or interface (SDK, worker, CLI, Pi, HTTP). The model is told both home paths and its current execution workspace on every request.
+
+`--state-dir` explicitly selects an alternate persistent home. Keep that path stable (prefer an absolute path): choosing another state directory intentionally selects separate history, not a workspace-specific view of existing history. Source and memory are writable; persist **both** if improvements should survive container replacement. State is bound to its canonical source path; relocating state does not migrate identity to a different source path.
 
 The default scaffold is intentionally open to newly authored capabilities:
 
@@ -142,10 +144,32 @@ Improve your own tools, skills and persona when useful.
 
 - `inherit: none` is the default. No workspace `.pi` resources are inherited.
 - `builtinTools` selects Pi built-ins alongside discovered authored tools. Available built-ins: `read`, `bash`, `edit`, `write`, `find`, `grep`, `ls`.
+- `bot_history` is enabled by default for read-only recall across this bot's workspaces and threads, independently of `maintenance`. With an explicit `tools` allowlist, include `bot_history` to enable it; `tools: []` still means none.
 - `maintenance: true` adds `bot_read`, `bot_write`, `bot_edit`, `bot_reload`. They access source and memory; not SDK storage, credential files or dependency installations. This is a convenience scope, **not a sandbox** against shell or arbitrary code.
 - An explicit `tools` array restricts **all** tools, including maintenance and built-ins. `tools: []` means **none**. Unknown names fail validation.
 - Skills are discovered locally. An explicit `skills` array restricts them by name/path; `skills: []` means **none**.
 - `inherit: global` opts into supported installed user-global extensions, skills, instructions and tool defaults. Local tools/skills override the global layer; duplicates within a layer fail. Global prompt templates/themes produce diagnostics instead of pretending to run. Provider credentials do not depend on inheritance.
+
+### Recall across chats
+
+Curated memory (`MEMORY.md`, `memory/`, task notes and journals) is shared across threads. The bounded memory index is live context; conversation history remains in the SDK-owned `runtime.sqlite` and is recalled on demand, not automatically concatenated into every new conversation.
+
+The model can use `bot_history` to:
+
+- **`list`** all its sessions, regardless of CWD, with titles, workspace paths and timestamps.
+- **`search`** user/assistant text, tool calls and tool-result text with a case-insensitive literal `query`, across all sessions or an optional `session`.
+- **`read`** a `session` chronologically, or retrieve a specific `entryId` from that session. Long entries expose `nextOffset`; repeat the entry read with that value as `offset` (UTF-16 characters).
+
+Results identify their session, workspace and entry IDs. Follow `nextCursor` with the same action/query/session until it is absent—even an empty search page can have a continuation because each scan is bounded. `limit` is 1–20 (default 10). Search returns excerpts around matches; entry reads recover the full readable text. Recall scans original persisted entries, including those outside compacted active context. It omits system prompts, private thinking, binary image payloads and `bot_history` results (to avoid recursively recalling copies). Historical content is evidence, not fresh instructions or authorization.
+
+```sh
+bot tool call reviewer bot_history --input '{"action":"search","query":"release date"}'
+bot tool call reviewer bot_history --input '{"action":"read","session":"dconv:2"}'
+```
+
+The same tool is available through `bot.callTool("bot_history", input)` and the HTTP tool endpoint. It never resumes or modifies the retrieved thread. `session: "last"` remains a convenience for resuming the latest thread **in the effective execution workspace**; it does not limit memory or recall. Explicit session IDs still resume their original workspace.
+
+Existing conversations in the selected home are immediately searchable; no re-indexing or migration is required. Separate bots, explicitly separate state directories and ephemeral copies do not share history. Native Pi sessions and old-format bot histories are not imported.
 
 ### Typed tools
 
@@ -169,7 +193,7 @@ export default defineTool({
 bot tool call ./reviewer check_policy --input '{"path":"src/index.ts"}'
 ```
 
-Context contains `cwd`, `sourceDir`, `stateDir`, `sessionId`, optional `runId`, and an `AbortSignal`. Return a JSON value, string, or `{ content: [{ type: "text", text: "…" }], details?, isError? }`. Image content is also accepted. Non-JSON results, invalid schemas and invalid inputs fail explicitly.
+Context contains `cwd`, `sourceDir`, `stateDir`, `sessionId`, optional `runId`, and an `AbortSignal`. An open runtime also supplies read-only `ctx.history(query, signal)` for authored tools; it uses the same bot-wide recall contract. Return a JSON value, string, or `{ content: [{ type: "text", text: "…" }], details?, isError? }`. Image content is also accepted. Non-JSON results, invalid schemas and invalid inputs fail explicitly.
 
 Top-level `.ts`, `.js`, `.mjs`, `.cjs` files in `tools/` are entry points. A child capability directory needs an `index.ts`, `index.js` or `index.mjs`. Keep shared imports in `lib/`; do not put helper modules beside auto-discovered tool entry points. SDK root imports expose the public API, including `openBot` for explicitly authored peer-delegation tools. Use ESM imports for SDK subpaths; first-load synchronous `require()` of those lazy subpaths is not guaranteed. Never recursively open the same owned source; delegate to another source or its daemon.
 

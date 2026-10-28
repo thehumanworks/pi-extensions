@@ -1,6 +1,6 @@
 import type { Static, TSchema } from "typebox";
 export { Type } from "typebox";
-import type { BotToolResult } from "./types.js";
+import type { BotToolResult, BotHistoryQuery, BotHistoryPage } from "./types.js";
 
 /** Tool context shared by all SDK entry points. Paths are absolute. */
 export interface BotToolContext {
@@ -10,6 +10,8 @@ export interface BotToolContext {
   signal: AbortSignal;
   sessionId: string;
   runId?: string;
+  /** Read-only bot-wide recall, supplied by an open runtime, never scoped by cwd. */
+  history?: (query: BotHistoryQuery, signal: AbortSignal) => Promise<BotHistoryPage>;
 }
 export interface BotToolDefinition<P extends TSchema = TSchema> {
   name: string;

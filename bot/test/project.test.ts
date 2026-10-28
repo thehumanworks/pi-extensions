@@ -20,7 +20,7 @@ test("v2 explicit empty selections, owned TS tools and imported code reload", as
   const bot = await readFile(join(f.source, "BOT.md"), "utf8"); await writeFile(join(f.source, "BOT.md"), bot.replace('["echo"]', "[]"));
   assert.deepEqual((await inspectBot(f.source, { agentDir: f.agentDir })).tools, []);
   await writeFile(join(f.source, "BOT.md"), bot.replace('tools: ["echo"]', "builtinTools: []\nmaintenance: false"));
-  assert.deepEqual((await inspectBot(f.source, { agentDir: f.agentDir })).tools.map(t => t.name), ["echo"]);
+  assert.deepEqual((await inspectBot(f.source, { agentDir: f.agentDir })).tools.map(t => t.name), ["bot_history", "echo"]);
 });
 
 test("scaffold is non-destructive and explicitly declares autonomous self-maintenance", async t => {
@@ -36,7 +36,7 @@ test("global resources are opt-in and never use cwd .pi", async t => {
   const f = await fixture({}, { "tools/echo.ts": echoTool("local") }); t.after(f.cleanup);
   await mkdir(join(f.agentDir, "extensions")); await writeFile(join(f.agentDir, "extensions/global.ts"), `import {Type} from 'typebox'; export default pi=>pi.registerTool({name:'global_tool',description:'global',parameters:Type.Object({}),execute:async()=>({content:[{type:'text',text:'global'}],details:undefined})});`);
   await mkdir(join(f.cwd, ".pi/extensions"), { recursive: true }); await writeFile(join(f.cwd, ".pi/extensions/evil.ts"), "throw new Error('must not load workspace code')");
-  let p = await loadProject(f.source, { agentDir: f.agentDir }); assert.deepEqual(p.tools.map(t => t.name), ["echo"]);
+  let p = await loadProject(f.source, { agentDir: f.agentDir }); assert.deepEqual(p.tools.map(t => t.name), ["bot_history", "echo"]);
   const bot = await readFile(join(f.source, "BOT.md"), "utf8"); await writeFile(join(f.source, "BOT.md"), bot.replace("format: 2", 'format: 2\ninherit: global'));
   p = await loadProject(f.source, { agentDir: f.agentDir }); assert(p.tools.some(t => t.name === "global_tool")); assert(!p.tools.some(t => t.name === "evil"));
 });

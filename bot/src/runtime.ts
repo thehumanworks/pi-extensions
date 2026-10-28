@@ -19,7 +19,8 @@ import { BotError, botError } from "./errors.js";
 import { expandHome, canonicalPath, isInside } from "./paths.js";
 import { snapshotSource, materializeSource } from "./snapshot.js";
 import { readSettings } from "./settings.js";
-import type { BotHandle, BotInfo, BotRunRecord, BotSessionInfo, BotEvent, OpenBotOptions, ReloadResult, RunOptions, Usage } from "./types.js";
+import { readHistory } from "./history.js";
+import type { BotHandle, BotInfo, BotRunRecord, BotSessionInfo, BotEvent, BotHistoryQuery, OpenBotOptions, ReloadResult, RunOptions, Usage } from "./types.js";
 
 const zero = (): Usage => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 });
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -194,6 +195,7 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
       if (!value) throw new BotError("NOT_FOUND", `Unknown durable conversation ${sessionId(id)}.`);
       return value;
     };
+    const history = async (query: BotHistoryQuery, signal: AbortSignal) => readHistory(storage!, Object.values((await state()).sessions), stateDir, query, signal);
     async function checkpoint(next: BotProject) {
       const root = join(stateDir, "revisions");
       const base = join(root, next.info.revision);
@@ -219,11 +221,11 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
       return defineExtension({ name: "bot.capabilities", tools: next.tools.map(tool => defineTool({
         name: tool.name, description: tool.description, parameters: tool.parameters, replay: tool.replay ?? "unsafe",
         execute: async (args, api, context) => {
-          const result = await invokeTool(tool, args, { cwd: (await api.agent(context)).cwd ?? defaultCwd, sourceDir, stateDir,
+          const result = await invokeTool(tool, args, { cwd: (await api.agent(context)).cwd ?? defaultCwd, sourceDir, stateDir, history,
             signal: context.abortSignal ?? new AbortController().signal, sessionId: sessionId(api.conversationId), ...(activeRun ? { runId: activeRun } : {}) });
           return { output: result.content, ...(result.details === undefined ? {} : { details: result.details as JsonValue }), ...(result.isError === undefined ? {} : { isError: result.isError }) };
         },
-      })), sections: [section("bot", async () => `${await composePrompt(project)}${diagnostics.length ? `\n<reload_diagnostics>\n${diagnostics.join("\n")}\nRepair the draft using the still-active maintenance tools.\n</reload_diagnostics>` : ""}`, { tag: false })],
+      })), sections: [section("bot", async input => `${await composePrompt(project, input.agent.cwd ?? defaultCwd)}${diagnostics.length ? `\n<reload_diagnostics>\n${diagnostics.join("\n")}\nRepair the draft using the still-active maintenance tools.\n</reload_diagnostics>` : ""}`, { tag: false })],
       hooks: [hook(GenerationTask, { afterTools: async (_assistant, _results, api) => {
         const result = await reloadAtBoundary();
         if (result.changed) {
@@ -476,7 +478,7 @@ async function openInstance(source: string, options: OpenBotOptions): Promise<Bo
           const tool = project.tools.find(tool => tool.name === name); if (!tool) throw new BotError("NOT_FOUND", `Tool ${name} is not enabled for this bot.`);
           let cwd = defaultCwd; let sid = opts.session ?? "direct";
           if (opts.session) { const meta = (await state()).sessions[opts.session]; if (!meta) throw new BotError("NOT_FOUND", `Unknown session ${opts.session}.`); cwd = meta.cwd; }
-          const result = await invokeTool(tool, input, { cwd, sourceDir, stateDir, sessionId: sid, signal: controller.signal });
+          const result = await invokeTool(tool, input, { cwd, sourceDir, stateDir, history, sessionId: sid, signal: controller.signal });
           await reloadAtBoundary(); return result;
         }, withAbortSignal(controller.signal, C)); }
         finally { directControllers.delete(controller); opts.signal?.removeEventListener("abort", abort); }
