@@ -53,6 +53,8 @@ export function config(overrides: Partial<BackgroundCompactionConfig> = {}): Bac
 		toolResultChars: 2000,
 		maxSwapRatio: 0.5,
 		timeoutMs: 60_000,
+		retries: 2,
+		retryDelayMs: 10_000,
 		...overrides,
 	};
 }
@@ -69,3 +71,15 @@ export function deferred<T>() {
 }
 
 export const tick = () => new Promise((resolve) => setImmediate(resolve));
+
+/** Let background jobs make progress, for checks that nothing more happens. */
+export const settle = (ms = 40) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Resolves once `check` passes: summaries run as background jobs, so their effects land later. */
+export async function until(check: () => boolean, what = "condition", ms = 5000): Promise<void> {
+	const deadline = Date.now() + ms;
+	while (!check()) {
+		if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`);
+		await new Promise((resolve) => setTimeout(resolve, 2));
+	}
+}

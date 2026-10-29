@@ -34,7 +34,12 @@ export interface BackgroundCompactionConfig {
 	/** Characters of each tool result kept in serialized requests (Pi keeps 2000). */
 	toolResultChars: number;
 	maxTokens?: number;
+	/** Each attempt at a summary is aborted after this long. */
 	timeoutMs: number;
+	/** Further attempts after a summary request fails. */
+	retries: number;
+	/** Wait before the first retry; it doubles for each later one. */
+	retryDelayMs: number;
 	/** JSONL file receiving one line per lifecycle event. */
 	trace?: string;
 }
@@ -122,6 +127,8 @@ export function readConfig(settings: unknown, cwd: string, env: NodeJS.ProcessEn
 		toolResultChars: number(pick("toolResultChars", "TOOL_RESULT_CHARS"), "toolResultChars", 100, 1_000_000) ?? 16_000,
 		maxTokens: number(pick("maxTokens", "MAX_TOKENS"), "maxTokens", 256, 1_000_000),
 		timeoutMs: number(pick("timeoutMs", "TIMEOUT_MS"), "timeoutMs", 1000, 3_600_000) ?? 300_000,
+		retries: number(pick("retries", "RETRIES"), "retries", 0, 10) ?? 2,
+		retryDelayMs: number(pick("retryDelayMs", "RETRY_DELAY_MS"), "retryDelayMs", 10, 3_600_000) ?? 10_000,
 		trace: typeof env[`${ENV}_TRACE`] === "string" && env[`${ENV}_TRACE`] ? env[`${ENV}_TRACE`] : undefined,
 	};
 }

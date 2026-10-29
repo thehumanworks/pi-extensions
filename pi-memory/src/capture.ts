@@ -8,7 +8,8 @@ import { MEMORY_TYPES, type MemoryInput, type MemoryItem, type FeedbackVerdict }
 import { redactSecrets, redactObject, isSuspiciousMemory } from './secrets.ts';
 
 export interface CaptureOptions { root: string; projectKey: string; model?: string; minTokens?: number }
-export interface CaptureResult { saved: number; skipped: boolean; rejected?: Array<{ candidate: number; reason: string }> }
+/** busy: skipped because another capture was running, so nothing was processed. */
+export interface CaptureResult { saved: number; skipped: boolean; busy?: boolean; rejected?: Array<{ candidate: number; reason: string }> }
 interface Evidence { id: string; role: string; text: string; timestamp?: string; isError?: boolean }
 interface CaptureState { processed: string[]; pending?: { entries: string[]; sessionFile?: string; projectKey: string; leafId?: string } }
 class InvalidCaptureOutput extends Error {}
@@ -192,7 +193,7 @@ export class CapturePipeline {
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
   }
   async capture(ctx: ExtensionContext, signal: AbortSignal, injectedIds: string[] = [], force = false): Promise<CaptureResult> {
-    if (this.busy) return { saved: 0, skipped: true };
+    if (this.busy) return { saved: 0, skipped: true, busy: true };
     this.busy = true;
     try { return await this.run(ctx, signal, injectedIds, force); } finally { this.busy = false; }
   }

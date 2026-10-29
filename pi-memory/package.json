@@ -33,6 +33,10 @@
     "test": "tsx --test test/*.test.ts && node --test eval/*.test.mjs",
     "eval": "node --import tsx eval/run.mjs"
   },
+  "dependencies": {
+    "@earendil-works/chord": "1.4.0",
+    "@earendil-works/pi-durable": "1.4.0"
+  },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-ai": "*",

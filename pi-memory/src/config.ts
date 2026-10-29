@@ -5,7 +5,8 @@ export interface MemoryConfig {
   enabled: boolean;
   mode: "inject" | "agent" | "both";
   dir: string;
-  capture: { enabled: boolean; model?: string; onCompact: boolean };
+  /** onCompact captures as a background job: timeoutMs bounds each attempt, retries follow after retryDelayMs, doubling. */
+  capture: { enabled: boolean; model?: string; onCompact: boolean; timeoutMs: number; retries: number; retryDelayMs: number };
   /** sessionBudgetTokens: cumulative ceiling on recall tokens injected into one session branch; 0 means no ceiling. */
   retrieval: { model?: string; maxItems: number; budgetTokens: number; sessionBudgetTokens: number; timeoutMs: number; strategy: "baseline" | "improved" };
   /** scope "rules": compiled standing feedback/preference rules only. "decisions": also user-stated durable project decisions, selected live when no compiled digest exists. */
@@ -59,7 +60,7 @@ export function readConfig(settings: unknown, agentDir: string, flags: Record<st
   return {
     enabled: flags["no-memory"] !== true && !/^(1|true|yes)$/i.test(env.PI_MEMORY_DISABLED ?? "") && bool(m.enabled, true),
     mode, dir: resolve(dir.replace(/^~(?=\/|$)/, homedir())),
-    capture: { enabled: env.PI_MEMORY_CAPTURE !== "0" && captureModel !== undefined && bool(capture.enabled, true), model: captureModel, onCompact: bool(capture.onCompact, true) },
+    capture: { enabled: env.PI_MEMORY_CAPTURE !== "0" && captureModel !== undefined && bool(capture.enabled, true), model: captureModel, onCompact: bool(capture.onCompact, true), timeoutMs: number(capture.timeoutMs, 120000, 1000, 600000), retries: number(capture.retries, 2, 0, 10), retryDelayMs: number(capture.retryDelayMs, 30000, 10, 3600000) },
     retrieval: { model: model(env.PI_MEMORY_RETRIEVAL_MODEL ?? retrieval.model), maxItems: number(retrieval.maxItems, 8, 1, 32), budgetTokens: number(env.PI_MEMORY_TOKEN_BUDGET === undefined ? retrieval.budgetTokens : Number(env.PI_MEMORY_TOKEN_BUDGET), 1200, 128, 8000), sessionBudgetTokens: number(env.PI_MEMORY_SESSION_BUDGET === undefined ? retrieval.sessionBudgetTokens : Number(env.PI_MEMORY_SESSION_BUDGET), 0, 0, 200000), timeoutMs: number(retrieval.timeoutMs, 2500, 100, 30000), strategy: strategy === "baseline" ? "baseline" : "improved" },
     digest: { budgetTokens: number(env.PI_MEMORY_DIGEST_BUDGET === undefined ? digest.budgetTokens : Number(env.PI_MEMORY_DIGEST_BUDGET), 1200, 0, 8000), scope: digestScope },
     scope: { projectLocation: location },

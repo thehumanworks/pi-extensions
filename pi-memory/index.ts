@@ -1,5 +1,6 @@
 import { appendFile, readFile, writeFile, rename } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { createHash, randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { getAgentDir, SessionManager, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
@@ -7,7 +8,8 @@ import { readConfig, model as validateModel, type MemoryConfig } from "./src/con
 import { MemoryStore, serializeMemory, evidenceHash } from "./src/store.ts";
 import { resolveProjectKey } from "./src/project.ts";
 import { estimateTokens, isExpired, renderMemories, selectMemories } from "./src/retrieve.ts";
-import { CapturePipeline } from "./src/capture.ts";
+import { CapturePipeline, type CaptureResult } from "./src/capture.ts";
+import { JobQueue } from "./src/jobs.ts";
 import { DreamPipeline } from "./src/dream.ts";
 import { IdleScheduler } from "./src/scheduler.ts";
 import { ProposalManager, type ProposalKind, type Proposal } from "./src/maintenance.ts";
@@ -21,11 +23,20 @@ const GUIDANCE = "Use relevant remembered facts and user-confirmed decisions to 
 
 const CAPTURE_DISABLED = "Capture is disabled. Set memory.capture.model to an explicit provider/modelId (or --memory-model / PI_MEMORY_MODEL) to enable it.";
 const DREAM_DISABLED = "Dreaming is disabled. Set memory.dream.model to an explicit provider/modelId to enable it.";
+// Longest a session switch or shutdown waits for capture jobs to stop; unfinished jobs resume next time.
+const CLOSE_MS = 2000;
+
+/** A capture of the branch as it was when Pi compacted, run as a durable background job. */
+interface CaptureJob { sessionFile?: string; leafId?: string; injectedIds: string[] }
 
 export default function memoryExtension(pi: ExtensionAPI): void {
   let config: MemoryConfig | undefined, store: MemoryStore | undefined, pipeline: CapturePipeline | undefined, proposals: ProposalManager | undefined, dream: DreamPipeline | undefined;
   let digest = "", modal = false, pending: Promise<void> | undefined, controller: AbortController | undefined, captures = 0;
   let background: IdleScheduler<ExtensionContext> | undefined, dreamWanted = false;
+  // Compaction captures run as jobs that retry and survive restarts; `session` is the context they run in.
+  let jobs: Promise<JobQueue<CaptureJob, CaptureResult>> | undefined, session: ExtensionContext | undefined;
+  // Compaction captures share the pipeline, so they run one at a time; an aborted attempt makes way at once.
+  let jobTurn: Promise<void> = Promise.resolve();
   const injected = new Map<string, string | undefined>();
   const retired = new Set<string>(), digestVersions = new Map<string, string>();
   // Recall tokens already injected into the current session branch; enforces retrieval.sessionBudgetTokens across process restarts.
@@ -76,42 +87,115 @@ export default function memoryExtension(pi: ExtensionAPI): void {
     }
   };
 
+  /** One capture pass: resume a pending delta, capture the branch, then record the outcome. Rejects on failure. */
+  async function capturePass(current: CapturePipeline, ctx: ExtensionContext, signal: AbortSignal, injectedIds: () => string[], force: boolean): Promise<CaptureResult> {
+    const resumed = await current.resumePending(ctx, signal);
+    const captured = await current.capture(ctx, signal, injectedIds(), force);
+    const rejected = [...(resumed.rejected ?? []), ...(captured.rejected ?? [])];
+    const outcome = { saved: resumed.saved + captured.saved, skipped: resumed.skipped && captured.skipped, ...(rejected.length ? { rejected } : {}) };
+    await trace({ event: "capture", ...outcome });
+    const rejection = outcome.rejected?.find(item => !item.reason.startsWith("Temporary evidence lacks") && !item.reason.startsWith("Already documented"));
+    if (rejection) notify(ctx, `Memory capture rejected output: ${rejection.reason}. Original session evidence retained.`, "error");
+    if (outcome.saved) {
+      const items = store!.list({ scope: "project" });
+      const activeBytes = items.reduce((total, item) => total + Buffer.byteLength(serializeMemory(item)), 0);
+      let schedule = { sourceCount: 0, at: Date.now(), dreamPending: false }, newSchedule = false;
+      try { schedule = JSON.parse(await readFile(maintenancePath(), "utf8")); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; newSchedule = true; }
+      const sources = items.filter(item => item.source.origin !== "consolidation").length;
+      const due = ++captures >= config!.consolidation.everyCaptures || sources - schedule.sourceCount >= config!.consolidation.everyCaptures || (sources >= 2 && Date.now() - schedule.at >= 86400000) || activeBytes >= config!.dream.softActiveBytes;
+      if (due) {
+        await store!.consolidate(); await proposals!.proposeEarned(); captures = 0;
+        dreamWanted = config!.dream.enabled;
+        await saveMaintenance({ sourceCount: sources, at: Date.now(), dreamPending: dreamWanted });
+      } else if (newSchedule) await saveMaintenance(schedule);
+    }
+    return { ...outcome, ...(captured.busy ? { busy: true } : {}) };
+  }
+
   function capture(ctx: ExtensionContext, force = false): Promise<void> | undefined {
     if (!active() || !config!.capture.enabled || !pipeline || pending) return pending;
     if (!force && (!ctx.isIdle() || ctx.hasPendingMessages() || modal || (ctx.mode === "tui" && ctx.ui.getEditorText().trim()))) return;
     controller = new AbortController();
     const signal = controller.signal;
-    const timeout = setTimeout(() => controller?.abort(), 120000);
-    const current = pipeline;
-    pending = (async () => {
-      const resumed = await current.resumePending(ctx, signal);
-      const captured = await current.capture(ctx, signal, [...injected.keys()], force);
-      const rejected = [...(resumed.rejected ?? []), ...(captured.rejected ?? [])];
-      return { saved: resumed.saved + captured.saved, skipped: resumed.skipped && captured.skipped, ...(rejected.length ? { rejected } : {}) };
-    })().then(async outcome => {
-      await trace({ event: "capture", ...outcome });
-      const rejection = outcome.rejected?.find(item => !item.reason.startsWith("Temporary evidence lacks") && !item.reason.startsWith("Already documented"));
-      if (rejection) notify(ctx, `Memory capture rejected output: ${rejection.reason}. Original session evidence retained.`, "error");
-      if (outcome.saved) {
-        const items = store!.list({ scope: "project" });
-        const activeBytes = items.reduce((total, item) => total + Buffer.byteLength(serializeMemory(item)), 0);
-        let schedule = { sourceCount: 0, at: Date.now(), dreamPending: false }, newSchedule = false;
-        try { schedule = JSON.parse(await readFile(maintenancePath(), "utf8")); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; newSchedule = true; }
-        const sources = items.filter(item => item.source.origin !== "consolidation").length;
-        const due = ++captures >= config!.consolidation.everyCaptures || sources - schedule.sourceCount >= config!.consolidation.everyCaptures || (sources >= 2 && Date.now() - schedule.at >= 86400000) || activeBytes >= config!.dream.softActiveBytes;
-        if (due) {
-          await store!.consolidate(); await proposals!.proposeEarned(); captures = 0;
-          dreamWanted = config!.dream.enabled;
-          await saveMaintenance({ sourceCount: sources, at: Date.now(), dreamPending: dreamWanted });
-        } else if (newSchedule) await saveMaintenance(schedule);
-      }
-    }).catch(error => { if (!signal.aborted) notify(ctx, `Background memory work failed; committed evidence retained: ${(error as Error).message}`, "error"); })
+    const timeout = setTimeout(() => controller?.abort(), config!.capture.timeoutMs);
+    pending = capturePass(pipeline, ctx, signal, () => [...injected.keys()], force)
+      .then(() => undefined, error => { if (!signal.aborted) notify(ctx, `Background memory work failed; committed evidence retained: ${(error as Error).message}`, "error"); })
       .finally(() => { clearTimeout(timeout); pending = undefined; controller = undefined; });
     return pending;
   }
 
+  /** One attempt of a compaction capture. It runs beside the agent, so it never holds up a prompt the way `pending` does. */
+  async function captureJob(job: CaptureJob, signal: AbortSignal): Promise<CaptureResult> {
+    const previous = jobTurn;
+    let release!: () => void;
+    jobTurn = new Promise(resolve => { release = resolve; });
+    const stopped = new Promise<never>((_resolve, reject) => signal.addEventListener("abort", () => { release(); reject(signal.reason); }, { once: true }));
+    stopped.catch(() => undefined);
+    try {
+      await Promise.race([previous, stopped]);
+      return await captureTurn(job, signal);
+    } finally { release(); }
+  }
+
+  async function captureTurn(job: CaptureJob, signal: AbortSignal): Promise<CaptureResult> {
+    const ctx = session, current = pipeline;
+    if (!ctx || !current || !active() || !config!.capture.enabled) throw new Error("Memory capture is off");
+    // The idle capture shares the pipeline; wait for it rather than be skipped as busy.
+    while (pending) await pending;
+    const live = job.sessionFile === undefined || job.sessionFile === ctx.sessionManager.getSessionFile();
+    const manager = live ? ctx.sessionManager : SessionManager.open(job.sessionFile!);
+    // Capture the branch Pi compacted, even after the session moved on or switched branches.
+    const pinned = new Proxy(manager, { get(target, property) {
+      if (property === "getBranch") return () => target.getBranch(job.leafId);
+      if (property === "getLeafId") return () => job.leafId ?? target.getLeafId();
+      const value = Reflect.get(target, property);
+      return typeof value === "function" ? value.bind(target) : value;
+    } });
+    const outcome = await capturePass(current, { ...ctx, sessionManager: pinned } as ExtensionContext, signal, () => job.injectedIds, true);
+    if (outcome.busy) throw new Error("Another memory capture was running");
+    await trace({ event: "capture-job", status: "completed", saved: outcome.saved }).catch(() => undefined);
+    return outcome;
+  }
+
+  const jobsFile = (sessionFile: string) => join(config!.dir, "capture", `${createHash("sha256").update(sessionFile).digest("hex")}.jobs.db`);
+
+  /** This session's capture jobs, opened on first use. Opening resumes the jobs an earlier process left. */
+  function captureJobs(ctx: ExtensionContext): Promise<JobQueue<CaptureJob, CaptureResult>> {
+    if (jobs) return jobs;
+    const sessionFile = ctx.sessionManager.getSessionFile();
+    const opened = JobQueue.open<CaptureJob, CaptureResult>({
+      kind: "pi-memory.capture",
+      file: sessionFile ? jobsFile(sessionFile) : undefined,
+      policy: () => ({ attempts: config!.capture.retries + 1, backoffMs: config!.capture.retryDelayMs, maxBackoffMs: 8 * config!.capture.retryDelayMs, timeoutMs: config!.capture.timeoutMs }),
+      run: captureJob,
+      failed: (error, attempt, retryAt) => {
+        void trace({ event: "capture-job", status: retryAt === undefined ? "failed" : "retrying", attempt, error: (error as Error).message, retryAt }).catch(() => undefined);
+        if (retryAt === undefined && session) notify(session, `Memory capture after compaction failed: ${(error as Error).message}. Session evidence retained for a later capture.`, "error");
+      },
+      report: error => void trace({ event: "capture-jobs", error: String(error) }).catch(() => undefined),
+    });
+    jobs = opened;
+    opened.catch(() => { if (jobs === opened) jobs = undefined; });
+    return opened;
+  }
+
+  /** Stop capture jobs: `abort` drops them, otherwise they stay stored and resume when the session opens again. */
+  async function closeJobs(abort = false): Promise<void> {
+    const opened = jobs;
+    jobs = undefined;
+    if (!opened) return;
+    const closed = opened.then(async queue => {
+      if (abort) for (const job of await queue.live()) await queue.abort(job.id);
+      await queue.close({ discard: true });
+    }).catch(() => undefined);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([closed, new Promise(resolve => { timer = setTimeout(resolve, CLOSE_MS); })]);
+    clearTimeout(timer);
+  }
+
   pi.on("session_start", async (_event, ctx) => {
     await background?.dispose(); background = undefined; dreamWanted = false;
+    await closeJobs(); session = ctx;
     controller?.abort(); await pending; store?.close(); store = undefined; pipeline = undefined; proposals = undefined; dream = undefined;
     injected.clear(); retired.clear(); digestVersions.clear(); digest = ""; captures = 0; recallTokensUsed = 0;
     try {
@@ -143,6 +227,9 @@ export default function memoryExtension(pi: ExtensionAPI): void {
         if (item) digestVersions.set(item.id, evidenceHash(item));
       }
       restoreInjected(ctx);
+      // Resume compaction captures an earlier process left; without stored jobs, pi-durable is not loaded.
+      const sessionFile = ctx.sessionManager.getSessionFile();
+      if (config.capture.enabled && sessionFile && existsSync(jobsFile(sessionFile))) void captureJobs(ctx).catch(() => undefined);
       registerMemoryTools(pi, state, config.mode);
       if (ctx.mode === "tui") { ctx.ui.addAutocompleteProvider(current => autocomplete(current, () => active() ? store : undefined)); ctx.ui.setStatus("memory", `Memory: ${store.list().length}`); }
       for (const warning of store.warnings) notify(ctx, warning, "error");
@@ -182,11 +269,21 @@ export default function memoryExtension(pi: ExtensionAPI): void {
   pi.on("agent_settled", (_event, ctx) => { const scheduler = background; void (capture(ctx) ?? Promise.resolve()).then(() => scheduler?.schedule(ctx)).catch(error => notify(ctx, String(error), "error")); });
   pi.on("ui_prompt_start", async () => { modal = true; controller?.abort(); await background?.cancel(); });
   pi.on("ui_prompt_end", () => { modal = false; });
-  pi.on("session_before_compact", async (_event, ctx) => { await background?.cancel(); if (config?.capture.onCompact) { await pending; await capture(ctx, true); } });
-  pi.on("session_compact", () => { injected.clear(); retired.clear(); });
+  // Capture once Pi has compacted, as a background job: compaction itself never waits for memory, and a
+  // compaction another extension cancels or defers captures nothing. The compacted entries stay in the session.
+  pi.on("session_compact", (event, ctx) => {
+    void background?.cancel();
+    if (active() && config!.capture.enabled && config!.capture.onCompact && pipeline) {
+      session = ctx;
+      const job: CaptureJob = { sessionFile: ctx.sessionManager.getSessionFile(), leafId: event.compactionEntry?.id ?? ctx.sessionManager.getLeafId() ?? undefined, injectedIds: [...injected.keys()] };
+      void captureJobs(ctx).then(queue => queue.enqueue(job)).catch(error => notify(ctx, `Memory capture after compaction was not started: ${(error as Error).message}`, "error"));
+    }
+    injected.clear(); retired.clear();
+  });
   pi.on("session_tree", async (_event, ctx) => { controller?.abort(); await background?.cancel(); restoreInjected(ctx); });
   pi.on("session_shutdown", async (_event, ctx) => {
     await background?.dispose();
+    await closeJobs();
     // Print/JSON runs need to finish their final capture before the process exits.
     await (pending ?? capture(ctx)); store?.close(); store = undefined;
   });
@@ -239,7 +336,7 @@ export default function memoryExtension(pi: ExtensionAPI): void {
         if (command === "on" || command === "off" || command === "mode") {
           if (command === "mode" && !["inject", "agent", "both"].includes(argument)) throw new Error("Use /memory mode inject|agent|both");
           await saveSettings(getAgentDir(), command === "mode" ? { mode: argument } : { enabled: command === "on" });
-          if (command === "off" && config) { config.enabled = false; controller?.abort(); await background?.cancel(); await pending; }
+          if (command === "off" && config) { config.enabled = false; controller?.abort(); await background?.cancel(); await closeJobs(true); await pending; }
           notify(ctx, `Saved. ${command === "off" ? "Memory is off." : "Use /reload to activate; command-line and project settings retain precedence."}`); return;
         }
         if (command === "model") {
@@ -342,7 +439,7 @@ export default function memoryExtension(pi: ExtensionAPI): void {
           if (rest.some(v => v.startsWith("--") && !["--yes", "--archive-only", "--including-codified"].includes(v))) throw new Error("Unsupported clear option; no changes made");
           const confirmed = ctx.hasUI ? await ctx.ui.confirm("Clear memory", `Remove ${scope} memory files and derived artifacts?`) : rest.includes("--yes");
           if (!confirmed) { notify(ctx, "No changes. Non-interactive clearing requires --yes."); return; }
-          controller?.abort(); await background?.cancel(); await pending; dreamWanted = false;
+          controller?.abort(); await background?.cancel(); await closeJobs(true); await pending; dreamWanted = false;
           const cleanup = await proposals!.cleanup(scope, rest.includes("--including-codified"));
           // Checkpoint current evidence without re-extracting it at shutdown after an explicit clear.
           await pipeline!.discardCurrent(ctx);

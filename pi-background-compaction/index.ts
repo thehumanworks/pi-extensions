@@ -1,8 +1,12 @@
+import { createHash } from "node:crypto";
 import { appendFileSync } from "node:fs";
+import { readdir, stat, unlink } from "node:fs/promises";
+import { join } from "node:path";
 import type { Api, Model } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { type ExtensionAPI, type ExtensionContext, getAgentDir } from "@earendil-works/pi-coding-agent";
 import { type BackgroundCompactionConfig, type CompactionControl, compactionSettings, readConfig } from "./src/config.ts";
-import { BackgroundCompactor, limits, type Snapshot, type SummaryJob, type SummaryOutput } from "./src/controller.ts";
+import { BackgroundCompactor, limits, type Snapshot, type SummaryJob, type SummaryOutput, type SummaryRequest } from "./src/controller.ts";
+import { JobQueue, PermanentError, type Recovered } from "./src/jobs.ts";
 import { writeSummary } from "./src/summarize.ts";
 
 const STATUS = "background-compaction";
@@ -10,6 +14,11 @@ const CONTROL = "background-compaction-settings";
 const HELP = "/bg-compact model <provider/modelId> | on | off | status | start | cancel";
 const BUILTIN = "Pi's built-in compaction is unchanged and may use the session model while this extension is off.";
 const VIRTUAL_API = "pi-virtual";
+const JOBS = "background-compaction.summary";
+// Stored summaries of sessions not resumed for this long are deleted.
+const KEEP_MS = 7 * 24 * 60 * 60 * 1000;
+// Longest a shutdown waits for the job queue to close.
+const SHUTDOWN_MS = 2000;
 // pi-ai's own provider APIs. Transcript requests stay on these: an extension provider such as a CLI
 // bridge may treat a resent conversation as the next turn of its own session.
 const TRANSCRIPT_APIS = new Set([
@@ -24,12 +33,27 @@ const TRANSCRIPT_APIS = new Set([
 	"bedrock-converse-stream",
 ]);
 
+type Queue = JobQueue<SummaryRequest, SummaryOutput>;
+
+/** The summary jobs of one session. Detached jobs are left to a later process instead of aborted. */
+interface Jobs {
+	queue: Promise<Queue>;
+	detached: boolean;
+}
+
+const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+/** Summary jobs live under Pi's agent directory, one database per session file. */
+const jobsDir = () => join(getAgentDir(), "background-compaction");
+
 export default function backgroundCompaction(pi: ExtensionAPI): void {
 	let ctx: ExtensionContext | undefined;
 	let config: BackgroundCompactionConfig | undefined;
 	let control: CompactionControl = {};
 	let configError: string | undefined;
-	let work = new AbortController();
+	let jobs: Jobs | undefined;
+	/** A `/compact` deferred until its summary is ready. */
+	let manual: { focus?: string } | undefined;
 	const warned = new Set<string>();
 
 	const warn = (message: string) => {
@@ -96,23 +120,128 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 		return model;
 	};
 
-	const summarize = async (job: SummaryJob): Promise<SummaryOutput> => {
+	/** One attempt of a stored summary request, run by the job queue off Pi's path. */
+	const attempt = async (request: SummaryRequest, signal: AbortSignal): Promise<SummaryOutput> => {
 		const context = ctx;
 		if (!context) throw new Error("no active session");
-		if (!current().enabled) throw new Error("background compaction is off");
-		const signal = AbortSignal.any([job.signal, work.signal]);
-		signal.throwIfAborted();
-		const model = summarizerModel(context);
+		if (!current().enabled) throw new PermanentError("background compaction is off");
+		let model: Model<Api>;
 		try {
-			return await writeSummary({ ...job, signal }, current(), {
-				model,
-				complete: (m, c, o) => context.modelRegistry.streamSimple(m, c, o).result(),
-				sessionThinking: context.thinkingLevel ?? "off",
-				sessionId: context.sessionManager.getSessionId(),
-			});
+			model = summarizerModel(context);
 		} catch (error) {
-			if (!signal.aborted) warn(`summary with ${model.provider}/${model.id} failed: ${error instanceof Error ? error.message : String(error)}. No session-model fallback.`);
-			throw error;
+			throw new PermanentError(message(error));
+		}
+		return writeSummary({ ...request, signal }, current(), {
+			model,
+			complete: (m, c, o) => context.modelRegistry.streamSimple(m, c, o).result(),
+			sessionThinking: context.thinkingLevel ?? "off",
+			sessionId: context.sessionManager.getSessionId(),
+		});
+	};
+
+	/** This session's summary jobs; opened on first use, and stored when the session has a file. */
+	const queue = (): Jobs => {
+		if (jobs) return jobs;
+		const file = ctx?.sessionManager.getSessionFile();
+		const slot = { detached: false } as Jobs;
+		slot.queue = JobQueue.open<SummaryRequest, SummaryOutput>({
+				kind: JOBS,
+				file: file ? join(jobsDir(), `${createHash("sha256").update(file).digest("hex")}.db`) : undefined,
+				policy: () => {
+					const { retries, retryDelayMs, timeoutMs } = current();
+					return { attempts: retries + 1, backoffMs: retryDelayMs, maxBackoffMs: 8 * retryDelayMs, timeoutMs };
+				},
+				run: attempt,
+				failed: (error, number, retryAt) => {
+					if (retryAt !== undefined) trace({ event: "retry", attempt: number, error: message(error), retryAt: new Date(retryAt).toISOString() });
+				},
+				recover: (opened, found) => recover(slot, opened, found),
+				report: (error) => trace({ event: "jobs", error: message(error) }),
+			});
+		slot.queue.catch(() => {
+			if (jobs === slot) jobs = undefined;
+		});
+		jobs = slot;
+		return slot;
+	};
+
+	/** Follow a job to its summary; aborting `signal` aborts the job unless its queue was detached. */
+	const follow = async (slot: Jobs, queue: Queue, id: number, signal: AbortSignal): Promise<SummaryOutput> => {
+		const stop = () => {
+			if (!slot.detached) void queue.abort(id);
+		};
+		signal.addEventListener("abort", stop, { once: true });
+		if (signal.aborted) stop();
+		try {
+			const outcome = await queue.wait(id);
+			if (outcome.status === "completed") return outcome.result;
+			if (outcome.status === "aborted") throw new Error("summary stopped");
+			if (!signal.aborted) warn(`summary with ${current().model} failed: ${outcome.error}. No session-model fallback.`);
+			throw new Error(outcome.error);
+		} finally {
+			signal.removeEventListener("abort", stop);
+		}
+	};
+
+	const summarize = async (job: SummaryJob): Promise<SummaryOutput> => {
+		const { signal, ...request } = job;
+		const slot = queue();
+		const jobQueue = await slot.queue;
+		signal.throwIfAborted();
+		return follow(slot, jobQueue, await jobQueue.enqueue(request), signal);
+	};
+
+	/** Abort this session's jobs and delete what they stored, e.g. after a compaction or `/bg-compact off`. */
+	const rotate = () => {
+		const slot = jobs;
+		jobs = undefined;
+		void slot?.queue
+			.then(async (queue) => {
+				for (const job of await queue.live()) await queue.abort(job.id);
+				await queue.close({ discard: true });
+			})
+			.catch((error: unknown) => trace({ event: "jobs", error: message(error) }));
+	};
+
+	/**
+	 * Take over what an earlier process left in a queue being opened: its finished summary, and a summary
+	 * still being written. Jobs that no longer apply, or that a newer request replaced, are aborted before they run.
+	 */
+	const recover = async (slot: Jobs, opened: Queue, { latest, live }: Recovered<SummaryRequest, SummaryOutput>) => {
+		const snap = ctx && jobs === slot ? snapshot(ctx) : undefined;
+		if (snap && latest) compactor.restore(snap, latest.input, latest.result);
+		for (const job of live) {
+			if (!snap || !compactor.adopt(snap, job.input, (signal) => follow(slot, opened, job.id, signal))) await opened.abort(job.id);
+		}
+		void prune(opened.file);
+	};
+
+	/** Open this session's jobs at session start, then plan as usual once recovered work is known. */
+	const resume = async (context: ExtensionContext) => {
+		try {
+			await queue().queue;
+		} catch (error) {
+			trace({ event: "jobs", error: message(error) });
+		} finally {
+			if (ctx === context) observe(context, "resume");
+		}
+	};
+
+	/** Delete the stored jobs of sessions untouched for a week: a database with its journal and lock files. */
+	const prune = async (keep: string | undefined) => {
+		const groups = new Map<string, { paths: string[]; newest: number }>();
+		for (const name of await readdir(jobsDir()).catch(() => [] as string[])) {
+			const id = /^([a-f0-9]{64})\.db/.exec(name)?.[1];
+			const path = join(jobsDir(), name);
+			const info = id && !(keep && path.startsWith(keep)) ? await stat(path).catch(() => undefined) : undefined;
+			if (!id || !info) continue;
+			const group = groups.get(id) ?? { paths: [], newest: 0 };
+			group.paths.push(path);
+			group.newest = Math.max(group.newest, info.mtimeMs);
+			groups.set(id, group);
+		}
+		for (const { paths, newest } of groups.values()) {
+			if (Date.now() - newest > KEEP_MS) for (const path of paths) await unlink(path).catch(() => undefined);
 		}
 	};
 
@@ -137,12 +266,31 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 		ctx.ui.setStatus(STATUS, current().enabled ? `compact: ${state} ${current().model}` : "compact: off");
 	};
 
-	const compactor = new BackgroundCompactor({ config: current, summarize, trace, changed: updateStatus });
+	/** Run a deferred `/compact` once its summary is ready and the agent is idle. */
+	const applyManual = () => {
+		const context = ctx;
+		if (!manual || !context || compactor.state === "writing") return;
+		if (compactor.state === "idle" || !current().enabled) {
+			manual = undefined;
+			return;
+		}
+		if (!context.isIdle()) return;
+		const { focus } = manual;
+		manual = undefined;
+		context.compact({ customInstructions: focus, onError: (error) => warn(`compaction failed: ${error.message}`) });
+	};
+
+	const changed = () => {
+		updateStatus();
+		if (manual) queueMicrotask(applyManual);
+	};
+
+	const compactor = new BackgroundCompactor({ config: current, summarize, trace, changed });
 
 	const resetWork = (reason: string) => {
-		work.abort(new Error(reason));
-		work = new AbortController();
 		compactor.reset(reason);
+		manual = undefined;
+		rotate();
 		updateStatus();
 	};
 
@@ -173,13 +321,15 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 		ctx = context;
 		config = undefined;
 		load(context);
-		resetWork("session start");
-		if (current().enabled) {
-			const message = `Background compaction on: ${current().model} (no session-model fallback)`;
-			if (context.hasUI) context.ui.notify(message, "info");
-			else process.stderr.write(`${message}\n`);
-		}
-		observe(context, "resume");
+		compactor.reset("session start");
+		manual = undefined;
+		updateStatus();
+		if (!current().enabled) return;
+		const notice = `Background compaction on: ${current().model} (no session-model fallback)`;
+		if (context.hasUI) context.ui.notify(notice, "info");
+		else process.stderr.write(`${notice}\n`);
+		// Opening the job queue loads pi-durable; session start does not wait for it.
+		void resume(context);
 	});
 
 	pi.on("turn_end", (event, context) => {
@@ -193,30 +343,42 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 		observe(context, "turn");
 	});
 
-	pi.on("agent_settled", (_event, context) => observe(context, "idle"));
+	pi.on("agent_settled", (_event, context) => {
+		observe(context, "idle");
+		applyManual();
+	});
 
-	pi.on("session_before_compact", async (event, context) => {
+	// Never waits: the summary is used if ready, otherwise compaction is deferred while it is written.
+	pi.on("session_before_compact", (event, context) => {
 		ctx = context;
 		if (!current().enabled) return undefined;
 		const model = current().model;
-		const signal = AbortSignal.any([event.signal, work.signal]);
 		try {
 			summarizerModel(context);
 			const snap = snapshot(context);
 			if (!snap) throw new Error("context limits are unavailable");
 			// Pi passes the settings it resolved for this compaction; prefer them.
 			snap.settings = event.preparation.settings;
-			const compaction = await compactor.take(snap, signal, {
+			const decision = compactor.take(snap, {
 				tokensBefore: event.preparation.tokensBefore,
 				reason: event.reason,
 				customInstructions: event.customInstructions,
 				firstKeptEntryId: event.preparation.firstKeptEntryId,
 			});
-			if (signal.aborted) return { cancel: true };
-			if (compaction) return { compaction };
-			throw new Error("no usable summary");
+			if (!decision) return undefined;
+			if ("compaction" in decision) return { compaction: decision.compaction };
+			if (event.reason === "manual") {
+				const writing = compactor.state === "writing";
+				manual = writing ? { focus: event.customInstructions } : undefined;
+				const notice = writing
+					? `Background compaction: writing the summary with ${model}; the session compacts when it is ready.`
+					: `Background compaction: not compacted (${decision.deferred}).`;
+				if (context.hasUI) context.ui.notify(notice, "info");
+				else process.stderr.write(`${notice}\n`);
+			}
+			return { cancel: true };
 		} catch (error) {
-			if (!signal.aborted) warn(`compaction with ${model} cancelled: ${error instanceof Error ? error.message : String(error)}. Retry, or use /bg-compact off to allow Pi's built-in compaction with the session model.`);
+			warn(`compaction with ${model} cancelled: ${message(error)}. Use /bg-compact off to allow Pi's built-in compaction with the session model.`);
 			return { cancel: true };
 		}
 	});
@@ -228,9 +390,20 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 
 	pi.on("session_tree", (_event, context) => observe(context, "tree"));
 
-	pi.on("session_shutdown", () => {
-		resetWork("shutdown");
+	pi.on("session_shutdown", async () => {
+		// Running and finished summaries stay stored for the next process that opens this session.
+		const slot = jobs;
+		const keep = compactor.state !== "idle";
+		jobs = undefined;
+		if (slot) slot.detached = true;
+		compactor.reset("shutdown");
+		manual = undefined;
 		if (ctx?.hasUI) ctx.ui.setStatus(STATUS, undefined);
+		// Results are committed as they happen, so a slow close must not hold up Pi; the next open waits for it.
+		const closed = slot?.queue.then((queue) => queue.close({ discard: !keep })).catch(() => undefined);
+		let timer: NodeJS.Timeout | undefined;
+		await Promise.race([closed, new Promise((resolve) => { timer = setTimeout(resolve, SHUTDOWN_MS); })]);
+		clearTimeout(timer);
 	});
 
 	pi.registerCommand("bg-compact", {
@@ -314,9 +487,9 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 				configError ? `Configuration error: ${configError}` : `prompt ${settings.promptName}, ${settings.request === "auto" ? `auto (${snap?.transcript ? "transcript" : "serialized"})` : settings.request} requests, swap at ${settings.swap}`,
 				`Usage: ${HELP}`,
 				"Command changes are saved for this session (including reload/resume), not to global or project settings.",
-				settings.enabled ? "If the configured summarizer fails, compaction is cancelled rather than using another model." : BUILTIN,
+				settings.enabled ? "Compaction never waits for a summary: until one is ready it is deferred, and a failed summary is retried rather than written by another model." : BUILTIN,
 				held ? `held summary by ${held.model} from ${new Date(held.readyAt).toLocaleTimeString()}, ${held.requests} request(s), keeps from ${held.plan.firstKeptEntryId}` : "",
-				`started ${stats.started}, ready ${stats.ready}, failed ${stats.failed}, swapped ${stats.swapped}, caught up ${stats.caughtUp}, foreground ${stats.foreground}, discarded ${stats.discarded}`,
+				`started ${stats.started}, ready ${stats.ready}, failed ${stats.failed}, swapped ${stats.swapped}, deferred ${stats.deferred}, discarded ${stats.discarded}`,
 			].filter(Boolean);
 			context.ui.notify(lines.join("\n"), "info");
 		},

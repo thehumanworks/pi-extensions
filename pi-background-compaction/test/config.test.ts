@@ -15,6 +15,9 @@ test("defaults", () => {
 	assert.equal(config.model, undefined);
 	assert.equal(config.promptName, "coding");
 	assert.equal(config.toolResultChars, 16_000);
+	assert.equal(config.timeoutMs, 300_000);
+	assert.equal(config.retries, 2);
+	assert.equal(config.retryDelayMs, 10_000);
 });
 
 test("settings and environment overrides", async () => {
@@ -32,6 +35,9 @@ test("settings and environment overrides", async () => {
 	assert.equal(config.focus, "Keep test names.");
 	assert.equal(config.keepRecentTokens, 8000);
 	assert.equal(config.trace, "/tmp/t.jsonl");
+	const retry = readConfig({ backgroundCompaction: { retries: 0 } }, dir, { PI_BACKGROUND_COMPACTION_RETRY_DELAY_MS: "500" });
+	assert.equal(retry.retries, 0);
+	assert.equal(retry.retryDelayMs, 500);
 	assert.equal(readConfig({}, dir, { PI_BACKGROUND_COMPACTION: "0" }).enabled, false);
 	assert.throws(() => readConfig({ backgroundCompaction: { model: "session" } }, dir, {}), /explicit provider\/modelId/);
 });

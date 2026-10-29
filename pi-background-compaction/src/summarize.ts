@@ -13,6 +13,7 @@ import {
 import { convertToLlm, estimateTokens } from "@earendil-works/pi-coding-agent";
 import type { BackgroundCompactionConfig } from "./config.ts";
 import type { SummaryJob, SummaryOutput } from "./controller.ts";
+import { PermanentError } from "./jobs.ts";
 import type { AgentMessage, FileLists, Plan } from "./plan.ts";
 import type { PromptSet } from "./prompts.ts";
 
@@ -110,6 +111,8 @@ export async function requestSummary(complete: Complete, model: Model<Api>, cont
 		else if (response.content.some((block) => block.type === "toolCall")) failure = "the summarizer called a tool";
 		else if (!text) failure = "the summary was empty";
 		if (!failure) return { text, usage: response.usage };
+		// Another attempt hits the same output limit.
+		if (response.stopReason === "length") throw new PermanentError(failure);
 		if (response.stopReason !== "error" || attempt >= retries || options.signal?.aborted) throw new Error(failure);
 	}
 }
@@ -136,7 +139,7 @@ export async function writeSummary(job: SummaryJob, config: BackgroundCompaction
 	const room = model.contextWindow > 0 ? model.contextWindow - input - 1024 : Number.POSITIVE_INFINITY;
 	// Reasoning counts against the cap, so leave room for a high session thinking level.
 	const maxTokens = Math.min(config.maxTokens ?? Math.min(model.maxTokens || 16384, 65536), room);
-	if (maxTokens < 1024) throw new Error(`the summary request does not fit ${model.provider}/${model.id}'s context window`);
+	if (maxTokens < 1024) throw new PermanentError(`the summary request does not fit ${model.provider}/${model.id}'s context window`);
 	const options: SimpleStreamOptions = {
 		signal: job.signal,
 		maxTokens,

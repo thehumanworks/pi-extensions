@@ -92,3 +92,8 @@ for (const { directory: dir } of workspaces) {
     }
   });
 }
+
+test('the vendored pi-durable job queue is identical in every package', () => {
+  const [compaction, memory] = ['pi-background-compaction', 'pi-memory'].map(dir => readFileSync(new URL(`${dir}/src/jobs.ts`, root), 'utf8'));
+  assert.equal(memory, compaction, 'copy pi-background-compaction/src/jobs.ts to pi-memory/src/jobs.ts');
+});

@@ -31,6 +31,10 @@
     "check": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts"
   },
+  "dependencies": {
+    "@earendil-works/chord": "1.4.0",
+    "@earendil-works/pi-durable": "1.4.0"
+  },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*"

@@ -42,6 +42,8 @@ PI_MEMORY_CAPTURE=0 pi -e ./pi-memory/index.ts --memory-dir /tmp/pi-memory-trial
 
 Automatic capture uses the editable `AGENT.md` policy plus a code-owned validation contract. It skips small, ordinary turns, redacts common credential shapes, ignores credential-file reads, requires source entry IDs, and rejects unsupported candidates with diagnostics. Reconciliation is validated before committing. Corrections supersede old items and retain their evidence in the archive. A pending capture can resume after interruption. Memory is historical evidence; current instructions and verified files take precedence.
 
+With `capture.onCompact` (default on), each compaction is followed by a capture of the branch it compacted. It runs as a durable [pi-durable](https://www.npmjs.com/package/@earendil-works/pi-durable) job, so neither compaction nor the next prompt waits for it. A compaction that another extension cancels or defers captures nothing. `capture.timeoutMs` (120000) bounds each attempt; a failed attempt is retried `capture.retries` times (2), first after `capture.retryDelayMs` (30000) and then doubling. A job that Pi's exit interrupts resumes when the session next opens. If every attempt fails, the evidence stays uncaptured for a later pass, with a notice.
+
 An invalid edit proposal can receive one corrective curator call per capture pass. Failed output is diagnosed and skipped instead of retried indefinitely; transport failures remain retryable. Unchanged facts in a bundled record are preserved when a correction edits one part.
 
 ## Settings
@@ -53,7 +55,7 @@ Add a `memory` object to Pi's `settings.json`:
   "memory": {
     "enabled": true,
     "mode": "inject",
-    "capture": { "enabled": true, "model": "openai/gpt-6.1-sol", "onCompact": true },
+    "capture": { "enabled": true, "model": "openai/gpt-6.1-sol", "onCompact": true, "timeoutMs": 120000, "retries": 2, "retryDelayMs": 30000 },
     "retrieval": { "maxItems": 8, "budgetTokens": 1200, "sessionBudgetTokens": 0, "timeoutMs": 2500 },
     "digest": { "budgetTokens": 1200, "scope": "decisions" },
     "consolidation": { "everyCaptures": 20 },

@@ -6,13 +6,23 @@ import { addUsage, formatFiles, stripFiles } from "./summarize.ts";
 
 export type RequestMode = "serialized" | "transcript";
 
-export interface SummaryJob {
+/** Usage and request count of the summaries a new summary extends. */
+export type Lineage = Pick<Held, "usage" | "requests" | "startedAt">;
+
+/** One summary request. JSON, so it can be stored and resumed after a restart. */
+export interface SummaryRequest {
 	plan: Plan;
 	mode: RequestMode;
 	/** The whole projected conversation, for transcript requests. */
 	transcript?: AgentMessage[];
 	/** Extra focus, e.g. `/compact` instructions. */
 	focus?: string;
+	base?: Lineage;
+	reason: string;
+	startedAt: number;
+}
+
+export interface SummaryJob extends SummaryRequest {
 	signal: AbortSignal;
 }
 
@@ -45,17 +55,15 @@ export interface Held {
 	requests: number;
 	model: string;
 	mode: RequestMode;
+	focus?: string;
 	startedAt: number;
 	readyAt: number;
 }
 
 interface Running {
-	plan: Plan;
-	base?: Held;
-	reason: string;
+	request: SummaryRequest;
 	abort: AbortController;
 	promise: Promise<Held | undefined>;
-	startedAt: number;
 }
 
 export interface Limits {
@@ -64,7 +72,7 @@ export interface Limits {
 	keep: number;
 	/** Tail growth after which a held summary is refreshed in the background. */
 	maxStale: number;
-	/** Largest context a swap may leave; a held summary that would leave more is caught up first. */
+	/** Largest context a swap should leave; a held summary that would leave more is caught up first. */
 	maxAfter: number;
 }
 
@@ -74,13 +82,14 @@ export interface Stats {
 	failed: number;
 	discarded: number;
 	swapped: number;
-	caughtUp: number;
-	foreground: number;
+	/** Compactions put off because no usable summary was ready. */
 	deferred: number;
-	waitedMs: number;
 	/** Usage of summaries that were written but never used. */
 	unused?: Usage;
 }
+
+/** What Pi's compaction gets: a summary to append now, or why compaction waits for a later check. */
+export type Decision = { compaction: CompactionResult } | { deferred: string };
 
 export interface CompactorDeps {
 	config(): BackgroundCompactionConfig;
@@ -93,24 +102,9 @@ export interface CompactorDeps {
 
 const estimate = (text: string) => Math.ceil(text.length / 4);
 
-/** Abort-aware wait: resolves when `promise` settles or `signal` aborts. */
-function until<T>(promise: Promise<T>, signal: AbortSignal): Promise<T | undefined> {
-	if (signal.aborted) return Promise.resolve(undefined);
-	return new Promise((resolve) => {
-		const onAbort = () => resolve(undefined);
-		signal.addEventListener("abort", onAbort, { once: true });
-		promise.then(
-			(value) => {
-				signal.removeEventListener("abort", onAbort);
-				resolve(value);
-			},
-			() => {
-				signal.removeEventListener("abort", onAbort);
-				resolve(undefined);
-			},
-		);
-	});
-}
+/** After a failed summary, compaction starts another only after this backoff, doubling per failure. */
+const RETRY_MS = 60_000;
+const MAX_RETRY_MS = 600_000;
 
 export function limits(config: BackgroundCompactionConfig, snapshot: Pick<Snapshot, "contextWindow" | "settings">): Limits {
 	const threshold = snapshot.contextWindow - snapshot.settings.reserveTokens;
@@ -122,14 +116,18 @@ export function limits(config: BackgroundCompactionConfig, snapshot: Pick<Snapsh
 
 /**
  * Writes the compaction summary before Pi needs it. `observe()` starts a background summary once the
- * context passes the trigger; `take()` hands it to Pi's compaction, waiting for it if it is still
- * being written and catching it up if too much arrived since. Summaries are held in memory only.
+ * context passes the trigger; `take()` hands it to Pi's compaction. `take()` never waits: without a
+ * usable summary it starts one in the background and defers, and Pi checks again before its next request.
  */
 export class BackgroundCompactor {
 	private running?: Running;
 	private held?: Held;
 	private failures = 0;
-	readonly stats: Stats = { started: 0, ready: 0, failed: 0, discarded: 0, swapped: 0, caughtUp: 0, foreground: 0, deferred: 0, waitedMs: 0 };
+	/** No summary starts at compaction before this time, after a failure. */
+	private retryAt = 0;
+	/** Compaction checks deferred since the last swap. */
+	private deferrals = 0;
+	readonly stats: Stats = { started: 0, ready: 0, failed: 0, discarded: 0, swapped: 0, deferred: 0 };
 	private readonly now: () => number;
 
 	constructor(private readonly deps: CompactorDeps) {
@@ -155,7 +153,7 @@ export class BackgroundCompactor {
 		const limit = limits(config, snapshot);
 		if (limit.threshold <= 0) return;
 		if (this.running) {
-			const why = misfit(snapshot.branch, this.running.plan);
+			const why = misfit(snapshot.branch, this.running.request.plan);
 			if (!why) return;
 			this.cancelRunning(why);
 		}
@@ -164,7 +162,7 @@ export class BackgroundCompactor {
 			if (why) this.discard(why);
 		}
 		if (!force && (snapshot.tokens === null || snapshot.tokens < limit.start)) return;
-		if (!force && this.failures >= 2) return;
+		if (!force && (this.failures >= 2 || this.now() < this.retryAt)) return;
 		if (this.held) {
 			// Pi compacts right after this boundary; the held summary is used or caught up then.
 			if (!force && (snapshot.tokens ?? 0) > limit.threshold) return;
@@ -186,12 +184,16 @@ export class BackgroundCompactor {
 		this.launch(plan, requestMode(config, snapshot), snapshot, reason);
 	}
 
-	private launch(plan: Plan, mode: RequestMode, snapshot: Snapshot, reason: string, base?: Held): void {
-		const config = this.deps.config();
-		const abort = new AbortController();
-		const timer = setTimeout(() => abort.abort(new Error("timed out")), config.timeoutMs);
-		timer.unref?.();
-		const startedAt = this.now();
+	private launch(plan: Plan, mode: RequestMode, snapshot: Snapshot, reason: string, base?: Held, focus?: string): void {
+		const request: SummaryRequest = {
+			plan,
+			mode,
+			transcript: mode === "transcript" ? projectedMessages(snapshot.branch) : undefined,
+			focus,
+			base: base && { usage: base.usage, requests: base.requests, startedAt: base.startedAt },
+			reason,
+			startedAt: this.now(),
+		};
 		this.stats.started++;
 		this.trace("start", {
 			reason,
@@ -201,47 +203,73 @@ export class BackgroundCompactor {
 			keptTokens: plan.keptTokens,
 			extends: base !== undefined,
 		});
-		const transcript = mode === "transcript" ? projectedMessages(snapshot.branch) : undefined;
-		const promise: Promise<Held | undefined> = this.deps
-			.summarize({ plan, mode, transcript, signal: abort.signal })
-			.then(
-				(output) => {
-					const held = this.toHeld(plan, output, mode, startedAt, base);
-					if (this.running?.promise !== promise) return held;
+		this.track(request, (signal) => this.deps.summarize({ ...request, signal }));
+	}
+
+	/**
+	 * Take over a summary request still running from an earlier process, when it applies to the branch.
+	 * `attach` follows the request to its result.
+	 */
+	adopt(snapshot: Snapshot, request: SummaryRequest, attach: (signal: AbortSignal) => Promise<SummaryOutput>): boolean {
+		if (this.running || !this.deps.config().enabled || misfit(snapshot.branch, request.plan)) return false;
+		this.trace("resumed", { reason: request.reason, mode: request.mode, summarizedTokens: request.plan.summarizedTokens });
+		this.track(request, attach);
+		return true;
+	}
+
+	/** Hold a summary an earlier process finished, when it still applies to the branch. */
+	restore(snapshot: Snapshot, request: SummaryRequest, output: SummaryOutput): boolean {
+		if (this.held || !this.deps.config().enabled || misfit(snapshot.branch, request.plan)) return false;
+		this.held = this.toHeld(request, output);
+		this.trace("restored", { reason: request.reason, mode: request.mode, summaryTokens: estimate(this.held.summary) });
+		this.deps.changed?.();
+		return true;
+	}
+
+	private track(request: SummaryRequest, run: (signal: AbortSignal) => Promise<SummaryOutput>): void {
+		const abort = new AbortController();
+		const { reason, mode, startedAt } = request;
+		const promise: Promise<Held | undefined> = run(abort.signal).then(
+			(output) => {
+				const held = this.toHeld(request, output);
+				if (this.running?.promise !== promise) return held;
+				this.running = undefined;
+				this.held = held;
+				this.failures = 0;
+				this.retryAt = 0;
+				this.stats.ready++;
+				this.trace("ready", { reason, mode, model: output.model, ms: held.readyAt - startedAt, summaryTokens: estimate(held.summary), usage: output.usage });
+				this.deps.changed?.();
+				return held;
+			},
+			(error: unknown) => {
+				const message = error instanceof Error ? error.message : String(error);
+				if (this.running?.promise === promise) {
 					this.running = undefined;
-					this.held = held;
-					this.failures = 0;
-					this.stats.ready++;
-					this.trace("ready", { reason, mode, model: output.model, ms: held.readyAt - startedAt, summaryTokens: estimate(held.summary), usage: output.usage });
+					this.failures++;
+					this.retryAt = this.now() + Math.min(RETRY_MS * 2 ** (this.failures - 1), MAX_RETRY_MS);
+					this.stats.failed++;
+					this.trace("failed", { reason, mode, error: message, ms: this.now() - startedAt });
 					this.deps.changed?.();
-					return held;
-				},
-				(error: unknown) => {
-					const message = error instanceof Error ? error.message : String(error);
-					if (this.running?.promise === promise) {
-						this.running = undefined;
-						this.failures++;
-						this.stats.failed++;
-						this.trace("failed", { reason, mode, error: message, ms: this.now() - startedAt });
-						this.deps.changed?.();
-					}
-					return undefined;
-				},
-			)
-			.finally(() => clearTimeout(timer));
-		this.running = { plan, base, reason, abort, promise, startedAt };
+				}
+				return undefined;
+			},
+		);
+		this.running = { request, abort, promise };
 		this.deps.changed?.();
 	}
 
-	private toHeld(plan: Plan, output: SummaryOutput, mode: RequestMode, startedAt: number, base?: Held): Held {
+	private toHeld(request: SummaryRequest, output: SummaryOutput): Held {
+		const { plan, base } = request;
 		return {
 			plan,
 			summary: stripFiles(output.text) + formatFiles(plan.files),
 			usage: addUsage(base?.usage, output.usage),
 			requests: (base?.requests ?? 0) + 1,
 			model: output.model,
-			mode,
-			startedAt: base?.startedAt ?? startedAt,
+			mode: request.mode,
+			focus: request.focus,
+			startedAt: base?.startedAt ?? request.startedAt,
 			readyAt: this.now(),
 		};
 	}
@@ -264,122 +292,89 @@ export class BackgroundCompactor {
 	}
 
 	/**
-	 * Pi is compacting: return the summary to append, or undefined to let Pi write its own. Waits for a
-	 * summary still being written. A held summary whose verbatim tail grew too long to free enough room
-	 * is caught up first; without a usable one the configured summarizer writes one now.
+	 * Pi is compacting: return the summary to append now, or defer. Never waits. A held summary that
+	 * leaves too much verbatim is caught up in the background first; without a usable one, a summary
+	 * starts in the background. Pi checks the threshold again before its next request.
 	 */
-	async take(
-		snapshot: Snapshot,
-		signal: AbortSignal,
-		options: { tokensBefore: number; reason: string; customInstructions?: string; firstKeptEntryId?: string },
-	): Promise<CompactionResult | undefined> {
+	take(snapshot: Snapshot, options: { tokensBefore: number; reason: string; customInstructions?: string; firstKeptEntryId?: string }): Decision | undefined {
 		const config = this.deps.config();
 		if (!config.enabled) return undefined;
 		const limit = limits(config, snapshot);
-		const started = this.now();
-		// A refresh only improves on a held summary; when that summary already frees enough room, use it
-		// now rather than wait. Wait when nothing usable is held, which still beats writing one now.
-		if (this.running && !options.customInstructions && !(this.running.base && this.fits(snapshot, this.held, limit))) {
-			this.trace("wait", { reason: options.reason });
-			await until(this.running.promise, signal);
-			if (signal.aborted) return undefined;
+		const focus = options.customInstructions?.trim() || undefined;
+		if (this.held) {
+			const why = misfit(snapshot.branch, this.held.plan);
+			if (why) this.discard(why);
 		}
-		if (this.running) this.cancelRunning("compacting now");
-		const waitedMs = this.now() - started;
-		this.stats.waitedMs += waitedMs;
-		let held = options.customInstructions ? undefined : this.held;
-		const why = held ? misfit(snapshot.branch, held.plan) : options.customInstructions ? "compaction has instructions" : "no background summary";
-		if (held && why) {
-			this.discard(why);
-			held = undefined;
-		}
-		let caughtUp = false;
-		const source = held ? "background" : "foreground";
+		const held = this.held && (focus === undefined || this.held.focus === focus) ? this.held : undefined;
 		if (held) {
 			const kept = keptTokens(snapshot.branch, held.plan.firstKeptEntryId) ?? Number.POSITIVE_INFINITY;
-			const stale = kept - held.plan.keptTokens;
-			// Catching up blocks about as long as a fresh summary, so only do it when the swap would
-			// barely shrink the context (the stale-summary failure in anthropics/claude-code#70459).
-			if (estimate(held.summary) + kept > limit.maxAfter) {
-				// Cut where Pi would, which also handles its overflow-recovery omissions.
-				const plan =
-					planCompaction(snapshot.branch, limit.keep, checkpoint(held), options.firstKeptEntryId) ??
-					planCompaction(snapshot.branch, limit.keep, checkpoint(held));
-				if (plan) {
-					this.trace("catch-up", { staleTokens: stale, summarizedTokens: plan.summarizedTokens });
-					const next = await this.write(plan, signal, held);
-					if (next) {
-						held = next;
-						caughtUp = true;
-						this.stats.caughtUp++;
-					} else if (estimate(held.summary) + kept >= limit.threshold) {
-						// Pi's own summary would most likely fail the same way, but this one frees nothing.
-						this.discard("catch-up failed");
-						this.stats.deferred++;
-						return undefined;
-					}
-					// Otherwise a swap that frees less than intended still beats a blocking retry.
-				}
+			const after = estimate(held.summary) + kept;
+			if (after <= limit.maxAfter) return this.swap(held, snapshot, options, false);
+			// Catching up costs about as much as a fresh summary, so only do it when the swap would barely
+			// shrink the context (the stale-summary failure in anthropics/claude-code#70459). Once the catch-up
+			// was given its chance, swap what frees room rather than let the context grow.
+			const frees = after < limit.threshold;
+			const tried = this.deferrals > 0 && !this.running;
+			if (frees && (options.reason === "overflow" || tried || this.now() < this.retryAt)) return this.swap(held, snapshot, options, true);
+			if (this.running) return this.defer(options.reason, "catching up");
+			if (this.now() < this.retryAt) return this.defer(options.reason, "the summarizer failed; retrying later");
+			// Cut where Pi would, which also handles its overflow-recovery omissions.
+			const plan =
+				planCompaction(snapshot.branch, limit.keep, checkpoint(held), options.firstKeptEntryId) ??
+				planCompaction(snapshot.branch, limit.keep, checkpoint(held));
+			if (plan) {
+				this.launch(plan, "serialized", snapshot, "catch-up", held, focus);
+				return this.defer(options.reason, "catching up");
 			}
-		} else {
-			// No usable background summary: write one now with the configured model and prompt.
-			const plan = planCompaction(snapshot.branch, limit.keep, undefined, options.firstKeptEntryId);
-			if (!plan) return undefined;
-			// An overflowing context cannot be resent whole, so overflow recovery summarizes it as text.
-			const mode = options.reason === "overflow" ? "serialized" : requestMode(config, snapshot);
-			this.trace("foreground", { reason: why, mode, summarizedTokens: plan.summarizedTokens });
-			held = await this.write(plan, signal, undefined, options.customInstructions, mode === "transcript" ? snapshot : undefined);
-			if (!held) {
-				this.stats.deferred++;
-				return undefined;
-			}
-			this.stats.foreground++;
+			if (frees) return this.swap(held, snapshot, options, true);
+			return this.defer(options.reason, "nothing to summarize");
 		}
-		if (signal.aborted) return undefined;
+		if (this.running && this.running.request.focus !== focus && focus !== undefined) this.cancelRunning("compaction has other instructions");
+		if (this.running) return this.defer(options.reason, "writing");
+		if (this.now() < this.retryAt) return this.defer(options.reason, "the summarizer failed; retrying later");
+		const plan = planCompaction(snapshot.branch, limit.keep, undefined, options.firstKeptEntryId);
+		if (!plan) return this.defer(options.reason, "nothing to summarize");
+		// An overflowing context cannot be resent whole, so overflow recovery summarizes it as text.
+		const mode = options.reason === "overflow" ? "serialized" : requestMode(config, snapshot);
+		this.launch(plan, mode, snapshot, "compaction", undefined, focus);
+		return this.defer(options.reason, "writing");
+	}
+
+	private defer(reason: string, why: string): Decision {
+		this.deferrals++;
+		this.stats.deferred++;
+		this.trace("deferred", { reason, why, deferrals: this.deferrals });
+		return { deferred: why };
+	}
+
+	private swap(held: Held, snapshot: Snapshot, options: { tokensBefore: number; reason: string }, stale: boolean): Decision {
+		if (this.running) this.cancelRunning("compacting now");
+		const kept = keptTokens(snapshot.branch, held.plan.firstKeptEntryId);
 		this.held = undefined;
 		this.failures = 0;
+		this.retryAt = 0;
 		this.stats.swapped++;
+		const swap = { stale, deferrals: this.deferrals };
+		this.deferrals = 0;
 		this.trace("swap", {
 			reason: options.reason,
-			source,
-			caughtUp,
-			waitedMs,
-			blockedMs: this.now() - started,
+			...swap,
 			requests: held.requests,
 			ageMs: this.now() - held.readyAt,
 			summaryTokens: estimate(held.summary),
-			keptTokens: keptTokens(snapshot.branch, held.plan.firstKeptEntryId),
+			keptTokens: kept,
 			usage: held.usage,
 		});
 		this.deps.changed?.();
 		return {
-			summary: held.summary,
-			firstKeptEntryId: held.plan.firstKeptEntryId,
-			tokensBefore: options.tokensBefore,
-			usage: held.usage,
-			details: details(held, { source, waitedMs, caughtUp }),
+			compaction: {
+				summary: held.summary,
+				firstKeptEntryId: held.plan.firstKeptEntryId,
+				tokensBefore: options.tokensBefore,
+				usage: held.usage,
+				details: details(held, swap),
+			},
 		};
-	}
-
-	/** Whether `held` still applies to the branch and swapping it in would leave at most `limit.maxAfter`. */
-	private fits(snapshot: Snapshot, held: Held | undefined, limit: Limits): boolean {
-		if (!held || misfit(snapshot.branch, held.plan)) return false;
-		const kept = keptTokens(snapshot.branch, held.plan.firstKeptEntryId);
-		return kept !== undefined && estimate(held.summary) + kept <= limit.maxAfter;
-	}
-
-	/** A blocking summary request, for catch-up and foreground compaction; a snapshot makes it a transcript request. */
-	private async write(plan: Plan, signal: AbortSignal, base?: Held, focus?: string, transcriptOf?: Snapshot): Promise<Held | undefined> {
-		const startedAt = this.now();
-		const mode: RequestMode = transcriptOf ? "transcript" : "serialized";
-		try {
-			const transcript = transcriptOf ? projectedMessages(transcriptOf.branch) : undefined;
-			const output = await this.deps.summarize({ plan, mode, transcript, focus, signal });
-			return this.toHeld(plan, output, mode, startedAt, base);
-		} catch (error) {
-			this.trace("failed", { reason: base ? "catch-up" : "foreground", error: error instanceof Error ? error.message : String(error) });
-			return undefined;
-		}
 	}
 
 	/** For `swap: "ready"`: the held summary as a compaction entry, when it can be applied now. */
@@ -396,9 +391,10 @@ export class BackgroundCompactor {
 		const held = this.held;
 		this.held = undefined;
 		this.stats.swapped++;
-		this.trace("swap", { reason: "ready", source: "background", caughtUp: false, waitedMs: 0, blockedMs: 0, requests: held.requests, ageMs: this.now() - held.readyAt, summaryTokens: estimate(held.summary), keptTokens: kept, usage: held.usage });
+		this.deferrals = 0;
+		this.trace("swap", { reason: "ready", stale: false, deferrals: 0, requests: held.requests, ageMs: this.now() - held.readyAt, summaryTokens: estimate(held.summary), keptTokens: kept, usage: held.usage });
 		this.deps.changed?.();
-		return { type: "compaction", summary: held.summary, firstKeptEntryId: held.plan.firstKeptEntryId, details: details(held, { source: "background", waitedMs: 0, caughtUp: false }), usage: held.usage };
+		return { type: "compaction", summary: held.summary, firstKeptEntryId: held.plan.firstKeptEntryId, details: details(held, { stale: false, deferrals: 0 }), usage: held.usage };
 	}
 
 	/** Forget everything, e.g. after a compaction or on shutdown. */
@@ -406,6 +402,8 @@ export class BackgroundCompactor {
 		this.cancelRunning(reason);
 		this.discard(reason);
 		this.failures = 0;
+		this.retryAt = 0;
+		this.deferrals = 0;
 	}
 }
 
@@ -417,19 +415,18 @@ function checkpoint(held: Held): Checkpoint {
 	return { summary: held.summary, firstKeptEntryId: held.plan.firstKeptEntryId, files: held.plan.files };
 }
 
-function details(held: Held, swap: { source: string; waitedMs: number; caughtUp: boolean }) {
+function details(held: Held, swap: { stale: boolean; deferrals: number }) {
 	return {
 		readFiles: held.plan.files.readFiles,
 		modifiedFiles: held.plan.files.modifiedFiles,
 		backgroundCompaction: {
-			source: swap.source,
 			model: held.model,
 			mode: held.mode,
 			requests: held.requests,
 			startedAt: new Date(held.startedAt).toISOString(),
 			readyAt: new Date(held.readyAt).toISOString(),
-			waitedMs: swap.waitedMs,
-			caughtUp: swap.caughtUp,
+			stale: swap.stale,
+			deferrals: swap.deferrals,
 		},
 	};
 }

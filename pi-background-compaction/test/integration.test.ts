@@ -9,6 +9,7 @@ import {
 	type CompactionEntry,
 	createAgentSession,
 	DefaultResourceLoader,
+	type ExtensionFactory,
 	ModelRuntime,
 	SessionManager,
 	SettingsManager,
@@ -35,7 +36,7 @@ const isSummaryRequest = (context: TranscriptContext) => {
  * A real AgentSession on the faux provider: a 30k window that Pi compacts at 24k. Replies are ~1.5k
  * tokens; summary requests answer after `summaryDelayMs`.
  */
-async function start(settings: Record<string, unknown>, summaryDelayMs = 0, extension = true): Promise<Run> {
+async function start(settings: Record<string, unknown>, summaryDelayMs = 0, extension = true, others: ExtensionFactory[] = []): Promise<Run> {
 	const dir = await mkdtemp(join(tmpdir(), "pi-bg-compaction-"));
 	const tracePath = join(dir, "trace.jsonl");
 	process.env.PI_BACKGROUND_COMPACTION_TRACE = tracePath;
@@ -63,7 +64,7 @@ async function start(settings: Record<string, unknown>, summaryDelayMs = 0, exte
 		cwd: dir,
 		agentDir: dir,
 		settingsManager,
-		extensionFactories: extension ? [backgroundCompaction] : [],
+		extensionFactories: [...(extension ? [backgroundCompaction] : []), ...others],
 		noSkills: true,
 		noPromptTemplates: true,
 		noThemes: true,
@@ -109,20 +110,37 @@ async function start(settings: Record<string, unknown>, summaryDelayMs = 0, exte
 
 const compactions = (run: Run) => run.entries().filter((entry): entry is CompactionEntry => entry.type === "compaction");
 
+/** How long each compaction kept the session waiting, from Pi's start event to its end event. */
+function blocked(run: Run): number[] {
+	const durations: number[] = [];
+	let started: number | undefined;
+	for (const event of run.events) {
+		if (event.type === "compaction_start") started = event.at;
+		if (event.type === "compaction_end" && started !== undefined) {
+			durations.push(event.at - started);
+			started = undefined;
+		}
+	}
+	return durations;
+}
+
+/** Real sessions pause between turns; the faux provider answers at once. */
+const pause = () => new Promise((resolve) => setTimeout(resolve, 50));
+
 test("Pi compacts with the summary written in the background", async () => {
 	const run = await start({ backgroundCompaction: { enabled: true, model: "faux/faux-1", minTokens: 0, prompt: "pi", trigger: 0.8 } });
 	try {
-		const turnsAt: number[] = [];
 		for (let i = 0; i < 8 && compactions(run).length === 0; i++) {
-			turnsAt.push(Date.now());
 			await run.prompt(`step ${i} ${words(1500)}`);
+			await pause();
 		}
 		const [compaction] = compactions(run);
 		assert.ok(compaction, "a compaction happened");
 		assert.equal(compaction.fromHook, true);
-		const meta = (compaction.details as { backgroundCompaction: { requests: number; caughtUp: boolean } }).backgroundCompaction;
+		const meta = (compaction.details as { backgroundCompaction: { requests: number; stale: boolean; deferrals: number } }).backgroundCompaction;
 		assert.equal(meta.requests, 1);
-		assert.equal(meta.caughtUp, false);
+		assert.equal(meta.stale, false);
+		assert.equal(meta.deferrals, 0);
 		// One summary request, sent with the configured prompt before Pi started compacting.
 		assert.equal(run.summaryRequests.length, 1);
 		assert.match(run.summaryRequests[0]!.text, /Create a structured context checkpoint summary/);
@@ -130,8 +148,8 @@ test("Pi compacts with the summary written in the background", async () => {
 		assert.ok(run.summaryRequests[0]!.at < startedAt);
 		const trace = await run.trace();
 		assert.deepEqual(trace.map((event) => event.event), ["start", "ready", "swap"]);
-		assert.equal(trace[2]!.source, "background");
-		const end = run.events.find((event) => event.type === "compaction_end");
+		assert.ok(Math.max(...blocked(run)) < 100, `blocked ${blocked(run).join(", ")} ms`);
+		const end = run.events.find((event) => event.type === "compaction_end" && event.result);
 		assert.ok(end && end.type === "compaction_end" && end.result?.summary.includes("background summary 0"));
 		// The kept entry is on the branch and the next request sees summary + kept tail.
 		const ids = new Set(run.entries().map((entry) => entry.id));
@@ -144,15 +162,39 @@ test("Pi compacts with the summary written in the background", async () => {
 	}
 });
 
-test("a slow background summary is awaited instead of starting another", async () => {
-	const run = await start({ backgroundCompaction: { enabled: true, model: "faux/faux-1", minTokens: 0, trigger: 0.95 } }, 300);
+test("a slow background summary defers compaction without blocking the session or other extensions", async () => {
+	// Another extension's compaction handler runs after this one: Pi calls them in turn.
+	const after: number[] = [];
+	const other: ExtensionFactory = (pi) => {
+		pi.on("session_before_compact", () => {
+			after.push(Date.now());
+		});
+	};
+	const run = await start({ backgroundCompaction: { enabled: true, model: "faux/faux-1", minTokens: 0, trigger: 0.95 } }, 300, true, [other]);
 	try {
-		for (let i = 0; i < 10 && compactions(run).length === 0; i++) await run.prompt(`step ${i} ${words(1500)}`);
+		for (let i = 0; i < 12 && compactions(run).length === 0; i++) {
+			await run.prompt(`step ${i} ${words(1500)}`);
+			await pause();
+			// Once compaction was deferred, take the summary's time before the next prompt, as a person would.
+			const events = (await run.trace()).map((event) => event.event);
+			if (events.includes("deferred") && !events.includes("ready")) await new Promise((resolve) => setTimeout(resolve, 400));
+		}
 		assert.equal(compactions(run).length, 1);
-		assert.equal(run.summaryRequests.length, 1);
-		const trace = await run.trace();
-		assert.deepEqual(trace.map((event) => event.event), ["start", "wait", "ready", "swap"]);
-		assert.ok((trace[3]!.waitedMs as number) > 0);
+		assert.equal(run.summaryRequests.length, 1, "deferred compactions share the one request");
+		const trace = (await run.trace()).map((event) => event.event);
+		assert.equal(trace[0], "start");
+		assert.ok(trace.indexOf("deferred") > 0 && trace.indexOf("deferred") < trace.indexOf("ready"), trace.join(", "));
+		assert.equal(trace.at(-1), "swap");
+		const meta = (compactions(run)[0]!.details as { backgroundCompaction: { deferrals: number } }).backgroundCompaction;
+		assert.ok(meta.deferrals >= 1);
+		// Every compaction check, deferred or not, returned at once.
+		const durations = blocked(run);
+		assert.ok(durations.length >= 2);
+		assert.ok(Math.max(...durations) < 100, `blocked ${durations.join(", ")} ms`);
+		// Pi skips later handlers once one cancels, so the other extension sees only the compaction that happened, at once.
+		const start = run.events.filter((event) => event.type === "compaction_start").at(-1)!.at;
+		assert.equal(after.length, 1);
+		assert.ok(after[0]! - start < 100, "the other extension's handler was not delayed");
 	} finally {
 		await run.dispose();
 	}

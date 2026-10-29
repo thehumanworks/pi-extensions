@@ -1,6 +1,6 @@
 import { test, type TestContext } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -15,8 +15,11 @@ import { autocomplete } from "../src/ui.ts";
 import { ProposalManager } from "../src/maintenance.ts";
 import { CapturePipeline } from "../src/capture.ts";
 
-async function harness(t: TestContext, mode = "inject", enabled = true, captureEnabled = false) {
-  const cwd = await mkdtemp(join(tmpdir(), "pi-memory-extension-")), root = join(cwd, "memory");
+interface HarnessOptions { capture?: Record<string, unknown>; cwd?: string; context?: Record<string, unknown>; sessionManager?: unknown }
+
+/** The extension with a fake Pi. `cwd` reuses another harness's directory, as a restarted process would. */
+async function harness(t: TestContext, mode = "inject", enabled = true, captureEnabled = false, options: HarnessOptions = {}) {
+  const cwd = options.cwd ?? await mkdtemp(join(tmpdir(), "pi-memory-extension-")), root = join(cwd, "memory");
   const events = new Map<string, Function>(), tools = new Map<string, any>(), commands = new Map<string, any>();
   let entries: any[] = [];
   const notifications: string[] = [];
@@ -24,20 +27,57 @@ async function harness(t: TestContext, mode = "inject", enabled = true, captureE
     on: (event: string, handler: Function) => { events.set(event, handler); return () => events.delete(event); },
     registerFlag: () => {}, getFlag: () => undefined,
     appendEntry: (customType: string, data: unknown) => entries.push({ type: "custom", customType, data }),
-    getSettings: () => ({ memory: { enabled, dir: root, mode, capture: { enabled: captureEnabled, ...(captureEnabled ? { model: "test/test" } : {}) } } }),
+    // Capture jobs retry after 10 ms here rather than 30 s.
+    getSettings: () => ({ memory: { enabled, dir: root, mode, capture: { enabled: captureEnabled, ...(captureEnabled ? { model: "test/test", retryDelayMs: 10 } : {}), ...options.capture } } }),
     registerTool: (tool: any) => tools.set(tool.name, tool),
     registerCommand: (name: string, command: any) => commands.set(name, command), registerMessageRenderer: () => {},
   } as unknown as ExtensionAPI;
   const ctx = {
     cwd, mode: "json", hasUI: true, isIdle: () => true, hasPendingMessages: () => false, isProjectTrusted: () => true,
     ui: { notify: (message: string) => notifications.push(message) },
-    sessionManager: { getBranch: () => entries, getSessionId: () => "test-session", getSessionFile: () => undefined, getLeafId: () => entries.at(-1)?.id },
+    sessionManager: options.sessionManager ?? { getBranch: () => entries, getSessionId: () => "test-session", getSessionFile: () => undefined, getLeafId: () => entries.at(-1)?.id },
+    ...options.context,
   } as unknown as ExtensionContext;
+  const previousTrace = process.env.PI_MEMORY_TRACE;
+  process.env.PI_MEMORY_TRACE = join(cwd, "trace.jsonl");
   memoryExtension(pi);
   await events.get("session_start")!({}, ctx);
-  t.after(async () => { await events.get("session_shutdown")!({}, ctx); await rm(cwd, { recursive: true, force: true }); });
+  t.after(async () => {
+    await events.get("session_shutdown")!({}, ctx);
+    if (!options.cwd) await rm(cwd, { recursive: true, force: true });
+    if (previousTrace === undefined) delete process.env.PI_MEMORY_TRACE; else process.env.PI_MEMORY_TRACE = previousTrace;
+  });
   return { cwd, root, events, tools, commands, ctx, notifications, entries: () => [...entries], branch: (next: any[]) => { entries = next; } };
 }
+
+async function until(check: () => boolean | Promise<boolean>, what: string, ms = 5000) {
+  const deadline = Date.now() + ms;
+  while (!(await check())) {
+    if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`);
+    await new Promise(resolve => setTimeout(resolve, 2));
+  }
+}
+
+/** Trace events of compaction capture jobs, in order. */
+async function jobEvents(h: { cwd: string }): Promise<Array<Record<string, unknown>>> {
+  const text = await readFile(join(h.cwd, "trace.jsonl"), "utf8").catch(() => "");
+  return text.split("\n").filter(Boolean).map(line => JSON.parse(line)).filter(event => event.event === "capture-job");
+}
+
+const completed = async (h: { cwd: string }) => (await jobEvents(h)).filter(event => event.status === "completed").length;
+
+/** Pi compacted: the hook returns at once, and the capture finishes later as a background job. */
+async function compact(h: { cwd: string; events: Map<string, Function>; ctx: ExtensionContext }) {
+  const before = await completed(h);
+  const started = performance.now();
+  assert.equal(h.events.get("session_compact")!({}, h.ctx), undefined, "the hook returns synchronously");
+  assert.ok(performance.now() - started < 50, `hook took ${(performance.now() - started).toFixed(1)} ms`);
+  await until(async () => await completed(h) > before, "the capture job");
+}
+
+const fact = { title: "Test policy", body: "Run tests before committing.", type: "feedback", scope: "project", confidence: 0.95, source: { entries: ["u1"], origin: "user_statement" } };
+const reply = (output: unknown) => ({ result: async () => ({ stopReason: "stop", content: [{ type: "text", text: JSON.stringify(output) }] }) });
+const testModel = { id: "test", provider: "test", maxTokens: 6000 };
 
 test("/memory model validates, checks the registry, and persists a nested patch without clobbering siblings", async t => {
   assert.deepEqual(mergeSettings({ capture: { enabled: true, onCompact: false }, mode: "agent" }, { capture: { model: "p/m" } }), { capture: { enabled: true, onCompact: false, model: "p/m" }, mode: "agent" });
@@ -125,6 +165,10 @@ test("settings enforce kill switches, budget boundaries, models, and deliberate 
   const explicit = readConfig({ memory: { capture: { model: "p/m" }, dream: { model: "p/d" } } }, "/tmp/agent", {}, {});
   assert.equal(explicit.capture.enabled, true); assert.equal(explicit.capture.model, "p/m");
   assert.equal(explicit.dream.enabled, true); assert.equal(explicit.dream.model, "p/d");
+  // Compaction captures retry in the background; each attempt is bounded.
+  assert.deepEqual([explicit.capture.timeoutMs, explicit.capture.retries, explicit.capture.retryDelayMs], [120000, 2, 30000]);
+  assert.equal(readConfig({ memory: { capture: { model: "p/m", retries: 0 } } }, "/tmp/agent", {}, {}).capture.retries, 0);
+  for (const capture of [{ retries: 11 }, { timeoutMs: 999 }, { retryDelayMs: 9 }]) assert.throws(() => readConfig({ memory: { capture: { model: "p/m", ...capture } } }, "/tmp/agent", {}, {}));
   assert.equal(readConfig({}, "/tmp/agent", {}, { PI_MEMORY_MODEL: "p/m" }).capture.enabled, true);
   assert.equal(readConfig({}, "/tmp/agent", { "memory-model": "p/m" }, {}).capture.enabled, true);
   assert.equal(readConfig({ memory: { consolidation: { model: "p/d" } } }, "/tmp/agent", {}, {}).dream.enabled, true);
@@ -325,12 +369,12 @@ test("capture reports invalid output once without retrying or storing an unsuppo
       hasConfiguredAuth: () => true, find: () => ({ id: "test", provider: "test", maxTokens: 6000 }),
       streamSimple: () => { const output = example.outputs[calls++]; return { result: async () => ({ stopReason: "stop", content: [{ type: "text", text: typeof output === "string" ? output : JSON.stringify(output) }] }) }; },
     } });
-    await h.events.get("session_before_compact")!({}, h.ctx);
+    await compact(h);
     assert.equal(calls, example.calls);
     assert.equal(h.notifications.length, 1);
     assert.match(h.notifications[0]!, /^Memory capture rejected output: .+\. Original session evidence retained\.$/);
     const originalNotice = h.notifications[0];
-    await h.events.get("session_before_compact")!({}, h.ctx);
+    await compact(h);
     assert.equal(calls, example.calls); assert.deepEqual(h.notifications, [originalNotice]);
     const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize();
     assert.equal(store.list().length, 0); store.close();
@@ -347,8 +391,8 @@ test("expected temporary and already-documented skips do not notify capture erro
       hasConfiguredAuth: () => true, find: () => ({ id: "test", provider: "test", maxTokens: 6000 }),
       streamSimple: () => { calls++; return { result: async () => ({ stopReason: "stop", content: [{ type: "text", text: JSON.stringify({ candidates: [{ title: "Policy", body, source: { entries: ["u1"], origin: "user_statement" } }], verdicts: [] }) }] }) }; },
     } });
-    await h.events.get("session_before_compact")!({}, h.ctx);
-    await h.events.get("session_before_compact")!({}, h.ctx);
+    await compact(h);
+    await compact(h);
     assert.equal(calls, 1); assert.deepEqual(h.notifications, []);
     const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize();
     assert.equal(store.list().length, 0); store.close();
@@ -363,9 +407,9 @@ test("resumed capture rejection reaches the normal notice flow exactly once", as
     ? { saved: 0, skipped: false, rejected: [{ candidate: -1, reason: "Memory model returned invalid JSON object" }] }
     : { saved: 0, skipped: true });
   // Empty current branch skips capture. Actual pending-file replay is covered by capture.test.ts.
-  await h.events.get("session_before_compact")!({}, h.ctx);
+  await compact(h);
   assert.deepEqual(h.notifications, ["Memory capture rejected output: Memory model returned invalid JSON object. Original session evidence retained."]);
-  await h.events.get("session_before_compact")!({}, h.ctx);
+  await compact(h);
   assert.equal(h.notifications.length, 1); assert.equal(resumes, 2);
   const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize();
   assert.equal(store.list().length, 0); store.close();
@@ -380,8 +424,100 @@ test("a resumed saved outcome reaches maintenance even when current capture skip
     return { saved: 1, skipped: false };
   });
   await assert.rejects(stat(path), { code: "ENOENT" });
-  await h.events.get("session_before_compact")!({}, h.ctx);
+  await compact(h);
   assert.ok((await stat(path)).isFile());
   assert.equal(store.list().length, 1); assert.deepEqual(h.notifications, []);
   resume.mock.restore(); store.close();
+});
+
+test("compaction is never held up by memory: only a finished compaction captures, without waiting", async t => {
+  let calls = 0;
+  const h = await harness(t, "inject", true, true, { context: { model: testModel, modelRegistry: {
+    hasConfiguredAuth: () => true, find: () => testModel,
+    streamSimple: () => { calls++; return { result: () => new Promise(() => {}) }; },
+  } } });
+  h.branch([{ id: "u1", type: "message", message: { role: "user", content: "Remember: run tests before committing." } }]);
+  // A compaction that another extension cancels or defers never reaches memory.
+  assert.equal(h.events.has("session_before_compact"), false);
+  const durations: number[] = [];
+  for (let i = 0; i < 5; i++) {
+    const started = performance.now();
+    assert.equal(h.events.get("session_compact")!({}, h.ctx), undefined);
+    durations.push(performance.now() - started);
+  }
+  assert.ok(Math.max(...durations) < 50, `slowest hook ${Math.max(...durations).toFixed(1)} ms`);
+  await until(() => calls === 1, "the capture request");
+  // The next prompt neither waits for the capture nor aborts it.
+  const started = performance.now();
+  await h.events.get("before_agent_start")!({ prompt: "tests", messageType: "user", systemPromptOptions: { sections: {} } }, h.ctx);
+  await h.events.get("agent_start")!({}, h.ctx);
+  assert.ok(performance.now() - started < 1000, `the prompt waited ${(performance.now() - started).toFixed(0)} ms`);
+  assert.equal(calls, 1, "one capture at a time; the others wait for it");
+  assert.equal(await completed(h), 0);
+});
+
+test("a failed compaction capture is retried in the background and saves once", async t => {
+  let calls = 0;
+  const outputs = [{ candidates: [fact], verdicts: [] }, { operations: [{ candidate: 0, action: "ADD" }] }];
+  const h = await harness(t, "inject", true, true, { context: { model: testModel, modelRegistry: {
+    hasConfiguredAuth: () => true, find: () => testModel,
+    streamSimple: () => ++calls === 1 ? { result: async () => { throw new Error("Temporary network outage"); } } : reply(outputs[calls - 2]),
+  } } });
+  h.branch([{ id: "u1", type: "message", message: { role: "user", content: "Remember: run tests before committing." } }]);
+  await compact(h);
+  assert.deepEqual((await jobEvents(h)).map(event => [event.status, event.attempt ?? event.saved]), [["retrying", 1], ["completed", 1]]);
+  assert.equal(calls, 3);
+  const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize();
+  assert.deepEqual(store.list().map(item => item.body), ["Run tests before committing."]); store.close();
+  assert.deepEqual(h.notifications, []);
+});
+
+test("a capture that keeps failing gives up after its retries and keeps the evidence for a later capture", async t => {
+  let calls = 0;
+  const h = await harness(t, "inject", true, true, { capture: { retries: 1 }, context: { model: testModel, modelRegistry: {
+    hasConfiguredAuth: () => true, find: () => testModel,
+    streamSimple: () => { calls++; return { result: async () => { throw new Error("Provider down"); } }; },
+  } } });
+  h.branch([{ id: "u1", type: "message", message: { role: "user", content: "Remember: run tests before committing." } }]);
+  assert.equal(h.events.get("session_compact")!({}, h.ctx), undefined);
+  await until(async () => (await jobEvents(h)).some(event => event.status === "failed"), "the job to fail");
+  assert.equal(calls, 2);
+  await until(() => h.notifications.length === 1, "the failure notice");
+  assert.match(h.notifications[0]!, /^Memory capture after compaction failed: .*Provider down.*Session evidence retained/);
+});
+
+test("a compaction capture interrupted by exit resumes in the next process and saves once", async t => {
+  const { SessionManager } = await import("@earendil-works/pi-coding-agent");
+  const cwd = await mkdtemp(join(tmpdir(), "pi-memory-restart-"));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+  const path = join(cwd, "session.jsonl"), timestamp = new Date().toISOString();
+  await writeFile(path, [
+    { type: "session", version: 3, id: "test-session", timestamp, cwd },
+    { id: "u1", parentId: null, timestamp, type: "message", message: { role: "user", content: "Remember: run tests before committing.", timestamp: Date.now() } },
+  ].map(value => JSON.stringify(value)).join("\n") + "\n");
+  let first = 0;
+  const h1 = await harness(t, "inject", true, true, { cwd, sessionManager: SessionManager.open(path), context: { model: testModel, modelRegistry: {
+    hasConfiguredAuth: () => true, find: () => testModel,
+    streamSimple: () => { first++; return { result: () => new Promise(() => {}) }; },
+  } } });
+  assert.equal(h1.events.get("session_compact")!({}, h1.ctx), undefined);
+  await until(() => first === 1, "the capture request");
+  // Pi exits while the capture waits for the model.
+  await h1.events.get("session_shutdown")!({}, h1.ctx);
+  const stored = (await readdir(join(cwd, "memory", "capture"))).filter(name => name.endsWith(".jobs.db"));
+  assert.equal(stored.length, 1);
+  let second = 0;
+  const outputs = [{ candidates: [fact], verdicts: [] }, { operations: [{ candidate: 0, action: "ADD" }] }];
+  const h2 = await harness(t, "inject", true, true, { cwd, sessionManager: SessionManager.open(path), context: { model: testModel, modelRegistry: {
+    hasConfiguredAuth: () => true, find: () => testModel,
+    streamSimple: () => reply(outputs[second++]),
+  } } });
+  await until(async () => await completed(h2) === 1, "the resumed capture");
+  assert.equal(second, 2);
+  assert.equal(first, 1, "the interrupted process made no further request");
+  const store = new MemoryStore(h2.root, resolveProjectKey(cwd)); await store.initialize();
+  assert.deepEqual(store.list().map(item => item.source.entries), [["u1"]]); store.close();
+  // The finished job leaves nothing stored once the session closes.
+  await h2.events.get("session_shutdown")!({}, h2.ctx);
+  assert.deepEqual((await readdir(join(cwd, "memory", "capture"))).filter(name => name.includes(".jobs.db")), []);
 });
