@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { Readable } from "node:stream";
 import test from "node:test";
 import { main, type CliDependencies } from "../src/cli.js";
-import type { OpenBotOptions, RunOptions } from "../src/types.js";
+import type { BotEvent, OpenBotOptions, RunOptions } from "../src/types.js";
 import type { ServeOptions } from "../src/server.js";
 import { eventually, fixture, INFO } from "./interface-fixtures.js";
 
@@ -140,9 +140,9 @@ function streaming() {
     for (const event of [
       { type: "message_start", data: { message: { role: "assistant", content: [{ type: "thinking", thinking: "Considering" }] } } },
       { type: "tool_execution_start", data: { toolCallId: "t1", toolName: "echo", args: { n: 2 } } },
-      { type: "tool_execution_end", data: { toolCallId: "t1", toolName: "echo", entry: { model: [{ role: "toolResult", content: [{ type: "text", text: "v1:2" }], isError: false }] } } },
-      { type: "message_end", data: { entry: { model: [{ role: "assistant", content: [{ type: "text", text: "**done**" }] }] } } },
-    ]) runOptions?.onEvent?.({ ...event, sessionId: accepted.sessionId, runId: accepted.runId });
+      { type: "tool_execution_end", data: { toolCallId: "t1", toolName: "echo", isError: false, summary: "v1:2", entry: { id: 1, kind: "message", model: [{ role: "toolResult", content: [{ type: "text", text: "v1:2" }], isError: false }] } } },
+      { type: "message_end", data: { entry: { id: 2, kind: "message", model: [{ role: "assistant", content: [{ type: "text", text: "**done**" }] }] } } },
+    ] satisfies BotEvent[]) runOptions?.onEvent?.({ ...event, sessionId: accepted.sessionId, runId: accepted.runId });
     f.complete(accepted.runId);
     return { ...(await f.bot.getRun(accepted.runId)), output: "**done**", toolCalls: 1, model: "faux/model",
       usage: { input: 1234, output: 34, cacheRead: 0, cacheWrite: 0, cost: 0.01, turns: 2 } };

@@ -17,8 +17,8 @@ test('pure canonical snapshot conversion omits compaction prompts, includes part
 test('queued runs do not replay the preceding assistant when run_start precedes their new user entry', async () => {
   const f = fixture(); f.setSnapshot({ entries: [user(1, 'old'), assistant(2, 'do not repeat me')] });
   const adapter = createBotChatAdapter({ backend: f.backend }); const response = await adapter.chat(request(body('new'))); const result = response.text();
-  f.emit('run_start', { inputs: [1] });
-  f.emit('entry_appended', { entry: user(3, 'new') }); f.emit('message_end', { entry: assistant(4, 'new reply') });
+  f.emit('run_start', {});
+  f.emit('message_end', { entry: user(3, 'new') }); f.emit('message_end', { entry: assistant(4, 'new reply') });
   f.setSnapshot({ entries: [user(1, 'old'), assistant(2, 'do not repeat me'), user(3, 'new'), assistant(4, 'new reply')] });
   f.setRun({ status: 'completed', output: 'new reply' }); f.emit('run_settled', f.run);
   const output = chunks(await result); assert.equal(output.filter(p => p.type === 'start').length, 1);
@@ -55,7 +55,7 @@ test('changed explicit request IDs cannot disguise editing or duplicate the same
 });
 
 test('late events from another run do not contaminate a selected active stream', async () => {
-  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: {} });
+  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: { ...f.run, status: 'running' } });
   const adapter = createBotChatAdapter({ backend: f.backend }); const response = await adapter.chat(request(body())); const result = response.text();
   f.emit('message_start', { message: { role: 'assistant', content: [{ type: 'text', text: 'wrong other run' }] } }, 'run-2');
   f.emit('message_end', { entry: assistant(2, 'right') }); f.setSnapshot({ entries: [user(1, 'hello'), assistant(2, 'right')] }); f.setRun({ status: 'completed', output: 'right' });
@@ -64,7 +64,7 @@ test('late events from another run do not contaminate a selected active stream',
 });
 
 test('slow readers are bounded and receive an error, not false success or backend cancellation', async () => {
-  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: {} });
+  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: { ...f.run, status: 'running' } });
   const adapter = createBotChatAdapter({ backend: f.backend }); const response = await adapter.chat(request(body()));
   f.emit('message_start', { message: { role: 'assistant', content: [{ type: 'text', text: 'x'.repeat(LIMITS.bufferBytes + 65536) }] } });
   const output = chunks(await response.text()); assert.ok(output.some(p => p.type === 'error' && p.errorText.includes('buffer')));
@@ -90,7 +90,7 @@ test('structural stream error events and uncorrelated run_end are explicitly obs
     f.emit(type, { message: 'SECRET' }); const raw = await result;
     assert.ok(!raw.includes('SECRET')); assert.ok(chunks(raw).some(p => p.type === 'error')); assert.ok(!chunks(raw).some(p => p.type === 'finish'));
   }
-  const f = fixture(); f.setSnapshot({ entries: [user(1, 'hello')], run: {} });
+  const f = fixture(); f.setSnapshot({ entries: [user(1, 'hello')], run: { ...f.run, status: 'running' } });
   const response = await createBotChatAdapter({ backend: f.backend }).resume(new Request('http://localhost/api/chat'), 'session-1'); const result = response.text();
   f.emit('run_end', {}, undefined); assert.ok(chunks(await result).some(p => p.type === 'error'));
 });

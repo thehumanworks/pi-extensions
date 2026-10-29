@@ -29,6 +29,13 @@ its integration boundary. The UI imports only the adapter's public package API
 and connects to a separately supervised bot over HTTP. Provider credentials stay
 with that bot's OS user. No Vercel hosting, AI Gateway or cloud sandbox is needed.
 
+The runtime inherits the user's global Pi extensions, MCP servers, skills and tool
+settings by default. Pi's native `AgentSession` executes these bots; `pi-durable`
+owns the persistent queue and run records. Isolated bots with `inherit: none` and
+no native extension factories use the durable executor. `BOT.md` has no format or
+version discriminator. See the [runtime guide](packages/runtime/README.md) for
+capabilities, provider setup, the HTTP/event contract, and operational limits.
+
 ## Run locally
 
 Requires Node 22.19+ (Node 24 recommended), npm, a Unix-like host with `flock`,
@@ -103,10 +110,13 @@ submits another turn. Accepted IDs survive browser reload in URL/storage referen
 including for queued runs not yet present in an active snapshot. New requests use
 stable idempotency keys.
 
-Durability does not make arbitrary host effects transactional. A shell command
-may partially execute before interruption. Unsafe tools report interruption
-rather than being blindly replayed. The runtime is trusted host code, not a
-security sandbox. Review the runtime's operational limits before network use.
+Durability does not make arbitrary host effects transactional. Native Pi requests
+interrupted by shutdown or a crash fail closed rather than replaying possibly
+completed effects. The isolated durable executor replays interrupted tools only
+when explicitly safe. Existing durable conversations need a new conversation
+when enabling native execution. The runtime is trusted host code, not a security
+sandbox. Review the [runtime's operational limits](packages/runtime/README.md#operational-limits)
+before network use.
 
 ## Development
 

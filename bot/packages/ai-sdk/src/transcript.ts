@@ -39,14 +39,16 @@ export class Transcript {
       if (data.generation !== undefined && (!data.generation || typeof data.generation !== 'object' || Array.isArray(data.generation))) invalid();
       this.generation = record(data.generation).message;
       if (this.generation !== undefined && (record(this.generation).role !== 'assistant' || !Array.isArray(record(this.generation).content))) invalid();
-      if (data.tools !== undefined && !Array.isArray(data.tools) || data.nestedTools !== undefined && !Array.isArray(data.nestedTools)) invalid();
-      this.snapshotRunId = event.runId; this.busy = !!data.run || !!data.generation;
-      for (const slot of [...(data.tools ?? []), ...(data.nestedTools ?? [])]) {
-        const s = record(slot); if (typeof s.callId !== 'string' || typeof s.name !== 'string') invalid();
-        this.tools.set(s.callId, { toolCallId: s.callId, toolName: s.name,
-          state: s.status === 'done' ? (s.summary?.isError ? 'failed' : 'completed') : 'running',
-          ...(s.arguments === undefined ? {} : { input: s.arguments }), ...(s.output === undefined ? {} : { output: s.output }),
-          ...(typeof s.parentCallId === 'string' ? { parentToolCallId: s.parentCallId } : {}) });
+      if (data.tools !== undefined && !Array.isArray(data.tools)) invalid();
+      this.snapshotRunId = event.runId;
+      this.busy = ['queued', 'running'].includes(record(data.run).status) || !!data.generation;
+      for (const slot of data.tools ?? []) {
+        const s = record(slot);
+        if (typeof s.toolCallId !== 'string' || typeof s.toolName !== 'string' || !['running', 'completed', 'failed'].includes(s.status)) invalid();
+        if (s.summary !== undefined && typeof s.summary !== 'string') invalid();
+        this.tools.set(s.toolCallId, { toolCallId: s.toolCallId, toolName: s.toolName, state: s.status,
+          ...(s.args === undefined ? {} : { input: s.args }), ...(s.summary === undefined ? {} : { output: s.summary }),
+          ...(typeof s.parentToolCallId === 'string' ? { parentToolCallId: s.parentToolCallId } : {}) });
       }
     } else if (event.type === 'message_start') {
       const message = record(data.message);
@@ -70,7 +72,7 @@ export class Transcript {
         // toolcall_delta is a structured argument delta; execution_start or final block is authoritative.
       }
       this.generation = { ...(this.generation ?? {}), role: 'assistant', content: current };
-    } else if (event.type === 'message_end' || event.type === 'entry_appended') {
+    } else if (event.type === 'message_end') {
       this.append(data.entry);
       if ((record(data.entry).model ?? []).some((m: Obj) => m.role === 'assistant')) this.generation = undefined;
     } else if (event.type.startsWith('tool_execution_')) {
@@ -84,15 +86,14 @@ export class Transcript {
         if (data.entry) this.append(data.entry);
         const result = (record(data.entry).model ?? []).find((m: Obj) => m.role === 'toolResult');
         if (result) { next.output = content(result); next.state = result.isError ? 'failed' : 'completed'; }
-        else if (data.result) { next.output = record(data.result).structuredOutput; next.state = record(data.result).isError ? 'failed' : 'completed'; }
-        else { next.state = 'failed'; next.output = 'Tool did not return a result'; }
-      } else if (data.output) {
-        const output = record(data.output); const before = typeof previous?.output === 'string' ? previous.output : '';
-        if (typeof output.set === 'string') next.output = output.set;
-        else if (typeof output.append === 'string') {
-          if (output.trimStart !== undefined && (!Number.isSafeInteger(output.trimStart) || output.trimStart < 0)) invalid();
-          next.output = before.slice(output.trimStart ?? 0) + output.append;
-        }
+        else if (typeof data.isError === 'boolean') {
+          if (data.summary !== undefined && typeof data.summary !== 'string') invalid();
+          next.state = data.isError ? 'failed' : 'completed';
+          next.output = data.summary ?? '';
+        } else { next.state = 'failed'; next.output = 'Tool did not return a result'; }
+      } else if (data.summary !== undefined) {
+        if (typeof data.summary !== 'string') invalid();
+        next.output = data.summary;
       }
       this.tools.set(data.toolCallId, next);
     } else if (event.type === 'run_start') this.busy = true;

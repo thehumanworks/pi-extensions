@@ -130,11 +130,11 @@ test("watch streams snapshot then updates, reconnects current state, and disconn
   const first = await stream(`${server.url}/v1/sessions/${accepted.sessionId}/stream`);
   assert.equal((await first.next()).type, "snapshot");
   f.complete(accepted.runId);
-  assert.equal((await first.next()).type, "run");
+  assert.equal((await first.next()).type, "run_settled");
   await first.close(); await eventually(() => f.unsubscribed === 1);
   const second = await stream(`${server.url}/v1/sessions/${accepted.sessionId}/stream`);
   const snapshot = await second.next();
-  assert.equal((snapshot.data as { runs: Array<{ status: string }> }).runs[0].status, "completed");
+  assert.equal((snapshot.data as { run: { status: string } }).run.status, "completed");
   await second.close(); await eventually(() => f.unsubscribed === 2);
   assert.deepEqual(f.cancelled, []);
   const third = await stream(`${server.url}/v1/sessions/${accepted.sessionId}/stream`);
@@ -191,7 +191,7 @@ test("run streams share stream limits and buffer bounds, and end on shutdown", a
   const overflow = await post(`${server.url}/v1/runs`, { message: "huge" }, NDJSON);
   const overflowBody = overflow.text().catch(() => "");
   await eventually(() => f.observers.has("run-1"));
-  f.emitRun("run-1", { type: "huge", data: "x".repeat(1024) });
+  f.emitRun("run-1", { type: "task_failed", data: { message: "x".repeat(1024) } });
   assert.ok(!(await overflowBody).includes("run_settled"), "an overflowing observer is disconnected");
   assert.deepEqual(f.cancelled, []);
   const open = await post(`${server.url}/v1/runs`, { message: "open at shutdown" }, NDJSON);
@@ -206,7 +206,7 @@ test("stream count and buffer bounds clean up watchers", async t => {
   t.after(() => server.close());
   const first = await stream(`${server.url}/v1/sessions/s/stream`); await first.next();
   assert.equal((await fetch(`${server.url}/v1/sessions/other/stream`)).status, 503);
-  f.emit("s", { type: "huge", data: "x".repeat(1024) });
+  f.emit("s", { type: "task_failed", data: { message: "x".repeat(1024) } });
   await eventually(() => f.unsubscribed === 1);
   await first.close().catch(() => {});
 });

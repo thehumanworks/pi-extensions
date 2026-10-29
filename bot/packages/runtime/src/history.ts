@@ -1,11 +1,9 @@
 import { createHash } from "node:crypto";
-import { withAbortSignal, BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
-import type { ConversationId, EntryId, EntryRecord, Storage } from "@earendil-works/pi-durable";
 import { Type } from "typebox";
 import { Compile } from "typebox/compile";
 import { defineTool } from "./definitions.js";
 import { BotError } from "./errors.js";
-import type { BotHistoryEntry, BotHistoryPage, BotHistoryQuery, BotSessionInfo } from "./types.js";
+import type { BotHistoryEntry, BotHistoryPage, BotHistoryQuery, BotSessionInfo, BotTranscriptEntry } from "./types.js";
 
 const TEXT_LIMIT = 2000;
 const SCAN_LIMIT = 500;
@@ -37,10 +35,10 @@ const inputValidator = Compile(historyTool.parameters);
 /** A readable projection of original entries, never the compacted active context.
  * Exclude system prompts, private thinking, binary payloads and recalled copies of history.
  */
-function entryText(entry: EntryRecord): string {
-  return (entry.model ?? []).flatMap(message => {
-    if (message.role === "system" || (message.role === "toolResult" && message.toolName === "bot_history")) return [];
-    const text = typeof message.content === "string" ? message.content : message.content.flatMap(part => {
+export function entryText(entry: BotTranscriptEntry): string {
+  return entry.model.flatMap(message => {
+    if (message.role === "toolResult" && message.toolName === "bot_history") return [];
+    const text = message.content.flatMap(part => {
       if (part.type === "text") return [part.text];
       if (part.type === "image") return ["[image omitted]"];
       if (part.type === "toolCall") return [`[tool call ${part.name}] ${JSON.stringify(part.arguments)}`];
@@ -51,11 +49,14 @@ function entryText(entry: EntryRecord): string {
 }
 
 type Position = { session: number; entry: number };
+export interface HistoryBounds { minEntryId?: number; maxEntryId?: number; order: "ascending" | "descending" }
+/** Reads the same public transcript contract from either active executor's private persistence. */
+export type HistoryReader = (sessionId: string, bounds: HistoryBounds, limit: number, signal: AbortSignal) => Promise<{ items: BotTranscriptEntry[]; hasMore: boolean }>;
 
 /** Bounded, cancellable scans of this instance only. Cursors are query/home-bound,
  * use immutable IDs (not recency offsets), and survive runtime restarts.
  */
-export async function readHistory(storage: Pick<Storage, "scanEntries">, sessions: BotSessionInfo[], home: string, args: BotHistoryQuery, signal: AbortSignal): Promise<BotHistoryPage> {
+export async function readHistory(read: HistoryReader, sessions: BotSessionInfo[], home: string, args: BotHistoryQuery, signal: AbortSignal): Promise<BotHistoryPage> {
   signal.throwIfAborted();
   if (!inputValidator.Check(args)) invalid("Invalid history query; check action, IDs, bounds and cursor.");
   const { action, session, query, entryId, offset = 0, limit = 10 } = args;
@@ -68,7 +69,7 @@ export async function readHistory(storage: Pick<Storage, "scanEntries">, session
   if (entryId !== undefined && args.cursor !== undefined) invalid("An entry read uses offset, not cursor.");
   if (session && !sessions.some(item => item.sessionId === session)) throw new BotError("NOT_FOUND", `Unknown session ${session}.`);
   const selected = sessions.filter(item => !session || item.sessionId === session).sort((a, b) => id(b) - id(a));
-  const key = createHash("sha256").update(JSON.stringify([1, home, action, session ?? null, query ?? null])).digest("hex");
+  const key = createHash("sha256").update(JSON.stringify([home, action, session ?? null, query ?? null])).digest("hex");
   const encode = (position: Position) => Buffer.from(JSON.stringify({ key, ...position })).toString("base64url");
   let position: Position | undefined;
   if (args.cursor) {
@@ -96,7 +97,6 @@ export async function readHistory(storage: Pick<Storage, "scanEntries">, session
     }
     return page();
   }
-  const context = withAbortSignal(signal, BACKGROUND_CONTEXT);
   // Literal Unicode-insensitive matching retains offsets in the original text;
   // lowercasing first can change its length (for example, U+0130).
   const search = action === "search" ? new RegExp(query!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "iu") : undefined;
@@ -108,9 +108,9 @@ export async function readHistory(storage: Pick<Storage, "scanEntries">, session
       signal.throwIfAborted();
       if (scanned >= SCAN_LIMIT || items.length >= limit) return page({ session: id(meta), entry: after });
       const beforePage = { session: id(meta), entry: after };
-      const bounds = entryId !== undefined ? { minEntryId: entryId as EntryId, maxEntryId: entryId as EntryId }
-        : after ? action === "search" ? { maxEntryId: (after - 1) as EntryId } : { minEntryId: (after + 1) as EntryId } : {};
-      const entries = await storage.scanEntries({ conversationId: id(meta) as ConversationId, order: action === "search" ? "descending" : "ascending", ...bounds }, Math.min(50, SCAN_LIMIT - scanned), undefined, context);
+      const bounds = entryId !== undefined ? { minEntryId: entryId, maxEntryId: entryId }
+        : after ? action === "search" ? { maxEntryId: after - 1 } : { minEntryId: after + 1 } : {};
+      const entries = await read(meta.sessionId, { order: action === "search" ? "descending" : "ascending", ...bounds }, Math.min(50, SCAN_LIMIT - scanned), signal);
       if (entryId !== undefined && !entries.items.length) throw new BotError("NOT_FOUND", `Unknown entry ${entryId} in ${session}.`);
       for (const entry of entries.items) {
         signal.throwIfAborted();
@@ -126,7 +126,7 @@ export async function readHistory(storage: Pick<Storage, "scanEntries">, session
         }
         after = entry.id; scanned++;
       }
-      if (!entries.next || entryId !== undefined) break;
+      if (!entries.hasMore || entryId !== undefined) break;
       // Each page advances by immutable entry ID, including entries with no searchable text.
       if (after === beforePage.entry) throw new BotError("UNAVAILABLE", "History scan did not advance.");
     }

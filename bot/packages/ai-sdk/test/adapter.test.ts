@@ -22,7 +22,7 @@ test('only newest user text is submitted; acceptance metadata precedes response 
   assert.deepEqual(f.submissions.map(s => s.text), ['new input']);
   assert.match(f.submissions[0].options!.requestId!, /^bot-/);
   const result = response.text();
-  f.emit('entry_appended', { entry: user(3, 'new input') });
+  f.emit('message_end', { entry: user(3, 'new input') });
   f.emit('message_start', { message: { role: 'assistant', content: [{ type: 'text', text: 'He' }] } });
   f.emit('message_update', { changes: [{ type: 'text_delta', contentIndex: 0, delta: 'll' }, { type: 'text_delta', contentIndex: 0, delta: 'o' }] });
   f.emit('message_end', { entry: assistant(4, 'Hello world') });
@@ -40,7 +40,7 @@ test('only newest user text is submitted; acceptance metadata precedes response 
 
 test('whole-message-only runs, lost tail events, initial partial snapshot, history and replay have stable IDs', async () => {
   const f = fixture(); f.setRun({ status: 'running' }, true);
-  f.setSnapshot({ entries: [user(1, 'hello')], run: { inputs: [1] }, generation: { attempt: 1, message: { role: 'assistant', content: [{ type: 'text', text: 'Already' }] } } });
+  f.setSnapshot({ entries: [user(1, 'hello')], run: f.run, generation: { message: { role: 'assistant', content: [{ type: 'text', text: 'Already' }] } } });
   const adapter = createBotChatAdapter({ backend: f.backend });
   const response = await adapter.resume(new Request('http://localhost/api/chat'), 'session-1', 'run-1');
   const result = response.text();
@@ -59,7 +59,7 @@ test('whole-message-only runs, lost tail events, initial partial snapshot, histo
 });
 
 test('AI SDK 7 reset-step reconciles retry/replacement instead of duplicating authoritative text', async () => {
-  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: { inputs: [1] } });
+  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: f.run });
   const adapter = createBotChatAdapter({ backend: f.backend }); const response = await adapter.chat(request(body())); const result = response.text();
   f.emit('message_start', { message: { role: 'assistant', content: [{ type: 'text', text: 'wrong partial' }] } });
   f.emit('auto_retry_start', { attempt: 2, errorMessage: 'SECRET provider key' });
@@ -72,21 +72,21 @@ test('AI SDK 7 reset-step reconciles retry/replacement instead of duplicating au
 });
 
 test('reasoning, batched starts/blocks and model/nested tool outputs are inert display data with stable IDs', async () => {
-  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: {} });
+  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: { ...f.run, status: 'running' } });
   const adapter = createBotChatAdapter({ backend: f.backend }); const response = await adapter.chat(request(body())); const result = response.text();
   f.emit('message_start', { message: { role: 'assistant', content: [] } });
-  f.emit('message_update', { changes: [{ type: 'thinking_start', contentIndex: 0, block: { type: 'thinking', thinking: 'think' } }, { type: 'thinking_delta', contentIndex: 0, delta: ' more' }, { type: 'toolcall_start', contentIndex: 1, block: { type: 'toolCall', id: 'tool/id', name: 'echo', arguments: { n: 1 } } }, { type: 'toolcall_delta', contentIndex: 1, path: ['n'], delta: '2' }] });
-  const toolAssistant = { id: 2, kind: 'pi.assistant', model: [{ role: 'assistant', content: [{ type: 'thinking', thinking: 'think more' }, { type: 'toolCall', id: 'tool/id', name: 'echo', arguments: { n: 12 } }] }] };
+  f.emit('message_update', { changes: [{ type: 'thinking_start', contentIndex: 0, block: { type: 'thinking', thinking: 'think' } }, { type: 'thinking_delta', contentIndex: 0, delta: ' more' }, { type: 'toolcall_start', contentIndex: 1, block: { type: 'toolCall', id: 'tool/id', name: 'echo', arguments: { n: 1 } } }, { type: 'block', contentIndex: 1, block: { type: 'toolCall', id: 'tool/id', name: 'echo', arguments: { n: 12 } } }] });
+  const toolAssistant = { id: 2, kind: 'message', model: [{ role: 'assistant', content: [{ type: 'thinking', thinking: 'think more' }, { type: 'toolCall', id: 'tool/id', name: 'echo', arguments: { n: 12 } }] }] };
   f.emit('message_end', { entry: toolAssistant });
   f.emit('tool_execution_start', { toolCallId: 'tool/id', toolName: 'echo', args: { n: 12 } });
-  f.emit('tool_execution_update', { toolCallId: 'tool/id', toolName: 'echo', output: { set: 'old' } });
-  f.emit('tool_execution_update', { toolCallId: 'tool/id', toolName: 'echo', output: { trimStart: 1, append: ' new' } });
+  f.emit('tool_execution_update', { toolCallId: 'tool/id', toolName: 'echo', summary: 'old' });
+  f.emit('tool_execution_update', { toolCallId: 'tool/id', toolName: 'echo', summary: 'ld new' });
   f.emit('tool_execution_start', { toolCallId: 'tool/id/child', toolName: 'nested', parentToolCallId: 'tool/id', args: { test: true } });
-  f.emit('tool_execution_end', { toolCallId: 'tool/id/child', toolName: 'nested', parentToolCallId: 'tool/id', result: { structuredOutput: '<b>escaped</b>', isError: true } });
-  const toolEntry = { id: 3, kind: 'pi.tool-result', model: [{ role: 'toolResult', toolCallId: 'tool/id', toolName: 'echo', content: [{ type: 'text', text: '12' }] }] };
-  f.emit('tool_execution_end', { toolCallId: 'tool/id', toolName: 'echo', entry: toolEntry });
+  f.emit('tool_execution_end', { toolCallId: 'tool/id/child', toolName: 'nested', parentToolCallId: 'tool/id', summary: '<b>escaped</b>', isError: true });
+  const toolEntry = { id: 3, kind: 'message', model: [{ role: 'toolResult', toolCallId: 'tool/id', toolName: 'echo', content: [{ type: 'text', text: '12' }], isError: false }] };
+  f.emit('tool_execution_end', { toolCallId: 'tool/id', toolName: 'echo', isError: false, summary: '12', entry: toolEntry });
   f.emit('message_start', { message: { role: 'assistant', content: [{ type: 'text', text: 'done' }] } }); f.emit('message_end', { entry: assistant(4, 'done') });
-  f.setSnapshot({ entries: [user(1, 'hello'), toolAssistant, toolEntry, assistant(4, 'done')], nestedTools: [{ callId: 'tool/id/child', name: 'nested', parentCallId: 'tool/id', status: 'done', summary: { isError: true }, output: '<b>escaped</b>' }] });
+  f.setSnapshot({ entries: [user(1, 'hello'), toolAssistant, toolEntry, assistant(4, 'done')], tools: [{ toolCallId: 'tool/id/child', toolName: 'nested', parentToolCallId: 'tool/id', status: 'failed', summary: '<b>escaped</b>' }] });
   f.setRun({ status: 'completed', output: 'done' }); f.emit('run_settled', f.run);
   const output = chunks(await result); const rendered = await message(output);
   assert.equal(rendered!.parts.find(p => p.type === 'reasoning')?.text, 'think more'); assert.equal(text(rendered), 'done');
@@ -139,7 +139,7 @@ test('stream failures and failed/cancelled runs are observable, never false succ
 });
 
 test('poll fallback catches terminal status without run_settled or message_end', async () => {
-  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: {} });
+  const f = fixture(); f.setRun({ status: 'running' }, true); f.setSnapshot({ entries: [user(1, 'hello')], run: { ...f.run, status: 'running' } });
   let reads = 0; f.backend.getRun = async () => { reads++; f.setSnapshot({ entries: [user(1, 'hello'), assistant(2, 'polled final')] }); return { ...f.run, status: 'completed', output: 'polled final' }; };
   const adapter = createBotChatAdapter({ backend: f.backend }); const output = chunks(await (await adapter.chat(request(body()))).text());
   assert.equal(text(await message(output)), 'polled final'); assert.ok(reads > 0); await eventually(() => f.observers === 0);

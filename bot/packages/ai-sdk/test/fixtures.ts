@@ -5,10 +5,10 @@ export const baseRun = (overrides: Partial<BotRun> = {}): BotRun => ({
   usage: { ...zero }, toolCalls: 0, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:01Z', ...overrides,
 });
 export const session: BotSession = { sessionId: 'session-1', cwd: '/workspace', createdAt: '2026-01-01', updatedAt: '2026-01-01', title: 'A session' };
-export const user = (id: number, text: string) => ({ id, kind: 'pi.user', model: [{ role: 'user', content: text }] });
-export const assistant = (id: number, text: string) => ({ id, kind: 'pi.assistant', model: [{ role: 'assistant', content: [{ type: 'text', text }] }] });
+export const user = (id: number, text: string) => ({ id, kind: 'message', model: [{ role: 'user', content: [{ type: 'text', text }] }] });
+export const assistant = (id: number, text: string) => ({ id, kind: 'message', model: [{ role: 'assistant', content: [{ type: 'text', text }] }] });
 export function fixture() {
-  let current = baseRun(); let snapshot: Record<string, unknown> = { entries: [], tools: [], nestedTools: [] };
+  let current = baseRun(); let snapshot: Record<string, unknown> = { entries: [], tools: [] };
   const listeners = new Set<(e: BotEvent) => void>(); const errorListeners = new Set<(e: Error) => void>();
   const submissions: Array<{ text: string; options?: BotSubmitOptions }> = []; const cancelled: string[] = [];
   let watches = 0; let stops = 0; let activeRun = false;

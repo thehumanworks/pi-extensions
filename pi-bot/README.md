@@ -1,6 +1,6 @@
 # @nothumanwork/pi-bot
 
-A thin Pi UI for [`@nothumanwork/bot`](../bot/README.md): named specialists, direct conversations, delegation, progress and durable resume references.
+A thin Pi UI for [`@nothumanwork/bot`](../bot/packages/runtime/README.md): named specialists, direct conversations, delegation, progress and durable resume references.
 
 All bot definition, tool loading, memory, execution and storage policy belongs to the SDK. The extension contains only adapter registration and rendering. A bot conversation is **not** a native Pi session: Pi displays inputs/replies and stores a reference; the SDK's `pi-durable` database owns its history.
 
@@ -40,7 +40,7 @@ bot run ./reviewer --cwd ../app --message "Review the staged diff"
 
 Names live under `$PI_BOT_HOME` or `<Pi user directory>/bots`. Paths containing `/`, `.` or `~` can select a source outside the roster. `/bot ./reviewer` and `/bot http://localhost:3000` both work. Tokens for protected daemons can be supplied through the `bot_run` tool or SDK CLI; the slash-command URL interface is tokenless.
 
-The status indicator shows the selected bot and durable session. Text deltas appear in a progress widget; finished replies contain run/session IDs. Rapid follow-ups queue against the same conversation. `/reload`/Pi session resume restores the saved reference, not a copied transcript. Accepted work suspended when Pi closes resumes when that source is opened again. Workers close at Pi session shutdown; an idle selected worker also closes on `/bot exit`.
+The status indicator shows the selected bot and durable session. Text deltas appear in a progress widget; finished replies contain run/session IDs. Rapid follow-ups queue against the same conversation. `/reload`/Pi session resume restores the saved reference, not a copied transcript. Queued work survives reopening. An interrupted in-flight native Pi request fails closed rather than replaying possibly completed external effects; inspect before retrying. Workers close at Pi session shutdown; an idle selected worker also closes on `/bot exit`.
 
 Pi `/model`, `/thinking`, `/tree`, `/fork` and native history editing **do not control** SDK conversations. Set the bot model/thinking in `BOT.md`; resume with `/bot resume`. Workspace changes require a new bot conversation, not a silent fork. Direct chat currently accepts text only and requires interactive Pi UI.
 
@@ -74,13 +74,17 @@ Pi tool cancellation flows to the SDK. Cancelling cannot undo external side effe
 
 ## Bot-owned capabilities and memory
 
-Definitions may omit `format` or declare `format: 2`; both use the current SDK semantics. Other explicit format values are rejected. Accepting unversioned definitions does not import old-home state, resume native Pi sessions or restore the previous Pi-native runtime.
+`BOT.md` uses YAML frontmatter and a persona body, with no format/version discriminator.
 
-The scaffold declares Pi workspace tools and `maintenance: true`, but omits a restrictive tool allowlist. Bots can autonomously author or improve `BOT.md`, `tools/`, `extensions/`, `skills/`, `scripts/`, and memory under `.bot/`. Valid generations activate after a tool batch, including within the same run. Invalid drafts stay on disk with repair diagnostics and the previous valid generation still active. No approval, promotion, PR or redeployment is required.
+The scaffold uses global Pi defaults and `maintenance: true`, but omits a restrictive tool allowlist. Bots can autonomously author or improve `BOT.md`, `tools/`, `extensions/`, `skills/`, `scripts/`, and memory under `.bot/`. Authored tool/persona generations can activate after a tool batch, including within the same run; native extension, MCP and selection changes wait for an idle request boundary. Invalid drafts stay on disk with repair diagnostics and the previous valid generation still active. No approval, promotion, PR or redeployment is required.
 
-Capability inheritance is off by default. `inherit: global` opts into supported user-global Pi resources, never workspace `.pi` resources. The current classic extension bridge supports `registerTool` only; Pi lifecycle/UI/provider hooks, MCP and channels are not supported. Built-in provider auth/catalog/OAuth access is independent of this inheritance choice and uses the current OS user's existing Pi setup.
+Global Pi extensions, MCP servers, skills, instructions and tool defaults are inherited **by default**, never workspace `.pi` resources or the parent conversation. Each worker owns its connections using the same user configuration; it does not borrow the parent's live session. Native Pi lifecycle/tool hooks, codemode and MCP run in Pi's real headless `AgentSession`.
 
-These are trusted executable bots, **not sandboxes**. Shell and authored tools use host permissions. A remote bot uses the server user's files and provider credentials; a daemon can deliberately run unauthenticated even on `0.0.0.0`. See the [SDK documentation](../bot/README.md) for optional tokens, checkpoint limits, durability/replay semantics and process lifecycle guarantees.
+Use `excludeTools`, `excludeExtensions`, and `excludeMcpServers` (exact names or `*` patterns) to remove defaults. Add bot-specific capabilities under `tools/` and `extensions/`. `inherit: none` explicitly opts out; provider auth remains independent. An explicit `tools` list remains restrictive, so omit it for additive discovery. Exclusions are also editable through `bot_manage`.
+
+Native execution persists conversations but does not provide durable tool replay. Existing durable-executor conversations need a new conversation when enabling native execution. UI/session-replacement commands are not a full Pi CLI embedding; see the SDK's operational limits.
+
+These are trusted executable bots, **not sandboxes**. Shell and authored tools use host permissions. A remote bot uses the server user's files and provider credentials; a daemon can deliberately run unauthenticated even on `0.0.0.0`. See the [SDK documentation](../bot/packages/runtime/README.md) for optional tokens, checkpoint limits, durability/replay semantics and process lifecycle guarantees.
 
 ## Development
 

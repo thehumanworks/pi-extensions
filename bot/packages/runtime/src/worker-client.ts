@@ -31,7 +31,7 @@ function validRun(value: unknown): value is BotRunRecord {
 }
 function validInfo(value: unknown): value is BotInfo {
   const info = value as BotInfo | null;
-  return !!info && info.format === 2 && typeof info.sourceDir === "string" && typeof info.stateDir === "string";
+  return !!info && typeof info.sourceDir === "string" && typeof info.stateDir === "string";
 }
 interface Pending { method: WorkerMethod; resolve(value: unknown): void; reject(error: unknown): void }
 interface Channel { listener?: (event: BotEvent) => void; removeAbort?: () => void; timer?: NodeJS.Timeout }

@@ -1,22 +1,22 @@
 # Bot SDK: design record and implemented scope
 
-This record replaces the original proposal after implementation was authorized. The subsequent user decision is authoritative: **no backwards compatibility or migration layer**. There is one supported BOT format and one conversation owner. The usage/API references are now [`bot/README.md`](../../bot/README.md) and [`pi-bot/README.md`](../README.md).
+This record replaces the original proposal after implementation was authorized. The subsequent user decision is authoritative: **no backwards compatibility or migration layer**. BOT.md has no format/version discriminator; there is one conversation owner. The usage/API references are now [`bot/packages/runtime/README.md`](../../bot/packages/runtime/README.md) and [`pi-bot/README.md`](../README.md).
 
 ## Decisions
 
 | Concern | Implementation |
 | --- | --- |
 | Public abstraction | **Bot**: source project, running instance, conversation/session, submitted run |
-| Runtime | Pi `pi-durable` Harness owns the model/tool loop and SQLite conversations; `pi-ai` supplies providers; Pi `ModelRuntime` supplies normal user auth/catalog/OAuth |
+| Runtime | Pi `pi-durable` owns the persistent queue/run records; native Pi `AgentSession` executes globally inheriting bots. Isolated bots without native factories retain the durable executor. Pi supplies provider auth/catalog/OAuth. |
 | Independence | `@nothumanwork/bot` runs without the Pi UI extension or a global `pi` executable; it intentionally depends on Pi libraries |
 | Source/state/workspace | Writable capability source; `.bot` state or explicit state directory; separately bound execution cwd |
 | Self-improvement | Bots write canonical source/memory directly; valid generations activate at tool-batch boundaries without approval or deployment |
-| Capabilities | Local typed tools, common tool/instruction bundles, skills, explicit built-ins/maintenance; optional supported user-global resources, never workspace `.pi` |
+| Capabilities | Global Pi extensions, MCP, skills and tool defaults unless excluded; additive local tools/bundles/native factories. Never workspace `.pi` resources. |
 | Provider auth | Existing serving user's Pi setup by default; never copied into bot state; explicit `Models` injection for embedding/testing |
 | Daemon access | No caller authentication unless a token is explicitly configured, including on `0.0.0.0`; no unsafe flag or mandatory confirmation |
 | Concurrency | One source/state owner under kernel `flock`; runs sharing writable bot state serialize |
 | Pi UI | Thin SDK client: input routing, progress, output and resume references. Pi does not own or mutate bot history |
-| Compatibility | Required `format: 2`; no native JSONL history adapter, old-home loader or migration path |
+| Definition | YAML frontmatter and persona body; no format/version discriminator |
 
 ## Package boundary
 
@@ -41,25 +41,25 @@ The SDK ships compiled ESM JavaScript, declarations, worker assets and its CLI. 
 
 ## Runtime ownership and recovery
 
-One durable Harness owns all conversations for an open instance. Its scheduler persists admission, request-ID deduplication, run status and session/cwd binding. There is no nested `pi-agent-core` loop. The surrounding Pi transcript records only UI inputs/replies and a source/session reference.
+One durable Harness owns the queue and records for an open instance. Its scheduler persists admission, request-ID deduplication, run status and session/cwd binding. Native Pi sessions execute the default globally inheriting path; their transcripts are persisted with session records. The isolated durable executor remains available with `inherit: none` and no native factories. The surrounding Pi transcript records only UI inputs/replies and a source/session reference.
 
 New sessions and follow-ups are queued, not surprise interruptions. Retried request IDs must refer to identical inputs. An explicit cwd conflicting with a resumed conversation is an error; there is no automatic fork. Watches start with a current snapshot and then deliver changes. They are not a historical event-log API.
 
 Embedded `openBot` executes in-process. CLI execution, default serving and the Pi adapter use `openBotProcess`, a child Node worker with typed bounded IPC, explicit cancellation, shutdown deadlines and process-tree cleanup. Supplying executable model objects uses embedded execution instead. Workers are isolation for lifecycle, not a sandbox.
 
-Closing an owner suspends accepted work for restart; cancelling a run explicitly aborts it. An observer/client disconnect does not cancel accepted runs. Interrupted tools replay only under an explicit safe-replay declaration. Unsafe external effects report interruption; the SDK makes no exactly-once promise.
+Queued work survives owner shutdown; cancelling a run explicitly aborts it. An observer/client disconnect does not cancel accepted runs. Interrupted native requests fail closed and never automatically replay possibly completed effects. The isolated durable executor can suspend/recover work and replay tools only under an explicit safe-replay declaration. The SDK makes no exactly-once promise. Existing durable conversations require a new conversation when switching to native execution.
 
 Source and state ownership use canonical paths and kernel locks. Lock files are not unlinked during release. A daemon and another local runtime cannot share mutable source even with separate state directories. Use the daemon's URL or copy the source for independent evolution.
 
 ## Autonomous capability generations
 
-The scaffold includes workspace built-ins and declared self-maintenance. It does **not** freeze authored tool/skill discovery behind an initial allowlist. The bot can create a tool, skill or revised persona and use it later in the same run.
+The scaffold uses global Pi tool defaults and declares self-maintenance. It does **not** freeze authored tool/skill discovery behind an initial allowlist. The bot can create a tool, skill or revised persona and use it later in the same run.
 
-Compilation validates definition/schema/imports/collisions, records origins, snapshots a bounded source set and verifies that source did not change during compilation. At a tool-batch boundary it publishes one complete common extension generation. Invalid drafts remain on disk; the previous generation remains active and diagnostics enter the next model context so the bot can repair them. Checkpoints are automatic recovery aids, not an approval gate.
+Compilation validates definition/schema/imports/collisions, records origins, snapshots a bounded source set and verifies that source did not change during compilation. At a tool-batch boundary it publishes one complete authored tool/persona generation. Native extension, MCP and selection changes wait for an idle request boundary. Invalid drafts remain on disk; the previous generation remains active and diagnostics enter the next model context so the bot can repair them. Checkpoints are automatic recovery aids, not an approval gate.
 
 The durable instance records its active revision and interrupted runs' recorded revision. Recovery loads that checkpoint before considering the current draft. Corrupt/missing referenced snapshots and incompatible external fingerprints fail explicitly rather than pretending a hash is enough to reproduce code.
 
-`tools: []` and `skills: []` mean none. Omission enables discovery. Catalog patch `null` removes an optional selection/default. Supported global inheritance is explicit; provider access is not inheritance. Local tools/skills override the global layer; ambiguous same-layer contributions fail.
+`tools: []` and `skills: []` mean none. Omission enables discovery. Catalog patch `null` removes an optional selection/default. Global inheritance is the default; `inherit: none` opts out. `excludeTools`, `excludeExtensions` and `excludeMcpServers` support selective exact-name or wildcard exclusions. Provider access is not inheritance. Local tools/skills override the global layer; ambiguous same-layer contributions fail.
 
 ## Service contract
 
@@ -77,8 +77,8 @@ Management of other roster bots is separate from a bot's declared self-maintenan
 
 ## Deliberately unsupported / bounded
 
-- Classic Pi factories support `registerTool` with a minimal context only. Lifecycle, provider-registration, UI, advanced delegated-tool semantics and MCP require dedicated adapters and are rejected, not partially loaded. Global inheritance consequently cannot load every installed Pi package.
-- Common bot bundles are not raw durable extensions. MCP/connections, hooks, channels, schedules and multi-bot hosting are not implemented.
+- Native Pi factories use the real lifecycle/tool pipeline and native MCP/codemode/tool-search integration. This is headless execution, not a complete interactive CLI embedding. Initial model selection still requires a configured catalog or supplied Models, not a provider model registered only by an extension.
+- Common bot bundles are not raw durable extensions. Bot-specific connections/hooks/channels directory declarations, schedules and multi-bot hosting are not implemented; native Pi lifecycle hooks and user MCP configuration are supported.
 - Checkpoints cover bounded local authoring files/assets, not installed dependencies, arbitrary workspace trees or complete transitive global import graphs. Excluded credential-like filenames are not a general secret scanner.
 - Restored module-relative runtime I/O sees checkpoint paths. External path references/dependency installations may prevent recovery after changes. There is no full environment snapshot or source-identity migration API.
 - Embedded noncooperative code can delay close; workers use bounded termination. Process-tree cleanup is not adversarial containment. Module top-level side effects have no general disposal lifecycle.

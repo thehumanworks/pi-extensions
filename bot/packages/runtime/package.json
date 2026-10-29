@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/bot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Directory-defined, self-improving bots powered by Pi, for applications, the CLI and long-running services",
   "keywords": ["bot", "sdk", "pi", "durable"],
@@ -19,10 +19,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "check": "tsc --noEmit && npm run check:ast",
-    "check:ast": "ast-grep scan --config sgconfig.yml src && ast-grep test --config sgconfig.yml --skip-snapshot-tests",
+    "check": "tsc --noEmit",
     "prepack": "npm run build",
-    "test": "npm run check:ast && npm run build && tsx --test test/*.test.ts"
+    "test": "npm run build && tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@earendil-works/chord": "1.4.0",

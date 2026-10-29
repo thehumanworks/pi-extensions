@@ -43,11 +43,15 @@ for (const { directory: dir } of workspaces) {
       if (pkg.pi) assert.ok(!['@earendil-works/pi-ai', '@earendil-works/pi-coding-agent', '@earendil-works/pi-tui', 'typebox'].includes(name), `host dependency bundled: ${name}`);
     }
     if (pkg.name === '@nothumanwork/bot') {
-      for (const entry of ['index', 'project', 'runtime', 'server', 'client', 'cli', 'pi', 'worker-client', 'worker', 'worker-protocol', 'worker-tree', 'catalog']) {
+      for (const entry of ['index', 'project', 'runtime', 'server', 'client', 'cli', 'pi', 'pi-internals', 'native-session', 'events', 'worker-client', 'worker', 'worker-protocol', 'worker-tree', 'catalog']) {
         assert.ok(files.has(`dist/${entry}.js`), `missing SDK module ${entry}`);
         assert.ok(files.has(`dist/${entry}.d.ts`), `missing SDK declarations ${entry}`);
       }
       assert.ok(files.has('bin/bot.mjs'));
+      assert.equal(pkg.exports['.'], './dist/index.js', 'the default entry remains the standalone SDK');
+      for (const entry of ['pi-internals', 'native-session', 'events']) {
+        assert.equal(pkg.exports[`./${entry}`], undefined, `${entry} remains an internal SDK module`);
+      }
       assert.ok(![...files].some(f => f.includes('legacy')), 'no backwards-compatibility layer');
       assert.equal(pkg.dependencies['@earendil-works/pi-durable'], '1.4.0');
       assert.equal(pkg.dependencies['@earendil-works/pi-coding-agent'], '1.4.0');

@@ -3,16 +3,17 @@ import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createBot, listBots, editBot, archiveBot, applyTextEdits } from "../src/catalog.js";
-import { inspectBot } from "../src/project.js";
+import { inspectBot, parseDefinition } from "../src/project.js";
 import { acquireLock } from "../src/lock.js";
 import { fixture, scripted } from "./helpers.js";
 import { openBot } from "../src/runtime.js";
 
-test("roster creates new-format bots and lists metadata without importing executable capabilities", async t => {
+test("roster creates bots without a format/version field and lists metadata without importing executable capabilities", async t => {
   const f = await fixture(); t.after(f.cleanup);
   const root = join(f.root, "roster");
   const created = await createBot("reviewer", { description: "Reviews code", prompt: "Be precise." }, root);
-  assert.equal(created.format, 2); assert.equal(created.stateDir, join(root, "reviewer", ".bot"));
+  assert.equal(created.stateDir, join(root, "reviewer", ".bot"));
+  assert.doesNotMatch(await readFile(join(created.sourceDir, "BOT.md"), "utf8"), /^(format|version):/m);
   await writeFile(join(created.sourceDir, "tools", "bad.ts"), "throw new Error('must not execute while listing');");
   const listing = await listBots(root);
   assert.equal(listing.bots.length, 1); assert.equal(listing.bots[0].description, "Reviews code");
@@ -22,23 +23,35 @@ test("roster creates new-format bots and lists metadata without importing execut
 });
 
 test("definition edits preserve unknown values and distinguish empty selections from discovery", async t => {
-  const f = await fixture({ extraConfig: { important: true } }); t.after(f.cleanup);
+  const f = await fixture({ extraConfig: { important: true }, format: "arbitrary metadata", version: { label: "custom" } }); t.after(f.cleanup);
   await editBot(f.source, { prompt: "Persona. Be direct.", tools: [], skills: [], thinking: "high" });
   assert.deepEqual((await inspectBot(f.source)).tools, []);
   await editBot(f.source, { edits: [{ oldText: "Be direct.", newText: "Be direct and cite sources." }], tools: null, maintenance: true });
   assert((await inspectBot(f.source)).tools.some(tool => tool.name === "bot_edit"));
   const definition = await readFile(join(f.source, "BOT.md"), "utf8");
   assert.match(definition, /important/); assert.match(definition, /cite sources/);
+  assert.deepEqual(parseDefinition(definition, f.source).extra, {
+    extraConfig: { important: true }, format: "arbitrary metadata", version: { label: "custom" },
+  });
   await assert.rejects(editBot(f.source, { prompt: "a", edits: [] }), /Use prompt or edits/);
   await assert.rejects(editBot(f.source, { definition: definition, model: null }), /cannot be combined/);
   await assert.rejects(editBot(f.source, { definition: "No metadata" }), /needs a name/);
   assert.equal(await readFile(join(f.source, "BOT.md"), "utf8"), definition);
 });
 
-test("metadata validation still requires a name in unversioned definitions", async t => {
+test("roster lists ordinary BOT.md definitions without a format/version field", async t => {
   const f = await fixture(); t.after(f.cleanup);
-  const root = join(f.root, "roster"); await mkdir(join(root, "old"), { recursive: true });
-  await writeFile(join(root, "old", "BOT.md"), "---\ndescription: old\n---\nPersona");
+  const root = join(f.root, "roster"); await mkdir(join(root, "ordinary"), { recursive: true });
+  await writeFile(join(root, "ordinary", "BOT.md"), "---\nname: ordinary\ndescription: Plain definition\n---\nPersona");
+  const result = await listBots(root);
+  assert.equal(result.bots.length, 1); assert.equal(result.bots[0].description, "Plain definition");
+  assert.deepEqual(result.errors, []);
+});
+
+test("metadata validation still requires a name in ordinary definitions", async t => {
+  const f = await fixture(); t.after(f.cleanup);
+  const root = join(f.root, "roster"); await mkdir(join(root, "missing-name"), { recursive: true });
+  await writeFile(join(root, "missing-name", "BOT.md"), "---\ndescription: Missing name\n---\nPersona");
   const result = await listBots(root);
   assert.equal(result.bots.length, 0); assert.match(result.errors[0], /needs a name/);
 });

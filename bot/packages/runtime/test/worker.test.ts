@@ -37,7 +37,7 @@ test("real compiled worker opens with Pi catalog/no auth, typed tools, stable er
     finally { if (previous === undefined) delete process.env.NODE_OPTIONS; else process.env.NODE_OPTIONS = previous; }
   })(); t.after(() => bot.close());
   assert.equal(bot.sourceDir, f.source); assert.equal(bot.stateDir, join(f.source, ".bot"));
-  const info = await bot.info(); assert.equal(info.format, 2); assert.equal(info.model, "openai/gpt-4o");
+  const info = await bot.info(); assert.equal("format" in info, false); assert.equal(info.model, "openai/gpt-4o");
   const result = await bot.callTool("echo", { n: 7 });
   const detail = JSON.parse((result.content[0] as { text: string }).text);
   assert.notEqual(detail.pid, process.pid); assert.equal(detail.cwd, f.cwd); assert.deepEqual(detail.execArgv, []); assert.equal(detail.nodeOptions, null);
@@ -87,7 +87,7 @@ test("cooperative direct-tool cancellation reaches its actual child AbortSignal"
   const result = bot.callTool("cooperative", { marker: path }, { signal: controller.signal });
   await eventually(async () => readFile(path, "utf8").catch(() => ""), value => value === "ready");
   controller.abort(); assert.equal(((await result).content[0] as { text: string }).text, "aborted in child");
-  assert.equal((await bot.info()).format, 2);
+  assert.equal((await bot.info()).name, "tester");
 });
 
 test("close suspends accepted durable work instead of sending explicit cancellation", async t => {
@@ -107,7 +107,7 @@ test("control calls retain capacity when the data/subscription limit is reached"
   const bot = await openBotProcess(f.source, { agentDir: f.agentDir }, { ...quiet, maxPendingRequests: 1, workerUrl: fauxWorker }); t.after(() => bot.close());
   const run = await bot.run("create session"); const stop = await bot.watch(run.sessionId, () => {});
   await assert.rejects(bot.info(), /Too many/); await stop();
-  assert.equal((await bot.info()).format, 2);
+  assert.equal((await bot.info()).name, "tester");
 });
 
 test("provided Models is the explicit in-process exception and still supports scripted runs", async t => {
@@ -124,7 +124,7 @@ test("late initialization timeout closes the eventual runtime and releases its s
   // The close request arrives during imports/opening; it must wait for and release the late handle.
   assert.notEqual(JSON.parse(await readFile(join(f.source, ".sdk-source.lock"), "utf8")).pid, process.pid);
   const bot = await openBotProcess(f.source, { agentDir: f.agentDir }, quiet); t.after(() => bot.close());
-  assert.equal((await bot.info()).format, 2);
+  assert.equal((await bot.info()).name, "tester");
 });
 
 for (const mode of ["async", "cpu"]) test(`noncooperative ${mode} direct tool: bounded close kills the process group and frees flock`, { skip: process.platform !== "linux" }, async t => {
@@ -158,7 +158,7 @@ test("explicit cancel replies clear their deadline, including completed/idempote
   await new Promise(resolve => setTimeout(resolve, 600));
   assert.equal((await bot.getRun(completed.runId)).status, "completed");
   assert.equal((await bot.getRun(accepted.runId)).status, "cancelled");
-  assert.equal((await bot.info()).format, 2, "successful/error replies must clear cancel timers, not close a healthy worker later");
+  assert.equal((await bot.info()).name, "tester", "successful/error replies must clear cancel timers, not close a healthy worker later");
 });
 
 for (const http of [false, true]) test(`${http ? "HTTP" : "direct"} explicit cancel of a CPU-blocked run fails boundedly without claiming durable cancellation`, { skip: process.platform !== "linux" }, async t => {
@@ -268,5 +268,5 @@ test("diagnostics use a bounded stderr sink and IPC requests are bounded", async
   assert.equal(((await bot.callTool("noisy", {})).content[0] as { text: string }).text, "ok");
   assert.ok(diagnostics.length < 100); assert.ok(!diagnostics.includes(f.agentDir));
   await assert.rejects(bot.callTool("noisy", "x".repeat(3000)), error => (error as { code?: string }).code === "INVALID_INPUT");
-  assert.equal((await bot.info()).format, 2);
+  assert.equal((await bot.info()).name, "tester");
 });

@@ -9,12 +9,17 @@ import { openBot } from "../src/runtime.js";
 import { main } from "../src/cli.js";
 import { fixture, scripted } from "./helpers.js";
 
-const definition = (format = "") => `---\n${format}name: tester\ndescription: Unversioned bot\nmodel: faux/faux-1\ntools: []\nskills: []\n---\n\nTest persona.\n`;
+// Keep the durable-executor coverage explicit; ordinary definitions inherit global Pi by default.
+const definition = (metadata = "") => `---\n${metadata}name: tester\ndescription: Unversioned bot\ninherit: none\nmodel: faux/faux-1\ntools: []\nskills: []\n---\n\nTest persona.\n`;
 
-test("omitted format and numeric 2 parse identically; explicit unsupported values fail", () => {
-  assert.deepEqual(parseDefinition(definition(), "/source"), parseDefinition(definition("format: 2\n"), "/source"));
-  for (const value of ["null", '"2"', "0", "1", "3", "false", "[]", "{}", ""]) {
-    assert.throws(() => parseDefinition(definition(`format: ${value}\n`), "/source"), /Unsupported BOT.md format/, value);
+test("BOT.md has no discriminator; format and version are preserved as ordinary metadata", () => {
+  const parsed = parseDefinition(definition(), "/source");
+  assert.deepEqual(parsed.extra, {});
+  assert.equal("format" in parsed, false); assert.equal("version" in parsed, false);
+  for (const field of ["format", "version"]) for (const value of ["null", '"2"', "0", "1", "2", "3", "false", "[]", "{}", ""]) {
+    assert.deepEqual(parseDefinition(definition(`${field}: ${value}\n`), "/source"), {
+      ...parsed, extra: { [field]: JSON.parse(value || "null") },
+    });
   }
   assert.throws(() => parseDefinition("---\ndescription: Missing name\n---\nPersona", "/source"), /needs a name/);
   assert.throws(() => parseDefinition("---\nname: tester\n---\nPersona", "/source"), /needs a description/);
@@ -24,7 +29,8 @@ test("omitted format and numeric 2 parse identically; explicit unsupported value
 test("unversioned source validates through SDK and CLI without rewriting the file", async t => {
   const f = await fixture(); t.after(f.cleanup);
   const file = join(f.source, "BOT.md"); await writeFile(file, definition());
-  assert.equal((await validateBot(f.source, { agentDir: f.agentDir })).format, 2);
+  const info = await validateBot(f.source, { agentDir: f.agentDir });
+  assert.equal(info.name, "tester"); assert.equal("format" in info, false); assert.equal("version" in info, false);
   let stdout = "", stderr = "";
   const code = await main(["validate", f.source], {
     stdout: { write(chunk) { stdout += chunk.toString(); return true; } },
@@ -60,7 +66,7 @@ test("unversioned bots execute, reload and reopen durable history with an offlin
   assert.equal((await bot.reload()).changed, true);
   await bot.close();
   bot = await openBot(f.source, { models, agentDir: f.agentDir });
-  assert.equal((await bot.info()).format, 2);
+  assert.equal("format" in await bot.info(), false);
   assert.equal((await bot.getRun(first.runId)).output, "First");
   const next = await bot.run("continue", { session: first.sessionId });
   assert.equal(next.status, "completed", next.error); assert.equal(next.output, "Continued");

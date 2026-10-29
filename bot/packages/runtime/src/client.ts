@@ -204,7 +204,7 @@ export class BotClient {
 
   /**
    * Admission for run(). With an observer, ask for the run's NDJSON stream (Accept: application/x-ndjson) and read
-   * its run_accepted line; a server that only answers JSON is still accepted. Acceptance is bounded by
+   * its run_accepted line. Observed runs require this contract. Acceptance is bounded by
    * requestTimeoutMs and deliberately ignores the caller's signal, so an abort can still learn the ID to cancel.
    */
   private async accept(message: string, options: Pick<RunOptions, "session" | "requestId" | "onEvent">): Promise<Acceptance> {
@@ -215,10 +215,8 @@ export class BotClient {
     try {
       const response = await this.response("/v1/runs", "POST", { message, session: options.session, requestId: options.requestId }, controller.signal, "application/x-ndjson");
       if (!isNdjson(response)) {
-        let value: unknown;
-        try { value = JSON.parse(await boundedText(response, this.responseLimit)); }
-        catch (error) { throw error instanceof BotClientError ? error : new BotClientError(502, "INVALID_RESPONSE", "Server returned malformed JSON"); }
-        return { record: runRecord(value), close() {} };
+        await response.body?.cancel();
+        throw new BotClientError(502, "INVALID_RESPONSE", "Expected an NDJSON run stream");
       }
       const reader = response.body!.getReader();
       const events = ndjson(reader, this.eventLimit);
@@ -245,7 +243,7 @@ export class BotClient {
 
   /**
    * Submit then wait for a terminal record. With onEvent, the run's own event stream is read from the same request
-   * (falling back to a session watch on servers without run streams). Only an explicit run signal abort cancels
+   * with a final status poll if the connection is interrupted. Only an explicit run signal abort cancels
    * the admitted run.
    */
   async run(message: string, options: Pick<RunOptions, "session" | "requestId" | "signal" | "onEvent"> = {}): Promise<BotRunRecord> {
@@ -257,7 +255,6 @@ export class BotClient {
     const acceptance = this.accept(message, options);
     let opened: Acceptance | undefined;
     let accepted: BotRunRecord | undefined;
-    let stop: (() => Promise<void>) | undefined;
     let cancelPromise: Promise<void> | undefined;
     const onAbort = () => {
       if (cancelPromise) return;
@@ -276,7 +273,6 @@ export class BotClient {
         const settled = await abortable(this.forward(opened, options.onEvent!), signal);
         if (settled) return settled;
       } else if (terminal(accepted)) return accepted;
-      else if (options.onEvent) stop = await this.watch(accepted.sessionId, options.onEvent, { signal });
       while (true) {
         signal.throwIfAborted();
         const current = await this.getRun(accepted.runId, { signal });
@@ -286,7 +282,6 @@ export class BotClient {
     } finally {
       options.signal?.removeEventListener("abort", onAbort);
       if (opened) opened.close(); else void acceptance.then(late => late.close(), () => {});
-      await stop?.();
       // An unobserved acceptance must not delay cancellation of the caller's wait.
       if (accepted) await cancelPromise?.catch(() => {});
     }

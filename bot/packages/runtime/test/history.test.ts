@@ -8,7 +8,8 @@ import { BACKGROUND_CONTEXT as C } from "@earendil-works/chord/context";
 import { fauxAssistantMessage as answer, fauxToolCall as call } from "@earendil-works/pi-ai/providers/faux";
 import { openBot } from "../src/runtime.js";
 import { resolveSource } from "../src/paths.js";
-import { readHistory } from "../src/history.js";
+import { readHistory, type HistoryReader } from "../src/history.js";
+import { durableEntry } from "../src/events.js";
 import type { BotHistoryEntry, BotHistoryPage, BotHistoryQuery, BotToolResult } from "../src/types.js";
 import { fixture, scripted } from "./helpers.js";
 
@@ -144,10 +145,10 @@ test("bounded scans continue through empty search pages and omit system/thinking
   const entries = Array.from({ length: 510 }, (_, index) => ({ id: index + 1, conversationId: 1, kind: "pi.assistant", model: [{ role: "assistant", content: [{ type: "thinking", thinking: "private needle" }, { type: "text", text: index === 0 ? "public needle" : "ordinary" }] }] })) as unknown as EntryRecord[];
   entries.push({ id: 511, conversationId: 1, kind: "pi.system", model: [{ role: "system", content: "system needle" }] } as unknown as EntryRecord);
   let scans = 0;
-  const storage: Pick<Storage, "scanEntries"> = { async scanEntries(query, limit) {
+  const storage: HistoryReader = async (_session, query, limit) => {
     scans++; const values = entries.filter(entry => query.maxEntryId === undefined || entry.id <= query.maxEntryId).reverse();
-    return { items: values.slice(0, limit), ...(values.length > limit ? { next: { after: values[limit - 1]!.id } } : {}) };
-  } };
+    return { items: values.slice(0, limit).map(durableEntry), hasMore: values.length > limit };
+  };
   const sessions = [{ sessionId: "dconv:1", cwd: "/work", createdAt: "now", updatedAt: "now" }];
   const signal = new AbortController().signal;
   const first = await readHistory(storage, sessions, "/home/bot", { action: "search", query: "needle" }, signal);
@@ -160,10 +161,10 @@ test("bounded scans continue through empty search pages and omit system/thinking
 
 test("byte-limited pages resume before the unconsumed entry without losing matches", async () => {
   const entries = Array.from({ length: 12 }, (_, index) => ({ id: index + 1, conversationId: 1, kind: "pi.user", model: [{ role: "user", content: "match " + "\u0000".repeat(2000) }] })) as unknown as EntryRecord[];
-  const storage: Pick<Storage, "scanEntries"> = { async scanEntries(query, limit) {
+  const storage: HistoryReader = async (_session, query, limit) => {
     const values = entries.filter(entry => query.maxEntryId === undefined || entry.id <= query.maxEntryId).reverse();
-    return { items: values.slice(0, limit), ...(values.length > limit ? { next: { after: values[limit - 1]!.id } } : {}) };
-  } };
+    return { items: values.slice(0, limit).map(durableEntry), hasMore: values.length > limit };
+  };
   const sessions = [{ sessionId: "dconv:1", cwd: "/work", createdAt: "now", updatedAt: "now" }];
   const seen: number[] = []; let cursor: string | undefined;
   do {

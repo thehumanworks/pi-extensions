@@ -88,3 +88,14 @@ test('actual HTTP bot: disconnect only detaches, resume never submits, explicit 
   assert.equal((await fixture.bot.getRun(accepted.runId)).status, 'cancelled');
   assert.equal((await adapter.history(accepted.sessionId)).messages.filter(message => message.role === 'user').length, 1);
 });
+
+test('isolated durable executor uses the same adapter tool and history contract as native Pi', { timeout: 20_000 }, async t => {
+  const fixture = await startScriptedBackend({ inherit: 'none' }); t.after(() => fixture.close());
+  const adapter = createBotChatAdapter({ backend: connectBotBackend(fixture.url, { token: fixture.token }) });
+  const output = await collect(await send(adapter, 'Use the echo tool.'));
+  assert.equal(output.run?.status, 'completed');
+  assert.ok(output.message?.parts.some(part => part.type === 'data-bot-tool' && part.data.toolName === 'echo' && part.data.state === 'completed'));
+  const history = await adapter.history(output.run!.sessionId);
+  assert.equal(history.messages.findLast(message => message.role === 'assistant')?.id, output.message?.id);
+  assert.equal(history.messages.filter(message => message.role === 'user').length, 1);
+});

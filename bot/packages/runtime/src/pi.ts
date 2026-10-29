@@ -78,17 +78,10 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
     persist();
     notify(ctx, `Talking to ${info.name}${remote(source) ? ` at ${source}` : ""}. Bot conversations are stored by the SDK. /bot exit returns to Pi; /bot stop cancels pending work.`);
   }
-  async function watchReply(slot: Selection, handle: Target, initial: BotRunRecord, ctx: ExtensionContext, signal: AbortSignal) {
+  async function awaitReply(slot: Selection, handle: Target, initial: BotRunRecord, ctx: ExtensionContext, signal: AbortSignal) {
     const key = `${slot.source}\n${initial.runId}`;
     pending.set(key, { target: handle, runId: initial.runId, selection: slot });
-    let stop: (() => Promise<void>) | undefined;
-    const reply = createReplyPreview();
     try {
-      // A session watch also sees other runs of the conversation; their events carry their own runId.
-      if (ctx.hasUI) stop = await handle.watch(initial.sessionId, event => {
-        if (signal.aborted || selected !== slot || (event.runId && event.runId !== initial.runId)) return;
-        if (reply.apply(event)) ctx.ui.setWidget("pi-bot-progress", [`${slot.name} · ${initial.runId}`, ...reply.text.slice(-2_000).split("\n").slice(-6)]);
-      });
       let result = initial;
       while (!terminal(result)) {
         await delay(100, undefined, { signal });
@@ -96,7 +89,7 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
       }
       if (!signal.aborted) pi.sendMessage({ customType: "bot-reply", content: result.output || result.error || "(no output)", display: true, details: result }, { triggerTurn: false });
     } catch (error) { if (!signal.aborted) notify(ctx, errorText(error), "error"); }
-    finally { pending.delete(key); await stop?.().catch(() => {}); if (!signal.aborted && selected === slot && ctx.hasUI) ctx.ui.setWidget("pi-bot-progress", undefined); }
+    finally { pending.delete(key); if (!signal.aborted && selected === slot && ctx.hasUI) ctx.ui.setWidget("pi-bot-progress", undefined); }
   }
   function chat(message: string, slot: Selection, ctx: ExtensionContext) {
     const signal = lifetime.signal;
@@ -104,11 +97,20 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
     admission = admission.then(async () => {
       if (signal.aborted) return;
       const handle = slot.target ??= await target(slot.source, ctx.cwd, slot.tokenEnv);
-      const accepted = await handle.submit(message, { session: slot.sessionId });
+      // Subscribe at admission, not after submit: a fast run may finish before watch attaches.
+      const reply = createReplyPreview();
+      const accepted = await handle.submit(message, { session: slot.sessionId, onEvent: event => {
+        if (signal.aborted || selected !== slot || !ctx.hasUI) return;
+        if (reply.apply(event)) ctx.ui.setWidget("pi-bot-progress", [
+          `${slot.name} · ${event.runId ?? "queued"}`,
+          ...reply.text.slice(-2_000).split("\n").filter(Boolean).slice(-6),
+          ...reply.activity.split("\n").filter(Boolean),
+        ]);
+      } });
       slot.sessionId = accepted.sessionId;
       if (!signal.aborted && selected === slot) persist();
       if (signal.aborted) return;
-      const work = watchReply(slot, handle, accepted, ctx, signal);
+      const work = awaitReply(slot, handle, accepted, ctx, signal);
       jobs.add(work); void work.finally(() => jobs.delete(work));
     }).catch(error => { if (!signal.aborted) notify(ctx, errorText(error), "error"); });
   }
@@ -154,7 +156,7 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
 
   pi.registerTool({
     name: "bot_manage", label: "Bot manage",
-    description: `List, inspect, create or edit directory-defined bots in ${root()}. Bots use Pi provider auth and have writable capabilities and durable memory. Create specialists when useful. Edit BOT.md via prompt/edits or a complete definition. Empty tools/skills means NONE; null restores discovery. BOT.md may omit format or declare format: 2; both use current SDK semantics. Tool and persona changes activate automatically at a safe boundary. Deletion is human-only through /bot delete.`,
+    description: `List, inspect, create or edit directory-defined bots in ${root()}. Bots use Pi provider auth and have writable capabilities and durable memory. Create specialists when useful. Edit BOT.md via prompt/edits or a complete definition. Empty tools/skills means NONE; null restores discovery. Tool and persona changes activate automatically at a safe boundary. Deletion is human-only through /bot delete.`,
     parameters: Type.Object({
       action: Type.Union([Type.Literal("list"), Type.Literal("show"), Type.Literal("create"), Type.Literal("edit")]),
       name: Type.Optional(Type.String({ description: "Roster name or source directory (create takes a name)" })),
@@ -163,6 +165,9 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
       thinking: Type.Optional(Type.Union([Type.String(), Type.Null()])),
       inherit: Type.Optional(Type.Union([Type.Literal("none"), Type.Literal("global")])),
       tools: Type.Optional(Type.Union([Type.Array(Type.String()), Type.Null()])),
+      excludeTools: Type.Optional(Type.Union([Type.Array(Type.String()), Type.Null()])),
+      excludeExtensions: Type.Optional(Type.Union([Type.Array(Type.String()), Type.Null()])),
+      excludeMcpServers: Type.Optional(Type.Union([Type.Array(Type.String()), Type.Null()])),
       builtinTools: Type.Optional(Type.Union([Type.Array(Type.String()), Type.Null()])),
       skills: Type.Optional(Type.Union([Type.Array(Type.String()), Type.Null()])), maintenance: Type.Optional(Type.Boolean()),
       edits: Type.Optional(Type.Array(Type.Object({ oldText: Type.String(), newText: Type.String() }))),
@@ -183,8 +188,8 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
         if (params.thinking != null && !["off", "minimal", "low", "medium", "high", "xhigh", "max"].includes(params.thinking)) throw new Error("Invalid thinking level.");
         if (params.definition !== undefined || params.edits !== undefined) throw new Error("create accepts a persona and settings, not definition/edits.");
         const created = await createBot(params.name, { description: params.description, prompt: params.prompt, model: params.model ?? undefined, inherit: params.inherit }, root());
-        const { tools, builtinTools, skills, maintenance, thinking } = params;
-        if ([tools, builtinTools, skills, maintenance, thinking].some(value => value !== undefined)) await editBot(created.sourceDir, { tools, builtinTools, skills, maintenance, thinking: thinking as ThinkingLevel | null | undefined });
+        const { tools, builtinTools, skills, maintenance, thinking, excludeTools, excludeExtensions, excludeMcpServers } = params;
+        if ([tools, builtinTools, skills, maintenance, thinking, excludeTools, excludeExtensions, excludeMcpServers].some(value => value !== undefined)) await editBot(created.sourceDir, { tools, builtinTools, skills, maintenance, excludeTools, excludeExtensions, excludeMcpServers, thinking: thinking as ThinkingLevel | null | undefined });
         return { content: text(`Created ${params.name} at ${created.sourceDir}. Talk with /bot ${params.name}; delegate with bot_run.`), details: await inspectBot(created.sourceDir) };
       }
       const { action: _action, name: _name, thinking, ...patch } = params;
@@ -203,8 +208,11 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
       const cwd = remote(params.bot) ? undefined : params.cwd ? resolve(ctx.cwd, expandHome(params.cwd)) : (!params.session || params.session === "new" || params.session === "last") ? ctx.cwd : undefined;
       const reply = createReplyPreview();
       const record = await handle.run(params.task, { session: params.session, ...(cwd ? { cwd } : {}), signal, onEvent: event => {
-        reply.apply(event); const output = reply.text.slice(-50_000);
-        onUpdate?.({ content: text(output || `${params.bot}: working…`), details: { bot: params.bot, output, event } });
+        reply.apply(event); const answer = reply.text.slice(-50_000);
+        // Pi's tool renderer prefers details.output over content. Include activity there too,
+        // while retaining answer-only text separately; the final result remains a BotRunRecord.
+        const output = [reply.activity, answer].filter(Boolean).join("\n\n");
+        onUpdate?.({ content: text(output || `${params.bot}: working…`), details: { bot: params.bot, output, answer, activity: reply.activity, event } });
       } });
       const body = record.output || record.error || "(no output)";
       const limited = body.length > 50_000 ? `${body.slice(0, 50_000)}\n[Output truncated; inspect run ${record.runId}.]` : body;

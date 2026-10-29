@@ -8,14 +8,14 @@ import { createModels } from '@earendil-works/pi-ai/models';
 import { fauxProvider, fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai/providers/faux';
 
 /** A real SQLite-backed runtime and HTTP server, with deterministic model output. */
-export async function startScriptedBackend() {
+export async function startScriptedBackend(options: { inherit?: 'none' | 'global' } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'bot-web-e2e-'));
   const source = join(directory, 'source');
   const workspace = join(directory, 'workspace');
   const agentDir = join(directory, 'agent');
   await Promise.all([mkdir(join(source, 'tools'), { recursive: true }), mkdir(workspace), mkdir(agentDir)]);
   await writeFile(join(source, 'BOT.md'), `---
-format: 2
+inherit: ${options.inherit ?? 'global'}
 name: Workspace test bot
 description: Deterministic browser integration fixture
 model: faux/faux-1

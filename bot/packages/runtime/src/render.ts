@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { styleText } from "node:util";
 import { applyChanges, assistantContent, type ReplyBlock } from "./reply.js";
-import type { BotEvent, BotRunRecord } from "./types.js";
+import type { BotEvent, BotEventData, BotRunRecord } from "./types.js";
 
 /** A writable stream; TTY fields enable live previews and width-aware rendering. */
 export interface TerminalOutput { write(chunk: string): unknown; isTTY?: boolean; columns?: number; rows?: number }
@@ -67,7 +67,6 @@ export async function loadMarkdown(): Promise<MarkdownRenderer> {
 
 type Style = Parameters<typeof styleText>[0];
 type Block = ReplyBlock;
-type ToolResult = { role?: string; content?: Array<{ type: string; text?: string }>; isError?: boolean; durationMs?: number };
 interface Stream { out: TerminalOutput; color: boolean; atLineStart: boolean; used: boolean }
 interface BlockState { started: boolean; shown: string; committed: number; chunks: number }
 
@@ -110,12 +109,15 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
   const live = !!markdown && options.stdout.isTTY === true;
   const states = new Map<number, BlockState>();
   const tools = new Map<string, string>();
+  const seen = new Set<string>();
+  const toolSummaries = new Map<string, string>();
   let message: { content: Array<Block | undefined> } | undefined;
   let cursor = 0;
   let previewRows = 0;
   let sectioned = false;
   let lastTool: string | undefined;
   let lastAnswer = "";
+  const finishedRuns = new Set<string>();
 
   const paint = (stream: Stream, style: Style, text: string) => stream.color && text ? styleText(style, text, { validateStream: false }) : text;
   const width = (stream: Stream) => Math.max(20, (stream.out.columns ?? 80) - 1);
@@ -156,6 +158,10 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
       section(stream); current.started = true;
       write(stream, marker, style);
     }
+    if (current.shown && !target.startsWith(current.shown)) {
+      // Already-written pipe output cannot be erased. Show the corrected authoritative text in a new section.
+      section(stream); current.shown = "";
+    }
     if (target.startsWith(current.shown) && target.length > current.shown.length) {
       write(stream, target.slice(current.shown.length).replace(/\n/g, `\n${indent}`), style);
       current.shown = target;
@@ -171,6 +177,10 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
       write(out, `${current.chunks ? "\n" : ""}${lines.join("\n")}\n`);
       current.chunks++;
     };
+    if (current.committed && text.slice(0, current.committed) !== current.shown.slice(0, current.committed)) {
+      clearPreview(); current.committed = 0; current.chunks = 0; current.started = false;
+    }
+    current.shown = text;
     let tail = text.slice(current.committed);
     const complete = done ? tail.length : markdown!.complete(tail);
     if (complete > 0) { commit(tail.slice(0, complete)); current.committed += complete; tail = tail.slice(complete); }
@@ -209,14 +219,23 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
     lastAnswer = message.content.filter(isText).map(block => block.text ?? "").join("\n");
     message = undefined; cursor = 0; states.clear();
   }
+  function replaceContent(content: Array<Block | undefined>) {
+    if (!message) { open(); message!.content = content; return; }
+    const changed = content.findIndex((block, index) => JSON.stringify(block) !== JSON.stringify(message!.content[index]));
+    if (changed >= 0) cursor = Math.min(cursor, changed);
+    message.content = content;
+  }
   function apply(changes: unknown) {
     if (!Array.isArray(changes)) return;
     if (!message) open();
+    const before = message!.content.map(block => JSON.stringify(block));
     message!.content = applyChanges(message!.content, changes);
+    const changed = message!.content.findIndex((block, index) => JSON.stringify(block) !== before[index]);
+    if (changed >= 0) cursor = Math.min(cursor, changed);
   }
 
-  function toolStart(id: string, name: string, args: unknown, nested: boolean) {
-    close();
+  function toolStart(id: string, name: string, args: unknown, nested: boolean, restore = false) {
+    if (!restore) close();
     tools.set(id, name);
     const indent = nested ? "  " : "";
     if (nested) endLine(err); else section(err);
@@ -225,42 +244,62 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
     write(err, head, "bold"); write(err, summary ? ` ${summary}\n` : "\n", "dim");
     lastTool = id;
   }
-  function toolEnd(data: { toolCallId?: string; toolName?: string; parentToolCallId?: string; entry?: { model?: ToolResult[] }; result?: { isError?: boolean; structuredOutput?: unknown } }) {
-    const id = data.toolCallId ?? ""; const nested = !!data.parentToolCallId;
-    if (!tools.has(id)) toolStart(id, data.toolName ?? "tool", undefined, nested);
-    const message = data.entry?.model?.find(item => item.role === "toolResult");
-    const isError = message?.isError ?? data.result?.isError ?? false;
-    let text: string;
-    if (message) text = (message.content ?? []).map(item => item.type === "text" ? item.text ?? "" : `[${item.type}]`).join("\n");
-    else if (data.result) text = typeof data.result.structuredOutput === "string" ? data.result.structuredOutput : JSON.stringify(data.result.structuredOutput ?? "");
-    else text = "(no result)";
+  function toolEnd(data: BotEventData["tool_execution_end"] | BotEventData["tool_execution_update"]) {
+    const id = data.toolCallId; const nested = !!data.parentToolCallId;
+    if (!tools.has(id)) toolStart(id, data.toolName, data.args, nested);
+    const isError = "isError" in data && data.isError;
+    const text = data.summary || ("isError" in data ? (isError ? "(failed)" : "(no output)") : "(running)");
+    const fingerprint = `${isError}:${"isError" in data}:${text}`;
+    if (toolSummaries.get(id) === fingerprint) return;
+    toolSummaries.set(id, fingerprint);
     const lines = text.split("\n").filter(line => line.trim());
     const prefix = `${nested ? "  " : ""}  ⎿ ${lastTool === id ? "" : `${tools.get(id)}: `}`;
-    const extra = [lines.length > 1 ? `(+${plural(lines.length - 1, "line")})` : "", message?.durationMs !== undefined ? `${message.durationMs}ms` : ""].filter(Boolean).join(" · ");
-    const first = truncate((lines[0] ?? "(no output)").trim(), width(err) - [...prefix].length - extra.length - 3);
+    const extra = lines.length > 1 ? ` · (+${plural(lines.length - 1, "line")})` : "";
+    const first = truncate((lines[0] ?? "(no output)").trim(), width(err) - [...prefix].length - extra.length);
     endLine(err);
-    write(err, `${prefix}${first}${extra ? ` · ${extra}` : ""}\n`, isError ? "red" : "dim");
+    write(err, `${prefix}${isError ? "✗ " : ""}${first}${extra}\n`, isError ? "red" : "dim");
     lastTool = id;
   }
-  function notice(text: string, style: Style) { close(); section(err); write(err, `${text}\n`, style); }
+  function notice(text: string, style: Style) { section(err); write(err, `${text}\n`, style); }
 
   function handle(event: BotEvent) {
-    const data = (event.data ?? {}) as Record<string, any>;
+    const id = event.runId ?? (event.type === "snapshot" ? event.data.run?.runId : event.type === "run_settled" ? event.data.runId : undefined);
+    if (id && finishedRuns.has(id)) return;
     switch (event.type) {
+      case "snapshot": {
+        // Recent entries may predate this run; only restore the live generation and activity.
+        for (const entry of event.data.entries) seen.add(`${event.sessionId ?? ""}:${entry.id}`);
+        for (const tool of event.data.tools) {
+          if (!tools.has(tool.toolCallId)) toolStart(tool.toolCallId, tool.toolName, tool.args, !!tool.parentToolCallId, true);
+          if (tool.summary || tool.status !== "running") toolEnd({ ...tool, ...(tool.status !== "running" ? { isError: tool.status === "failed" } : {}) });
+        }
+        if (event.data.notice) notice(event.data.notice, "yellow");
+        const run = event.data.run;
+        if (run && ["completed", "failed", "cancelled"].includes(run.status)) { finish(run); break; }
+        const content = assistantContent(event);
+        if (content) { replaceContent(content); sync(false); }
+        break;
+      }
+      case "run_settled": finish(event.data); break;
       case "message_start": { const content = assistantContent(event); if (content) open(content); sync(false); break; }
-      case "message_update": apply(data.changes); sync(false); break;
+      case "message_update": apply(event.data.changes); sync(false); break;
       case "message_end": {
+        const key = `${event.sessionId ?? ""}:${event.data.entry.id}`;
+        if (seen.has(key)) break;
+        seen.add(key);
         const final = assistantContent(event);
         if (!final) break;
-        if (message) message.content = final; else open(final);
+        replaceContent(final);
         close(); break;
       }
-      case "tool_execution_start": toolStart(data.toolCallId ?? "", data.toolName ?? "tool", data.args, !!data.parentToolCallId); break;
-      case "tool_execution_end": close(); toolEnd(data); break;
-      case "auto_retry_start": notice(`↻ Retrying (attempt ${data.attempt ?? "?"}): ${data.errorMessage ?? "provider error"}`, "yellow"); break;
+      case "tool_execution_start": toolStart(event.data.toolCallId, event.data.toolName, event.data.args, !!event.data.parentToolCallId); break;
+      case "tool_execution_update": toolEnd(event.data); break;
+      case "tool_execution_end": close(); toolEnd(event.data); break;
+      case "auto_retry_start": notice(`↻ Retrying (attempt ${event.data.attempt}): ${event.data.errorMessage}`, "yellow"); break;
+      case "auto_retry_end": if (!event.data.success) notice(`✗ Retry failed: ${event.data.errorMessage ?? "Provider error"}`, "red"); break;
       case "compaction_start": notice("… Compacting context", "dim"); break;
-      case "compaction_end": if (data.error) notice(`✗ Compaction failed: ${data.error}`, "red"); break;
-      case "task_failed": notice(`✗ ${data.message ?? "Task failed"}`, "red"); break;
+      case "compaction_end": if (event.data.error) notice(`✗ Compaction failed: ${event.data.error}`, "red"); break;
+      case "error": case "task_failed": notice(`✗ ${event.data.message}`, "red"); break;
     }
   }
   function footer(record: BotRunRecord) {
@@ -275,28 +314,31 @@ export function createChatRenderer(options: ChatRendererOptions): ChatRenderer {
     write(err, `Session: ${record.sessionId} · Run: ${record.runId}\n`, "dim");
   }
 
+  function finish(record: BotRunRecord) {
+    if (finishedRuns.has(record.runId)) return;
+    finishedRuns.add(record.runId);
+    if (message && record.output) {
+      // Complete a lost streamed tail from the authoritative terminal record.
+      const texts = message.content.filter(isText);
+      const shown = texts.map(block => block.text ?? "").join("\n");
+      const last = texts.at(-1);
+      if (last && record.output.length > shown.length && record.output.startsWith(shown)) last.text = (last.text ?? "") + record.output.slice(shown.length);
+    }
+    close();
+    if (record.output && record.output !== lastAnswer) { open([{ type: "text", text: record.output }]); close(); }
+    footer(record); endLine(out);
+  }
+
   return {
     begin(echoed) {
-      message = undefined; cursor = 0; states.clear(); tools.clear(); lastTool = undefined; lastAnswer = ""; sectioned = false;
+      message = undefined; cursor = 0; states.clear(); tools.clear(); seen.clear(); toolSummaries.clear(); lastTool = undefined; lastAnswer = ""; sectioned = false; finishedRuns.clear();
       // The prompt starts each turn on stderr; answers stay separated on stdout.
       err.atLineStart = echoed; err.used = false;
     },
     onEvent(event) {
       try { handle(event); } catch { /* rendering never affects the run */ }
     },
-    finish(record) {
-      if (message && record.output) {
-        // Final events can be lost (late attach, early disconnect): complete the open answer from the record.
-        const texts = message.content.filter(isText);
-        const shown = texts.map(block => block.text ?? "").join("\n");
-        const last = texts.at(-1);
-        if (last && record.output.length > shown.length && record.output.startsWith(shown)) last.text = (last.text ?? "") + record.output.slice(shown.length);
-      }
-      close();
-      if (record.output && record.output !== lastAnswer) { open([{ type: "text", text: record.output }]); close(); }
-      footer(record);
-      endLine(out);
-    },
+    finish,
     stop() { clearPreview(); endLine(out); endLine(err); },
   };
 }

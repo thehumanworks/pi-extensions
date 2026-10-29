@@ -34,7 +34,6 @@ try {
   // Selecting a catalog model requires no credentials for direct tool calls.
   // This opens the real worker and SQLite runtime without a provider request.
   writeFileSync(join(source, "BOT.md"), `---
-format: 2
 name: reviewer
 description: Nix smoke test
 model: openai/gpt-4o

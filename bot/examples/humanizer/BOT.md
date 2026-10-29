@@ -1,5 +1,4 @@
 ---
-format: 2
 name: "humanizer"
 description: "Rewrites stiff, template, or model-sounding prose into natural writing without changing the facts."
 inherit: "none"
