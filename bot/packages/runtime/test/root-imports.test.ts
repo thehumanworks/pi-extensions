@@ -75,7 +75,7 @@ test("skill files/assets refer to isolated and restored source generations", asy
   let bot = await sdk.openBot(f.source, { models, agentDir: f.agentDir, ephemeral: true });
   let file = (await bot.info()).skills[0]!.source;
   assert(file.startsWith(bot.sourceDir + "/")); assert.equal(await readFile(join(dirname(file), "asset.txt"), "utf8"), "pinned asset");
-  const isolated = await sdk.loadBot(bot.sourceDir, { agentDir: f.agentDir, stateDir: bot.stateDir }); assert(isolated.prompt.includes(file)); await bot.close();
+  const isolated = await sdk.loadBot(bot.sourceDir, { agentDir: f.agentDir, stateDir: bot.stateDir }); assert((await sdk.composePrompt(isolated, f.cwd)).includes(file)); await bot.close();
   bot = await sdk.openBot(f.source, { models, agentDir: f.agentDir }); const revision = (await bot.info()).revision; await bot.close();
   await writeFile(join(f.source, "BOT.md"), "invalid draft"); await writeFile(join(f.source, "skills/local/asset.txt"), "unvalidated live asset");
   bot = await sdk.openBot(f.source, { models, agentDir: f.agentDir }); t.after(() => bot.close());

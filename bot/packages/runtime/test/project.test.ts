@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { initBot, loadProject, inspectBot, validateBot, invokeTool } from "../src/project.js";
+import { initBot, loadProject, inspectBot, validateBot, invokeTool, composePrompt } from "../src/project.js";
 import { modelRuntimeOptions } from "../src/runtime.js";
 import { echoTool, fixture } from "./helpers.js";
 
@@ -40,6 +40,50 @@ test("explicit inherit none opts out; global discovery never uses cwd .pi", asyn
   let p = await loadProject(f.source, { agentDir: f.agentDir }); assert.deepEqual(p.tools.map(t => t.name), ["bot_history", "echo"]);
   const bot = await readFile(join(f.source, "BOT.md"), "utf8"); await writeFile(join(f.source, "BOT.md"), bot.replace('inherit: "none"', 'inherit: "global"'));
   p = await loadProject(f.source, { agentDir: f.agentDir }); assert(p.extensionPaths.some(path => path.endsWith("global.ts"))); assert(!p.extensionPaths.some(path => path.endsWith("evil.ts")));
+});
+
+test("skills name bot-owned or installed host skills; workspace skills resolve per session and missing names are optional", async t => {
+  const skill = (name: string, description: string) => `---\nname: ${name}\ndescription: ${description}\n---\n${description} body.\n`;
+  const f = await fixture({ skills: ["own", "user-pi", "user-agents", "workspace", "shadowed", "missing"] },
+    { "skills/own/SKILL.md": skill("own", "Bot-owned skill"), "skills/unlisted/SKILL.md": skill("unlisted", "Unselected bot skill") }); t.after(f.cleanup);
+  const home = join(f.root, "home"), previousHome = process.env.HOME; process.env.HOME = home;
+  t.after(() => { if (previousHome === undefined) delete process.env.HOME; else process.env.HOME = previousHome; });
+  const install = async (dir: string, name: string, description: string) => { await mkdir(join(dir, name), { recursive: true }); await writeFile(join(dir, name, "SKILL.md"), skill(name, description)); };
+  await install(join(f.agentDir, "skills"), "own", "Host copy of an owned name");
+  await install(join(f.agentDir, "skills"), "user-pi", "Pi user skill");
+  await install(join(f.agentDir, "skills"), "shadowed", "User-level shadowed skill");
+  await install(join(home, ".agents/skills"), "user-pi", "Lower-precedence duplicate");
+  await install(join(home, ".agents/skills"), "user-agents", "Agents user skill");
+  // A workspace provides .pi/skills in its cwd and .agents/skills up to its git root.
+  const repo = join(f.root, "repo"), cwd = join(repo, "package"); await mkdir(join(repo, ".git"), { recursive: true });
+  await install(join(repo, ".agents/skills"), "workspace", "Workspace agents skill");
+  await install(join(cwd, ".pi/skills"), "shadowed", "Workspace override");
+  await install(join(f.root, ".agents/skills"), "missing", "Outside the git root");
+  const p = await loadProject(f.source, { agentDir: f.agentDir });
+  assert.deepEqual(p.info.skills.map(s => s.description), ["Bot-owned skill", "Pi user skill", "Agents user skill", "User-level shadowed skill"]);
+  assert.deepEqual(p.hostSkillNames, ["user-pi", "user-agents", "workspace", "shadowed", "missing"]);
+  for (const name of ["workspace", "missing"]) assert(p.info.diagnostics.some(d => d.startsWith(`Skill ${name} is not in skills/`)));
+  const inWorkspace = await composePrompt(p, cwd), elsewhere = await composePrompt(p, f.cwd);
+  for (const text of ["Bot-owned skill", "Pi user skill", "Agents user skill", "Workspace agents skill", "Workspace override"]) assert.match(inWorkspace, new RegExp(text));
+  for (const text of ["Unselected bot skill", "Host copy", "Lower-precedence", "User-level shadowed", "Outside the git root"]) assert.doesNotMatch(inWorkspace, new RegExp(text));
+  assert.match(elsewhere, /User-level shadowed skill/); assert.doesNotMatch(elsewhere, /Workspace agents skill|Workspace override/);
+  const bot = await readFile(join(f.source, "BOT.md"), "utf8");
+  for (const path of ["~/.pi/agent/skills/user-pi", "../skills/user-pi", "user-pi/SKILL.md", "./own"]) {
+    await writeFile(join(f.source, "BOT.md"), bot.replace('"own",', `${JSON.stringify(path)},`));
+    await assert.rejects(loadProject(f.source, { agentDir: f.agentDir }), /skill names, not paths/);
+  }
+});
+
+test("colliding host skills follow Pi precedence instead of failing global discovery", async t => {
+  const f = await fixture({ inherit: "global" }); t.after(f.cleanup);
+  const home = join(f.root, "home"), previousHome = process.env.HOME; process.env.HOME = home;
+  t.after(() => { if (previousHome === undefined) delete process.env.HOME; else process.env.HOME = previousHome; });
+  for (const [dir, description] of [[join(f.agentDir, "skills"), "Pi copy"], [join(home, ".agents/skills"), "Agents copy"]]) {
+    await mkdir(join(dir, "shared"), { recursive: true }); await writeFile(join(dir, "shared/SKILL.md"), `---\nname: shared\ndescription: ${description}\n---\nBody.\n`);
+  }
+  const p = await loadProject(f.source, { agentDir: f.agentDir });
+  assert.deepEqual(p.info.skills.map(s => s.description), ["Pi copy"]);
+  assert(p.info.diagnostics.some(d => /collision/.test(d)));
 });
 
 test("duplicate/unknown tools, unsupported APIs and connections fail rather than partially load", async t => {

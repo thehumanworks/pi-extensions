@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "1.4.0",
-    "@nothumanwork/bot": "^0.2.0",
+    "@nothumanwork/bot": "^0.3.0",
     "@playwright/test": "1.64.1",
     "@types/node": "^22.19.0",
     "ai": "7.0.155",

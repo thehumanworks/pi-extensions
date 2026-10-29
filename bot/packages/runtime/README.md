@@ -144,14 +144,14 @@ You are a precise reviewer. Cite files and verify claims with tests.
 Improve your own tools, skills and persona when useful.
 ```
 
-- Omitted `inherit` means `global`: installed user-global extensions, MCP servers, skills, instructions and tool defaults are available. Workspace `.pi` resources are not inherited. `inherit: none` explicitly opts out of all global capabilities; provider credentials are independent.
+- Omitted `inherit` means `global`: installed user-global extensions, MCP servers, skills, instructions and tool defaults are available. Workspace `.pi` resources are not inherited, except skills named in `skills`. `inherit: none` explicitly opts out of all global capabilities; provider credentials are independent.
 - `excludeTools`, `excludeExtensions`, and `excludeMcpServers` remove individual capabilities using exact names or `*` patterns. Excluded MCP servers are not connected. Tool exclusions apply to nested calls too. Extension exclusions match entry paths, filenames/stems, index-directory names, or `builtin:mcp` / `builtin:codemode` / `builtin:tool_search`.
 - Bot-local `tools/` and `extensions/` are additive. Local tool/skill definitions override the global layer; duplicate authored definitions within a layer fail.
 - `builtinTools` optionally overrides the initial built-in selection; otherwise the user's `defaultTools` applies (fallback: `read`, `bash`, `edit`, `write`). Available built-ins also include `find`, `grep`, `ls`. `builtinTools: []` does not remove inherited extension/MCP tools.
 - `bot_history` is enabled by default for read-only recall across this bot's workspaces and threads, independently of `maintenance`. With an explicit `tools` allowlist, include `bot_history` to enable it; `tools: []` still means none.
 - `maintenance: true` adds `bot_read`, `bot_write`, `bot_edit`, `bot_reload`. They access source and memory; not SDK storage, credential files or dependency installations. This is a convenience scope, **not a sandbox** against shell or arbitrary code.
 - An explicit `tools` array remains a restrictive allowlist for **all** tools, including maintenance and built-ins. `tools: []` means **none**. Usually omit it and use exclusions instead. Global extension/MCP tools are discovered at session startup, not during offline validation.
-- Skills are discovered locally. An explicit `skills` array restricts them by name/path; `skills: []` means **none**.
+- Without `skills`, the bot's own `skills/` load, plus Pi's user-global skills with `inherit: global`. An explicit `skills` array lists skill **names**, never paths, and works with either `inherit` value. Each name resolves from the bot's own `skills/`, then the execution workspace's `.pi/skills` or `.agents/skills` (up to its git root), then `~/.pi/agent/skills` or `~/.agents/skills`. The first match wins. Names are optional references: a skill that isn't installed is skipped with a diagnostic, so a workspace-specific skill loads only in workspaces that provide it. `skills: []` means **none**. Reference installed skills by name instead of copying them into `skills/`.
 - Global prompt templates/themes produce diagnostics instead of pretending to run a UI. Inspection/validation does not execute global extension factories or connect MCP servers. Runtime `info()` includes discovered tools after sessions initialize.
 
 ### Recall across chats
@@ -211,7 +211,7 @@ The bot may change its persona, skills, scripts, tools and bundles without appro
 
 Memory is live writable context, separate from capability revisions: a bounded `MEMORY.md` index, linked memories, resumable task notes and journal entries. Task notes do not automatically schedule work. SDK `editBot` and BOT.md maintenance edits share a definition lock; arbitrary editors/shell writes remain outside that cooperative protocol.
 
-Checkpoint scope is bounded: root authoring/config/docs plus `tools`, `extensions`, `lib`, `skills`, `scripts`, `assets`, `evals`. Limits are **2 MiB/file, 16 MiB total, 2,048 files, 10,000 scanned entries**. Hidden directories, `.env*`, recognized credential names, SDK state and `node_modules` are excluded. Symlinked capability files are rejected. This is not a generic secret detector.
+Checkpoint scope is bounded: root authoring/config/docs plus `tools`, `extensions`, `lib`, `skills`, `scripts`, `assets`, `evals`. File sizes are not limited; counts are (**2,048 files, 10,000 scanned entries**). Hidden directories, `.env*`, recognized credential names, SDK state and `node_modules` are excluded. Symlinked capability files are rejected. This is not a generic secret detector.
 
 `--ephemeral` copies that source scope into scratch source and state and removes them on normal close. The execution workspace is **not isolated**; dependency installations are shared, not copied. Hard process termination may leave scratch directories for manual cleanup.
 

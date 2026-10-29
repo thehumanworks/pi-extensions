@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-bot",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "description": "Pi commands, tools and conversation UI for the @nothumanwork/bot SDK",
   "keywords": [
@@ -31,7 +31,7 @@
     "test": "npm run build --workspace @nothumanwork/bot && tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@nothumanwork/bot": "^0.2.0"
+    "@nothumanwork/bot": "^0.3.0"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "^1.4.0",

@@ -156,7 +156,7 @@ export function registerPiBot(pi: ExtensionAPI, options: PiBotOptions = {}): voi
 
   pi.registerTool({
     name: "bot_manage", label: "Bot manage",
-    description: `List, inspect, create or edit directory-defined bots in ${root()}. Bots use Pi provider auth and have writable capabilities and durable memory. Create specialists when useful. Edit BOT.md via prompt/edits or a complete definition. Empty tools/skills means NONE; null restores discovery. Tool and persona changes activate automatically at a safe boundary. Deletion is human-only through /bot delete.`,
+    description: `List, inspect, create or edit directory-defined bots in ${root()}. Bots use Pi provider auth and have writable capabilities and durable memory. Create specialists when useful. Edit BOT.md via prompt/edits or a complete definition. skills are names, never paths: the bot's own skills/, then the workspace's .pi/skills or .agents/skills, then ~/.pi/agent/skills or ~/.agents/skills; missing names are skipped. Empty tools/skills means NONE; null restores discovery. Tool and persona changes activate automatically at a safe boundary. Deletion is human-only through /bot delete.`,
     parameters: Type.Object({
       action: Type.Union([Type.Literal("list"), Type.Literal("show"), Type.Literal("create"), Type.Literal("edit")]),
       name: Type.Optional(Type.String({ description: "Roster name or source directory (create takes a name)" })),

@@ -8,7 +8,6 @@ import { fauxAssistantMessage as answer, fauxToolCall as call } from "@earendil-
 import { openBot } from "../src/runtime.js";
 import { loadProject } from "../src/project.js";
 import { acquireLock } from "../src/lock.js";
-import { SNAPSHOT_POLICY } from "../src/snapshot.js";
 import { fixture, scripted, echoTool, eventually } from "./helpers.js";
 
 const code = (expected: string) => (error: unknown) => (error as { code: string }).code === expected;
@@ -193,11 +192,11 @@ test("source aliases contend on the same lock; symlink and hardlink lock attacks
   assert.equal(await readFile(victim, "utf8"), "DO NOT TRUNCATE");
 });
 
-test("bounded snapshots and ephemeral copies exclude secrets, binary junk and aliased state", async t => {
+test("snapshots and ephemeral copies exclude secrets, binary junk and aliased state, but not large assets", async t => {
   const f = await fixture({ tools: ["echo"] }, { "tools/echo.ts": echoTool(), "lib/asset.bin": "asset", ".env.production": "FAKE_SECRET", ".envlocal": "FAKE_SECRET", "auth.json": "FAKE_SECRET", "credentials.yaml": "FAKE_SECRET" }); t.after(f.cleanup);
   const nestedState = join(f.source, "lib/instance-state"); await mkdir(nestedState); await writeFile(join(nestedState, "precious.txt"), "state survives");
   const stateAlias = join(f.root, "state-alias"); await symlink(nestedState, stateAlias, "dir");
-  await writeFile(join(f.source, "junk.bin"), Buffer.alloc(SNAPSHOT_POLICY.maxFileBytes + 1));
+  await writeFile(join(f.source, "junk.bin"), Buffer.alloc(3 * 1024 * 1024));
   const project = await loadProject(f.source, { stateDir: stateAlias, agentDir: f.agentDir });
   assert.equal(project.info.stateDir, nestedState); assert(!Object.keys(project.files).some(path => /env|auth|credentials|instance-state|junk/.test(path)));
   assert.equal(Buffer.from(project.files["lib/asset.bin"]!, "base64").toString(), "asset");
@@ -206,6 +205,8 @@ test("bounded snapshots and ephemeral copies exclude secrets, binary junk and al
   await assert.rejects(stat(join(bot.sourceDir, ".env.production"))); await assert.rejects(stat(join(bot.sourceDir, "lib/instance-state"))); await bot.close();
   assert.equal(await readFile(join(nestedState, "precious.txt"), "utf8"), "state survives"); assert.equal(await readFile(join(f.source, ".env.production"), "utf8"), "FAKE_SECRET");
   await assert.rejects(openBot(f.source, { models, agentDir: f.agentDir, stateDir: join(f.root, "source-alias-parent", "..") }), code("INVALID_INPUT"));
-  await writeFile(join(f.source, "lib/too-big.bin"), Buffer.alloc(SNAPSHOT_POLICY.maxFileBytes + 1));
-  await assert.rejects(loadProject(f.source, { stateDir: stateAlias, agentDir: f.agentDir }), /2 MiB\/file/);
+  // File sizes are unbounded: a capability asset larger than the former 2 MiB/16 MiB limits is snapshotted whole.
+  for (const n of [1, 2, 3, 4, 5, 6]) await writeFile(join(f.source, `lib/large-${n}.bin`), Buffer.alloc(3 * 1024 * 1024, n));
+  const large = await loadProject(f.source, { stateDir: stateAlias, agentDir: f.agentDir });
+  assert.deepEqual(Buffer.from(large.files["lib/large-6.bin"]!, "base64"), Buffer.alloc(3 * 1024 * 1024, 6));
 });

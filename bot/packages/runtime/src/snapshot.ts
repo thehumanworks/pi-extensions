@@ -8,9 +8,9 @@ import { canonicalPath, isInside } from "./paths.js";
  * Snapshot policy: root authoring/config/docs plus tools/extensions/lib/skills/scripts/assets/evals.
  * No arbitrary workspace tree. Assets in those directories may be binary.
  * Credential-like names, dotfiles (except authoring config), dependencies and SDK state are excluded.
- * Limits are hard failures, never truncated executable files or silently incomplete assets.
+ * File sizes are unbounded. Count limits are hard failures, never silently incomplete snapshots.
  */
-export const SNAPSHOT_POLICY = { maxFileBytes: 2 * 1024 * 1024, maxTotalBytes: 16 * 1024 * 1024, maxFiles: 2048, maxEntries: 10_000 } as const;
+export const SNAPSHOT_POLICY = { maxFiles: 2048, maxEntries: 10_000 } as const;
 const roots = new Set(["tools", "extensions", "lib", "skills", "scripts", "assets", "evals"]);
 export function excludedSourceName(name: string): boolean {
   return name === "node_modules" || name === ".git" || name === ".bot" || name.startsWith(".sdk-") ||
@@ -24,7 +24,7 @@ export function rootSourceFile(name: string): boolean {
 export async function snapshotSource(sourceDir: string, stateDir: string, agentDir: string): Promise<Record<string, string>> {
   const files: Record<string, string> = {};
   const omitted = [stateDir, agentDir].map(canonicalPath).filter(path => path !== canonicalPath(sourceDir) && !isInside(sourceDir, path));
-  let total = 0, count = 0, visited = 0;
+  let count = 0, visited = 0;
   async function walk(path: string, root: boolean): Promise<void> {
     const entries = [];
     for await (const entry of await opendir(path)) {
@@ -49,14 +49,12 @@ export async function snapshotSource(sourceDir: string, stateDir: string, agentD
         const metadata = await handle.stat();
         if (!metadata.isFile()) throw new BotError("INVALID_INPUT", `Snapshot source is no longer a regular file: ${file}`);
         const size = metadata.size;
-        if (size > SNAPSHOT_POLICY.maxFileBytes || total + size > SNAPSHOT_POLICY.maxTotalBytes) throw new BotError("INVALID_INPUT", `Bot snapshot exceeds size limits (2 MiB/file, 16 MiB total): ${file}`);
-        // A bounded read also covers a file that grows after stat().
-        content = Buffer.alloc(Math.min(SNAPSHOT_POLICY.maxFileBytes + 1, size + 1));
+        // The extra byte detects a file that grows after stat().
+        content = Buffer.alloc(size + 1);
         const read = await handle.read(content, 0, content.length, 0);
         content = content.subarray(0, read.bytesRead);
         if (read.bytesRead !== size || (await handle.stat()).size !== size) throw new BotError("CONFLICT", `Source file changed while snapshotting: ${file}`);
       } finally { await handle.close(); }
-      total += content.length;
       files[relative(sourceDir, file)] = content.toString("base64");
     }
   }

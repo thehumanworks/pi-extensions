@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/bot",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Directory-defined, self-improving bots powered by Pi, for applications, the CLI and long-running services",
   "keywords": ["bot", "sdk", "pi", "durable"],
