@@ -45,7 +45,7 @@ buildNpmPackage {
     cp nix/package-lock.json package-lock.json
   '';
 
-  npmDepsHash = "sha256-yLzBvCS4O1b274dw1NDt/vAM4yRA682Hc1CsPw805eo=";
+  npmDepsHash = "sha256-FrpaFMxnaSpzO/C/2J1N40Y3dLhy6njQZJeSWto/cek=";
   # Match the repository's peer-dependency policy.
   npmFlags = [ "--legacy-peer-deps" ];
   # The build phase already compiled dist; do not run prepack a second time.
@@ -81,7 +81,7 @@ buildNpmPackage {
 
   meta = {
     inherit (manifest) description;
-    homepage = "https://github.com/thehumanworks/pi-extensions/tree/main/bot";
+    homepage = "https://github.com/thehumanworks/pi-extensions/tree/main/bot/packages/runtime";
     mainProgram = "bot";
     platforms = [
       "x86_64-linux"

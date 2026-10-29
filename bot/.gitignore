@@ -1,2 +1,15 @@
 /result
 /result-*
+node_modules/
+.next/
+*.tsbuildinfo
+playwright-report/
+test-results/
+.env.local
+.env.*.local
+.bot/
+.build/
+/.pi/NATIVE-PLAN.md
+/.pi/workflows/native-web.ts
+/.pi/IMPLEMENTATION.md
+/.pi/workflows/bot-workspace.ts

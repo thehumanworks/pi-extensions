@@ -39,6 +39,27 @@ bot init "$HOME/bots/reviewer"
 bot run "$HOME/bots/reviewer" --cwd "$PWD" --message "Review this project"
 ```
 
+## Native web UI
+
+The runtime stays independent of the UI. The same flake also exposes a separate
+Bun-compiled native web application with embedded Next production assets:
+
+```sh
+# From bot/ (path: includes newly added, unstaged source files):
+nix run "path:$PWD#web"                  # http://[::1]:3001
+nix build "path:$PWD#bot-web"            # result/bin/bot-web
+./result/bin/bot-web --help
+```
+
+Start the bot daemon separately on `http://[::1]:8787` (or configure
+`BOT_SERVER_URL` on the web process). The UI does not use provider credentials,
+start a daemon, or take ownership of its SQLite state. `#bot` and the default app
+continue to be this Node-backed runtime CLI; the native UI adds no Next/React/AI
+SDK dependency to it. The web binary needs no external JavaScript runtime or
+asset directory. Native OS/Nix shared libraries still apply. See the
+[web packaging guide](../../../nix/web/README.md) and
+[UI operations guide](../../../apps/web/README.md).
+
 ## Use from another flake
 
 Add this input to your existing flake:
@@ -69,7 +90,8 @@ expected. For example, a project shell:
 
 An optional `inputs.bot.inputs.nixpkgs.follows = "nixpkgs";` shares the caller's
 Nixpkgs pin. Omitting it uses this package's tested pin. An overridden pin must
-provide Node 24 and the Nixpkgs Node build helpers used by `nix/package.nix`.
+provide Node 24 and the Nixpkgs Node build helpers used by
+`packages/runtime/nix/package.nix`.
 
 ### NixOS
 
@@ -135,16 +157,16 @@ npm run test --workspace @nothumanwork/bot
 ```
 
 Or enter with `nix develop` from `bot/`. The shell provides Node/npm, runtime
-tools, Git, `nixfmt`, and `prefetch-npm-deps`. It does not install dependencies
+tools, Bun, ast-grep, Git, `nixfmt`, and `prefetch-npm-deps`. It does not install dependencies
 or run scripts automatically; the normal development workflow still uses the
 root npm workspace lockfile.
 
 From **`bot/`**:
 
 ```sh
-nix flake check                     # build, type check, offline tests, CLI smoke test
+nix flake check                     # runtime + native web builds, checks and smoke tests
 nix flake check --all-systems --no-build  # evaluate both supported systems
-nix fmt -- flake.nix nix/package.nix
+nix fmt -- flake.nix packages/runtime/nix/package.nix nix/web/package.nix
 ```
 
 The installed-CLI smoke test starts with an empty `PATH` and isolated user
@@ -159,23 +181,26 @@ unstaged checkout. Likewise, `nix develop path:.` and
 ## Updating pins
 
 - `bot/flake.lock` pins Nixpkgs.
-- `bot/nix/package-lock.json` pins the standalone bot build. It is deliberately
-  separate from the root workspace lockfile, so the flake never needs sibling
-  extensions or their dependencies.
-- `npmDepsHash` in `bot/nix/package.nix` pins the fetched npm cache.
+- `bot/packages/runtime/nix/package-lock.json` pins the standalone runtime build.
+  It is deliberately separate from workspace lockfiles, so the runtime build
+  never needs the AI SDK adapter, Next.js application, or sibling extensions.
+- `bot/nix/web/package-lock.json` and its own `npmDepsHash` independently pin the
+  native UI/adapter build. See that directory's updater; never mix the two locks.
+- `npmDepsHash` in `bot/packages/runtime/nix/package.nix` pins the fetched npm cache.
 
-After changing `bot/package.json` dependencies or version, run from **`bot/`**:
+After changing `bot/packages/runtime/package.json` dependencies or version,
+run from **`bot/`**:
 
 ```sh
-nix develop --command bash nix/update-lock.sh
-# Copy the printed hash into npmDepsHash in nix/package.nix.
+nix develop --command bash packages/runtime/nix/update-lock.sh
+# Copy the printed hash into packages/runtime/nix/package.nix.
 nix flake check
 ```
 
 The updater resolves in a temporary directory, retaining existing compatible
-pins, and never changes the root lockfile or installs into the checkout. Remove
-`nix/package-lock.json` before running it to deliberately re-resolve all
-transitive dependencies. Update the root workspace lockfile separately when
+pins, and never changes workspace lockfiles or installs into the checkout. Remove
+`packages/runtime/nix/package-lock.json` before running it to deliberately
+re-resolve all transitive dependencies. Update the root workspace lockfile separately when
 changing workspace dependencies. Commit the manifest, standalone lock and new
 hash together; an ordinary test also checks that the standalone lock matches
 the manifest.

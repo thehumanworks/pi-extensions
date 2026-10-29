@@ -179,12 +179,12 @@ test("tool-only canonical activity reaches both bot_run updates and the direct-c
   const root = await mkdtemp(join(tmpdir(), "pi-bot-activity-")); t.after(() => rm(root, { recursive: true, force: true }));
   const source = join(root, "reviewer");
   await initBot(source, { name: "reviewer", inherit: "none" });
-  const { fixture } = await import("../../bot/test/interface-fixtures.js");
+  const { fixture } = await import("../../bot/packages/runtime/test/interface-fixtures.js");
   const fake = fixture();
   const original = fake.bot.submit;
   fake.bot.submit = async (message, options) => {
     const accepted = await original(message, options);
-    const events: import("../../bot/src/types.js").BotEvent[] = [
+    const events: import("../../bot/packages/runtime/src/types.js").BotEvent[] = [
       { type: "tool_execution_start", data: { toolCallId: "a", toolName: "read", args: { path: "notes.md" } } },
       { type: "tool_execution_update", data: { toolCallId: "a", toolName: "read", summary: "Reading header" } },
       { type: "tool_execution_end", data: { toolCallId: "a", toolName: "read", isError: true, summary: "Permission denied" } },

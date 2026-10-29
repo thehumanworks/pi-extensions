@@ -1,5 +1,5 @@
 {
-  description = "Directory-defined bots powered by Pi";
+  description = "Local-first bot runtime and native web application";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -17,10 +17,11 @@
       packages = forAllSystems (
         system:
         let
-          bot = (pkgsFor system).callPackage ./nix/package.nix { };
+          bot = (pkgsFor system).callPackage ./packages/runtime/nix/package.nix { };
+          bot-web = (pkgsFor system).callPackage ./nix/web/package.nix { };
         in
         {
-          inherit bot;
+          inherit bot bot-web;
           default = bot;
         }
       );
@@ -33,15 +34,22 @@
             program = "${self.packages.${system}.bot}/bin/bot";
             meta.description = "Directory-defined bots powered by Pi";
           };
+          web = {
+            type = "app";
+            program = "${self.packages.${system}.bot-web}/bin/bot-web";
+            meta.description = "Native web UI with embedded Next.js assets";
+          };
         in
         {
-          inherit bot;
+          inherit bot web;
+          bot-web = web;
           default = bot;
         }
       );
 
       overlays.default = final: _prev: {
-        bot = final.callPackage ./nix/package.nix { };
+        bot = final.callPackage ./packages/runtime/nix/package.nix { };
+        bot-web = final.callPackage ./nix/web/package.nix { };
       };
 
       devShells = forAllSystems (
@@ -53,6 +61,8 @@
           default = pkgs.mkShell {
             packages = self.packages.${system}.bot.runtimeInputs ++ [
               pkgs.git
+              pkgs.bun
+              pkgs.ast-grep
               pkgs.nixfmt
               pkgs.prefetch-npm-deps
             ];
@@ -63,6 +73,7 @@
       checks = forAllSystems (system: {
         # Includes type checking, the offline test suite and installed-CLI smoke tests.
         default = self.packages.${system}.bot;
+        web = self.packages.${system}.bot-web;
       });
 
       formatter = forAllSystems (system: (pkgsFor system).nixfmt);

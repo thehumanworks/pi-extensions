@@ -48,6 +48,14 @@ test("roster lists ordinary BOT.md definitions without a format/version field", 
   assert.deepEqual(result.errors, []);
 });
 
+test("metadata validation still requires a name in ordinary definitions", async t => {
+  const f = await fixture(); t.after(f.cleanup);
+  const root = join(f.root, "roster"); await mkdir(join(root, "missing-name"), { recursive: true });
+  await writeFile(join(root, "missing-name", "BOT.md"), "---\ndescription: Missing name\n---\nPersona");
+  const result = await listBots(root);
+  assert.equal(result.bots.length, 0); assert.match(result.errors[0], /needs a name/);
+});
+
 test("archive refuses an owned source and preserves source/state once it is closed", async t => {
   const f = await fixture(); t.after(f.cleanup);
   await mkdir(join(f.source, ".bot")); await writeFile(join(f.source, ".bot", "MEMORY.md"), "keep this");

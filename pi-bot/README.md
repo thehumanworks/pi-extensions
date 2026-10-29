@@ -1,6 +1,6 @@
 # @nothumanwork/pi-bot
 
-A thin Pi UI for [`@nothumanwork/bot`](../bot/README.md): named specialists, direct conversations, delegation, progress and durable resume references.
+A thin Pi UI for [`@nothumanwork/bot`](../bot/packages/runtime/README.md): named specialists, direct conversations, delegation, progress and durable resume references.
 
 All bot definition, tool loading, memory, execution and storage policy belongs to the SDK. The extension contains only adapter registration and rendering. A bot conversation is **not** a native Pi session: Pi displays inputs/replies and stores a reference; the SDK's `pi-durable` database owns its history.
 
@@ -84,7 +84,7 @@ Use `excludeTools`, `excludeExtensions`, and `excludeMcpServers` (exact names or
 
 Native execution persists conversations but does not provide durable tool replay. Existing durable-executor conversations need a new conversation when enabling native execution. UI/session-replacement commands are not a full Pi CLI embedding; see the SDK's operational limits.
 
-These are trusted executable bots, **not sandboxes**. Shell and authored tools use host permissions. A remote bot uses the server user's files and provider credentials; a daemon can deliberately run unauthenticated even on `0.0.0.0`. See the [SDK documentation](../bot/README.md) for optional tokens, checkpoint limits, durability/replay semantics and process lifecycle guarantees.
+These are trusted executable bots, **not sandboxes**. Shell and authored tools use host permissions. A remote bot uses the server user's files and provider credentials; a daemon can deliberately run unauthenticated even on `0.0.0.0`. See the [SDK documentation](../bot/packages/runtime/README.md) for optional tokens, checkpoint limits, durability/replay semantics and process lifecycle guarantees.
 
 ## Development
 

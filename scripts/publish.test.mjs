@@ -67,6 +67,27 @@ test('publishes the standalone SDK only when explicitly registered and scoped', 
   assert.ok(f.calls[0][1].includes('--workspace=@nothumanwork/bot'));
   assert.throws(() => publish(['bot-missing'], f));
 });
+test('resolves nested bot packages by public name without publishing private applications', t => {
+  const f = fixture(t);
+  const paths = ['bot', 'bot/packages/runtime', 'bot/packages/ai-sdk', 'bot/apps/web'];
+  const packages = [
+    { name: '@nothumanwork/bot-workspace', private: true },
+    { name: '@nothumanwork/bot', version: '0.1.0', publishConfig: { access: 'public' } },
+    { name: '@nothumanwork/bot-ai-sdk', version: '0.1.0', publishConfig: { access: 'public' } },
+    { name: '@nothumanwork/bot-ui', private: true },
+  ];
+  writeFileSync(join(f.cwd, 'package.json'), JSON.stringify({ workspaces: paths }));
+  paths.forEach((path, index) => {
+    mkdirSync(join(f.cwd, path), { recursive: true });
+    writeFileSync(join(f.cwd, path, 'package.json'), JSON.stringify(packages[index]));
+  });
+  publish(['bot', '--dry-run'], f);
+  publish(['bot-ai-sdk', '--dry-run'], f);
+  assert.deepEqual(f.calls.map(call => call[1].find(arg => arg.startsWith('--workspace='))), ['--workspace=@nothumanwork/bot', '--workspace=@nothumanwork/bot-ai-sdk']);
+  assert.throws(() => publish(['bot-ui', '--dry-run'], f));
+  assert.throws(() => publish(['bot/packages/runtime'], f));
+});
+
 test('help does not call npm', t => {
   const f = fixture(t);
   publish(['--help'], f);

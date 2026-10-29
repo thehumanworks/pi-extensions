@@ -1,6 +1,6 @@
 # Bot SDK: design record and implemented scope
 
-This record replaces the original proposal after implementation was authorized. The subsequent user decision is authoritative: **no backwards compatibility or migration layer**. BOT.md has no format/version discriminator; there is one conversation owner. The usage/API references are now [`bot/README.md`](../../bot/README.md) and [`pi-bot/README.md`](../README.md).
+This record replaces the original proposal after implementation was authorized. The subsequent user decision is authoritative: **no backwards compatibility or migration layer**. BOT.md has no format/version discriminator; there is one conversation owner. The usage/API references are now [`bot/packages/runtime/README.md`](../../bot/packages/runtime/README.md) and [`pi-bot/README.md`](../README.md).
 
 ## Decisions
 

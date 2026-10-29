@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import semver from 'semver';
 import { publish } from './publish.mjs';
+import { publicWorkspaces } from './workspaces.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const registry = 'https://registry.npmjs.org/';
@@ -26,18 +26,13 @@ export function publishUpdated(args, { cwd = root, run = spawnSync, log = consol
   }
   if (args.length > 1 || args.some(arg => arg !== '--dry-run')) throw new Error(usage);
   const dryRun = args.includes('--dry-run');
-  const manifest = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8'));
-  if (!Array.isArray(manifest.workspaces)) throw new Error('Expected an explicit workspaces array.');
+  const workspaces = publicWorkspaces(cwd);
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const candidates = [];
 
   // Finish all lookups before publishing, so a lookup error cannot cause a partial release.
-  for (const dir of manifest.workspaces) {
-    if (typeof dir !== 'string' || !/^(?:bot|pi-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(dir)) {
-      throw new Error(`Invalid workspace directory: ${dir}`);
-    }
-    const pkg = JSON.parse(readFileSync(resolve(cwd, dir, 'package.json'), 'utf8'));
-    if (pkg.name !== `@nothumanwork/${dir}` || pkg.private === true || pkg.publishConfig?.access !== 'public') {
+  for (const { directory: dir, pkg } of workspaces) {
+    if (!/^@nothumanwork\/(?:bot(?:-ai-sdk)?|pi-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(pkg.name) || pkg.publishConfig?.access !== 'public') {
       throw new Error(`Invalid publishable workspace manifest: ${dir}`);
     }
     if (pkg.publishConfig?.registry && pkg.publishConfig.registry.replace(/\/$/, '') !== registry.replace(/\/$/, '')) {
@@ -77,7 +72,7 @@ export function publishUpdated(args, { cwd = root, run = spawnSync, log = consol
   // Reuse the single-package helper for auth, manifest validation, and lifecycle scripts.
   // Stop at the first failure; previous uploads cannot be rolled back.
   for (const candidate of candidates) {
-    publishPackage([candidate.directory], { cwd, run, log });
+    publishPackage([candidate.name.slice('@nothumanwork/'.length)], { cwd, run, log });
   }
   if (candidates.length) log(`Published ${candidates.length} package(s).`);
   return candidates;
