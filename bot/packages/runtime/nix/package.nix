@@ -8,6 +8,7 @@
   ripgrep,
   util-linux,
   which,
+  ast-grep,
 }:
 let
   manifest = lib.importJSON ../package.json;
@@ -33,6 +34,8 @@ buildNpmPackage {
       ../bin
       ../src
       ../test
+      ../ast-grep
+      ../sgconfig.yml
       ../package.json
       ../tsconfig.json
       ../tsconfig.build.json
@@ -51,7 +54,7 @@ buildNpmPackage {
   # The build phase already compiled dist; do not run prepack a second time.
   npmPackFlags = [ "--ignore-scripts" ];
 
-  nativeCheckInputs = runtimeInputs;
+  nativeCheckInputs = runtimeInputs ++ [ ast-grep ];
   doCheck = true;
   checkPhase = ''
     runHook preCheck

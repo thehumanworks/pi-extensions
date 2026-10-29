@@ -74,7 +74,7 @@ Pi tool cancellation flows to the SDK. Cancelling cannot undo external side effe
 
 ## Bot-owned capabilities and memory
 
-Current definitions require `format: 2`. There is no old-home loader, native-session adapter, migration or compatibility mode.
+Definitions may omit `format` or declare `format: 2`; both use the current SDK semantics. Other explicit format values are rejected. Accepting unversioned definitions does not import old-home state, resume native Pi sessions or restore the previous Pi-native runtime.
 
 The scaffold declares Pi workspace tools and `maintenance: true`, but omits a restrictive tool allowlist. Bots can autonomously author or improve `BOT.md`, `tools/`, `extensions/`, `skills/`, `scripts/`, and memory under `.bot/`. Valid generations activate after a tool batch, including within the same run. Invalid drafts stay on disk with repair diagnostics and the previous valid generation still active. No approval, promotion, PR or redeployment is required.
 

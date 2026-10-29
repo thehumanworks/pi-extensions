@@ -96,6 +96,28 @@ test('allows the standalone bot SDK in the release roster', t => {
   const candidates = publishUpdated(['--dry-run'], f);
   assert.deepEqual(candidates.map(item => item.name), ['@nothumanwork/bot']);
 });
+test('nested bot packages are selected while private roots and applications are never queried', t => {
+  const f = fixture(t, []);
+  const paths = ['bot', 'bot/packages/runtime', 'bot/packages/ai-sdk', 'bot/apps/web'];
+  const packages = [
+    { name: '@nothumanwork/bot-workspace', private: true },
+    { name: '@nothumanwork/bot', version: '0.1.0', publishConfig: { access: 'public' } },
+    { name: '@nothumanwork/bot-ai-sdk', version: '0.1.0', publishConfig: { access: 'public' } },
+    { name: '@nothumanwork/bot-ui', private: true },
+  ];
+  writeFileSync(join(f.cwd, 'package.json'), JSON.stringify({ workspaces: paths }));
+  paths.forEach((path, index) => {
+    mkdirSync(join(f.cwd, path), { recursive: true });
+    writeFileSync(join(f.cwd, path, 'package.json'), JSON.stringify(packages[index]));
+  });
+  const queried = [], published = [];
+  f.run = (_command, args) => { queried.push(args[1]); return { status: 1, stderr: JSON.stringify({ error: { code: 'E404' } }) }; };
+  f.publishPackage = args => published.push(args[0]);
+  publishUpdated([], f);
+  assert.deepEqual(queried, ['@nothumanwork/bot', '@nothumanwork/bot-ai-sdk']);
+  assert.deepEqual(published, ['bot', 'bot-ai-sdk']);
+});
+
 test('no updates means no publisher or login check', t => {
   const f = fixture(t, [{ local: '1.0.0', remote: ['1.0.0'] }]);
   assert.deepEqual(publishUpdated([], f), []);

@@ -31,16 +31,16 @@ test("definition edits preserve unknown values and distinguish empty selections 
   assert.match(definition, /important/); assert.match(definition, /cite sources/);
   await assert.rejects(editBot(f.source, { prompt: "a", edits: [] }), /Use prompt or edits/);
   await assert.rejects(editBot(f.source, { definition: definition, model: null }), /cannot be combined/);
-  await assert.rejects(editBot(f.source, { definition: "No metadata" }), /expected 2/);
+  await assert.rejects(editBot(f.source, { definition: "No metadata" }), /needs a name/);
   assert.equal(await readFile(join(f.source, "BOT.md"), "utf8"), definition);
 });
 
-test("metadata validation rejects old-format definitions rather than providing compatibility", async t => {
+test("metadata validation still requires a name in unversioned definitions", async t => {
   const f = await fixture(); t.after(f.cleanup);
   const root = join(f.root, "roster"); await mkdir(join(root, "old"), { recursive: true });
   await writeFile(join(root, "old", "BOT.md"), "---\ndescription: old\n---\nPersona");
   const result = await listBots(root);
-  assert.equal(result.bots.length, 0); assert.match(result.errors[0], /expected 2/);
+  assert.equal(result.bots.length, 0); assert.match(result.errors[0], /needs a name/);
 });
 
 test("archive refuses an owned source and preserves source/state once it is closed", async t => {

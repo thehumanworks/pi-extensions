@@ -61,7 +61,8 @@ function strings(value: unknown, field: string): string[] | undefined {
 }
 export function parseDefinition(content: string, sourceDir: string): ProjectDefinition {
   const { frontmatter: f, body } = parseFrontmatter<Record<string, unknown>>(content);
-  if (f.format !== 2) throw new BotError("INVALID_INPUT", `Unsupported BOT.md format ${String(f.format)}; expected 2.`);
+  // Missing format is supported authoring syntax, normalized to v2 below; explicit versions remain strict.
+  if (f.format !== undefined && f.format !== 2) throw new BotError("INVALID_INPUT", `Unsupported BOT.md format ${String(f.format)}; expected 2 or an omitted format.`);
   if (typeof f.name !== "string" || !f.name.trim()) throw new BotError("INVALID_INPUT", "BOT.md needs a name.");
   if (typeof f.description !== "string" || !f.description.trim()) throw new BotError("INVALID_INPUT", "BOT.md needs a description.");
   if (!body.trim()) throw new BotError("INVALID_INPUT", "BOT.md needs a persona body.");

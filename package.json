@@ -4,6 +4,9 @@
   "type": "module",
   "workspaces": [
     "bot",
+    "bot/packages/runtime",
+    "bot/packages/ai-sdk",
+    "bot/apps/web",
     "pi-advisor",
     "pi-atlassian",
     "pi-bot",

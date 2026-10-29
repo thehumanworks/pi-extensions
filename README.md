@@ -1,6 +1,6 @@
 # Pi extensions
 
-An npm-workspace monorepo with independently versioned Pi extensions and standalone Pi-powered SDKs. The root is private and is never published. Each directory is a separate npm package; there is no aggregate extension that loads everything.
+An npm-workspace monorepo with independently versioned Pi extensions and standalone Pi-powered SDKs. The root is private and is never published. Extensions are separate npm packages; `bot/` is a private nested workspace containing the standalone runtime, an independent AI SDK adapter, and a maintained Next.js application. There is no aggregate extension that loads everything.
 
 ## Install an extension
 
@@ -15,7 +15,9 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 
 | Package | Source and documentation |
 | --- | --- |
-| `@nothumanwork/bot` | [bot](bot/README.md) — standalone bot SDK, CLI and daemon |
+| `@nothumanwork/bot` | [runtime](bot/packages/runtime/README.md) — standalone bot SDK, CLI and daemon |
+| `@nothumanwork/bot-ai-sdk` | [AI SDK adapter](bot/packages/ai-sdk/README.md) — independent `useChat` integration |
+| `@nothumanwork/bot-ui` | [web application](bot/apps/web/README.md) — maintained Next.js UI (private application) |
 | `@nothumanwork/pi-advisor` | [pi-advisor](pi-advisor/README.md) |
 | `@nothumanwork/pi-atlassian` | [pi-atlassian](pi-atlassian/README.md) |
 | `@nothumanwork/pi-background-compaction` | [pi-background-compaction](pi-background-compaction/README.md) |
@@ -81,7 +83,7 @@ npm run publish:package -- pi-voice --dry-run
 npm run publish:package -- pi-voice
 ```
 
-The helper in `scripts/publish.mjs` accepts only the registered `bot` SDK or a registered `pi-*` workspace, verifies its `@nothumanwork` name and public access, then runs `npm whoami` before publishing to `https://registry.npmjs.org/`. If login cannot be verified, it stops and asks you to run `npm login`; it does not log in automatically. npm still enforces scope permissions, version uniqueness, and 2FA. Terminal input is passed through for npm prompts. `--dry-run` skips the helper's authentication check and upload but still runs npm lifecycle scripts and may contact the registry. npm can reject a dry run if that version is already published; use `npm pack --workspace @nothumanwork/pi-voice --dry-run` for a packaging-only preview. The helper does not bump versions or run the test suite for you.
+The helper in `scripts/publish.mjs` accepts a registered public package short name (`bot`, `bot-ai-sdk`, or `pi-*`), resolves nested workspace paths, skips private coordinators/applications, verifies its `@nothumanwork` name and public access, then runs `npm whoami` before publishing to `https://registry.npmjs.org/`. If login cannot be verified, it stops and asks you to run `npm login`; it does not log in automatically. npm still enforces scope permissions, version uniqueness, and 2FA. Terminal input is passed through for npm prompts. `--dry-run` skips the helper's authentication check and upload but still runs npm lifecycle scripts and may contact the registry. npm can reject a dry run if that version is already published; use `npm pack --workspace @nothumanwork/pi-voice --dry-run` for a packaging-only preview. The helper does not bump versions or run the test suite for you.
 
 You can also run `node /path/to/pi-extensions/scripts/publish.mjs pi-voice` from any directory.
 

@@ -1,0 +1,42 @@
+{
+  "name": "@nothumanwork/bot",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Directory-defined, self-improving bots powered by Pi, for applications, the CLI and long-running services",
+  "keywords": ["bot", "sdk", "pi", "durable"],
+  "engines": { "node": ">=22.19.0" },
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "git+https://github.com/thehumanworks/pi-extensions.git", "directory": "bot/packages/runtime" },
+  "files": ["dist", "bin", "README.md"],
+  "bin": { "bot": "bin/bot.mjs" },
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./server": "./dist/server.js",
+    "./client": "./dist/client.js",
+    "./pi": "./dist/pi.js",
+    "./worker": "./dist/worker-client.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "tsc --noEmit && npm run check:ast",
+    "check:ast": "ast-grep scan --config sgconfig.yml src && ast-grep test --config sgconfig.yml --skip-snapshot-tests",
+    "prepack": "npm run build",
+    "test": "npm run check:ast && npm run build && tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@earendil-works/chord": "1.4.0",
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-agent-core": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-durable": "1.4.0",
+    "@earendil-works/pi-tui": "1.4.0",
+    "jiti": "2.6.1",
+    "typebox": "1.3.27"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}

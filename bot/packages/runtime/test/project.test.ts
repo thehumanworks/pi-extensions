@@ -51,11 +51,14 @@ test("duplicate/unknown tools, unsupported APIs and connections fail rather than
   await assert.rejects(loadProject(f.source, { agentDir: f.agentDir }), /Unsupported connections/);
 });
 
-test("only current format is supported and state/auth paths remain separate", async t => {
+test("unversioned definitions use current semantics and state/auth paths remain separate", async t => {
   const f = await fixture(); t.after(f.cleanup);
   const p = await loadProject(f.source, { agentDir: f.agentDir });
   assert.equal(p.info.format, 2); assert.equal(p.info.stateDir, join(f.source, ".bot"));
   await writeFile(join(f.source, "BOT.md"), "---\nname: old\ndescription: no format\n---\n\nPersona\n");
-  await assert.rejects(loadProject(f.source, { agentDir: f.agentDir }), error => (error as {code:string}).code === "INVALID_INPUT");
+  const unversioned = await loadProject(f.source, { agentDir: f.agentDir });
+  assert.equal(unversioned.info.format, 2);
+  assert.equal(unversioned.info.stateDir, join(f.source, ".bot"));
+  assert.equal(unversioned.definition.inherit, "none");
   assert.deepEqual(modelRuntimeOptions(f.agentDir), { authPath: join(f.agentDir, "auth.json"), modelsPath: join(f.agentDir, "models.json"), modelsStorePath: join(f.agentDir, "models-store.json"), allowModelNetwork: false });
 });

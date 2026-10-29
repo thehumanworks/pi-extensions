@@ -1,0 +1,27 @@
+id: bot-no-required-format-check
+language: TypeScript
+severity: error
+message: Do not add a BOT.md format-presence gate. Only the absence-aware explicit-version check is allowed in parseDefinition.
+files:
+  - src/**/*.ts
+rule:
+  all:
+    - kind: if_statement
+    - inside:
+        stopBy: end
+        all:
+          - kind: function_declaration
+          - has:
+              field: name
+              regex: ^parseDefinition$
+    - has:
+        field: condition
+        has:
+          stopBy: end
+          any:
+            - pattern: $F.format
+            - pattern: $F["format"]
+            - pattern: '"format" in $F'
+            - pattern: Object.hasOwn($F, "format")
+    - not:
+        pattern: if ($F.format !== undefined && $F.format !== 2) $BODY

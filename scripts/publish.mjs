@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import { registeredWorkspaces } from './workspaces.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const registry = 'https://registry.npmjs.org/';
@@ -15,16 +15,14 @@ export function publish(args, { cwd = root, run = spawnSync, log = console.log }
     return;
   }
   const [shortName, ...options] = args;
-  if (!/^(?:bot|pi-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(shortName ?? '') ||
+  if (!/^(?:bot(?:-ai-sdk)?|pi-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(shortName ?? '') ||
       options.length > 1 || options.some(option => option !== '--dry-run')) {
     throw new Error(usage);
   }
-  const manifest = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8'));
-  if (!Array.isArray(manifest.workspaces) || !manifest.workspaces.includes(shortName)) {
-    throw new Error(`Not a registered workspace: ${shortName}`);
-  }
-  const pkg = JSON.parse(readFileSync(resolve(cwd, shortName, 'package.json'), 'utf8'));
   const name = `@nothumanwork/${shortName}`;
+  const entry = registeredWorkspaces(cwd).find(({ pkg }) => pkg.name === name);
+  if (!entry) throw new Error(`Not a registered workspace: ${shortName}`);
+  const { pkg } = entry;
   if (pkg.name !== name || pkg.private === true || pkg.publishConfig?.access !== 'public') {
     throw new Error(`${shortName} must be a public, publishable package named ${name}.`);
   }
