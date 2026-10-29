@@ -39,7 +39,7 @@ test("timeouts bound stalled providers/auth refresh and abort their signals", as
   const task = collectUsage([provider("stalled", async (ctx) => {
     signal = ctx.signal;
     return new Promise(() => {});
-  })], registry, new AbortController().signal, 5);
+  })], registry, new AbortController().signal, { timeoutMs: 5 });
   const [results] = await Promise.all([task, delay(20)]); // keep Node alive for AbortSignal.timeout's unref'd timer
   assert.equal(results[0].status, "error");
   assert.match(JSON.stringify(results), /timed out/);
@@ -72,6 +72,17 @@ test("provider filtering, unknown arguments and no-UI mode do not query unintend
   await h.command.handler("", { ...h.ctx, hasUI: false, mode: "print" });
   assert.deepEqual(queried, ["two"]);
   assert.match(h.notifications[1], /Usage: \/usage/);
+});
+
+test("Claude alias selects its adapter and forwards the active model provider", async () => {
+  const seen: Array<string | undefined> = [];
+  const adapter = { ...provider("claude", async (ctx) => { seen.push(ctx.activeProvider); return snapshot; }), aliases: ["anthropic"] };
+  const h = harness([adapter]);
+  const ctx = { ...h.ctx, model: { provider: "claude-bridge" } } as ExtensionCommandContext;
+  await h.command.handler("anthropic", ctx);
+  await h.command.handler("claude", ctx);
+  assert.deepEqual(seen, ["claude-bridge", "claude-bridge"]);
+  assert.equal(h.notifications.length, 2);
 });
 
 test("shutdown cancels active work and does not post a late notification", async () => {

@@ -20,7 +20,7 @@ export function registerUsage(pi: ExtensionAPI, providers: readonly UsageProvide
         return;
       }
       const id = args.trim().toLowerCase();
-      const selected = id ? providers.filter((provider) => provider.id === id) : providers;
+      const selected = id ? providers.filter((provider) => provider.id === id || provider.aliases?.includes(id)) : providers;
       if (!selected.length) {
         ctx.ui.notify(`Usage: /usage [${providers.map((provider) => provider.id).join("|")}]`, "warning");
         return;
@@ -35,12 +35,12 @@ export function registerUsage(pi: ExtensionAPI, providers: readonly UsageProvide
         if (ctx.mode === "tui") {
           await ctx.ui.custom<void>((tui, theme, keys, done) => {
             const view = new UsageView(tui, theme, keys, () => done(), (signal) =>
-              collectUsage(selected, ctx.modelRegistry, AbortSignal.any([signal, controller.signal])));
+              collectUsage(selected, ctx.modelRegistry, AbortSignal.any([signal, controller.signal]), { activeProvider: ctx.model?.provider }));
             controller.signal.addEventListener("abort", () => view.close(), { once: true });
             return view;
           }, { overlay: true, overlayOptions: { width: "90%", maxHeight: "85%" } });
         } else {
-          const results = await collectUsage(selected, ctx.modelRegistry, controller.signal);
+          const results = await collectUsage(selected, ctx.modelRegistry, controller.signal, { activeProvider: ctx.model?.provider });
           if (!controller.signal.aborted) ctx.ui.notify(formatUsage(results), "info");
         }
       } catch {

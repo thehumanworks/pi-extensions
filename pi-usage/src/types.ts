@@ -6,6 +6,8 @@ export type AuthRegistry = Pick<ExtensionContext["modelRegistry"], "getProviderA
 export interface UsageWindow {
   label: string;
   remainingPercent?: number;
+  /** Default is remaining (Codex); Claude displays used like Claude Code. */
+  display?: "remaining" | "used";
   resetsAt?: number; // Unix milliseconds, not credential expiry.
 }
 
@@ -28,8 +30,9 @@ export interface UsageSnapshot {
 export interface UsageProvider {
   id: string;
   label: string;
+  aliases?: readonly string[];
   dashboardUrl: string;
-  fetch(context: { registry: AuthRegistry; signal: AbortSignal }): Promise<UsageSnapshot>;
+  fetch(context: { registry: AuthRegistry; signal: AbortSignal; activeProvider?: string }): Promise<UsageSnapshot>;
 }
 
 export type UsageResult = {

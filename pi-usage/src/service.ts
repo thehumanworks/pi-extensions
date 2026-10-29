@@ -15,15 +15,15 @@ export async function collectUsage(
   providers: readonly UsageProvider[],
   registry: AuthRegistry,
   signal: AbortSignal,
-  timeoutMs = 15_000,
+  options: { timeoutMs?: number; activeProvider?: string } = {},
 ): Promise<UsageResult[]> {
   signal.throwIfAborted();
   const results = await Promise.all(providers.map(async (adapter): Promise<UsageResult> => {
     const provider = { id: adapter.id, label: adapter.label, dashboardUrl: adapter.dashboardUrl };
-    const timeout = AbortSignal.timeout(timeoutMs);
+    const timeout = AbortSignal.timeout(options.timeoutMs ?? 15_000);
     const combined = AbortSignal.any([signal, timeout]);
     try {
-      const snapshot = await abortable(Promise.resolve().then(() => adapter.fetch({ registry, signal: combined })), combined);
+      const snapshot = await abortable(Promise.resolve().then(() => adapter.fetch({ registry, signal: combined, activeProvider: options.activeProvider })), combined);
       return { provider, status: "ok", snapshot };
     } catch (error) {
       if (signal.aborted) throw signal.reason;

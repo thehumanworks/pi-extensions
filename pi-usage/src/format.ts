@@ -24,10 +24,11 @@ export function formatWindow(window: UsageWindow, now: number): string[] {
   const label = safeText(window.label);
   if (window.remainingPercent === undefined) return [`${label}: Not reported`, `  ${formatReset(window.resetsAt, now)}`];
   const left = Math.max(0, Math.min(100, window.remainingPercent));
-  const filled = Math.round(left / 5);
+  const percent = window.display === "used" ? 100 - left : left;
+  const filled = Math.round(percent / 5);
   const bar = "█".repeat(filled) + "░".repeat(20 - filled);
   return [
-    `${label}: [${bar}] ${Math.round(left * 10) / 10}% left`,
+    `${label}: [${bar}] ${Math.round(percent * 10) / 10}% ${window.display === "used" ? "used" : "left"}`,
     `  ${formatReset(window.resetsAt, now)}`,
   ];
 }
