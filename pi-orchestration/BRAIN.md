@@ -212,7 +212,7 @@ None.
 - Value: ✅ yielded value: tick 20's text output is now protected by tests that run the compiled CLI.
 - Lesson: `npm test` prints `ℹ tests N`, not `# tests N`; grep `^ℹ (tests|pass|fail)` for the counts.
 
-### Tick 22 · 12:41 · result on a cancelled run exits 3 with run_cancelled
+### Tick 22 · 12:39 · result on a cancelled run exits 3 with run_cancelled
 - Action: took the exit-code part of axeval fix 9, because it fits a four-minute tick and makes the documented exit code (`3 cancelled`) true; fix 8 needs a full tick. `src/engine/index.ts` result throws `run_cancelled: Run <id> is cancelled.` before the generic `run_failed`; `errorInfo` (`src/cli.ts`) maps `run_cancelled` to exit 3.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` SIGKILL test now asserts `result` on the cancelled run exits 3 with `run_cancelled` on stderr. The tool path gets the code too via tick 18's `codedError`.
 - Value: ✅ yielded value: scripts and agents can branch on a cancelled run as the help documents.
