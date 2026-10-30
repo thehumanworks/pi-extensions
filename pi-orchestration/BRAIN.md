@@ -24,7 +24,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `runshape` (spawned tick 26, branch brain/runshape, herdr w5:p1): axeval fix 8, one run shape across CLI and tool (string model, brief JSON view with `runId` for status/list/poll/run --json). Baseline 37/37.
+- None running. `runshape` merged at `237e912` and retired in tick 28.
 - `axeval` merged at `050a209` and retired in tick 11; its report is `brain/axeval.md` (ranked fixes drive Backlog item 0).
 - `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
@@ -40,9 +40,10 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    5. ✅ Done in tick 16: `poll` returns on `waiting_signal` by default (`--until done` keeps waiting), prints a line only when more than elapsed time changed, help/README say `--interval 1s`. `watch` still defaults to `done`.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
    7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
-   8. In progress: subagent `runshape` (tick 26). One run shape across surfaces (`model` form, `id` vs `runId`).
+   8. ✅ Done in tick 28 (merged `runshape`, `237e912`): model stored as `"provider/modelId"`; CLI `--json` for status/poll/run/cancel/retry/revert prints the tool's brief view, list the list view (`src/presentation.ts` `runHead`); only `status --verbose`/`watch` print the full record with `id`.
    9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Tick 24: `worker status|stop` with no worker fail `worker_unavailable` (exit 4) naming `worker start`, tested. Tick 25: process test asserts the `agents` and `worker status` text.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
+   11. Next: clear `waitingFor` when a run reaches a terminal status; a cancelled or reverted run still prints "waiting for signal … signal: …" (runshape observation, engine record).
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
 2. Workflow files are source (D2): ✅ done. Bot workflows tracked and ignore rules removed (tick 2); guide, tool description, `init` output and README state the policy (tick 5). Possible follow-up: `validate`/`catalog` warn on git-ignored workflow files (item 4).
@@ -219,3 +220,9 @@ None.
 - Value: ✅ yielded value: a misspelled agent option is caught at validate, before launch.
 - Follow-up in the same tick (`64463bd` then this commit): `ctx.spawn({…})` options are linted too, accepting `name`, `initialPrompt` and `detach` on top; the test adds a `modle` typo. **37/37**.
 - Lesson: one shared constant between the lint and the run-time check keeps them from drifting. Commit at the first green, then extend; both fit the four minutes. Next: review runshape when done.
+
+### Tick 28 · 13:10 · Merge runshape: one run shape across surfaces
+- Action: reviewed and merged `brain/runshape`, done since tick 27, because a finished branch blocks nothing else and fix 8 was the last open ranked axeval fix. Diff: 12 files, +195/-57 (cli.ts, engine/index.ts, store.ts, extension.ts, presentation.ts, README, tests).
+- Outcome: `npm test` in its worktree **38/38**; after `git merge --no-ff` on top of tick 27's lint, `npm run check` clean and `npm test` **38/38**. Merge `237e912`, pushed; `loop.sh retire runshape` succeeded. All ten axeval fixes are now done. runshape's observation (terminal runs keep `waitingFor`) became Backlog 0.11.
+- Value: ✅ yielded value: an agent that learned the JSON shape on the CLI can parse the tool's details and vice versa; `list` no longer mixes model types.
+- Lesson: re-run the suite after merging, not only in the branch; tick 27 changed validation.ts and execution.ts under it. Next: Backlog 0.11, then a second axeval round to measure the fixes.
