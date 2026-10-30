@@ -178,13 +178,16 @@ test("catalog reports a broken file without hiding valid workflows", async () =>
     broken: "export default { oops",
     plainargs: workflow(`{ name: "plainargs", args: { topic: "string" }, async run() { return 1; } }`),
     stringargs: workflow(`{ name: "stringargs", args: Type.String(), async run() { return 1; } }`),
+    sinclair: `import { Type } from "@sinclair/typebox";\nexport default { name: "sinclair", args: Type.Object({}), async run() { return 1; } };\n`,
   } });
   try {
     const entries = await f.request<CatalogEntry[]>({ action: "catalog", cwd: f.project });
-    assert.deepEqual(entries.map(entry => [entry.name, entry.error === undefined]), [["broken", false], ["good", true], ["plainargs", false], ["stringargs", false]]);
+    assert.deepEqual(entries.map(entry => [entry.name, entry.error === undefined]), [["broken", false], ["good", true], ["plainargs", false], ["sinclair", false], ["stringargs", false]]);
     assert.match(entries[0].error!, /Cannot load/);
     assert.match(entries[2].error!, /args must be Type\.Object\(\{\.\.\.\}\) from "typebox"; got \{"topic":"string"\}/);
-    assert.match(entries[3].error!, /args must be Type\.Object/);
+    assert.match(entries[3].error!, /Cannot find module '@sinclair\/typebox'.*Use import \{ Type \} from "typebox" \(bundled with pi-orchestration\)\.$/s);
+    assert.doesNotMatch(entries[3].error!, /Require stack/);
+    assert.match(entries[4].error!, /args must be Type\.Object/);
     assert.equal((await f.run("good")).result, 1);
   } finally { await f.close(); }
 });

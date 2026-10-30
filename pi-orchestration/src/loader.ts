@@ -65,7 +65,7 @@ export async function loadWorkflow(ref: WorkflowRef | string, cwd: string): Prom
   });
   let definition: WorkflowDefinition;
   try { definition = await loader.import<WorkflowDefinition>(path, { default: true }); }
-  catch (error) { throw new WorkflowError("invalid_workflow", `Cannot load ${path}: ${error instanceof Error ? error.message : String(error)}`); }
+  catch (error) { throw new WorkflowError("invalid_workflow", `Cannot load ${path}: ${loadMessage(error)}`); }
   if (!definition || typeof definition !== "object" || typeof definition.run !== "function" || typeof definition.name !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(definition.name)) {
     throw new WorkflowError("invalid_workflow", `${path} must export default defineWorkflow({ name: 'kebab-case', async run(ctx) { ... } }).`);
   }
@@ -74,6 +74,11 @@ export async function loadWorkflow(ref: WorkflowRef | string, cwd: string): Prom
     throw new WorkflowError("invalid_workflow", `${path}: args must be Type.Object({...}) from "typebox"; got ${describeArgs(definition.args)}.`);
   }
   return { definition, path, hash };
+}
+// Node's "Require stack:" lists loader internals, not the workflow's mistake.
+function loadMessage(error: unknown): string {
+  const message = (error instanceof Error ? error.message : String(error)).replace(/\n\s*Require stack:[\s\S]*$/, "");
+  return /Cannot find module '@sinclair\/typebox/.test(message) ? `${message} Use import { Type } from "typebox" (bundled with pi-orchestration).` : message;
 }
 function describeArgs(args: unknown): string {
   try { return JSON.stringify(args)?.slice(0, 120) ?? String(args); } catch { return String(args); }
