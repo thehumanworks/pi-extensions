@@ -2,6 +2,8 @@ import { parse } from "@babel/parser";
 import type { ValidationResult } from "./index.ts";
 
 /** Option names ctx.agent() and ctx.spawn() accept; checked at validate time and again at run time. */
+/** Members of the run context; validate reports any other `ctx.<name>` the run reads. */
+export const CONTEXT_MEMBERS = ["runId", "args", "cwd", "depth", "budget", "agent", "parallel", "pipeline", "step", "workflow", "signal", "sleep", "spawn", "swarm", "phase", "log", "now", "random"];
 export const AGENT_OPTIONS = ["model", "thinkingLevel", "instructions", "tools", "cwd", "isolation", "budget", "timeoutMs", "retries", "label", "phase", "agentType", "key", "schema"];
 
 type Node = { type: string; [key: string]: unknown };
@@ -42,10 +44,14 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
     const loc = value.loc as { start?: { line?: number } } | undefined;
     diagnostics.push({ code: "nondeterministic_call", line: loc?.start?.line, message: `${label} is not replay-safe in workflow control flow. Use ctx.now(), ctx.random() or ctx.sleep(); place external effects inside ctx.step().` });
   }
+  let ctxName: string | undefined;
   function visit(value: unknown, active = false, effectOptions = false): void {
     if (!node(value)) return;
     const key = name(value.key);
     if ((value.type === "ObjectMethod" || value.type === "ObjectProperty") && key === "run") {
+      const fn = value.type === "ObjectMethod" ? value : functionNode(value.value) ? value.value : undefined;
+      const param = fn ? (fn.params as Node[])[0] : undefined;
+      if (!active) ctxName = param?.type === "Identifier" ? name(param) : undefined;
       if (value.type === "ObjectMethod") { visit(value.body, true); return; }
       if (functionNode(value.value)) { visit(value.value.body, true); return; }
     }
@@ -75,6 +81,13 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
           visit(arg, active, index === 2);
         });
         return;
+      }
+    }
+    if (active && ctxName && ["MemberExpression", "OptionalMemberExpression"].includes(value.type) && !value.computed && name(value.object) === ctxName) {
+      const member = name(value.property);
+      if (member && !CONTEXT_MEMBERS.includes(member)) {
+        const loc = value.loc as { start?: { line?: number } } | undefined;
+        diagnostics.push({ code: "unknown_context_member", line: loc?.start?.line, message: `${ctxName}.${member} does not exist on the workflow context. Members: ${CONTEXT_MEMBERS.join(", ")}.` });
       }
     }
     if (active && value.type === "NewExpression" && name(value.callee) === "Date" && (value.arguments as unknown[]).length === 0) report(value, "new Date()");
