@@ -395,9 +395,14 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       case "worker": {
         count(1, "worker start|stop|status");
         const workerText = (worker: WorkerStatus) => `worker pid ${worker.pid} · home ${worker.home} · up ${duration(worker.uptimeMs)}`;
+        // Only start spawns a worker; status and stop on an empty home explain that instead of a socket errno.
+        const running = <T>(request: Promise<T>) => request.catch((error: NodeJS.ErrnoException) => {
+          if (!["ENOENT", "ECONNREFUSED"].includes(error.code ?? "")) throw error;
+          throw new CliError(`No workflow worker is running for this home. Start one with ${hint} worker start; run, poll and the other commands start it automatically.`, "worker_unavailable", 4);
+        });
         if (args[0] === "start") { const worker = await client.ensure(options) as WorkerStatus; emit(worker, workerText(worker)); }
-        else if (args[0] === "stop") emit(await client.rpc({ action: "stop" }, options), "worker stopped");
-        else if (args[0] === "status") { const worker = await client.rpc({ action: "ping" }, options) as WorkerStatus; emit(worker, workerText(worker)); }
+        else if (args[0] === "stop") emit(await running(client.rpc({ action: "stop" }, options)), "worker stopped");
+        else if (args[0] === "status") { const worker = await running(client.rpc({ action: "ping" }, options)) as WorkerStatus; emit(worker, workerText(worker)); }
         else throw new CliError(`Usage: ${program} worker start|stop|status`);
         return 0;
       }

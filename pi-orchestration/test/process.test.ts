@@ -40,6 +40,10 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     await s.write("gate", workflow(`{ name: "gate", async run(ctx) { return ctx.signal("go", { schema: Type.Boolean() }); } }`));
     await s.write("clock", workflow(`{ name: "clock", async run() { return Date.now(); } }`));
 
+    const idle = await s.cli(["worker", "status"], {}, false);
+    assert.equal(idle.code, 4);
+    assert.match(idle.stderr, /^error worker_unavailable: No workflow worker is running .* worker start;/);
+
     const refused = await s.cli(["run", "quick", "--args", '{"n":1}'],
       { PI_WORKFLOW_RUN_ID: "parent", PI_WORKFLOW_STEP: "root/agent#0" });
     assert.equal(refused.code, 2);

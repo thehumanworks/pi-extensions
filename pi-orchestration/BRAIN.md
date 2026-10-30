@@ -41,7 +41,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
    7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
-   9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Follow-up found in tick 23: `worker status` with no worker running prints `Error ENOENT: connect ENOENT …/worker.sock`; it should say no worker is running, name `worker start`, and exit 4. No test covers the `agents`/`worker` text yet.
+   9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Tick 24: `worker status|stop` with no worker fail `worker_unavailable` (exit 4) naming `worker start`, tested. No test covers the `agents`/`worker start` text yet.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
@@ -223,3 +223,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. Local CLI (after `npm run build`) with `--home /tmp/bt23` printed all three lines. Found: `worker status` with no worker prints a raw `ENOENT` (logged under Backlog 0.9). No test asserts the new text yet.
 - Value: ✅ yielded value: no CLI command dumps JSON in text mode any more.
 - Lesson: try each command once against a fresh home after changing it; the empty case showed an error the report missed.
+
+### Tick 24 · 12:52 · worker status explains a missing worker
+- Action: fixed tick 23's follow-up because it fits a four-minute tick; fix 8 needs a full tick. `worker status` and `worker stop` on a home with no worker printed `error ENOENT: connect ENOENT …/worker.sock` (exit 4 already). In the `worker` case of `src/cli.ts`, a `running` wrapper now turns ENOENT/ECONNREFUSED into `worker_unavailable: No workflow worker is running for this home. Start one with <hint> worker start; run, poll and the other commands start it automatically.` The hint keeps `--home`.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` asserts exit 4 and the message for `worker status` before any worker starts.
+- Value: ✅ yielded value: an agent that checks the worker first gets the fix, not a socket errno.
+- Lesson: wrap errno handling at the command that knows the context (here: only `start` spawns), not in the shared rpc client.
