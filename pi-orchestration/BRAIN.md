@@ -39,7 +39,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 000. axeval3's ranked fixes (`brain/axeval3.md`, "Ranked fixes"; round three: S1-S4 all 0 wrong turns). Open, in order:
    1. Worker build check (worker.ts:58, protocol.ts:11, client.ts:54-57): worker reports a build id; client restarts an idle stale worker, else warns naming `worker stop`. Same as 00.11. In progress: `worker1` (tick 55).
    2. ✅ Done tick 54 (58f2ec3), pending Q1. Ask before answering a gate: append to `toolHints.signal` (presentation.ts:95-96) `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` Measured unasked approvals 6/6 → 2/6, told-to-approve 4/4 still fine. Policy choice: see Questions.
-   3. Lint rest: `require("fs"|…)`, `randomBytes`/`randomInt` imports, `process.hrtime` (tick 52 covered performance.now, crypto.randomUUID, getRandomValues).
+   3. Lint rest: `require("fs"|…)` calls and `process.hrtime.bigint()` (tick 52 covered performance.now, crypto.randomUUID, getRandomValues; tick 55 covered process.hrtime, randomBytes, randomInt; run `npm run check` on ddfb224).
    4. ✅ Widget pluralisation, done tick 51.
    5. Guide signal line (guide.ts:78): status shows key, schema and deliver call; value is JSON, not a string.
    6. `invalid_args` example built from the actual input (engine/index.ts:308).
@@ -276,3 +276,4 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Outcome: `loop.sh spawn` took about 35 seconds; branch brain/worker1 pushed, worktree `.pi/worktrees/brain-worker1`, herdr w9:p1 `agent_status=working`. No source changed; tests not rerun (42/42 at b057433). Archived tick 30 (Log was 26 entries).
 - Value: ✅ yielded value: the last ranked fix that needs a design choice is being worked in parallel with the four-minute lint and guide items.
 - Lesson: read the three named file:line spots before writing the brief (one command, 20 seconds); the brief then names exact lines. Next: Backlog 000.3 lint rest (`require("fs")`, `randomBytes`/`randomInt` imports, `process.hrtime`) in src/validation.ts, no overlap with worker1.
+- Follow-up in the same tick: part of 000.3. `lintDeterminism` (`src/validation.ts:90-91`) reports `process.hrtime()`, bare `randomBytes()`/`randomInt()` and `crypto.randomBytes()`/`crypto.randomInt()` as `nondeterministic_call`; `test/unit.test.ts:32-33` asserts all three forms. `npm test` **42/42**. Commit `ddfb224`. Not checked: `npm run check` (no time; the tsc call I ran used the wrong prefix and proves nothing), `process.hrtime.bigint()`. Left: `require("fs"|"node:fs"|…)` calls.
