@@ -89,6 +89,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
+- Tick 14: check option names at the one function every agent path goes through (`resolveOptions`); lint at validate as the follow-up.
 - Ticks 11-13: an evaluation subagent with a narrow write scope merges cleanly. TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer. Keep error formatting shared across surfaces (`src/engine/mismatch.ts`).
 - Ticks 8-10: read the surface's own help before adding a backlog item; act on a subagent's concrete partial findings outside its write scope without waiting for the final report.
 
