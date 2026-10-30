@@ -41,7 +41,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    6. Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
    7. Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
-   9. Exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` hint keeps `--home` (cli.ts:189-192).
+   9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). Exit code for `not_found` itself is still 2.
    10. Guide says why it uses the full command (link.ts:25-29, guide.ts:46).
    Unranked: no-model warning on agent-less workflows, `Approval 0/0`, `1 agents`, unrounded costUsd, tool errors with `details: {}`.
 
@@ -251,3 +251,9 @@ None.
 - Outcome: `npm run check` clean; `npm test` **38/38**. `test/engine.test.ts` catalog test adds a `sinclair` fixture and asserts the hint and no `Require stack`; with the old loader.ts the suite is 37/38. Commit `a7efd5b`.
 - Value: ✅ yielded value: a wrong TypeBox import is a one-edit fix named in the error.
 - Lesson: commit at green, then run the old-source check; both fit the four minutes. Next: 00.9 (exit 1 for usage-class errors; `not_found` hint keeps `--home`) or 00.6.
+
+### Tick 40 · 14:11 · Lookup errors exit 1 and name the list command
+- Action: took Backlog 00.9, because it fits four minutes and fixes axeval2's mismatch with `--help` (unknown_signal exited 2 while invalid_signal exited 1) and the `--home`-less `Use workflow list.` hint. `src/cli.ts` `errorInfo` adds unknown_signal, unknown_agent_option and unknown_context_member to the exit-1 list; the CLI catch appends `List runs: <hint> list.` to `not_found`; `src/engine/index.ts:222` drops its CLI hint; `src/extension.ts` appends `List runs with {"action":"list"}.` for the tool.
+- Outcome: `npm run check` clean; `npm test` **38/38**. `test/process.test.ts:57-58` asserts `status nope` prints `error not_found: Unknown workflow run nope. List runs: … list.` The first regex expected `--home`, but the sandbox sets the home by environment, so the hint is the bare program; loosened. Not tested: the tool-side hint, and the new exit-1 codes (no assertion). Commit `8e2aaa5`.
+- Value: ✅ yielded value: exit codes for lookup typos match the help, and neither surface names the other's command for a missing run.
+- Lesson: keep the engine's messages surface-neutral and let each client append its own next step; this is the third time (result_not_ready, signal, not_found). Next: 00.6 (validate in one pass) or a test for the tool `not_found` hint via the `harness()` fake.
