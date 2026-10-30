@@ -1,4 +1,4 @@
-Status: working — build check implemented (typechecks); writing tests
+Status: done — worker reports its build; an idle worker of another build is replaced, a busy one is kept with a one-line warning (npm test 44/44, Nix smoke passed)
 
 # Subagent worker1
 
@@ -15,3 +15,19 @@ Goal: a running pi-orchestration worker must not keep serving old code after an 
   - `ensureWorker`: build differs → `list` non-terminal runs (`all`, `limit 1`); active → keep it and call `options.onStaleWorker(status)`; idle → `stop`, wait for the old pid to exit (not just the socket: `server.close()` refuses connections before the owner lock is released, so a replacement spawned then would lose the lock and exit), then spawn. Shared through the existing `starting` map, and callers skip the ping while a start/replace is pending.
   - CLI: one stderr line per command (poll loops too), also in --json mode since stdout stays clean: `Workflow worker runs an older build (<old>); stop it with <hint> worker stop when its runs finish.` (`hint` keeps --home). `worker status|start` text ends with `· build <id>`.
   - Tool: `execute` now wraps an inner `executeTool` (body moved, dedented, unchanged) and appends once per stale worker pid: `The workflow worker runs an older build (<old>); the user can stop it with /workflow worker stop when its runs finish.`
+- 15:50 Tests (commit e6b8bf8). `test/process.test.ts` "an idle worker of another build is replaced; a busy one keeps serving with one warning per command": compiled CLI with `PI_WORKFLOW_BUILD` old/new/next. `worker status` only pings, so it shows `build old` without replacing. The next command (`list`, build new) replaces it silently (new pid, old pid ESRCH). With a gate run waiting, an attached `run` under build next keeps the same pid and prints the warning exactly once across its several requests. After both runs finish, `worker start` replaces it (no stderr, build next). `test/extension.test.ts` "the first tool result after a worker of another build was kept says so": the fake client calls `onStaleWorker`; the note is appended to the first result only.
+- 15:52 Manual checks with real builds (no override), `--home` under /tmp. Idle worker + `npm run build` → `list` replaced it (pid 2543355 → 2543487, build time 15:38:41 → 15:39:06). Busy worker + rebuild → `status` printed `Workflow worker runs an older build (0.3.0+2026-10-30T15:39:06.347Z); stop it with workflow --home /tmp/w1-C8Dc/h worker stop when its runs finish.` on stderr. In --json mode stdout stayed one JSON line. After the signal and poll, `worker start` showed the new build.
+- 15:55 README: one sentence in "Worker, data and configuration". Nix: fast build (doCheck off) + `node pi-orchestration/nix/smoke-test.mjs <out>/bin/workflow` → "Installed Nix smoke passed" (exit 0); the smoke reads only `pid`/`home` from worker status JSON.
+
+## Result
+
+Done. Summary of the change (pi-orchestration):
+- src/protocol.ts: `WorkerStatus.build?` and the shared `workerBuild()` (version + `dist/worker.js` mtime; `PI_WORKFLOW_BUILD` test override). src/worker.ts: computed once at startup, returned by ping. Protocol version unchanged.
+- src/client.ts: `ensureWorker` replaces an idle worker of another build (stop, wait for the pid to exit, spawn), or keeps a busy one and calls `ClientOptions.onStaleWorker`. The client has no wording beyond its timeout error.
+- src/cli.ts: one stderr warning per command, using the brief's wording with `hint` (keeps --home); `worker start|status` text ends `· build <id>`. src/extension.ts: tool results get a one-time note per stale worker pid that names `/workflow worker stop`; `/workflow` commands get the CLI line through notify.
+- Verified: `npm test` 44/44 (baseline 42/42 + 2 new), `npm run check` clean, manual real-rebuild runs above, Nix smoke passed.
+
+Notes for the brain:
+- Limitation: npm tarballs (1985) and the Nix store (epoch) normalize mtimes, so installed builds differ only by package version. Two Nix or npm builds with the same version count as the same build. The case from the evidence (a local `npm run build` in a checkout) is covered. Hashing all of dist/*.js would close the gap at the cost of reading ~30 files per command.
+- Advice wording: because the first command after a busy worker's runs finish replaces it automatically, "stop it ... when its runs finish" is optional advice. I kept the brief's CLI text verbatim. Worth rewording if you want it to say the restart is automatic.
+- Not handled (already true before this change): a second process that pings during another client's stop gets `Worker is stopping` (internal_error), and `worker stop` immediately followed by a command can race the owner lock. `replace()` avoids that race for itself by waiting for the old pid to exit.
