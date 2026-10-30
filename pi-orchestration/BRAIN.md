@@ -43,6 +43,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    7. ✅ Done in tick 46: `nondeterministic_call` for fs, fs/promises, child_process imports and `fetch` outside `ctx.step`.
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
    9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). `not_found` exits 1 since tick 48.
+   11. Stale worker (axeval3 ledger 17:25): after an upgrade or `npm run build`, a running worker keeps serving old code because `src/client.ts:56` compares only PROTOCOL_VERSION. Compare the package version or a build id and restart the worker. Lint misses left: `require("node:fs")` calls.
    10. Low impact (axeval2: dev checkouts loaded with `-e` only). Guide says why it uses the full command (link.ts:25-29, guide.ts:46): `workflow` missing vs another install's path. guide.ts:46 already says "not on PATH here".
    Unranked (axeval3 S1-S2 adds: ✅ `not_found` exits 1 (tick 48), syntax error text repeats the path, `invalid_args` JSON-string example is fixed `{"topic":"bees"}`; ✅ typebox hint separator fixed tick 48): no-model warning on agent-less workflows, `Approval 0/0`, unrounded costUsd, tool errors with `details: {}`. ✅ `1 agents` fixed in tick 45 (b788e5d).
 
