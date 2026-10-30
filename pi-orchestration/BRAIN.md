@@ -40,7 +40,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    4. ✅ Done in ticks 37-38 (8fce02c, b47be74, 895d71b): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}` (tested); tool `signal` replies `Signal "k" accepted. Check the run with {"action":"status",…}.` (tested).
    6. Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
    7. Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
-   8. `@sinclair/typebox` load error hints `typebox`; drop `Require stack:` (loader.ts:68).
+   8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
    9. Exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` hint keeps `--home` (cli.ts:189-192).
    10. Guide says why it uses the full command (link.ts:25-29, guide.ts:46).
    Unranked: no-model warning on agent-less workflows, `Approval 0/0`, `1 agents`, unrounded costUsd, tool errors with `details: {}`.
@@ -250,3 +250,9 @@ None.
 - Outcome: `npm run check` clean; `npm test` **38/38**. With the pre-8fce02c extension.ts the extension tests are 8/9, so the new assertion catches a missing hint. Commits `b47be74` (test) and `895d71b` (signal reply). Not verified live in Pi (D8).
 - Value: ✅ yielded value: both tool replies around a gate now name the tool call to make next, under test.
 - Lesson: the fake client in `harness()` makes tool-path tests cheap; add a branch per action rather than an engine fixture. Next: 00.3 (`waitingLines` helper) or 00.6 (validate in one pass).
+
+### Tick 39 · 14:04 · Load errors hint the bundled typebox
+- Action: took Backlog 00.8 over 00.3 and 00.6, because it fits four minutes and has a visible effect (axeval2 S2: an agent searched for the TypeBox package after `Cannot find module '@sinclair/typebox'`). `loadMessage` (`src/loader.ts`) strips Node's `Require stack:` tail from every load error and, for `@sinclair/typebox`, appends `Use import { Type } from "typebox" (bundled with pi-orchestration).`
+- Outcome: `npm run check` clean; `npm test` **38/38**. `test/engine.test.ts` catalog test adds a `sinclair` fixture and asserts the hint and no `Require stack`; with the old loader.ts the suite is 37/38. Commit `a7efd5b`.
+- Value: ✅ yielded value: a wrong TypeBox import is a one-edit fix named in the error.
+- Lesson: commit at green, then run the old-source check; both fit the four minutes. Next: 00.9 (exit 1 for usage-class errors; `not_found` hint keeps `--home`) or 00.6.
