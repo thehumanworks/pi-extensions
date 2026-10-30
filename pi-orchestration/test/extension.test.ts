@@ -159,7 +159,7 @@ test("inner tool and /workflow launches still fail with not_from_root in any Pi 
         await h.handlers.get("session_start")!({}, ctx);
         await assert.rejects(h.tools.get("workflow")!.execute("call-1",
           { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx),
-          (error: { code?: string }) => error.code === "not_from_root");
+          (error: { code?: string; message: string }) => error.code === "not_from_root" && error.message.startsWith("not_from_root: "));
         await h.commands.get("workflow")!.handler("run flow --bg --json", ctx);
         const reply = h.messages.find(item => item.message.details.kind === "command");
         assert.equal(JSON.parse(reply!.message.content).error.code, "not_from_root", mode);

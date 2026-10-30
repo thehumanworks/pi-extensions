@@ -39,7 +39,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    4. ✅ Done in tick 15: args must be `Type.Object` (loader.ts:72); plain objects and `Type.String()` fail validate/catalog with the offending value.
    5. ✅ Done in tick 16: `poll` returns on `waiting_signal` by default (`--until done` keeps waiting), prints a line only when more than elapsed time changed, help/README say `--interval 1s`. `watch` still defaults to `done`.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
-   7. Tool errors carry a code; fix dead `run_not_found` branch (extension.ts:179, 318).
+   7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
    9. No pretty JSON in text mode (cancel/retry/signal/agents/worker status); `result` on cancelled exits 3.
    10. Guide shell lifecycle: `--bg` → `poll` → `result` (guide.ts:63-65).
@@ -186,3 +186,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts` "summaries name the model…" asserts the tool signal and retry hints and the CLI hint with `--home`. Not verified live in Pi (D8).
 - Value: ✅ yielded value: a tool-using agent is no longer pointed at the shell to answer a gate or resume a parked run.
 - Lesson: pass a formatter, not a program string, when one view serves two surfaces; the string overload kept every CLI call site unchanged.
+
+### Tick 18 · 12:21 · Tool errors lead with their code
+- Action: took axeval fix 7, next in order and one file. The tool's `execute` (`src/extension.ts`) now wraps its body in `try … catch` and rethrows through `codedError`, which prefixes a `WorkflowError`'s message with `code: ` (once), so a tool-using agent sees `invalid_args: …` or `not_found: …` as the CLI's `{"error":{"code"}}` shows it. The completion poller checked `"run_not_found"`, which the engine never throws; it now checks `"not_found"` (engine/index.ts:222, 229), so vanished runs stop being polled.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/extension.test.ts:162` asserts the message starts with `not_from_root: ` and the code survives. Not verified live in Pi (D8).
+- Value: ✅ yielded value: tool errors are branchable by code and the dead branch is live.
+- Lesson: a body-wide `try` around a long method is a mechanical reindent (`sed '284,387s/^\(.\)/  \1/'`); check `tsc` right after.
