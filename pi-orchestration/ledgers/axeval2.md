@@ -1,0 +1,11 @@
+Status: working — just started
+
+# Subagent axeval2
+
+Branch brain/axeval2, spawned 2026-10-30T13:24:37+00:00 by the brain.
+
+## Task
+
+Goal: a second agent-experience evaluation of pi-orchestration, measuring whether the ten fixes from round one (pi-orchestration/brain/axeval.md, all now merged at 3fb3137) removed the wrong turns, and finding the next ranked fixes. Method: repeat the four scenarios in brain/axeval.md exactly as described there (1: CLI from nothing to a 2-agent parallel result; 2: deliberately broken workflows, same file set; 3: signal discovery from status/poll; 4: the Pi tool headless, the session that sent JSON strings). Act as a fresh agent: use only --help, the guide, the README and error messages; read src/ only afterwards to locate fixes. Run each scenario from a clean temp cwd with a short --home such as /tmp/axb1/h. Run 'npm run build' in pi-orchestration first: bin/workflow.mjs runs the git-ignored dist/, not src/. The installed Pi loads npm 0.2.1, so headless Pi tool sessions must load this checkout with 'pi -e <worktree>/pi-orchestration/index.ts' (put the message after -- or a non-boolean flag; boolean flags like --no-memory swallow the next positional). Use anthropic/claude-haiku-4-5 for headless sessions and workflow agents, as round one did, so the counts compare; cap spend around $0.50 total. Deliverable: pi-orchestration/brain/axeval2.md with, per scenario, wrong turns in round one vs now, which fixes held (quote the output), any regressions, and a new ranked fix list (file:line, expected effect, evidence). Also cover parity: does 'workflow guide' outside Pi teach the same as the tool's guide action? Acceptance: report committed and pushed on brain/axeval2, ledger marked done with the headline counts; 'npm test' in pi-orchestration still 38/38 (the baseline at 3fb3137). Out of scope: changing src/, test/, README, brain/loop.sh or BRAIN.md; report findings only.
+
+## Log
