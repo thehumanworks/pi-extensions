@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { test } from "node:test";
-import { help, intervalMs, modelOption, runCli, splitCommand, type WorkflowClient } from "../src/cli.ts";
+import { help, intervalMs, modelOption, runCli, splitCommand, statusText, type WorkflowClient } from "../src/cli.ts";
 import { EXAMPLES_DIR, guide, README_PATH, template } from "../src/guide.ts";
 import type { RunRecord } from "../src/index.ts";
 import { linkCli, shellCommand } from "../src/link.ts";
@@ -84,6 +84,10 @@ test("summaries name the model and catalogs read as text", () => {
   } as RunRecord;
   assert.equal(runSummary(run), "r w completed 2s · openai/gpt:high · 1 agents · 3 tokens · $0.0000 · 1 failed step");
   assert.match(runSummary({ ...run, model: undefined, steps: [] }), / · no model · /);
+  assert.match(statusText(run, "workflow --home /h"), /\nresult: workflow --home \/h result r$/);
+  const waiting = statusText({ ...run, status: "waiting_signal", waitingFor: { key: "ok", prompt: "Approve?" } });
+  assert.match(waiting, /\nwaiting for signal "ok": Approve\?\nsignal: workflow signal r "ok" '<json>'$/);
+  assert.match(statusText({ ...run, status: "failed", error: { reason: "budget", message: "over" } } as RunRecord), /\nbudget: over$/);
   assert.equal(catalogText([
     { name: "ok", description: "Does it.", path: "/a", args: { type: "object" } as never, source: "project" },
     { name: "broken", path: "/b", args: {} as never, source: "user", error: "SyntaxError" },

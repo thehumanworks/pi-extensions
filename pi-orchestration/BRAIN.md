@@ -25,7 +25,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 ## Agents
 
 - `axeval` (spawned tick 8, 11:30; task `303a9c1`, herdr w4:p1): agent-experience evaluation of the CLI and the Pi tool through 4 scenarios; delivers `brain/axeval.md` with wrong turns and a ranked fix list. Evaluation only, no src/ changes.
-  Its scenario 1 finding "hints drop --home" was fixed in tick 9; drop it from its ranked list on merge.
+  Already fixed, so drop them from its ranked list on merge: "hints drop --home" (tick 9); plain status/poll lacking the signal key, the error message and a `result` hint (tick 10).
 - `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
 ## Backlog
@@ -126,3 +126,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (new test in `test/unit.test.ts` covers quoted, plain and absent `--home`). Committed `4eb0dc1`; axeval was told via herdr prompt (still `working`) to list it as fixed.
 - Value: ✅ yielded value: an agent with an isolated home can now copy-paste every next step.
 - Lesson: act on a subagent's partial findings when they are concrete and outside its write scope; no need to wait for the final report.
+
+### Tick 10 · 11:39 · Status and poll say what to do next
+- Action: fixed axeval's scenario 3 and part of its scenario 1 and 2 findings in one helper. The plain `status` and `poll` text was only `runSummary`, so a run in `waiting_signal` gave no key, a failed run gave no error message, and a completed run did not say how to read the result. Chosen over waiting for the final report because it is observed, small and outside axeval's write scope. `statusText` (`src/cli.ts`, before `errorInfo`) adds `reason: message`, `waiting for signal "key": prompt` plus a copyable `signal: <hint> signal <id> "key" '<json>'`, and `result: <hint> result <id>`; `poll` (non-watch) and `status` (non-verbose) use it. JSON output is unchanged.
+- Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (`test/unit.test.ts` "summaries name the model…" now covers the result, signal and error lines). Committed `9b8f46a`, pushed.
+- Value: ✅ yielded value: an agent can now answer a signal or read a failure from plain `status` without knowing about `--verbose` or `--json`.
+- Lesson: act on concrete partial findings before the full report; one helper fixed three wrong turns in two scenarios.

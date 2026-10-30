@@ -163,6 +163,18 @@ export function workflowReference(value: string, cwd: string): { path: string } 
     : { name: value };
 }
 
+/** The status line plus what the caller needs next: why it failed, which signal to answer or how to read the result. */
+export function statusText(run: RunRecord, hint = "workflow"): string {
+  const lines = [runSummary(run)];
+  if (run.error) lines.push(`${run.error.reason ?? "error"}: ${run.error.message}`);
+  if (run.waitingFor) {
+    lines.push(`waiting for signal ${JSON.stringify(run.waitingFor.key)}${run.waitingFor.prompt ? `: ${run.waitingFor.prompt}` : ""}`);
+    lines.push(`signal: ${hint} signal ${run.id} ${JSON.stringify(run.waitingFor.key)} '<json>'`);
+  }
+  if (run.status === "completed") lines.push(`result: ${hint} result ${run.id}`);
+  return lines.join("\n");
+}
+
 function errorInfo(error: unknown): { code: string; message: string; exitCode: number } {
   if (error instanceof CliError) return error;
   const data = error as { code?: string; message?: string; reason?: string };
@@ -229,7 +241,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
             }
             if (!jsonMode) warn(runTree(run, Date.now(), hint) + "\n");
           } else {
-            emit(run, action === "watch" ? runTree(run, Date.now(), hint) : runSummary(run));
+            emit(run, action === "watch" ? runTree(run, Date.now(), hint) : statusText(run, hint));
             if (values.once) return 0;
             if (terminal) return statusExitCode(run.status);
             if (until === "signal" && run.status === "waiting_signal") return 0;
@@ -291,7 +303,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         count(1, "status <runId> [--verbose]");
         const run = await request<RunRecord>({ action, runId: args[0], verbose: values.verbose });
         if (TERMINAL_STATUSES.has(run.status)) context.onSettled?.(run.id);
-        emit(run, values.verbose ? runTree(run, Date.now(), hint) : runSummary(run));
+        emit(run, values.verbose ? runTree(run, Date.now(), hint) : statusText(run, hint));
         return 0;
       }
       case "list": {
