@@ -15,3 +15,5 @@ Method: run at least 4 short scenarios as a fresh agent would, each from a clean
 Deliverable: pi-orchestration/brain/axeval.md committed on this branch: per scenario the commands run, the exact confusing output (quoted), and the wrong-turn count; then a ranked list of at most 10 fixes, each with the file:line to change, the proposed text or behaviour, and the expected effect. Keep cost low (cheap model, small budgets). Out of scope: changing src/ or tests, brain/loop.sh, BRAIN.md, the main checkout, ~/.pi. Mark your ledger done when axeval.md is pushed.
 
 ## Log
+
+- 2026-10-30 baseline: `npm test` in pi-orchestration 36/36 green. Starting scenarios with `node pi-orchestration/bin/workflow.mjs` from temp cwds under /tmp/axN.
