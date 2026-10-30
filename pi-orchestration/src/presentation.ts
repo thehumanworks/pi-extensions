@@ -55,7 +55,7 @@ export function runListView(runs: RunRecord[]): Array<Record<string, unknown>> {
 }
 
 /** The compact view of a run: outcome first, internals only on request. */
-export function runBrief(run: RunRecord, program = "workflow"): { view: Record<string, unknown>; text: string } {
+export function runBrief(run: RunRecord, program = "workflow", hints: Hints = cliHints(program)): { view: Record<string, unknown>; text: string } {
   const failed = failedSteps(run).map(step => ({ key: step.key, ...(step.label ? { label: step.label } : {}), error: step.error?.message ?? "failed" }));
   const view: Record<string, unknown> = {
     ...runHead(run),
@@ -68,14 +68,24 @@ export function runBrief(run: RunRecord, program = "workflow"): { view: Record<s
   const lines = [runSummary(run)];
   for (const step of failed) lines.push(`failed ${step.key}${step.label ? ` (${step.label})` : ""}: ${step.error}`);
   if (run.error) lines.push(`${run.error.reason ?? "error"}: ${run.error.message}${run.error.stepKey ? ` (${run.error.stepKey})` : ""}`);
-  if (run.waitingFor) lines.push(`Waiting for signal ${JSON.stringify(run.waitingFor.key)}${run.waitingFor.prompt ? `: ${run.waitingFor.prompt}` : ""}`);
-  if (run.waitingFor?.schema) lines.push(`Expects: ${JSON.stringify(run.waitingFor.schema)}`);
+  lines.push(...waitingLines(run, hints));
   if (run.result !== undefined) lines.push(modelResult(run.result, run.id, RESULT_BYTES, program).text);
   else if (run.resultRef) lines.push(`The result is stored separately; fetch it with result ${run.id}.`);
   return { view, text: lines.join("\n") };
 }
 
 /** How a view names the next step: a CLI command, or a call of the Pi tool. */
+/** What a run waiting on a signal needs from the caller, on every surface: the key and prompt, the schema and how to deliver it. */
+export function waitingLines(run: RunRecord, hints: Hints): string[] {
+  const waiting = run.waitingFor;
+  if (!waiting) return [];
+  return [
+    `Waiting for signal ${JSON.stringify(waiting.key)}${waiting.prompt ? `: ${waiting.prompt}` : ""}`,
+    ...(waiting.schema ? [`Expects: ${JSON.stringify(waiting.schema)}`] : []),
+    `Deliver with: ${hints.signal(run.id, waiting.key)}`,
+  ];
+}
+
 export interface Hints { signal(runId: string, key: string): string; retry(runId: string): string }
 
 export function cliHints(program = "workflow"): Hints {
@@ -131,11 +141,7 @@ export function runTree(run: RunRecord, now = Date.now(), program: string | Hint
   }
   if (run.error) lines.push(`${run.error.reason ?? "error"}: ${run.error.message}${run.error.stepKey ? ` (${run.error.stepKey})` : ""}`);
   if (run.parked) lines.push(`Parked after repeated restarts. Resume with: ${hints.retry(run.id)}`);
-  if (run.waitingFor) {
-    if (run.waitingFor.prompt) lines.push(run.waitingFor.prompt);
-    lines.push(`Waiting for ${run.waitingFor.key}; deliver with: ${hints.signal(run.id, run.waitingFor.key)}`);
-    if (run.waitingFor.schema) lines.push(`Expects: ${JSON.stringify(run.waitingFor.schema)}`);
-  }
+  lines.push(...waitingLines(run, hints));
   if (run.logs?.length) lines.push(`log: ${run.logs.at(-1)!.message}`);
   return lines.join("\n");
 }

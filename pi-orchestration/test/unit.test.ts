@@ -98,11 +98,11 @@ test("summaries name the model and catalogs read as text", () => {
     [head, { runId: "c", workflow: "w", status: "completed", summary: runSummary({ ...run, id: "c", model: undefined }), parentRunId: "r" }]);
   assert.match(statusText(run, "workflow --home /h"), /\nresult: workflow --home \/h result r$/);
   const waiting = statusText({ ...run, status: "waiting_signal", waitingFor: { key: "ok", prompt: "Approve?" } });
-  assert.match(waiting, /\nwaiting for signal "ok": Approve\?\nsignal: workflow signal r "ok" '<json>'$/);
+  assert.match(waiting, /\nWaiting for signal "ok": Approve\?\nDeliver with: workflow signal r "ok" '<json>'$/);
   const gate = { ...run, status: "waiting_signal", waitingFor: { key: "ok", schema: { type: "boolean" } }, parked: true } as RunRecord;
-  assert.match(runTree(gate, 0, toolHints), /deliver with: \{"action":"signal","runId":"r","key":"ok","value":<JSON value, not a string>\}/);
+  assert.match(runTree(gate, 0, toolHints), /Deliver with: \{"action":"signal","runId":"r","key":"ok","value":<JSON value, not a string>\}/);
   assert.match(runTree(gate, 0, toolHints), /Resume with: \{"action":"retry","runId":"r"\}/);
-  assert.match(runTree(gate, 0, "workflow --home /h"), /deliver with: workflow --home \/h signal r "ok" '<json>'/);
+  assert.match(runTree(gate, 0, "workflow --home /h"), /Deliver with: workflow --home \/h signal r "ok" '<json>'/);
   assert.match(runTree(gate, 0, toolHints), /Expects: \{"type":"boolean"\}/);
   assert.match(statusText({ ...run, status: "failed", error: { reason: "budget", message: "over" } } as RunRecord), /\nbudget: over$/);
   assert.equal(catalogText([

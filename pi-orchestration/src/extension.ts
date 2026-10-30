@@ -130,7 +130,7 @@ function toolResult(value: unknown, runId?: string, text?: string) {
 }
 
 function briefResult(run: RunRecord, note?: string) {
-  const brief = runBrief(run);
+  const brief = runBrief(run, undefined, toolHints);
   return toolResult(brief.view, run.id, note ? `${brief.text}\n${note}` : brief.text);
 }
 

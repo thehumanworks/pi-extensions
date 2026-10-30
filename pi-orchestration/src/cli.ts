@@ -9,7 +9,7 @@ import type { BackgroundAgentRecord, CatalogEntry, ModelName, RunRecord, RunStat
 import { shellCommand } from "./link.ts";
 import { agentDirectory } from "./paths.ts";
 import type { ControlRequest, WorkerStatus } from "./protocol.ts";
-import { catalogText, duration, json, modelLabel, runBrief, runList, runListView, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText } from "./presentation.ts";
+import { catalogText, cliHints, duration, json, modelLabel, runBrief, runList, runListView, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText, waitingLines } from "./presentation.ts";
 
 export function help(program = "workflow"): string {
   return `${program} guide                    how to write a workflow: template, ctx API, model rules
@@ -170,11 +170,7 @@ export function workflowReference(value: string, cwd: string): { path: string } 
 export function statusText(run: RunRecord, hint = "workflow"): string {
   const lines = [runSummary(run)];
   if (run.error) lines.push(`${run.error.reason ?? "error"}: ${run.error.message}`);
-  if (run.waitingFor) {
-    lines.push(`waiting for signal ${JSON.stringify(run.waitingFor.key)}${run.waitingFor.prompt ? `: ${run.waitingFor.prompt}` : ""}`);
-    if (run.waitingFor.schema) lines.push(`expects: ${JSON.stringify(run.waitingFor.schema)}`);
-    lines.push(`signal: ${hint} signal ${run.id} ${JSON.stringify(run.waitingFor.key)} '<json>'`);
-  }
+  lines.push(...waitingLines(run, cliHints(hint)));
   if (run.status === "completed") lines.push(`result: ${hint} result ${run.id}`);
   return lines.join("\n");
 }
