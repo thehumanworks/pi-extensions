@@ -50,7 +50,7 @@ A workflow is a TypeScript file whose run(ctx) decides what happens. Each ctx.ag
 
 ## 1. Write one
 
-Save it as <project>/.pi/workflows/<name>.ts, or ~/.pi/agent/workflows/<name>.ts for every project:
+Save it as <project>/.pi/workflows/<name>.ts, or ~/.pi/agent/workflows/<name>.ts for every project. Workflow files are project source: commit them and never add them to .gitignore.
 
 \`\`\`ts
 ${template().trimEnd()}

@@ -31,7 +31,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
-2. Workflow files are source (D2): ✅ bot workflows now tracked and ignore rules removed (tick 2). Remaining: guide, tool description, `init` output and README. Now unblocked: `approval` has merged, so no file overlap remains.
+2. Workflow files are source (D2): ✅ done. Bot workflows tracked and ignore rules removed (tick 2); guide, tool description, `init` output and README state the policy (tick 5). Possible follow-up: `validate`/`catalog` warn on git-ignored workflow files (item 4).
 3. Fix baseline failures so a red test means a regression. ✅ Package source-only fixture fixed in tick 3: after the D1 merge the brain result is 33/35 passing (D1 replaced five gate tests with two matrices). Remaining: isolate catalog from the user's home; refresh standalone Nix lock metadata and its dependency hash without bumping package versions.
 4. Unexplored directions for the goal:
    - One output contract: the tool and the CLI return the same JSON shapes, and every CLI command supports `--json`.
@@ -87,3 +87,9 @@ None.
 - Outcome: merge `70ae028`, pushed. `npm test` on the merged branch: **35 tests, 33 pass, 2 fail**. The 2 are the known catalog leak from the home directory and the stale Nix lock, so it is no worse than the baseline: the merge brought the subagent's 32/35 together with tick 3's package fixture fix. `grep` for `UNATTENDED|workflow.approval|assertUnattended` in src, test and README finds nothing. `loop.sh retire approval` succeeded.
 - Value: ✅ yielded value: user decision D1 is implemented on brain/orchestration with regression coverage for the root guard in all four Pi modes.
 - Lesson: when the brain has fixed the baseline on its own branch, compare the subagent's result after the merge, not before.
+
+### Tick 5 · 11:10 · State the workflow-source policy where agents look (D2)
+- Action: finished D2 myself instead of spawning: four one-sentence edits fit a four-minute tick and no subagent was running. Added "workflow files are project source: commit them, never add them to .gitignore" to `src/guide.ts:53`, the tool description `src/extension.ts:19`, `workflow init` output `src/cli.ts` (init case) and README.md (resolution paragraph, line 113).
+- Outcome: `npm run check` passes; `npm test` **35 tests, 33 pass, 2 fail**, the same two baseline failures (catalog home leak, Nix lock). Local CLI verified: `init demo --cwd /tmp/brain-t5` prints the new `Commit it:` line after `Next:`, and `guide` prints the policy in section 1. Existing `test/unit.test.ts:120` regex still matches the init output.
+- Value: ✅ yielded value: user decision D2 is fully implemented on brain/orchestration.
+- Lesson: small text-only guidance changes are faster done directly than delegated; spawning costs a minute plus a review tick.

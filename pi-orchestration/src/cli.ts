@@ -353,7 +353,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           throw error;
         }
         const model = program.startsWith("/") ? "" : " --model provider/model";
-        emit({ path, name }, `Created ${path}\nNext: ${program} validate ${name}\n      ${program} run ${name} --args '{"path":"README.md"}'${model}`);
+        emit({ path, name }, `Created ${path}\nNext: ${program} validate ${name}\n      ${program} run ${name} --args '{"path":"README.md"}'${model}\nCommit it: workflow files are project source, never add them to .gitignore.`);
         return 0;
       }
       case "validate": {

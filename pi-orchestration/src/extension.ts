@@ -16,7 +16,7 @@ import type { ControlRequest } from "./protocol.ts";
 import { catalogText, modelLabel, modelResult, runBrief, runDetail, runList, runSummary, TERMINAL_STATUSES, validationText } from "./presentation.ts";
 
 export const TOOL_DESCRIPTION = `Run and manage durable multi-agent workflows. A workflow is a TypeScript file whose run(ctx) calls ctx.agent(), ctx.parallel() and similar; a separate worker runs it, so it outlives this session.
-Start with catalog. Before writing a workflow, call guide: it gives a starter file, the ctx API and which model runs. Save workflows as .pi/workflows/<name>.ts.
+Start with catalog. Before writing a workflow, call guide: it gives a starter file, the ctx API and which model runs. Save workflows as .pi/workflows/<name>.ts and commit them: they are project source, never add them to .gitignore.
 Actions:
 - catalog: saved workflows with descriptions and args schemas.
 - guide: how to write a workflow.
