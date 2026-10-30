@@ -89,6 +89,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
+- Ticks 11-13: an evaluation subagent with a narrow write scope merges cleanly. TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer. Keep error formatting shared across surfaces (`src/engine/mismatch.ts`).
 - Ticks 8-10: read the surface's own help before adding a backlog item; act on a subagent's concrete partial findings outside its write scope without waiting for the final report.
 
 ## Questions for the user
@@ -96,24 +97,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 None.
 
 ## Log
-
-### Tick 11 · 11:44 · Merge the axeval evaluation
-- Action: reviewed and merged `brain/axeval`, done since the last tick, because its ranked fix list is the evidence the backlog was waiting for; a code fix first would have guessed at priorities the report already settles.
-- Outcome: diff is docs only (`brain/axeval.md` +154, `ledgers/axeval.md` +26). Merge `050a209`, pushed; `npm test` on the merged branch **37/37**. `loop.sh retire axeval` succeeded. The 10 ranked fixes are now Backlog item 0. Biggest finding: the Pi tool's `args`/`value` are `Type.Unknown`, so Haiku sent JSON strings and two of four tool sessions never launched (11 and 5 wrong turns).
-- Value: ✅ yielded value: the next ticks have a measured, ordered fix list with file:line targets.
-- Lesson: an evaluation subagent with a narrow write scope merges cleanly; acting on its partial findings during the run (ticks 9-10) shortened the list it delivered.
-
-### Tick 12 · 11:49 · Tool args are an object; string and schema errors explain themselves
-- Action: took axeval fix 1, the top-ranked one (two of four tool sessions never launched because `args` was `Type.Unknown` and Haiku sent JSON strings). Small enough to do directly. `src/extension.ts:58` types `args` as an open object whose description says "pass the object itself, not a JSON-encoded string". `src/engine/index.ts:299-309` rejects a string `args` with `invalid_args: args is a JSON-encoded string; pass the object itself…` and turns schema errors into lines like `args/n: must be number (got "x")` after the schema JSON, instead of a raw TypeBox error dump.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts:44-51` now asserts the per-field line and the string-args message. Committed `82c02ea`. Not verified live in Pi, because the installed Pi still runs npm 0.2.1 (D8).
-- Value: ✅ yielded value: the most expensive observed wrong turn now either cannot happen (schema says object) or gets a one-line fix.
-- Lesson: TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer.
-
-### Tick 13 · 11:58 · Signals show their schema and explain mismatches
-- Action: took axeval fix 2, next in order and small. New `src/engine/mismatch.ts` holds `mismatchLines` (shared with tick 12's args errors) and `signalMismatch`. `waitingFor` now carries `schema` (`execution.ts:361`); `status` text prints `expects: <schema>` (`cli.ts` statusText) and the tool summary prints `Expects:` (`presentation.ts:62`). `invalid_signal` says `Signal 'k' expects {...}; got ...` plus per-field lines and a JSON-string hint (engine/index.ts, execution.ts); `unknown_signal` names the key the run waits for. Tool `value` description says not a JSON-encoded string.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts:128-135` asserts the schema in `waitingFor`, the mismatch message, the string hint and the named waiting key. Not verified live in Pi (D8).
-- Value: ✅ yielded value: an agent answering a signal sees the expected shape before sending and gets the fix when it is wrong.
-- Lesson: extracting tick 12's error formatter into a module made the second use a one-liner; keep error formatting shared across surfaces.
 
 ### Tick 14 · 12:00 · Unknown agent options fail instead of granting default tools
 - Action: took axeval fix 3, next in order. axeval saw `ctx.agent(…, { tool: [] })` silently ignored, so the agent got Read/Write/Edit/Bash. `resolveOptions` (`src/engine/execution.ts`) now checks the call's keys against `AGENT_OPTIONS` and throws `unknown_agent_option: Unknown agent option 'tool' (did you mean 'tools'?). Valid options: …` before journaling or spawning anything. It covers `ctx.agent` and `ctx.spawn` (background.ts passes the rest of its input through it).
