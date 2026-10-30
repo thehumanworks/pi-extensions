@@ -35,7 +35,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
    2. ✅ Done in tick 13: expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
-   3. Reject unknown `ctx.agent` options (`tool` silently granted Read/Write/Edit/Bash) and lint unknown `ctx.*` members (execution.ts:297, validation.ts:50).
+   3. ⚠️ Half done in tick 14: unknown `ctx.agent`/`ctx.spawn` options now fail with `unknown_agent_option` and a did-you-mean (execution.ts `AGENT_OPTIONS`, `resolveOptions`). Remaining: lint unknown `ctx.*` members and unknown options at `validate` time (src/validation.ts), so the author learns before launching.
    4. Require args to be `Type.Object` (loader.ts:72).
    5. `poll` returns on `waiting_signal` by default; print only changes; help says `--interval 1s` (cli.ts:22, 227-247).
    6. Tool-shaped hints in tool results, not CLI commands (extension.ts:358, presentation.ts:110-113).
@@ -162,3 +162,10 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts:128-135` asserts the schema in `waitingFor`, the mismatch message, the string hint and the named waiting key. Not verified live in Pi (D8).
 - Value: ✅ yielded value: an agent answering a signal sees the expected shape before sending and gets the fix when it is wrong.
 - Lesson: extracting tick 12's error formatter into a module made the second use a one-liner; keep error formatting shared across surfaces.
+
+### Tick 14 · 12:00 · Unknown agent options fail instead of granting default tools
+- Action: took axeval fix 3, next in order. axeval saw `ctx.agent(…, { tool: [] })` silently ignored, so the agent got Read/Write/Edit/Bash. `resolveOptions` (`src/engine/execution.ts`) now checks the call's keys against `AGENT_OPTIONS` and throws `unknown_agent_option: Unknown agent option 'tool' (did you mean 'tools'?). Valid options: …` before journaling or spawning anything. It covers `ctx.agent` and `ctx.spawn` (background.ts passes the rest of its input through it).
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts` "agents return text…" adds a fifth parallel call with `tool` and asserts the code and the hint. The static half (lint in `validate`) is not done.
+- Value: ✅ yielded value: a misspelled option can no longer widen an agent's tools silently.
+- Lesson: check option names at the one function every agent path goes through; the run-time check is cheap, the validate-time lint is the follow-up.
+

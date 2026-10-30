@@ -188,6 +188,7 @@ test("agents return text or validated structured results with one repair turn", 
         () => ctx.agent('SUBMIT {"value":1}', { tools: [], schema: Result }),
         () => ctx.agent('REPAIR {"value":2}', { tools: [], schema: Result }),
         () => ctx.agent("NEVER", { tools: [], schema: Result }),
+        () => ctx.agent("ECHO typo", { tool: [] } as never),
       ], { failure: "allSettled" });
     },
   }`) } });
@@ -197,6 +198,8 @@ test("agents return text or validated structured results with one repair turn", 
     const results = run.result as Array<{ status: string; value?: unknown; reason?: { code?: string } }>;
     assert.deepEqual(results.slice(0, 3).map(item => item.value), ["plain", { value: 1 }, { value: 2 }]);
     assert.equal(results[3].reason?.code, "invalid_structured_output");
+    assert.equal(results[4].reason?.code, "unknown_agent_option");
+    assert.match((results[4].reason as { message: string }).message, /'tool' \(did you mean 'tools'\?\)/);
     assert.equal(run.usage.agents, 4);
     assert.ok(run.usage.inputTokens > 0);
   } finally { await f.close(); }

@@ -17,6 +17,9 @@ import { ensureWorktree, worktreeSuffix } from "./worktrees.ts";
 import { BackgroundRuntime } from "./background.ts";
 import { runSwarm } from "./swarm.ts";
 
+// Options ctx.agent and ctx.spawn accept; a misspelled one must not silently fall back to defaults.
+const AGENT_OPTIONS = ["model", "thinkingLevel", "instructions", "tools", "cwd", "isolation", "budget", "timeoutMs", "retries", "label", "phase", "agentType", "key", "schema"];
+
 function fingerprint(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
@@ -296,6 +299,12 @@ export class Execution {
   }
 
   resolveOptions(call: AgentOptions): AgentOptions {
+    const unknown = Object.keys(call).filter(name => !AGENT_OPTIONS.includes(name));
+    if (unknown.length) {
+      const near = (name: string) => AGENT_OPTIONS.find(known => known.startsWith(name) || name.startsWith(known));
+      const hints = unknown.map(name => near(name) ? `'${name}' (did you mean '${near(name)}'?)` : `'${name}'`);
+      throw new WorkflowError("unknown_agent_option", `Unknown agent option ${hints.join(", ")}. Valid options: ${AGENT_OPTIONS.join(", ")}.`);
+    }
     const spec = call.agentType ? this.definition.agents?.[call.agentType] : undefined;
     if (call.agentType && !spec) throw new WorkflowError("unknown_agent_type", `Unknown agentType '${call.agentType}'. Define it in workflow.agents.`);
     return { retries: this.engine.options.defaultRetries ?? 0, timeoutMs: this.engine.options.defaultTimeoutMs ?? 600_000,
