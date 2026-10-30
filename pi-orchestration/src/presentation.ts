@@ -59,6 +59,7 @@ export function runBrief(run: RunRecord, program = "workflow"): { view: Record<s
   for (const step of failed) lines.push(`failed ${step.key}${step.label ? ` (${step.label})` : ""}: ${step.error}`);
   if (run.error) lines.push(`${run.error.reason ?? "error"}: ${run.error.message}${run.error.stepKey ? ` (${run.error.stepKey})` : ""}`);
   if (run.waitingFor) lines.push(`Waiting for signal ${JSON.stringify(run.waitingFor.key)}${run.waitingFor.prompt ? `: ${run.waitingFor.prompt}` : ""}`);
+  if (run.waitingFor?.schema) lines.push(`Expects: ${JSON.stringify(run.waitingFor.schema)}`);
   if (run.result !== undefined) lines.push(modelResult(run.result, run.id, RESULT_BYTES, program).text);
   else if (run.resultRef) lines.push(`The result is stored separately; fetch it with result ${run.id}.`);
   return { view, text: lines.join("\n") };

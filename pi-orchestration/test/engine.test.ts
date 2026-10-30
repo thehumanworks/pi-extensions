@@ -125,9 +125,14 @@ test("signals are schema-checked and children charge their parent", async () => 
   try {
     const runId = await f.launch("gate");
     const waiting = await f.wait(runId, run => run.status === "waiting_signal");
-    assert.deepEqual(waiting.waitingFor, { key: "approve", prompt: "Approve?" });
-    const invalid = await f.request({ action: "signal", runId, key: "approve", value: { ok: "yes" } }).then(() => "", (error: { code: string }) => error.code);
-    assert.equal(invalid, "invalid_signal");
+    assert.equal(waiting.waitingFor?.key, "approve");
+    assert.equal(waiting.waitingFor?.prompt, "Approve?");
+    assert.ok(waiting.waitingFor?.schema, "waitingFor exposes the signal schema");
+    const failure = (error: { code: string; message: string }) => `${error.code}: ${error.message}`;
+    const invalid = await f.request({ action: "signal", runId, key: "approve", value: { ok: "yes" } }).then(() => "", failure);
+    assert.match(invalid, /^invalid_signal: Signal 'approve' expects \{.*\}; got \{"ok":"yes"\}\.\nvalue\/ok: .* \(got "yes"\)/);
+    assert.match(await f.request({ action: "signal", runId, key: "approve", value: "{}" }).then(() => "", failure), /not a JSON-encoded string/);
+    assert.match(await f.request({ action: "signal", runId, key: "aprove", value: {} }).then(() => "", failure), /^unknown_signal: .*waiting for 'approve'/);
     await f.request({ action: "signal", runId, key: "approve", value: { ok: true } });
     const done = await f.wait(runId);
     assert.equal(done.status, "completed", JSON.stringify(done.error));

@@ -34,7 +34,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
-   2. Expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
+   2. ✅ Done in tick 13: expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
    3. Reject unknown `ctx.agent` options (`tool` silently granted Read/Write/Edit/Bash) and lint unknown `ctx.*` members (execution.ts:297, validation.ts:50).
    4. Require args to be `Type.Object` (loader.ts:72).
    5. `poll` returns on `waiting_signal` by default; print only changes; help says `--interval 1s` (cli.ts:22, 227-247).
@@ -156,3 +156,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts:44-51` now asserts the per-field line and the string-args message. Committed `82c02ea`. Not verified live in Pi, because the installed Pi still runs npm 0.2.1 (D8).
 - Value: ✅ yielded value: the most expensive observed wrong turn now either cannot happen (schema says object) or gets a one-line fix.
 - Lesson: TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer.
+
+### Tick 13 · 11:58 · Signals show their schema and explain mismatches
+- Action: took axeval fix 2, next in order and small. New `src/engine/mismatch.ts` holds `mismatchLines` (shared with tick 12's args errors) and `signalMismatch`. `waitingFor` now carries `schema` (`execution.ts:361`); `status` text prints `expects: <schema>` (`cli.ts` statusText) and the tool summary prints `Expects:` (`presentation.ts:62`). `invalid_signal` says `Signal 'k' expects {...}; got ...` plus per-field lines and a JSON-string hint (engine/index.ts, execution.ts); `unknown_signal` names the key the run waits for. Tool `value` description says not a JSON-encoded string.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts:128-135` asserts the schema in `waitingFor`, the mismatch message, the string hint and the named waiting key. Not verified live in Pi (D8).
+- Value: ✅ yielded value: an agent answering a signal sees the expected shape before sending and gets the fix when it is wrong.
+- Lesson: extracting tick 12's error formatter into a module made the second use a one-liner; keep error formatting shared across surfaces.

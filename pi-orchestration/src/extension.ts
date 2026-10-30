@@ -76,7 +76,7 @@ const parameters = Type.Object({
   allowChanged: Type.Optional(Type.Boolean({ description: "For retry: allow the workflow file to have changed since launch." })),
   keepWorktrees: Type.Optional(Type.Boolean({ description: "For revert: keep agent worktrees." })),
   key: Type.Optional(Type.String({ description: "For signal: the key the run waits on (status shows it)." })),
-  value: Type.Optional(Type.Unknown({ description: "For signal: JSON value to deliver, including null." })),
+  value: Type.Optional(Type.Unknown({ description: "For signal: the JSON value itself (object, array, string, number, boolean or null), not a JSON-encoded string. Must match waitingFor.schema when status shows one." })),
   agent: Type.Optional(Type.String({ description: "For steer: background agent name." })),
   message: Type.Optional(Type.String({ description: "For steer: message to send." })),
   filter: Type.Optional(Type.Object({

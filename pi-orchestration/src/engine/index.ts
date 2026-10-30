@@ -18,6 +18,7 @@ import type { ControlRequest } from "../protocol.ts";
 import { loadWorkflow } from "../loader.ts";
 import { WorkflowError } from "../errors.ts";
 import { Execution } from "./execution.ts";
+import { mismatchLines, signalMismatch } from "./mismatch.ts";
 import { AgentMeta, copy, json, publicRun, RunStore, storedRun, type RunData } from "./store.ts";
 import { installDeterminismGuard, outsideScript, wallNow } from "./scopes.ts";
 import { Semaphore } from "./semaphore.ts";
@@ -299,12 +300,7 @@ export class Engine {
     if (typeof request.args === "string")
       throw new WorkflowError("invalid_args", `args is a JSON-encoded string; pass the object itself, e.g. {"topic":"bees"}, not "{\\"topic\\":\\"bees\\"}".`);
     if (!Value.Check(argsSchema, request.args ?? {})) {
-      const problems = [...Value.Errors(argsSchema, request.args ?? {})].slice(0, 10)
-        .map(error => {
-          const got = error.instancePath.split("/").slice(1)
-            .reduce<unknown>((value, key) => (value as Record<string, unknown> | undefined)?.[key.replace(/~1/g, "/").replace(/~0/g, "~")], request.args ?? {});
-          return `args${error.instancePath}: ${error.message} (got ${JSON.stringify(got) ?? "undefined"})`;
-        });
+      const problems = mismatchLines(argsSchema, request.args ?? {}, "args");
       throw new WorkflowError("invalid_args", `Arguments do not match the workflow schema ${JSON.stringify(argsSchema)}:\n${problems.join("\n")}`.slice(0, 2000));
     }
     // Definition defaults outrank the launch model for every agent, so record the model agents will actually use.
@@ -416,8 +412,10 @@ export class Engine {
   async signal(runId: string, key: string, value: unknown): Promise<{ runId: string; key: string; accepted: true }> {
     await this.mutate(runId, run => {
       const step = run.steps.find(item => item.kind === "signal" && item.signalKey === key);
-      if (!step) throw new WorkflowError("unknown_signal", `No waiting signal '${key}'. Use status --verbose to see the requested key.`);
-      if (step.schema && !Value.Check(step.schema, value)) throw new WorkflowError("invalid_signal", `Signal '${key}' does not match its schema.`);
+      if (!step) throw new WorkflowError("unknown_signal", run.waitingFor
+        ? `No waiting signal '${key}'. The run is waiting for '${run.waitingFor.key}'.`
+        : `No waiting signal '${key}'. The run is not waiting for a signal (status ${run.status}).`);
+      if (step.schema && !Value.Check(step.schema, value)) throw new WorkflowError("invalid_signal", signalMismatch(key, step.schema, value));
       const data = json(value);
       if (Object.hasOwn(run.signals, key) && JSON.stringify(run.signals[key]) !== JSON.stringify(data))
         throw new WorkflowError("signal_already_set", `Signal '${key}' already has a different durable value.`);

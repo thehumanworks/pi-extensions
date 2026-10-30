@@ -10,6 +10,7 @@ import { WorkflowError } from "../errors.ts";
 import type { Engine, RunRuntime } from "./index.ts";
 import { AgentMeta, copy, json, RunStore, storedRun, StructuredResult, type JournalEntry, type RunData } from "./store.ts";
 import { outsideScript, randomValue, scopedSignal, scriptScope, structuralKey } from "./scopes.ts";
+import { signalMismatch } from "./mismatch.ts";
 import { Semaphore } from "./semaphore.ts";
 import { structuredTool } from "./structured.ts";
 import { ensureWorktree, worktreeSuffix } from "./worktrees.ts";
@@ -358,14 +359,14 @@ export class Execution {
       if (options.schema) current.schema = json(options.schema) as NonNullable<JournalEntry["schema"]>;
       if (options.prompt) current.signalPrompt = options.prompt;
       run.status = "waiting_signal";
-      run.waitingFor = { key: name, ...(options.prompt ? { prompt: options.prompt } : {}), ...(current.deadline === undefined ? {} : { deadline: current.deadline }) };
+      run.waitingFor = { key: name, ...(options.prompt ? { prompt: options.prompt } : {}), ...(current.schema ? { schema: current.schema } : {}), ...(current.deadline === undefined ? {} : { deadline: current.deadline }) };
       return current.deadline;
     });
     for (;;) {
       const run = await this.engine.get(this.runId);
       if (Object.hasOwn(run.signals, name)) {
         const value = run.signals[name];
-        if (options.schema && !Value.Check(options.schema, value)) throw new WorkflowError("invalid_signal", `Signal '${name}' does not match its schema.`, key);
+        if (options.schema && !Value.Check(options.schema, value)) throw new WorkflowError("invalid_signal", signalMismatch(name, options.schema, value), key);
         await this.complete(key, value);
         await this.engine.mutate(this.runId, current => { current.status = "running"; delete current.waitingFor; });
         return copy(value);

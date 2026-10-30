@@ -133,7 +133,7 @@ export interface RunRecord {
   children: RunId[];
   logs?: Array<{ time: number; message: string; data?: unknown }>;
   parked?: boolean;
-  waitingFor?: { key: string; prompt?: string; deadline?: number };
+  waitingFor?: { key: string; prompt?: string; schema?: unknown; deadline?: number };
   worktrees?: Array<{ path: string; branch: string }>;
 }
 export interface BackgroundAgentRecord {
