@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-loop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Durable, host-side recurring Pi agent runs",
   "type": "module",
   "license": "MIT",
