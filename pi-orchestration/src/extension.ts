@@ -386,7 +386,8 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
               `Check the run with {"action":"status","runId":${JSON.stringify(request.runId)}}.`);
           case "list": {
             const runs = result as RunRecord[];
-            return toolResult(runListView(runs), undefined, runList(runs));
+            return toolResult(runListView(runs), undefined, runs.length ? runList(runs)
+              : 'No workflow runs. Saved workflows are listed by {"action":"catalog"}.');
           }
           case "catalog": {
             const entries = result as CatalogEntry[];

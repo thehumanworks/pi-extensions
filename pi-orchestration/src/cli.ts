@@ -326,7 +326,8 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         const valid = new Set(["queued", "running", "waiting_signal", ...TERMINAL_STATUSES]);
         if (statuses?.some(item => !valid.has(item))) throw new CliError("--status contains an unknown run status.");
         const runs = await request<RunRecord[]>({ action, filter: { status: statuses, all: values.all } });
-        emit(runListView(runs), runList(runs));
+        emit(runListView(runs), runs.length ? runList(runs)
+          : `No workflow runs. Saved workflows are listed by: ${program} catalog`);
         return 0;
       }
       case "result": {
