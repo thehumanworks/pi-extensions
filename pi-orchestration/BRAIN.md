@@ -41,7 +41,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
    7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
-   9. ⚠️ Half done in tick 20: cancel/retry/signal print text. Text for signal and cancel is covered by `test/process.test.ts` (tick 21). Remaining: `agents` and `worker status` text, `result` on a cancelled run exits 3 with `run_cancelled`.
+   9. ⚠️ Mostly done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22). Remaining: `agents` and `worker status` text.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
@@ -211,3 +211,9 @@ None.
 - Outcome: the gate test asserts `signal` prints exactly `Signal "go" accepted. poll: … poll <id>`; the SIGKILL test asserts `cancel` prints status text containing `cancelled`, not JSON. `npm run check` passes; `npm test` **37/37**.
 - Value: ✅ yielded value: tick 20's text output is now protected by tests that run the compiled CLI.
 - Lesson: `npm test` prints `ℹ tests N`, not `# tests N`; grep `^ℹ (tests|pass|fail)` for the counts.
+
+### Tick 22 · 12:41 · result on a cancelled run exits 3 with run_cancelled
+- Action: took the exit-code part of axeval fix 9, because it fits a four-minute tick and makes the documented exit code (`3 cancelled`) true; fix 8 needs a full tick. `src/engine/index.ts` result throws `run_cancelled: Run <id> is cancelled.` before the generic `run_failed`; `errorInfo` (`src/cli.ts`) maps `run_cancelled` to exit 3.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` SIGKILL test now asserts `result` on the cancelled run exits 3 with `run_cancelled` on stderr. The tool path gets the code too via tick 18's `codedError`.
+- Value: ✅ yielded value: scripts and agents can branch on a cancelled run as the help documents.
+- Lesson: check each documented exit code against a test; the help promised 3 and the code returned 2.

@@ -97,6 +97,9 @@ test("a SIGKILLed worker resumes runs without repeating committed steps", { time
     assert.equal(cancelled.code, 0, cancelled.stderr);
     assert.match(cancelled.stdout, /cancelled/);
     assert.doesNotMatch(cancelled.stdout, /^\{/);
+    const unreadable = await s.cli(["result", doomed.json.runId], {}, false);
+    assert.equal(unreadable.code, 3, unreadable.stderr);
+    assert.match(unreadable.stderr, /run_cancelled/);
     assert.equal((await s.cli(["poll", doomed.json.runId, "--interval", "20ms"])).code, 3);
     const waiting = await s.cli(["poll", runId, "--interval", "50ms"]);
     assert.equal(waiting.json.status, "waiting_signal");

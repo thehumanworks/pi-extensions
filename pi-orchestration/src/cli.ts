@@ -186,7 +186,7 @@ function errorInfo(error: unknown): { code: string; message: string; exitCode: n
   const usage = ["usage_error", "validation_error", "invalid_args", "invalid_request", "invalid_signal", "invalid_workflow",
     "invalid_cwd", "unknown_step", "workflow_not_found", "nondeterministic_call"].includes(code)
     || code.startsWith("ERR_PARSE_ARGS");
-  return { code, message, exitCode: worker ? 4 : usage ? 1 : 2 };
+  return { code, message, exitCode: worker ? 4 : usage ? 1 : code === "run_cancelled" ? 3 : 2 };
 }
 
 export async function runCli(argv: string[], context: CliContext = {}): Promise<number> {
