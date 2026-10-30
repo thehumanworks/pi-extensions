@@ -8,7 +8,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 - D1 (user, 2026-10-30): Workflow launches need no user approval. Remove the gate from the package entirely: the confirm dialog, `/workflow approval`, the `workflow.approval` setting, the TUI status, `PI_WORKFLOW_ALLOW_UNATTENDED`, and their docs and tests. No compatibility shim. Keep the `not_from_root` guard, which stops inner workflow agents from launching runs; it is not a user approval.
 - D2 (user, 2026-10-30): Workflow files are project source and must never be added to .gitignore. Say so where agents look: the guide (`src/guide.ts`), the tool description (`src/extension.ts`), `workflow init` output (`src/cli.ts`) and the README. Also remove the two ignore lines in `bot/.gitignore` (13 and 15) and commit those workflow files; they exist only in the main checkout (`/home/nixos/pi-extensions/bot/.pi/workflows/`), so copy them from there without modifying it.
-- D3 (user, 2026-10-30; amended 11:30): Push freely to brain/orchestration and brain/<name> feature branches. The user then allowed merging to main: the supervisor (the interactive session) fast-forwarded main to brain/orchestration for the 0.3.0 release. The brain itself still never merges into or pushes main and never bumps versions; releases go through the supervisor and the user.
+- D3 (user, 2026-10-30; amended 11:31): Push freely to brain/orchestration and brain/<name> feature branches. The user's rule: "you are allowed to merge, the running agents are not". Only the supervisor (the interactive session working with the user) merges into main, pushes main or bumps versions. Running agents, meaning every brain tick and every subagent, never do. main was fast-forwarded to brain/orchestration for 0.3.0 and pushed to origin at aeb0bc2. To ship something, record it under Questions for the user as ready to release.
 - D4 (user, 2026-10-30): The project does not add legacy compatibility layers; use the current contract directly.
 - D5 (setup): The brain works in the worktree `.pi/worktrees/brain-orchestration` on branch brain/orchestration, based on main at f21d735. The main checkout holds the user's uncommitted work (pi-loggly, root README.md, package.json, package-lock.json) and must not be modified.
 - D6 (setup): Subagents are interactive Pi sessions in the herdr session `pi-brain`, each in its own worktree and workspace, started with `brain/loop.sh spawn`. At most 2 at a time. Model: the user's default (openai/gpt-6.1-sol, high).
@@ -24,7 +24,9 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- None active. `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
+- `axeval` (spawned tick 8, 11:30; task `303a9c1`, herdr w4:p1): agent-experience evaluation of the CLI and the Pi tool through 4 scenarios; delivers `brain/axeval.md` with wrong turns and a ranked fix list. Evaluation only, no src/ changes.
+  Its scenario 1 finding "hints drop --home" was fixed in tick 9; drop it from its ranked list on merge.
+- `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
 ## Backlog
 
@@ -41,7 +43,8 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    - Parity: an agent outside Pi gets the same guide (`workflow guide`) and examples as one inside Pi.
    - Exit codes that scripts and agents can branch on.
    - ✅ Done in tick 7: a long `--home` now fails with `home_too_long` naming the byte limit and the fix, before any directory is created.
-   - An agent-experience evaluation: give fresh agents tasks through only the CLI or only the tool, and count wrong turns. This measures progress on the goal instead of guessing.
+   - An agent-experience evaluation: give fresh agents tasks through only the CLI or only the tool, and count wrong turns. This measures progress on the goal instead of guessing. In progress: `axeval` (tick 8). Its ranked fix list should reorder this backlog.
+   - Exit codes are already documented in `workflow --help` (0 success, 1 usage, 2 failed, 3 cancelled, 4 worker unavailable); check the docs and the tool agree rather than adding them.
 
 ## Lessons
 
@@ -111,3 +114,15 @@ None.
 - Outcome: `npm test` 36/36; `nix build .#workflow` 36/36 plus the installed smoke; `npm pack --dry-run` ships 92 files with no BRAIN, brain/, ledgers, test or nix files. main fast-forwarded to brain/orchestration in the main checkout, preserving the user's staged work; main is not pushed. Loop restarted.
 - Value: ✅
 - Lesson: the main checkout keeps staged user work, so a non-fast-forward merge there would abort. Keep brain/orchestration a descendant of main so releases stay fast-forwards.
+
+### Tick 8 · 11:30 · Spawn the agent-experience evaluation
+- Action: spawned `axeval` to run 4 scenarios as a fresh agent (CLI author-validate-run-poll-result, broken-workflow errors, signal discovery from status, the Pi tool headless) and rank fixes by wrong turns. Chosen over another small fix because the backlog's remaining items are guesses; an evaluation turns them into evidence, and it is too long for one tick.
+- Outcome: `loop.sh spawn` took 44 seconds; task committed as `303a9c1` on `brain/axeval`, Herdr w4:p1 confirmed `agent_status=working`. Found while writing the brief: `workflow --help` already documents exit codes, so that backlog item shrinks to a parity check. No code changed; tests not rerun (36/36 at aeb0bc2).
+- Value: ✅ yielded value: the next code changes will be chosen from observed wrong turns, not guesses.
+- Lesson: read the surface's own help before adding a backlog item; one listed gap was already closed.
+
+### Tick 9 · 11:34 · Next-step hints keep --home
+- Action: fixed the first wrong turn `axeval` logged in scenario 1 (its ledger): hints printed after `run --bg`, detach, `init`, `watch`/`status --verbose` trees and the foreground run dropped `--home`, so a copied `workflow poll <id>` hit the default worker and returned `not_found`. Chosen over waiting for the full report because it is observed, small and independent of axeval's remaining scenarios (axeval changes no src/). `src/cli.ts:184-207` builds a `hint` prefix (`workflow --home DIR`, shell-quoted when needed) used at every hint site; usage and help text keep the bare program.
+- Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (new test in `test/unit.test.ts` covers quoted, plain and absent `--home`). Committed `4eb0dc1`; axeval was told via herdr prompt (still `working`) to list it as fixed.
+- Value: ✅ yielded value: an agent with an isolated home can now copy-paste every next step.
+- Lesson: act on a subagent's partial findings when they are concrete and outside its write scope; no need to wait for the final report.

@@ -78,7 +78,7 @@ Optimise what an agent sees and experiences when it uses pi-orchestration throug
 ## Boundaries
 
 - Change only this worktree (@WT@) and subagent worktrees. Read anything, but never modify the main checkout (@REPO@, which holds the user's uncommitted work), ~/.pi, /etc/nixos or other repositories.
-- Push only brain/orchestration and brain/<name> branches. Never push to or merge into main, never force-push, never npm publish, never bump package versions. Merging to main happens at the end, with the user.
+- Push only brain/orchestration and brain/<name> branches. Never push to or merge into main, never force-push, never npm publish, never bump package versions. Only the supervisor, the interactive session working with the user, merges to main; when work is ready to ship, say so under Questions for the user.
 - Workflow files (.pi/workflows/*.ts) are project source: never add them to .gitignore.
 - You may launch workflows without approval; PI_WORKFLOW_ALLOW_UNATTENDED=1 is set. Do not create scheduled loops: this script is the loop. Do not save memories: BRAIN.md is your memory.
 - Verify before claiming: run `npm test` in pi-orchestration before committing code changes, and record failures honestly against the baseline in BRAIN.md.
