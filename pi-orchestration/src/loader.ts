@@ -11,7 +11,7 @@ import { WorkflowError } from "./errors.ts";
 import { lintDeterminism } from "./validation.ts";
 export { lintDeterminism } from "./validation.ts";
 
-export interface LoadedWorkflow { definition: WorkflowDefinition; path: string; hash: string }
+export interface LoadedWorkflow { definition: WorkflowDefinition; path: string; hash: string; source: string }
 const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 let installedAliases: Promise<Record<string, string>> | undefined;
 function dependencyAliases(): Promise<Record<string, string>> {
@@ -73,22 +73,37 @@ export async function loadWorkflow(ref: WorkflowRef | string, cwd: string): Prom
   if (definition.args !== undefined && !Type.IsObject(definition.args)) {
     throw new WorkflowError("invalid_workflow", `${path}: args must be Type.Object({...}) from "typebox"; got ${describeArgs(definition.args)}.`);
   }
-  return { definition, path, hash };
+  return { definition, path, hash, source };
 }
 // Node's "Require stack:" lists loader internals, not the workflow's mistake.
 function loadMessage(error: unknown): string {
   const message = (error instanceof Error ? error.message : String(error)).replace(/\n\s*Require stack:[\s\S]*$/, "");
-  return /Cannot find module '@sinclair\/typebox/.test(message) ? `${message} Use import { Type } from "typebox" (bundled with pi-orchestration).` : message;
+  return /Cannot find module '@sinclair\/typebox/.test(message) ? `${message.replace(/\.?\s*$/, ".")} Use import { Type } from "typebox" (bundled with pi-orchestration).` : message;
 }
 function describeArgs(args: unknown): string {
   try { return JSON.stringify(args)?.slice(0, 120) ?? String(args); } catch { return String(args); }
 }
+type Diagnostic = ValidationResult["diagnostics"][number];
+function loadDiagnostic(error: unknown): Diagnostic {
+  const message = error instanceof Error ? error.message : String(error);
+  const code = error instanceof WorkflowError ? error.code : "invalid_workflow";
+  // Parse errors end with "\n <file>:<line>:<column>", the column 0-based; lift that into fields.
+  const at = /\s*\n\s*(\S.*):(\d+):(\d+)\s*$/.exec(message);
+  return at ? { code, message: message.slice(0, at.index), path: at[1], line: Number(at[2]), column: Number(at[3]) + 1 } : { code, message };
+}
 export async function validateWorkflow(ref: WorkflowRef | string, cwd: string): Promise<ValidationResult> {
+  let path: string;
+  try { path = await resolveWorkflow(ref, cwd); } catch (error) { return { valid: false, diagnostics: [loadDiagnostic(error)] }; }
+  // Lint even when loading fails, so one pass reports every problem.
+  const lint = await readFile(path, "utf8").then(lintDeterminism, () => []);
   try {
-    const loaded = await loadWorkflow(ref, cwd);
-    const diagnostics = lintDeterminism(await readFile(loaded.path, "utf8"));
-    return { valid: diagnostics.length === 0, path: loaded.path, name: loaded.definition.name, hash: loaded.hash, args: loaded.definition.args ?? Type.Object({}), diagnostics };
-  } catch (error) { return { valid: false, diagnostics: [{ message: error instanceof Error ? error.message : String(error), code: error instanceof WorkflowError ? error.code : "invalid_workflow" }] }; }
+    const loaded = await loadWorkflow({ path }, cwd);
+    return { valid: lint.length === 0, path, name: loaded.definition.name, hash: loaded.hash, args: loaded.definition.args ?? Type.Object({}), diagnostics: lint };
+  } catch (error) {
+    const failure = loadDiagnostic(error);
+    // The loader and the lint both see a syntax error in the workflow file; keep the loader's, which has the column.
+    return { valid: false, path, diagnostics: [failure, ...lint.filter(item => item.code !== "syntax_error" || failure.path !== path)] };
+  }
 }
 export async function catalog(cwd: string): Promise<CatalogEntry[]> {
   const entries: CatalogEntry[] = [];

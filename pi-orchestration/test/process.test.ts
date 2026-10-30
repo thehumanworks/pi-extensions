@@ -56,8 +56,13 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     assert.equal((await s.cli(["run", "quick", "--args", '{"n":"x"}'])).code, 1);
     const missing = await s.cli(["status", "nope"], {}, false);
     assert.match(missing.stderr, /^error not_found: Unknown workflow run nope\. List runs: \S*workflow\b.* list\.$/m);
+    assert.equal(missing.code, 1);
+    assert.match((await s.cli(["list"], {}, false)).stdout, /^No workflow runs\. Saved workflows are listed by: \S*workflow\b.* catalog$/m);
     assert.equal((await s.cli(["nope"])).code, 1);
     assert.equal((await s.cli(["validate", "clock"])).code, 1);
+    const clock = await s.cli(["run", "clock", "--model", "local/m1"], {}, false);
+    assert.equal(clock.code, 1);
+    assert.match(clock.stderr, /^error invalid_workflow: \S+clock\.ts is not a valid workflow; no run was created:\nline 4: Date\.now\(\)/);
 
     // Every --json run view is the Pi tool's brief view: runId, the workflow's name and the model as one string.
     const quick = await s.cli(["run", "quick", "--args", '{"n":21}', "--model", "local/m1"]);
@@ -99,6 +104,49 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     const attached = await s.cli(["run", "gate", "--model", "local/m1", "--interval", "20ms"], {}, false);
     assert.equal(attached.code, 0, attached.stderr);
     assert.match(attached.stdout, /waiting_signal[\s\S]*then: .*poll /);
+  } finally { await s.close(); }
+});
+
+test("an idle worker of another build is replaced; a busy one keeps serving with one warning per command", { timeout: 60_000 }, async () => {
+  const s = await sandbox();
+  const builds = { old: { PI_WORKFLOW_BUILD: "old" }, new: { PI_WORKFLOW_BUILD: "new" }, next: { PI_WORKFLOW_BUILD: "next" } };
+  const warning = /^Workflow worker runs an older build \(new\); stop it with workflow worker stop when its runs finish\.$/m;
+  try {
+    await s.write("gate", workflow(`{ name: "gate", async run(ctx) { return ctx.signal("go"); } }`));
+    const old = (await s.cli(["worker", "start"], builds.old)).json;
+    assert.equal(old.build, "old");
+    // status only asks; it shows the running build without replacing it.
+    assert.match((await s.cli(["worker", "status"], builds.new, false)).stdout, new RegExp(`^worker pid ${old.pid} · .* · build old$`, "m"));
+
+    const listed = await s.cli(["list"], builds.new);
+    assert.equal(listed.code, 0, listed.stderr);
+    assert.equal(listed.stderr, "");
+    const current = (await s.cli(["worker", "status"], builds.new)).json;
+    assert.equal(current.build, "new");
+    assert.notEqual(current.pid, old.pid);
+    assert.throws(() => process.kill(old.pid, 0), { code: "ESRCH" });
+
+    const first = (await s.cli(["run", "gate", "--bg", "--model", "local/m1"], builds.new)).json.runId as string;
+    assert.equal((await s.cli(["poll", first, "--interval", "20ms"], builds.new)).json.status, "waiting_signal");
+    // An attached run makes several requests in one command and warns once.
+    const attached = await s.cli(["run", "gate", "--model", "local/m1", "--interval", "20ms"], builds.next, false);
+    assert.equal(attached.code, 0, attached.stderr);
+    assert.match(attached.stdout, /waiting_signal/);
+    assert.equal(attached.stderr.split("\n").filter(line => warning.test(line)).length, 1, attached.stderr);
+    const kept = await s.cli(["worker", "status"], builds.next);
+    assert.equal(kept.json.pid, current.pid);
+
+    for (const run of (await s.cli(["list"], builds.next)).json as Array<{ runId: string }>) {
+      const answered = await s.cli(["signal", run.runId, "go", "true"], builds.next);
+      assert.equal(answered.code, 0, answered.stderr);
+      assert.match(answered.stderr, warning);
+      assert.equal((await s.cli(["poll", run.runId, "--until", "done", "--interval", "20ms"], builds.next)).json.status, "completed");
+    }
+    // Its runs finished, so the next command replaces it without a warning.
+    const after = await s.cli(["worker", "start"], builds.next);
+    assert.equal(after.stderr, "");
+    assert.equal(after.json.build, "next");
+    assert.notEqual(after.json.pid, current.pid);
   } finally { await s.close(); }
 });
 

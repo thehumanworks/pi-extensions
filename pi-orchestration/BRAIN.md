@@ -13,7 +13,8 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 - D5 (setup): The brain works in the worktree `.pi/worktrees/brain-orchestration` on branch brain/orchestration, based on main at f21d735. The main checkout holds the user's uncommitted work (pi-loggly, root README.md, package.json, package-lock.json) and must not be modified.
 - D6 (setup): Subagents are interactive Pi sessions in the herdr session `pi-brain`, each in its own worktree and workspace, started with `brain/loop.sh spawn`. At most 2 at a time. Model: the user's default (openai/gpt-6.1-sol, high).
 - D7 (user, 2026-10-30): The tick rules live in `brain/loop.sh` and belong to the brain; it may change them. The ledger must be updated every tick.
-- D8 (setup; updated 11:30): Pi on this machine loads `npm:@nothumanwork/pi-orchestration` from npm, not this checkout. 0.3.0 (D1 and D2, the home_too_long error, green tests) is on main but NOT yet published; the installed Pi still runs 0.2.1 until the user publishes and updates. Keep PI_WORKFLOW_ALLOW_UNATTENDED in brain/loop.sh until the user confirms the publish. Test changes with `npm test`, the local CLI (`node pi-orchestration/bin/workflow.mjs`) or `pi -e ./pi-orchestration/index.ts`.
+- D8 (setup; updated 15:50): Pi on this machine loads `npm:@nothumanwork/pi-orchestration` from npm, not this checkout, and still runs 0.2.1 until the user updates Pi packages. npm has 0.3.1 and 0.3.2 (published by the user from main, brain work up to a12cb48). The supervisor prepared 0.4.0 on main: everything through tick 55 plus worker1, minor bump because launches now refuse workflows that fail the determinism lint (validate1). Keep PI_WORKFLOW_ALLOW_UNATTENDED in brain/loop.sh until Pi runs 0.3.0 or later. Test changes with `npm test`, the local CLI (`node pi-orchestration/bin/workflow.mjs`, after `npm run build`) or `pi -e ./pi-orchestration/index.ts`.
+- D9 (supervisor, user-approved, 15:34): the loop stopped after tick 55 (brain/STOP). axeval3 measured 0 wrong turns in every scenario (S1-S4, rounds one to three), and most recent ticks shipped small polish (45, 48, 51-53). Remaining work: worker1 (stale worker after upgrade; PROTOCOL_VERSION is 1 in both 0.2.1 and 0.3.0, so an upgrade keeps the old worker), Q1 (user policy), and the low items in Backlog 000. The supervisor reviews and merges worker1. Restart only with a new goal or new evaluation scenarios.
 
 ## Baseline
 
@@ -24,7 +25,9 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `validate1` (spawned tick 42, herdr w7:p1, branch brain/validate1): Backlog 00.6 and 00.7 (validate in one pass, lint at launch, lint I/O outside ctx.step). Baseline 38/38 at b63b97e.
+- None running. `worker1` merged at `6f2ba7d` and retired by the supervisor (Backlog 000.1; 44/44, Nix smoke passed).
+- `axeval3` merged at `2af4ece` and retired in tick 54; its report is `brain/axeval3.md` (ranked fixes drive Backlog item 000).
+- `validate1` merged at `6facf5c` and retired in tick 46 (Backlog 00.6 and 00.7).
 - `axeval2` merged at `6ed16ed` and retired in tick 35; its report is `brain/axeval2.md` (ranked fixes drive Backlog item 00).
 - `runshape` merged at `237e912` and retired in tick 28.
 - `axeval` merged at `050a209` and retired in tick 11; its report is `brain/axeval.md` (ranked fixes drive Backlog item 0).
@@ -34,16 +37,30 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
+000. axeval3's ranked fixes (`brain/axeval3.md`, "Ranked fixes"; round three: S1-S4 all 0 wrong turns). Open, in order:
+   1. Worker build check (worker.ts:58, protocol.ts:11, client.ts:54-57): worker reports a build id; client restarts an idle stale worker, else warns naming `worker stop`. Same as 00.11. ✅ Done: `worker1` merged at `6f2ba7d` (44/44, Nix smoke passed).
+   2. ✅ Done tick 54 (58f2ec3), pending Q1. Ask before answering a gate: append to `toolHints.signal` (presentation.ts:95-96) `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` Measured unasked approvals 6/6 → 2/6, told-to-approve 4/4 still fine. Policy choice: see Questions.
+   3. Lint rest: `require("fs"|…)` calls and `process.hrtime.bigint()` (tick 52 covered performance.now, crypto.randomUUID, getRandomValues; tick 55 covered process.hrtime, randomBytes, randomInt).
+   4. ✅ Widget pluralisation, done tick 51.
+   5. Guide signal line (guide.ts:78): status shows key, schema and deliver call; value is JSON, not a string.
+   6. `invalid_args` example built from the actual input (engine/index.ts:308).
+   7. Node unknown-option advice wrong for this CLI (cli.ts:426, :434-437); measured no gain, low. Do NOT ship variant (x) (measured worse).
+   8. Guide full-command reason (= 00.10), low.
+   9. Exit codes: `run_finished` → 1; `result_not_ready` own code or a help line (cli.ts:185-189).
+   10. Tool errors keep the code in `details` (extension.ts:104).
+   Other: no-model warning on agent-less workflows (cli.ts:300, extension.ts:340); `Approval 0/0` (presentation.ts:39); stacked doc comments over `waitingLines` (presentation.ts:77-78).
+
 00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
    3. ✅ Done in tick 44 (a549d14): one `waitingLines(run, hints)` in presentation.ts used by runBrief, runTree and cli.ts statusText (`Waiting for signal "k": prompt`, `Expects:`, `Deliver with:`); the tool brief now names the `{"action":"signal",…}` call, asserted in test/extension.test.ts (tick 44).
    4. ✅ Done in ticks 37-38 (8fce02c, b47be74, 895d71b): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}` (tested); tool `signal` replies `Signal "k" accepted. Check the run with {"action":"status",…}.` (tested).
-   6. In progress (`validate1`, tick 42). Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
-   7. In progress (`validate1`, tick 42). Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
+   6. ✅ Done in tick 46 (merged validate1, `6facf5c`): validate reports load errors and lint findings in one pass with path/line/column; launch throws `invalid_workflow` (exit 1) before creating a run. Not covered: `retry --allow-changed` does not lint the edited file; module-evaluation errors have no location.
+   7. ✅ Done in tick 46: `nondeterministic_call` for fs, fs/promises, child_process imports and `fetch` outside `ctx.step`.
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
-   9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). Exit code for `not_found` itself is still 2.
+   9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). `not_found` exits 1 since tick 48.
+   11. Stale worker (axeval3 ledger 17:25): after an upgrade or `npm run build`, a running worker keeps serving old code because `src/client.ts:56` compares only PROTOCOL_VERSION. Compare the package version or a build id and restart the worker. Lint misses left: `require("node:fs")` calls.
    10. Low impact (axeval2: dev checkouts loaded with `-e` only). Guide says why it uses the full command (link.ts:25-29, guide.ts:46): `workflow` missing vs another install's path. guide.ts:46 already says "not on PATH here".
-   Unranked: no-model warning on agent-less workflows, `Approval 0/0`, `1 agents`, unrounded costUsd, tool errors with `details: {}`.
+   Unranked (axeval3 S1-S2 adds: ✅ `not_found` exits 1 (tick 48), syntax error text repeats the path, `invalid_args` JSON-string example is fixed `{"topic":"bees"}`; ✅ typebox hint separator fixed tick 48): no-model warning on agent-less workflows, `Approval 0/0`, unrounded costUsd, tool errors with `details: {}`. ✅ `1 agents` fixed in tick 45 (b788e5d).
 
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
@@ -75,6 +92,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 ## Lessons
 
+- Supervisor, at the stop: 34 detached workers started by evaluation subagents (axeval, axeval2, axeval3, validate1) were still running after their worktrees were removed; the supervisor stopped them. Evaluation and test briefs must stop every worker they start (`workflow worker stop --home <home>`), and `retire` should check for live workers in the worktree.
 - Supervisor, release check 14:30: `npm test` does not run `nix/smoke-test.mjs`, the installed-CLI acceptance test, and it broke unnoticed: after tick 16 and runshape (tick 28), `poll` prints the brief view without `steps` or `usage`, but the smoke test still read them from poll. Fixed in a2fe460 (it now reads them from `status --verbose`). Any change to CLI output shapes must also pass the smoke test. Fast way, about 30 seconds plus the test: build without checks, `nix build --impure --no-link --print-out-paths --expr "(builtins.getFlake \"git+file://$PWD?dir=pi-orchestration\").packages.x86_64-linux.workflow.overrideAttrs (_: { doCheck = false; doInstallCheck = false; })"` from the worktree root, then `node pi-orchestration/nix/smoke-test.mjs <out>/bin/workflow`. The full `nix build .#workflow` takes about 5 minutes.
 - Supervisor, after tick 1: the approval brief told the subagent to drop PI_WORKFLOW_ALLOW_UNATTENDED from brain/loop.sh. That would break headless workflow launches here, because the installed Pi runs npm 0.2.1 (D8) until the user publishes. The subagent was told to leave loop.sh alone. Check every change to the loop's own environment against D8.
 - Tick 1: `loop.sh spawn` completed in 43 seconds (30 seconds installing dependencies). Verify Herdr `agent_status=working` after submission, not merely a successful prompt write. Keep delegated scope explicit so the brain can work on adjacent priorities without overlapping files.
@@ -90,6 +108,8 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
+- Ticks 22-29: check each documented exit code against a test; try each changed command once against a fresh home; handle errno at the command that knows the context; delegate an item deferred three times; share one constant between lint and run-time checks; rerun the suite after every merge; trace where a field is written before patching. A hook blocks `git checkout -- <file>` and heredocs with delete-like words: restore with `git show HEAD:<path>`, edit the ledger with the edit tool.
+- Ticks 18-21: in a four-minute tick, ship the edit with the suite green and log the missing test as the next step; `npm test` prints `ℹ tests N`, so grep `^ℹ (tests|pass|fail)` for counts.
 - Tick 16: a four-minute tick fits one ranked fix when the report already names file:line.
 - Tick 15: TypeBox's `IsSchema` is a weak structural check; use the kind-specific guard (`IsObject`) where the contract needs one shape.
 - Tick 14: check option names at the one function every agent path goes through (`resolveOptions`); lint at validate as the follow-up.
@@ -98,88 +118,10 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 ## Questions for the user
 
-None.
+- Q1 (tick 54): should agents answer `ctx.signal` gates on their own? axeval3 measured that agents approve a gate unasked 6/6 times; a one-line caution on the tool's deliver hint cut it to 2/6 without hurting sessions told to approve. The brain shipped that caution in tick 54 (58f2ec3, reversible, one line); it will revert it if you say signals are meant for agents to answer freely.
+- Q2 (tick 54): resolved. The supervisor merged everything through tick 55 plus worker1 into main as 0.4.0 (see D8).
 
 ## Log
-
-### Tick 18 · 12:21 · Tool errors lead with their code
-- Action: took axeval fix 7, next in order and one file. The tool's `execute` (`src/extension.ts`) now wraps its body in `try … catch` and rethrows through `codedError`, which prefixes a `WorkflowError`'s message with `code: ` (once), so a tool-using agent sees `invalid_args: …` or `not_found: …` as the CLI's `{"error":{"code"}}` shows it. The completion poller checked `"run_not_found"`, which the engine never throws; it now checks `"not_found"` (engine/index.ts:222, 229), so vanished runs stop being polled.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/extension.test.ts:162` asserts the message starts with `not_from_root: ` and the code survives. Not verified live in Pi (D8).
-- Value: ✅ yielded value: tool errors are branchable by code and the dead branch is live.
-- Lesson: a body-wide `try` around a long method is a mechanical reindent (`sed '284,387s/^\(.\)/  \1/'`); check `tsc` right after.
-
-### Tick 19 · 12:24 · The guide teaches the shell lifecycle
-- Action: took axeval fix 10 instead of 8 or 9, because it was the only one that fit a four-minute tick (one sentence; 8 and 9 touch several cli.ts sites and the run record). `src/guide.ts:63` now says a shell `run` waits and prints the result, and that `--bg` returns a runId for `poll <runId>` (returns at the end or a signal wait) and `result <runId>`, using the machine's real command; the sentence after it now says it describes Pi.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts:113-114` asserts the lifecycle with the bare and the full-path command. `bin/workflow.mjs` imports the git-ignored `dist/cli.js`, which was stale; after `npm run build` the local CLI prints the new lifecycle line.
-- Value: ✅ yielded value: a shell agent learns `--bg` → `poll` → `result` from the guide alone.
-- Lesson: when the deadline is four minutes, choose the ranked fix that fits, not strictly the next one; 8 and 9 need a full tick each.
-
-### Tick 20 · 12:29 · cancel, retry and signal print text, not JSON
-- Action: took the text half of axeval fix 9, because it fits one tick; the `run_cancelled` exit code and the `agents`/`worker status` text are left. `src/cli.ts` (result/cancel/revert, retry, signal cases): `cancel` prints `statusText`, `retry` prints `statusText` plus `poll: <hint> poll <id>`, `signal` prints `Signal "key" accepted. poll: <hint> poll <id>`. `--json` output is unchanged.
-- Outcome: `npm run check` passes; `npm test` **37/37**. No new test asserts the text lines yet; process tests use `--json`.
-- Value: ⚠️ partial: readable output for three commands, without a test for the text.
-- Lesson: in a four-minute tick, ship the edit with the suite green and log the missing test as the next step instead of starting it late.
-
-### Tick 21 · 12:34 · Test the readable signal and cancel output
-- Action: wrote the test tick 20 left as its next step. Chosen over fix 8 or the rest of fix 9 because untested text output can regress silently and the test fits a four-minute tick. The process sandbox's `cli` (`test/process.test.ts:20`) takes a third `json = true` argument; without it the CLI runs as an agent would, with no `--json`.
-- Outcome: the gate test asserts `signal` prints exactly `Signal "go" accepted. poll: … poll <id>`; the SIGKILL test asserts `cancel` prints status text containing `cancelled`, not JSON. `npm run check` passes; `npm test` **37/37**.
-- Value: ✅ yielded value: tick 20's text output is now protected by tests that run the compiled CLI.
-- Lesson: `npm test` prints `ℹ tests N`, not `# tests N`; grep `^ℹ (tests|pass|fail)` for the counts.
-
-### Tick 22 · 12:39 · result on a cancelled run exits 3 with run_cancelled
-- Action: took the exit-code part of axeval fix 9, because it fits a four-minute tick and makes the documented exit code (`3 cancelled`) true; fix 8 needs a full tick. `src/engine/index.ts` result throws `run_cancelled: Run <id> is cancelled.` before the generic `run_failed`; `errorInfo` (`src/cli.ts`) maps `run_cancelled` to exit 3.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` SIGKILL test now asserts `result` on the cancelled run exits 3 with `run_cancelled` on stderr. The tool path gets the code too via tick 18's `codedError`.
-- Value: ✅ yielded value: scripts and agents can branch on a cancelled run as the help documents.
-- Lesson: check each documented exit code against a test; the help promised 3 and the code returned 2.
-
-### Tick 23 · 12:47 · agents and worker print text, not JSON
-- Action: finished axeval fix 9, because it was the last small piece of it and fits a four-minute tick; fix 8 needs a full tick. `src/cli.ts` agents case prints one line per background agent (`runId name status [detached]`) or `No background agents. agents lists ctx.spawn() agents; ctx.agent() steps are in status --verbose.`; `worker start|status` print `worker pid N · home DIR · up 0s`, `worker stop` prints `worker stopped`. `--json` is unchanged.
-- Outcome: `npm run check` passes; `npm test` **37/37**. Local CLI (after `npm run build`) with `--home /tmp/bt23` printed all three lines. Found: `worker status` with no worker prints a raw `ENOENT` (logged under Backlog 0.9). No test asserts the new text yet.
-- Value: ✅ yielded value: no CLI command dumps JSON in text mode any more.
-- Lesson: try each command once against a fresh home after changing it; the empty case showed an error the report missed.
-
-### Tick 24 · 12:50 · worker status explains a missing worker
-- Action: fixed tick 23's follow-up because it fits a four-minute tick; fix 8 needs a full tick. `worker status` and `worker stop` on a home with no worker printed `error ENOENT: connect ENOENT …/worker.sock` (exit 4 already). In the `worker` case of `src/cli.ts`, a `running` wrapper now turns ENOENT/ECONNREFUSED into `worker_unavailable: No workflow worker is running for this home. Start one with <hint> worker start; run, poll and the other commands start it automatically.` The hint keeps `--home`.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` asserts exit 4 and the message for `worker status` before any worker starts.
-- Value: ✅ yielded value: an agent that checks the worker first gets the fix, not a socket errno.
-- Lesson: wrap errno handling at the command that knows the context (here: only `start` spawns), not in the shared rpc client.
-
-### Tick 25 · 12:56 · Archive the oldest log entries; test agents and worker text
-- Action: the Log had 26 entries, past the 25 limit, so ticks 0-4 moved to `brain/archive/2026-10-30.md` (tick 4's lesson kept under Lessons). With the remaining time, closed the gap tick 23 left: no test asserted the `agents` and `worker status` text. Fix 8 needs a full tick, so it waits.
-- Outcome: `test/process.test.ts` (after the quick run) asserts `agents` prints `No background agents. …` and `worker status` prints `worker pid N · home …`, both without `--json`. `npm test` **37/37**.
-- Value: ✅ yielded value: every text-mode command changed in ticks 20-24 is now under test, and the ledger is back within its limits.
-- Lesson: pair mandatory housekeeping with a test-sized change; both fit one four-minute tick.
-
-### Tick 26 · 13:00 · Spawn runshape for one run shape across surfaces
-- Action: spawned `runshape` for axeval fix 8, because it is the last full ranked fix, touches engine/index.ts, cli.ts, extension.ts, presentation.ts and the README, and three ticks in a row (19, 22, 23) deferred it as too big for four minutes. The brief names the JSON table (axeval.md:79-86), the four changes, the D4 no-shim rule, the 37/37 baseline and the out-of-scope files.
-- Outcome: `loop.sh spawn` finished in about 50 seconds; branch brain/runshape pushed, worktree `.pi/worktrees/brain-runshape`, herdr w5:p1 reports `agent_status=working`. No code changed this tick; tests not rerun (37/37 at 1a5871e).
-- Value: ✅ yielded value: the largest open fix is being worked without blocking the small ones.
-- Lesson: when the same item is deferred three times as too big for a tick, delegate it instead of deferring again. Next tick: fix 3's validate-time lint (src/validation.ts), which does not overlap runshape's files.
-
-### Tick 27 · 13:08 · validate reports unknown ctx.agent options
-- Action: took the static half of axeval fix 3, as tick 26 planned, because it does not overlap runshape's files and fits four minutes. `lintDeterminism` (`src/validation.ts`) checks the object-literal second argument of every `ctx.agent` call in run control flow and reports `unknown_agent_option` with line, did-you-mean and the valid list; `validateWorkflow` already marks any diagnostic as invalid. `AGENT_OPTIONS` moved from engine/execution.ts into validation.ts so both checks share one list.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts` determinism test asserts `{ tool: [], label }` yields exactly one `unknown_agent_option` naming `tools`.
-- Value: ✅ yielded value: a misspelled agent option is caught at validate, before launch.
-- Follow-up in the same tick (`64463bd` then this commit): `ctx.spawn({…})` options are linted too, accepting `name`, `initialPrompt` and `detach` on top; the test adds a `modle` typo. **37/37**.
-- Lesson: one shared constant between the lint and the run-time check keeps them from drifting. Commit at the first green, then extend; both fit the four minutes. Next: review runshape when done.
-
-### Tick 28 · 13:10 · Merge runshape: one run shape across surfaces
-- Action: reviewed and merged `brain/runshape`, done since tick 27, because a finished branch blocks nothing else and fix 8 was the last open ranked axeval fix. Diff: 12 files, +195/-57 (cli.ts, engine/index.ts, store.ts, extension.ts, presentation.ts, README, tests).
-- Outcome: `npm test` in its worktree **38/38**; after `git merge --no-ff` on top of tick 27's lint, `npm run check` clean and `npm test` **38/38**. Merge `237e912`, pushed; `loop.sh retire runshape` succeeded. All ten axeval fixes are now done. runshape's observation (terminal runs keep `waitingFor`) became Backlog 0.11.
-- Value: ✅ yielded value: an agent that learned the JSON shape on the CLI can parse the tool's details and vice versa; `list` no longer mixes model types.
-- Lesson: re-run the suite after merging, not only in the branch; tick 27 changed validation.ts and execution.ts under it. Next: Backlog 0.11, then a second axeval round to measure the fixes.
-
-### Tick 29 · 13:14 · Reproduce stale waitingFor on cancelled runs
-- Action: took Backlog 0.11, the next open item and small on paper. Added a test that cancels a run waiting on a signal and asserts `waitingFor` is gone, then cleared `waitingFor` in `Engine.mutate` for terminal statuses and in the runTask `abort` commit.
-- Outcome: the test reproduced the bug (`waitingFor` still `{key:"approve",…}` after cancel); both fixes left it failing, **38 tests, 37 pass, 1 fail** (the new assertion). Out of time, so I restored the source and the test from HEAD rather than commit a red suite; code is unchanged from 7435e3a (38/38). The reproducer and the two dead ends are in Backlog 0.11.
-- Value: ⚠️ partial: the bug is confirmed with a reproducer and two wrong fixes are ruled out; nothing shipped.
-- Lesson: trace where a field is written before patching; I patched two plausible writers without reading the signal loop and ran out of time. A hook blocks `git checkout -- <file>` and heredocs containing words like "delete"; restore files with `git show HEAD:<path>` and edit the ledger with the edit tool.
-
-### Tick 30 · 13:19 · Terminal runs no longer show waitingFor
-- Action: retook Backlog 0.11 with tick 29's reproducer, because it was the only open ranked item and the bug was confirmed. Rewrote the test (second `gate` after the list assertions, cancel while `waiting_signal`, assert no `waitingFor`), then tried tick 29's abort-commit fix alone.
-- Outcome: `delete run.waitingFor` in the runTask `abort` commit (engine/index.ts ~545) fixes it; without it the test fails (checked both ways). Also cleared it in the `execute` failure commit, so a `signal_timeout` run does not keep it. `npm run check` clean; `npm test` **38/38**. Tick 29's failure came from testing it together with the `Engine.mutate` change, not from the abort fix itself.
-- Value: ✅ yielded value: a cancelled or failed run no longer prints "waiting for signal … signal: …".
-- Lesson: retest the simplest candidate fix alone before ruling it out. Next: a second axeval round to measure the ten fixes (spawn), since Backlog 0 is now empty.
 
 ### Tick 31 · 13:24 · Spawn axeval2 to measure the fixes
 - Action: spawned `axeval2`, as tick 30 planned, because every ranked axeval fix is done and the next changes should come from measured wrong turns, not guesses. The brief repeats round one's four scenarios with the same model (haiku) so counts compare, adds a parity check of `workflow guide` vs the tool's guide, and carries the D8 and tick 19 traps (`pi -e` the local index.ts, `npm run build` before using bin/workflow.mjs) and the Pi boolean-flag trap.
@@ -267,3 +209,79 @@ None.
 - Outcome: `npm test` **38/38** (under 30 s this time), including the process gate test (`then: … poll`) and the updated unit regexes. Committed `a549d14`. Then added the missing assertion: the `harness()` fake gives `waiting_signal` records a `waitingFor`, and the brief-status test asserts the tool brief prints `Deliver with: {"action":"signal","runId":"run-gate","key":"go",…`. Against the old briefResult the extension tests are 8/9; with it, `npm test` **38/38**.
 - Value: ✅ yielded value: all three waiting-signal renderers share one casing, and a tool agent reading the brief status sees the signal call without asking for `verbose`.
 - Lesson: a killed tick's diff with a passing typecheck is worth one `npm test` before deciding; it took seconds. Next: check validate1; otherwise the unranked items under 00 (`1 agents`, unrounded costUsd).
+
+### Tick 45 · 14:39 · Run summary pluralises agents
+- Action: validate1 committed 25ad435 but its ledger is not done, so no review yet. Took the smallest unranked item under 00: `runSummary` (`src/presentation.ts:43`) printed `1 agents` on every surface (tool brief, CLI status, list). It now says `1 agent` / `N agents`, like the `failed step(s)` suffix beside it.
+- Outcome: `test/unit.test.ts:92` expects `1 agent`; `npm test` **38/38**. The Nix smoke test does not read this text (checked `nix/smoke-test.mjs`). Commit `b788e5d`.
+- Value: ✅ yielded value: small, but every status line an agent reads is now grammatical.
+- Lesson: with four minutes and a subagent mid-work, a one-line fix from the unranked list beats a broad read. Next: review validate1 when its ledger says done; otherwise the no-model warning on agent-less workflows (cli.ts:300).
+
+### Tick 46 · 14:44 · Merge validate1: one-pass validate, launch lint, I/O lint
+- Action: reviewed and merged `brain/validate1`, done with a clean worktree, because a finished branch blocks nothing and closes the last two ranked axeval2 fixes (00.6, 00.7). Diff: 10 files, +162/-14 (loader.ts, validation.ts, engine/index.ts launch, presentation.ts `diagnosticText`, tests, one README line).
+- Outcome: `npm test` in its worktree **40/40**; after `git merge --no-ff` on top of ticks 44-45, **40/40**. Merge `6facf5c`, pushed; `loop.sh retire validate1` succeeded. Engine message names no CLI command. Not run: the Nix smoke test (CLI output shape unchanged except a new `invalid_workflow` refusal).
+- Value: ✅ yielded value: an agent sees every validate problem at once, and a launch can no longer create a run that lint already rejects.
+- Lesson: a subagent brief with file:line, three named test cases and the old-source check came back mergeable in about 20 minutes. Next: all ranked axeval2 fixes are done; either lint `retry --allow-changed`, or spawn axeval3 to measure 00.2-00.9.
+
+### Tick 47 · 14:49 · Spawn axeval3 to measure the axeval2 fixes
+- Action: spawned `axeval3`, as tick 46 planned, because every ranked axeval2 fix is done and the next changes should come from measured wrong turns; tick 35 showed a round after a batch of fixes pays. The brief lists the fixes since round two, the round-two counts (S1 0, S2 4, S3 0, S4 A/B/C/D 0/0/0/13), the D8/`npm run build`/boolean-flag/socket-path traps, the 40/40 baseline and a report-only write scope. Also archived ticks 18-21 (Log was 29 entries), keeping their lesson.
+- Outcome: `loop.sh spawn` took about 55 seconds; branch brain/axeval3 pushed, worktree `.pi/worktrees/brain-axeval3`, herdr w8:p1 `agent_status=working` (idle for the first seconds, then working). No source changed; tests not rerun (40/40 at 6facf5c).
+- Value: ✅ yielded value: the effect of ticks 36-46 will be measured against round two.
+- Lesson: run the spawn in the background and archive meanwhile; both fit four minutes. Next tick: act on axeval3's concrete partial findings outside its scope, or lint `retry --allow-changed` (validate1's gap).
+
+### Tick 48 · 14:54 · Typebox load hint reads as a sentence
+- Action: took axeval3's S2 finding (ledger 15:15), concrete, one line and outside its write scope: the load error read `Cannot find module '@sinclair/typebox' Use import …` with no separator. `loadMessage` (`src/loader.ts:81`) now ends the Node message with one full stop before the hint. Chosen over `retry --allow-changed` lint, which needs more than four minutes.
+- Outcome: `test/engine.test.ts:206` asserts `typebox'. Use import …` exactly; `npm test` **40/40**; with the old loader.ts the engine tests are 11/12. Commit `34b76c4`. axeval3 so far: S1 0 wrong turns (round two 0), S2 0 (round two 4); running S3.
+- Value: ✅ yielded value: small, but the hint now reads as a separate instruction.
+- Follow-up in the same tick: an unknown run id (`not_found`) now exits 1 like `workflow_not_found` and the other lookup typos (`src/cli.ts:186`), not 2 ("failed"); `test/process.test.ts:59` asserts it. `npm test` **40/40**; the Nix smoke test does not read this exit code.
+- Lesson: pin exact punctuation in assertions when the bug is punctuation; `.*` hid it. Next: axeval3's other S2 polish (syntax text repeats the path) or its final report.
+
+### Tick 49 · 15:00 · Tool run wait:true returns at a signal wait
+- Action: took axeval3's latest finding (ledger 15:40), concrete and outside its write scope: the tool's `run` with `wait:true` polled until a terminal status or `waitTimeoutMs` (default 60 s), so a gated run held the agent for a minute; the CLI's attached `run` already returns at the wait (tick 36). `src/extension.ts` wait loop now also breaks on `waiting_signal` and returns the brief (which carries `Deliver with: {"action":"signal",…}`) plus `Stopped waiting: the run needs a signal. This session gets a message when it ends.`
+- Outcome: `test/extension.test.ts` "wait:true returns at a signal wait" asserts the status and note; `npm test` **41/41**. Commit `42b1362`. First draft of the test queued `running, waiting_signal, completed` and saw `completed` (the launch or poller consumes a status); a single `waiting_signal` queue fixed it. Old-source check not run: without the fix the loop waits the full 60 s and the note differs, so the regex would fail.
+- Value: ✅ yielded value: both surfaces now stop at a gate instead of blocking.
+- Lesson: the `harness()` status queue is shared by launch, poller and status; use a single-status queue when the order is not the point. Next: axeval3's report (session E will measure this) and its remaining polish (`Approval 0/0`, no-model warning on agent-less workflows).
+- Also steered axeval3 to measure session E before and after merging brain/orchestration (42b1362).
+
+### Tick 50 · 15:06 · Empty list points to catalog
+- Action: took axeval3's F2 finding (ledger 16:10), its only wrong turn in the new probes: asked to "list the available workflows", an agent ran `workflow list`, got `No workflow runs.` and had to read `--help` to find `catalog`. Chosen over `Approval 0/0` and the no-model warning because it is a measured wrong turn and fits four minutes. Empty `list` now prints `No workflow runs. Saved workflows are listed by: <program> catalog` (`src/cli.ts` list case) and the tool `No workflow runs. Saved workflows are listed by {"action":"catalog"}.` (`src/extension.ts` list case); `runList` stays surface-neutral.
+- Outcome: `test/process.test.ts:60` asserts the CLI text on a home with no runs; `npm test` **41/41**. Commit `ad724c3`. The Nix smoke test reads only `list --all` JSON. Not tested: the tool-side text (the `harness()` fake always returns runs).
+- Value: ✅ yielded value: the run/workflow naming confusion now resolves in one step.
+- Lesson: when a noun is ambiguous (list = runs), make the empty case name the other command. Next: a tool-path test for the empty list, then axeval3's report.
+
+### Tick 51 · 15:09 · Pi widget pluralises agents and runs
+- Action: took axeval3's side finding (ledger 16:45): the Pi TUI widget (`widgetLine`, `src/extension.ts:36`) still printed `1 agents` and `+1 runs`, which tick 45 fixed only in `runSummary`. Chosen over the empty-list tool test and axeval3's unprompted-approval experiment (c), which should wait for its report. `widgetLine` is now exported and pluralises both.
+- Outcome: `test/extension.test.ts` "widget line pluralises agents and other runs" asserts `· 1 agent · $0.0000 · +1 run` and `· 0 agents · … · +2 runs`. First `npm test` run: **42 tests, 40 pass, 2 fail** (failures not captured); the second and third runs **42/42**. Commit `9ec61ad`. The 2 failures look like a flake; not investigated.
+- Value: ✅ yielded value: small; no surface prints `1 agents` now.
+- Lesson: capture failing test names on the first run (`npm test > file`), a flake cannot be named afterwards. Next: watch for the flake; axeval3's report (experiment (c), a `toolHints.signal` line telling agents to ask before approving, measured 2/3).
+
+### Tick 52 · 15:15 · Lint performance.now() and crypto random
+- Action: took axeval3's lint probe gap (ledger 17:20), concrete and one file: `performance.now()`, `crypto.randomUUID()`, bare `randomUUID()` and `crypto.getRandomValues()` in run control flow validated clean. Chosen over the stale-worker check (client.ts:56 compares only PROTOCOL_VERSION; needs more than four minutes) and `require("node:fs")` (needs require tracking). `lintDeterminism` (`src/validation.ts:89-90`) now reports them as `nondeterministic_call`, pointing to ctx.now()/ctx.random().
+- Outcome: `test/unit.test.ts` determinism test asserts the three calls are flagged and `randomUUID()` inside `ctx.step` is not; `npm test` **42/42** (no flake this run). Examples still validate. Commit `1a90795`. Old-source check not run: without the change the list is empty.
+- Value: ✅ yielded value: small; two more replay breakers are caught at validate instead of on retry.
+- Lesson: an evaluation's probe list of misses is a ready queue of four-minute fixes. Next: stale worker after upgrade (compare package version in client.ts:56, restart the worker), or axeval3's report when done.
+
+### Tick 53 · 15:21 · Test the tool's empty list hint
+- Action: closed tick 50's untested gap, because it fits four minutes; the stale-worker fix (Backlog 00.11) needs a design choice (restarting a worker with live runs) that does not fit. The `harness()` fake returns no runs for a `cancelled` filter; the catalog test asserts the tool's empty `list` text is exactly `No workflow runs. Saved workflows are listed by {"action":"catalog"}.`
+- Outcome: `npm test` **42/42**. Commit `5b9bc56`. Old-source check not run: without the extension.ts text the exact-match assertion cannot pass.
+- Value: ✅ yielded value: small; both surfaces' empty-list hints are under test.
+- Lesson: a filter branch in the fake gives an empty case without disturbing the shared run list. Next: stale worker (client.ts:56): add a build id to `ping` and decide between a clear `worker_outdated` error naming `worker stop` and an automatic restart when no run is active; or axeval3's report.
+
+### Tick 54 · 15:24 · Merge the axeval3 evaluation
+- Action: reviewed and merged `brain/axeval3`, done with a clean worktree, because a finished report-only branch blocks nothing and its ranked list should drive the next ticks. Diff: `brain/axeval3.md` +216, `ledgers/axeval3.md` +37; no src or test changes.
+- Outcome: merge `2af4ece`, pushed; `loop.sh retire axeval3` succeeded. Tests not rerun: no source changed (42/42 at 5b9bc56). Round three: S1-S4 all 0 wrong turns (round two 0/4/0/0-0-0-13); tool `wait:true` on a gate 69.3 s → 6.6 s after tick 49. Open fixes moved to Backlog 000; the gate-approval policy is Q1, a release is Q2. Archived ticks 22-29 (Log was 33 entries).
+- Value: ✅ yielded value: the second batch of fixes is measured as working, and ten new fixes are ranked with file:line.
+- Follow-up in the same tick: shipped 000.2 as Q1's reversible default: `toolHints.signal` (`src/presentation.ts:96`) ends `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` `test/extension.test.ts:250` asserts it; `npm test` **42/42**. Commit `58f2ec3`. The CLI hint is unchanged (unmeasured). Old-source check not run: without the text the exact regex cannot match.
+- Lesson: an evaluation that shares findings in its ledger as it goes lets the brain fix them before the report lands (ticks 48-53 closed four of its items early). Next: spawn a subagent for 000.1 (worker build check), then 000.3 lint rest.
+
+### Tick 55 · 15:29 · Spawn worker1 for the worker build check
+- Action: spawned `worker1` for Backlog 000.1, as tick 54 planned, because it is axeval3's top ranked fix and was deferred in ticks 52-53 as too big for four minutes (tick 26's rule). The brief names client.ts:54-75, protocol.ts:6/:11 and worker.ts:58, asks for a shared build id (package version plus a per-build value), transparent restart of an idle stale worker, a warning naming `worker stop` when runs are active (worded by cli.ts/extension.ts, not the engine), a test with a faked build id, the 42/42 baseline, the `npm run build` and socket-path traps, and the Nix smoke test if CLI output changes.
+- Outcome: `loop.sh spawn` took about 35 seconds; branch brain/worker1 pushed, worktree `.pi/worktrees/brain-worker1`, herdr w9:p1 `agent_status=working`. No source changed; tests not rerun (42/42 at b057433). Archived tick 30 (Log was 26 entries).
+- Value: ✅ yielded value: the last ranked fix that needs a design choice is being worked in parallel with the four-minute lint and guide items.
+- Lesson: read the three named file:line spots before writing the brief (one command, 20 seconds); the brief then names exact lines. Next: Backlog 000.3 lint rest (`require("fs")`, `randomBytes`/`randomInt` imports, `process.hrtime`) in src/validation.ts, no overlap with worker1.
+- Follow-up in the same tick: part of 000.3. `lintDeterminism` (`src/validation.ts:90-91`) reports `process.hrtime()`, bare `randomBytes()`/`randomInt()` and `crypto.randomBytes()`/`crypto.randomInt()` as `nondeterministic_call`; `test/unit.test.ts:32-33` asserts all three forms. `npm test` **42/42**. Commit `ddfb224`. `npm run check` exit 0. Not covered: `process.hrtime.bigint()`. Left: `require("fs"|"node:fs"|…)` calls.
+
+### Supervisor · 15:50 · Merge worker1, clean up, prepare 0.4.0 on main (user request)
+- Action: the user's 0.3.1 edit in this worktree was a mistake (they published 0.3.1 and 0.3.2 from main); restored it. Reviewed and merged `brain/worker1` (build id in the ping reply, idle worker of another build replaced, busy one kept with a one-line warning on both surfaces); retired it. Stopped 34 orphaned evaluation workers. Rules: subagents stop every worker they start; `retire` stops workers still running from the retired worktree.
+- Outcome: `npm test` 44/44 after the merge. Next: merge into main as 0.4.0 with a refreshed Nix lock.
+- Value: ✅
+- Lesson: a stopped loop still needs a reviewer for its last subagent; check for running subagents before stopping.

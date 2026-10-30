@@ -16,6 +16,14 @@ function member(value: unknown, object: string, property: string): boolean {
   return node(value) && (value.type === "MemberExpression" || value.type === "OptionalMemberExpression") && name(value.object) === object && name(value.property) === property;
 }
 function functionNode(value: unknown): value is Node { return node(value) && ["FunctionExpression", "ArrowFunctionExpression", "ObjectMethod"].includes(value.type); }
+/** `a.b.c` for an identifier or a chain of plain member accesses. */
+function dotted(value: unknown): string | undefined {
+  if (!node(value)) return undefined;
+  if (value.type === "Identifier") return value.name as string;
+  if ((value.type !== "MemberExpression" && value.type !== "OptionalMemberExpression") || value.computed) return undefined;
+  const object = dotted(value.object), property = name(value.property);
+  return object && property ? `${object}.${property}` : undefined;
+}
 
 /** Inspect actual calls in run control flow, excluding comments, text and ctx.step effects. */
 export function lintDeterminism(source: string): ValidationResult["diagnostics"] {
@@ -29,6 +37,8 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
   const timerNames = ["setTimeout", "setInterval", "setImmediate"];
   const timerAliases = new Set(timerNames);
   const timerNamespaces = new Set<string>();
+  // Local names bound to file system and process APIs, whether functions (readFileSync) or namespaces (fs).
+  const ioNames = new Set<string>();
   function imports(value: unknown): void {
     if (!node(value)) return;
     if (value.type === "ImportDeclaration" && node(value.source) && /^(node:)?timers(?:\/promises)?$/.test(String(value.source.value))) {
@@ -36,6 +46,9 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
         if (item.type === "ImportSpecifier" && timerNames.includes(name(item.imported) ?? "")) timerAliases.add(name(item.local)!);
         if (item.type === "ImportNamespaceSpecifier" || item.type === "ImportDefaultSpecifier") timerNamespaces.add(name(item.local)!);
       }
+    }
+    if (value.type === "ImportDeclaration" && node(value.source) && /^(node:)?(?:fs|fs\/promises|child_process)$/.test(String(value.source.value))) {
+      for (const item of value.specifiers as Node[]) ioNames.add(name(item.local)!);
     }
     for (const child of Object.values(value)) if (Array.isArray(child)) child.forEach(imports); else if (node(child)) imports(child);
   }
@@ -73,7 +86,16 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
       const callName = name(callee);
       if (member(callee, "Date", "now") || callName === "Date") report(value, "Date.now()/Date()");
       if (member(callee, "Math", "random")) report(value, "Math.random()");
+      if (member(callee, "performance", "now")) report(value, "performance.now()");
+      if (member(callee, "process", "hrtime")) report(value, "process.hrtime()");
+      if (["randomBytes", "randomInt"].includes(callName ?? "") || member(callee, "crypto", "randomBytes") || member(callee, "crypto", "randomInt")) report(value, "crypto.randomBytes()/randomInt()");
+      if (callName === "randomUUID" || member(callee, "crypto", "randomUUID") || member(callee, "crypto", "getRandomValues")) report(value, "crypto.randomUUID()/getRandomValues()");
       if (timerAliases.has(callName ?? "") || (node(callee) && timerNamespaces.has(name(callee.object) ?? "") && timerNames.includes(name(callee.property) ?? ""))) report(value, "Timer call");
+      const io = dotted(callee);
+      if (io === "fetch" || io === "globalThis.fetch" || ioNames.has(io?.split(".")[0] ?? "")) {
+        const loc = value.loc as { start?: { line?: number } } | undefined;
+        diagnostics.push({ code: "nondeterministic_call", line: loc?.start?.line, message: `${io}() is I/O; move it into ctx.step().` });
+      }
       if (node(callee) && ["MemberExpression", "OptionalMemberExpression"].includes(callee.type) && name(callee.property) === "step") {
         visit(callee, active);
         (value.arguments as unknown[]).forEach((arg, index) => {

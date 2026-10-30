@@ -44,6 +44,7 @@ export interface ClientOptions {
   home?: string;
   signal?: AbortSignal;
   timeoutMs?: number;
+  onStaleWorker?: (worker: WorkerStatus) => void;
 }
 
 export interface WorkflowClient {
@@ -183,7 +184,7 @@ function errorInfo(error: unknown): { code: string; message: string; exitCode: n
   const worker = ["worker_unavailable", "worker_unreachable", "ENOENT", "ECONNREFUSED", "EACCES", "EPERM", "ETIMEDOUT"].includes(code)
     || /worker.*(?:did not start|unavailable|timed out|closed|protocol)/i.test(message);
   const usage = ["usage_error", "validation_error", "invalid_args", "invalid_request", "invalid_signal", "invalid_workflow",
-    "invalid_cwd", "unknown_step", "unknown_signal", "unknown_agent_option", "unknown_context_member", "workflow_not_found",
+    "invalid_cwd", "unknown_step", "unknown_signal", "unknown_agent_option", "unknown_context_member", "workflow_not_found", "not_found",
     "nondeterministic_call"].includes(code)
     || code.startsWith("ERR_PARSE_ARGS");
   return { code, message, exitCode: worker ? 4 : usage ? 1 : code === "run_cancelled" ? 3 : 2 };
@@ -218,7 +219,11 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
     const cwd = resolve(context.cwd ?? process.cwd(), values.cwd ?? ".");
     const home = values.home ? resolve(context.cwd ?? process.cwd(), values.home) : undefined;
     if (home) hint = `${program} --home ${/^[\w@%+=:,./-]+$/.test(home) ? home : `'${home.replaceAll("'", `'\\''`)}'`}`;
-    const options: ClientOptions = { home, signal: context.signal };
+    let stale = false;
+    const options: ClientOptions = { home, signal: context.signal, onStaleWorker: worker => {
+      if (!stale) warn(`Workflow worker runs an older build (${worker.build ?? "unknown"}); stop it with ${hint} worker stop when its runs finish.\n`);
+      stale = true;
+    } };
     const request = <T = unknown>(value: ControlRequest) => client.request(value, options) as Promise<T>;
     const count = (n: number, usage: string) => {
       if (args.length !== n) throw new CliError(`Usage: ${program} ${usage}`);
@@ -326,7 +331,8 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         const valid = new Set(["queued", "running", "waiting_signal", ...TERMINAL_STATUSES]);
         if (statuses?.some(item => !valid.has(item))) throw new CliError("--status contains an unknown run status.");
         const runs = await request<RunRecord[]>({ action, filter: { status: statuses, all: values.all } });
-        emit(runListView(runs), runList(runs));
+        emit(runListView(runs), runs.length ? runList(runs)
+          : `No workflow runs. Saved workflows are listed by: ${program} catalog`);
         return 0;
       }
       case "result": {
@@ -411,7 +417,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       }
       case "worker": {
         count(1, "worker start|stop|status");
-        const workerText = (worker: WorkerStatus) => `worker pid ${worker.pid} · home ${worker.home} · up ${duration(worker.uptimeMs)}`;
+        const workerText = (worker: WorkerStatus) => `worker pid ${worker.pid} · home ${worker.home} · up ${duration(worker.uptimeMs)} · build ${worker.build ?? "unknown"}`;
         // Only start spawns a worker; status and stop on an empty home explain that instead of a socket errno.
         const running = <T>(request: Promise<T>) => request.catch((error: NodeJS.ErrnoException) => {
           if (!["ENOENT", "ECONNREFUSED"].includes(error.code ?? "")) throw error;

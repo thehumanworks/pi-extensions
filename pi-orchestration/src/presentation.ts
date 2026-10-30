@@ -40,7 +40,7 @@ export function runSummary(run: RunRecord, now = Date.now()): string {
   const tokens = run.usage.inputTokens + run.usage.outputTokens;
   const failed = failedSteps(run).length;
   return `${run.id} ${run.workflow.name} ${run.status} ${duration(elapsed)} · ${modelLabel(run.model, run.thinkingLevel)}` +
-    `${phases ? ` · ${phases}` : ""} · ${run.usage.agents} agents · ${tokens} tokens · ${cost(run.usage.costUsd)}` +
+    `${phases ? ` · ${phases}` : ""} · ${run.usage.agents} agent${run.usage.agents === 1 ? "" : "s"} · ${tokens} tokens · ${cost(run.usage.costUsd)}` +
     `${failed ? ` · ${failed} failed step${failed === 1 ? "" : "s"}` : ""}`;
 }
 
@@ -93,7 +93,7 @@ export function cliHints(program = "workflow"): Hints {
 }
 
 export const toolHints: Hints = {
-  signal: (id, key) => `{"action":"signal","runId":${JSON.stringify(id)},"key":${JSON.stringify(key)},"value":<JSON value, not a string>}`,
+  signal: (id, key) => `{"action":"signal","runId":${JSON.stringify(id)},"key":${JSON.stringify(key)},"value":<JSON value, not a string>}. Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.`,
   retry: id => `{"action":"retry","runId":${JSON.stringify(id)}}`,
 };
 
@@ -107,8 +107,15 @@ export function runDetail(run: RunRecord, program: string | Hints = "workflow"):
   return modelResult(sections.join("\n\n"), run.id, RESULT_BYTES, typeof program === "string" ? program : "workflow").text;
 }
 
+/** One diagnostic as a line of text: where, what and the code. */
+export function diagnosticText(item: ValidationResult["diagnostics"][number]): string {
+  const at = item.path ? `${[item.path, item.line, item.column].filter(part => part !== undefined).join(":")}: `
+    : item.line === undefined ? "" : `line ${item.line}: `;
+  return `${at}${item.message}${item.code ? ` (${item.code})` : ""}`;
+}
+
 export function validationText(result: ValidationResult): string {
-  const problems = result.diagnostics.map(item => `${item.line === undefined ? "" : `line ${item.line}: `}${item.message}${item.code ? ` (${item.code})` : ""}`);
+  const problems = result.diagnostics.map(diagnosticText);
   return result.valid ? [`Valid: ${result.name} (${result.path}).`, ...problems].join("\n") : ["Invalid:", ...problems].join("\n");
 }
 

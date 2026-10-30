@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, chmod, lstat, mkdir, mkdtemp, readdir, readFile, readlink, rm, writeFile } from "node:fs/promises";
+import { access, chmod, lstat, mkdir, mkdtemp, readdir, readFile, readlink, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -29,6 +29,8 @@ test("determinism lint reports real control-flow calls only", () => {
     });
   `);
   assert.deepEqual(diagnostics.map(item => item.line), [9, 10, 10]);
+  const clocks = lintDeterminism(`export default { async run(ctx) { return [performance.now(), crypto.randomUUID(), randomUUID(), process.hrtime(), randomBytes(4), crypto.randomInt(9), await ctx.step("id", async () => randomUUID())]; } };`);
+  assert.deepEqual(clocks.map(item => item.message.split(" is ")[0]), ["performance.now()", "crypto.randomUUID()/getRandomValues()", "crypto.randomUUID()/getRandomValues()", "process.hrtime()", "crypto.randomBytes()/randomInt()", "crypto.randomBytes()/randomInt()"]);
   assert.equal(lintDeterminism("export default {")[0].code, "syntax_error");
   const members = lintDeterminism(`export default { async run(ctx) { await ctx.runAgent("p"); return ctx.args; } };`);
   assert.deepEqual(members.map(item => item.code), ["unknown_context_member"]);
@@ -37,6 +39,49 @@ test("determinism lint reports real control-flow calls only", () => {
   assert.deepEqual(options.map(item => item.code), ["unknown_agent_option", "unknown_agent_option"]);
   assert.match(options[1].message, /'modle'/);
   assert.match(options[0].message, /'tool' \(did you mean 'tools'\?\)/);
+});
+
+test("determinism lint reports I/O in control flow but not inside ctx.step", () => {
+  const diagnostics = lintDeterminism(`
+    import { readFileSync as read } from "node:fs";
+    import * as fsp from "fs/promises";
+    import { execFileSync } from "child_process";
+    export default {
+      async run(ctx) {
+        const inside = await ctx.step("read", async () => read("a", "utf8") + await fsp.readFile("b") + await fetch("x"));
+        const outside = read("README.md", "utf8");
+        await fsp.writeFile("c", outside);
+        return [inside, execFileSync("git", ["status"]), await fetch("https://example.com")];
+      },
+    };
+  `);
+  assert.deepEqual(diagnostics.map(item => [item.code, item.line]), [["nondeterministic_call", 8], ["nondeterministic_call", 9], ["nondeterministic_call", 10], ["nondeterministic_call", 10]]);
+  assert.deepEqual(diagnostics.map(item => item.message.split(" ")[0]), ["read()", "fsp.writeFile()", "execFileSync()", "fetch()"]);
+  assert.equal(diagnostics[0].message, "read() is I/O; move it into ctx.step().");
+});
+
+test("validate reports a load error and the lint findings in one pass, with locations", async () => {
+  const directory = await realpath(await mkdtemp(join(tmpdir(), "po-")));
+  try {
+    await writeFile(join(directory, "nondet.ts"), `export default {\n  name: "Non Det",\n  async run(ctx) { return Date.now(); },\n};\n`);
+    const nondet = await validateWorkflow({ path: join(directory, "nondet.ts") }, directory);
+    assert.equal(nondet.valid, false);
+    assert.equal(nondet.path, join(directory, "nondet.ts"));
+    assert.deepEqual(nondet.diagnostics.map(item => [item.code, item.line]), [["invalid_workflow", undefined], ["nondeterministic_call", 3]]);
+    assert.match(nondet.diagnostics[0].message, /must export default defineWorkflow/);
+
+    await writeFile(join(directory, "helper.ts"), "export const helper = (x: number) => x + ;\n");
+    await writeFile(join(directory, "uses.ts"), `import { helper } from "./helper.ts";\nexport default { name: "uses", async run() { return helper(1); } };\n`);
+    const uses = await validateWorkflow({ path: join(directory, "uses.ts") }, directory);
+    assert.deepEqual(uses.diagnostics.map(({ code, path, line, column }) => ({ code, path, line, column })),
+      [{ code: "invalid_workflow", path: join(directory, "helper.ts"), line: 1, column: 42 }]);
+    assert.equal(validationText(uses), `Invalid:\n${join(directory, "helper.ts")}:1:42: Cannot load ${join(directory, "uses.ts")}: ParseError: Unexpected token (invalid_workflow)`);
+
+    // A syntax error reaches the loader and the lint; it is reported once.
+    await writeFile(join(directory, "syntax.ts"), "export default {\n  name: 'syntax',\n  async run() { const x = ; },\n};\n");
+    const syntax = await validateWorkflow({ path: join(directory, "syntax.ts") }, directory);
+    assert.deepEqual(syntax.diagnostics.map(({ code, path, line }) => ({ code, path, line })), [{ code: "invalid_workflow", path: join(directory, "syntax.ts"), line: 3 }]);
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
 test("command parsing and intervals", () => {
@@ -89,7 +134,7 @@ test("summaries name the model and catalogs read as text", () => {
     model: "openai/gpt", thinkingLevel: "high",
     steps: [{ key: "a", kind: "agent", status: "failed", attempts: 1, error: { message: "x" } }, { key: "p", kind: "parallel", status: "failed", attempts: 1 }],
   } as RunRecord;
-  assert.equal(runSummary(run), "r w completed 2s · openai/gpt:high · 1 agents · 3 tokens · $0.0000 · 1 failed step");
+  assert.equal(runSummary(run), "r w completed 2s · openai/gpt:high · 1 agent · 3 tokens · $0.0000 · 1 failed step");
   assert.match(runSummary({ ...run, model: undefined, steps: [] }), / · no model · /);
   // Brief and list views lead with the same fields on every surface.
   const head = { runId: "r", workflow: "w", status: "completed", model: "openai/gpt", summary: runSummary(run) };

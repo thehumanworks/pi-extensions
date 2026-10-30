@@ -153,19 +153,37 @@ test("signals are schema-checked and children charge their parent", async () => 
   } finally { await f.close(); }
 });
 
-test("nondeterministic control flow is rejected by lint and at run time", async () => {
-  const f = await fixture({ workflows: { clock: workflow(`{
+test("launch refuses what validate rejects, before creating a run; the runtime guards what lint cannot see", async () => {
+  const f = await fixture({ workflows: {
+    clock: workflow(`{
     name: "clock",
     async run(ctx) {
       const allowed = await ctx.step("inside-step", async () => Date.now());
       return allowed + Date.now();
     },
-  }`) } });
+  }`),
+    typo: workflow(`{ name: "typo", async run(ctx) { return ctx.agent("ECHO hi", { tool: [] }); } }`),
+    // The lint reads run() only, so a module-level helper hides this Date.now() from it.
+    hidden: workflow(`{
+    name: "hidden",
+    async run(ctx) {
+      const allowed = await ctx.step("inside-step", async () => stamp());
+      return allowed + stamp();
+    },
+  }`, "const stamp = () => Date.now();"),
+  } });
   try {
     const validation = await f.request<ValidationResult>({ action: "validate", workflow: { name: "clock" }, cwd: f.project });
     assert.equal(validation.valid, false);
     assert.deepEqual(validation.diagnostics.map(item => [item.code, item.line]), [["nondeterministic_call", 8]]);
-    const run = await f.run("clock");
+    for (const [name, finding] of [["clock", /\nline 8: Date\.now\(\)\/Date\(\) is not replay-safe.* \(nondeterministic_call\)$/], ["typo", /\nline 4: Unknown agent option 'tool' \(did you mean 'tools'\?\).* \(unknown_agent_option\)$/]] as const) {
+      const refused = await f.launch(name).then(() => undefined, (error: { code: string; message: string }) => error);
+      assert.equal(refused?.code, "invalid_workflow", name);
+      assert.match(refused?.message ?? "", /\.ts is not a valid workflow; no run was created:\n/);
+      assert.match(refused?.message ?? "", finding);
+    }
+    assert.deepEqual(await f.request<RunRecord[]>({ action: "list", filter: { all: true } }), []);
+    const run = await f.run("hidden");
     assert.equal(run.status, "failed");
     assert.equal(run.error?.reason, "nondeterministic_call");
     assert.equal(step(run, "root/inside-step")?.status, "completed");
@@ -185,7 +203,7 @@ test("catalog reports a broken file without hiding valid workflows", async () =>
     assert.deepEqual(entries.map(entry => [entry.name, entry.error === undefined]), [["broken", false], ["good", true], ["plainargs", false], ["sinclair", false], ["stringargs", false]]);
     assert.match(entries[0].error!, /Cannot load/);
     assert.match(entries[2].error!, /args must be Type\.Object\(\{\.\.\.\}\) from "typebox"; got \{"topic":"string"\}/);
-    assert.match(entries[3].error!, /Cannot find module '@sinclair\/typebox'.*Use import \{ Type \} from "typebox" \(bundled with pi-orchestration\)\.$/s);
+    assert.match(entries[3].error!, /Cannot find module '@sinclair\/typebox'\. Use import \{ Type \} from "typebox" \(bundled with pi-orchestration\)\.$/s);
     assert.doesNotMatch(entries[3].error!, /Require stack/);
     assert.match(entries[4].error!, /args must be Type\.Object/);
     assert.equal((await f.run("good")).result, 1);

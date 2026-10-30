@@ -4,13 +4,19 @@ import { setTimeout as delay } from "node:timers/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { WorkflowClient } from "../src/cli.ts";
 import { WorkflowError } from "../src/errors.ts";
-import { registerOrchestration } from "../src/extension.ts";
+import { registerOrchestration, widgetLine } from "../src/extension.ts";
 import { BIN_PATH, README_PATH } from "../src/guide.ts";
 import type { RunRecord, RunStatus } from "../src/index.ts";
-import type { ControlRequest } from "../src/protocol.ts";
+import type { ControlRequest, WorkerStatus } from "../src/protocol.ts";
 
 type Handler = (event: unknown, ctx: ExtensionContext) => Promise<void>;
 type Entry = { type: "custom"; customType: string; data: unknown } | { type: "custom_message"; customType: string; details: unknown };
+
+test("widget line pluralises agents and other runs", () => {
+  const one = { ...runRecord("run-one", "running"), usage: { inputTokens: 0, outputTokens: 0, costUsd: 0, agents: 1 } };
+  assert.match(widgetLine(one, 1, 200), / · 1 agent · \$0\.0000 · \+1 run$/u);
+  assert.match(widgetLine(runRecord("run-two", "running"), 2, 200), / · 0 agents · \$0\.0000 · \+2 runs$/u);
+});
 
 function runRecord(id: string, status: RunStatus): RunRecord {
   return {
@@ -38,9 +44,11 @@ function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv =
     appendEntry: (customType: string, data: unknown) => { entries.push({ type: "custom", customType, data }); },
     getThinkingLevel: () => "medium",
   } as unknown as ExtensionAPI;
+  const worker: { stale?: WorkerStatus } = {};
   const client: WorkflowClient = {
-    async request(request) {
+    async request(request, options) {
       requests.push(request);
+      if (worker.stale) options?.onStaleWorker?.(worker.stale);
       if (request.action === "run") return { runId: `run-${++launches}`, status: "queued", ...(request.model ? { model: request.model } : {}) };
       if (request.action === "status" && request.runId === "nope") throw new WorkflowError("not_found", "Unknown workflow run nope.");
       if (request.action === "status") {
@@ -52,6 +60,7 @@ function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv =
       // The run finishes just as the agent asks for its result.
       if (request.action === "result") { statuses[request.runId] = ["completed"]; return "done"; }
       if (request.action === "catalog") return [];
+      if (request.action === "list" && request.filter?.status?.includes("cancelled")) return [];
       if (request.action === "list") return [runRecord("run-2", "completed"), { ...runRecord("run-3", "running"), origin: { kind: "workflow", parentRunId: "run-2", stepKey: "child" } }];
       throw new Error(`unexpected ${request.action}`);
     },
@@ -72,7 +81,7 @@ function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv =
   }) as unknown as ExtensionContext;
   registerOrchestration(pi, { client, pollIntervalMs: 5, env, printOutput: () => {} });
   const completions = () => messages.filter(item => item.message.details.kind === "completion");
-  return { handlers, tools, commands, messages, entries, requests, context, completions, notices, agent, statuses, prompts };
+  return { handlers, tools, commands, messages, entries, requests, context, completions, notices, agent, statuses, prompts, worker };
 }
 
 test("wait:true returns the outcome without a second completion turn", async () => {
@@ -91,6 +100,29 @@ test("wait:true returns the outcome without a second completion turn", async () 
   await h.handlers.get("session_start")!({}, h.context("s1"));
   await delay(30);
   assert.deepEqual(h.completions(), []);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
+test("the first tool result after a worker of another build was kept says so", async () => {
+  const h = harness({ "run-1": ["waiting_signal"] });
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  const status = () => h.tools.get("workflow")!.execute("call-1", { action: "status", runId: "run-1" }, undefined, undefined, ctx) as Promise<{ content: Array<{ text: string }> }>;
+  assert.doesNotMatch((await status()).content[0]!.text, /older build/);
+  h.worker.stale = { version: 1, build: "0.3.0+old", pid: 42, home: "/h", uptimeMs: 1 };
+  assert.match((await status()).content[0]!.text,
+    /Waiting for signal "go"[\s\S]*\nThe workflow worker runs an older build \(0\.3\.0\+old\); the user can stop it with \/workflow worker stop when its runs finish\.$/);
+  assert.doesNotMatch((await status()).content[0]!.text, /older build/);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
+test("wait:true returns at a signal wait", async () => {
+  const h = harness({ "run-1": ["waiting_signal"] });
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  const result = await h.tools.get("workflow")!.execute("call-1", { action: "run", workflow: { name: "flow" }, wait: true }, undefined, undefined, ctx) as { details: RunRecord; content: Array<{ text: string }> };
+  assert.equal(result.details.status, "waiting_signal");
+  assert.match(result.content[0]!.text, /Stopped waiting: the run needs a signal\./);
   await h.handlers.get("session_shutdown")!({}, ctx);
 });
 
@@ -192,6 +224,8 @@ test("the tool explains every action and an empty catalog teaches authoring", as
   assert.match(catalog.content[0].text, /^No saved workflows \(searched \/w\/\.pi\/workflows and .*\)\. To write one, call guide/);
   assert.deepEqual(catalog.details.workflows, []);
   assert.equal(catalog.details.searched[0], "/w/.pi/workflows");
+  const empty = await tool.execute("call-1b", { action: "list", filter: { status: ["cancelled"] } }, undefined, undefined, ctx) as ToolReply;
+  assert.equal(empty.content[0].text, 'No workflow runs. Saved workflows are listed by {"action":"catalog"}.');
 
   // Without `workflow` on PATH, the guide gives a shell command that works anyway.
   const guide = await tool.execute("call-2", { action: "guide" }, undefined, undefined, ctx) as ToolReply;
@@ -228,6 +262,7 @@ test("reading a finished run's outcome replaces the completion turn, and status 
   assert.equal(signalled.content[0].text, 'Signal "go" accepted. Check the run with {"action":"status","runId":"run-gate"}.');
   const gate = await tool.execute("call-7", { action: "status", runId: "run-gate" }, undefined, undefined, ctx) as ToolReply;
   assert.match(gate.content[0].text, /Deliver with: \{"action":"signal","runId":"run-gate","key":"go"/);
+  assert.match(gate.content[0].text, /not a string>\}\. Send it only if the user told you what to answer; otherwise report what the run waits for and ask them\./);
   await assert.rejects(tool.execute("call-7", { action: "status", runId: "nope" }, undefined, undefined, ctx),
     (error: Error) => error.message === 'not_found: Unknown workflow run nope. List runs with {"action":"list"}.');
   await h.handlers.get("session_shutdown")!({}, ctx);

@@ -103,6 +103,7 @@ The brain is an autonomous loop that improves pi-orchestration (the standalone `
 - Never push to or merge into main or brain/orchestration, never force-push, never npm publish, never bump package versions, and never modify anything outside your worktree (not ~/.pi, /etc/nixos or the main checkout).
 - Workflow files (.pi/workflows/*.ts) are project source: never add them to .gitignore.
 - The installed Pi workflow tool asks a human to approve launches, and none is watching. If you need a workflow, use the `workflow` CLI from bash; PI_WORKFLOW_ALLOW_UNATTENDED=1 is set.
+- Stop every workflow worker you start (`node pi-orchestration/bin/workflow.mjs worker stop --home <home>`) before you mark the task done; evaluation runs left dozens running.
 - Do not save memories: your ledger is your memory.
 EOF
 }
@@ -264,6 +265,8 @@ retire() {  # <name>
   git -C "$path" fetch -q origin "brain/$name" 2>/dev/null
   [[ -z $(git -C "$path" log --oneline "origin/brain/$name..HEAD" 2>/dev/null) ]] || die "$name has unpushed commits"
   hd workspace close "$workspace" >/dev/null || echo "loop.sh: closing herdr workspace $workspace failed" >&2
+  # Workers outlive the agent that started them; stop any still running this worktree's build.
+  pkill -TERM -f "$path/pi-orchestration/dist/worker.js" && echo "stopped workers left running from $path"
   git_wt worktree remove "$path" || die "git worktree remove $path failed"
   rm -f "$saved"
   echo "retired $name; branch brain/$name stays on origin"
