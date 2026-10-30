@@ -24,15 +24,15 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `approval`: done, awaiting review (spawned tick 1), branch `brain/approval` at `53b421f`, worktree `/home/nixos/pi-extensions/.pi/worktrees/brain-approval`, ledger `pi-orchestration/ledgers/approval.md`. D1 implementation/docs/tests finished; reports 32/35 passing with only the original baseline failures, plus 32/32 focused tests with an isolated agent directory. Loop environment intentionally unchanged (D8). Review diff, rerun tests and merge next tick.
+- None active. `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
 ## Backlog
 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
-1. D1 approval-gate removal: `approval` finished during tick 3. Next: review diff, run `npm test` in its worktree and merge only if no worse than the original baseline (its branch does not yet have tick 3's package fixture fix). Retain `not_from_root` on all launch paths; do not confuse business `ctx.signal()` approval examples with the removed launch policy. After publication, remove the obsolete loop environment workaround (D8).
-2. Workflow files are source (D2): ✅ bot workflows now tracked and ignore rules removed (tick 2). Remaining: guide, tool description, `init` output and README; coordinate these edits with `approval`.
-3. Fix baseline failures so a red test means a regression. ✅ Package source-only fixture fixed in tick 3: current brain result is 36/38 passing. Remaining: isolate catalog from the user's home; refresh standalone Nix lock metadata and its dependency hash without bumping package versions.
+1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
+2. Workflow files are source (D2): ✅ bot workflows now tracked and ignore rules removed (tick 2). Remaining: guide, tool description, `init` output and README. Now unblocked: `approval` has merged, so no file overlap remains.
+3. Fix baseline failures so a red test means a regression. ✅ Package source-only fixture fixed in tick 3: after the D1 merge the brain result is 33/35 passing (D1 replaced five gate tests with two matrices). Remaining: isolate catalog from the user's home; refresh standalone Nix lock metadata and its dependency hash without bumping package versions.
 4. Unexplored directions for the goal:
    - One output contract: the tool and the CLI return the same JSON shapes, and every CLI command supports `--json`.
    - Errors name the next command to run; error codes are stable and documented.
@@ -80,3 +80,9 @@ None.
 - Outcome: `npm run check` and `git diff --check` passed. `npm test`: **38 tests, 36 pass, 2 fail**, improving the original 35/38 baseline. The source-only copied package now passes its real typecheck, prepack, compiled CLI/guide and loader validation checks. Remaining failures are the original global-catalog leak and stale Nix lock version. `approval` became done at `53b421f` during verification; review/merge is deliberately deferred to the next tick rather than rushed into this action.
 - Value: ✅ yielded value — packaging regressions are now detectable instead of hidden behind a broken workspace fixture.
 - Lesson: dependency directories are not necessarily complete installs; exercise the hoisted-plus-local-override layout explicitly.
+
+### Tick 4 · 11:05 · Review and merge D1 approval-gate removal
+- Action: reviewed `brain/approval` (13 files, +114/−237): `assertUnattended`, the confirm dialog, `/workflow approval`, `workflow.approval`, footer status and session restoration are gone; `assertRootLaunch` stays on the CLI, client and extension tool paths and run/step markers are still set for inner agents. Merged with `--no-ff` because the review and test run fit in one tick and unblock D2's guidance edits.
+- Outcome: merge `70ae028`, pushed. `npm test` on the merged branch: **35 tests, 33 pass, 2 fail**. The 2 are the known catalog leak from the home directory and the stale Nix lock, so it is no worse than the baseline: the merge brought the subagent's 32/35 together with tick 3's package fixture fix. `grep` for `UNATTENDED|workflow.approval|assertUnattended` in src, test and README finds nothing. `loop.sh retire approval` succeeded.
+- Value: ✅ yielded value: user decision D1 is implemented on brain/orchestration with regression coverage for the root guard in all four Pi modes.
+- Lesson: when the brain has fixed the baseline on its own branch, compare the subagent's result after the merge, not before.
