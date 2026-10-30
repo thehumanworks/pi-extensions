@@ -252,6 +252,6 @@ None.
 
 ### Tick 36 · 13:50 · Attached run returns at a signal wait
 - Action: took Backlog 00.2, the top open ranked fix: axeval2 found the guide's default shell command (`workflow run <name>`) hangs on a gate and reprints the tree every second. `poll` in `src/cli.ts` (foreground branch) now returns 0 on `waiting_signal` unless `--until done`, printing `statusText` (with its `signal:` hint) and `then: <hint> poll <id>`; `--json` emits the brief view. Progress lines on stderr print only when the tree changes apart from elapsed time (shared `unchanged` helper).
-- Outcome: `npm run check` clean; `npm test` **38/38**. `test/process.test.ts` gate test runs `run gate` attached without `--json` and asserts exit 0 and `waiting_signal … then: … poll`. Not checked against the old source (it would hang to the 60 s timeout; no time this tick).
+- Outcome: `npm run check` clean; `npm test` **38/38**. `test/process.test.ts` gate test runs `run gate` attached without `--json` and asserts exit 0 and `waiting_signal … then: … poll`. With the old `src/cli.ts` the process tests are 1/2 (the gate test fails), so the test catches the hang.
 - Value: ✅ yielded value: a shell agent following the guide no longer hangs on a gate.
 - Lesson: one shared change key keeps `run`, `poll` and `watch` quiet the same way. Next: Backlog 00.3 (`waitingLines` helper) or 00.4 (surface-neutral `result_not_ready`).
