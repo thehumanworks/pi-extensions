@@ -58,6 +58,7 @@ function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv =
       // The run finishes just as the agent asks for its result.
       if (request.action === "result") { statuses[request.runId] = ["completed"]; return "done"; }
       if (request.action === "catalog") return [];
+      if (request.action === "list" && request.filter?.status?.includes("cancelled")) return [];
       if (request.action === "list") return [runRecord("run-2", "completed"), { ...runRecord("run-3", "running"), origin: { kind: "workflow", parentRunId: "run-2", stepKey: "child" } }];
       throw new Error(`unexpected ${request.action}`);
     },
@@ -208,6 +209,8 @@ test("the tool explains every action and an empty catalog teaches authoring", as
   assert.match(catalog.content[0].text, /^No saved workflows \(searched \/w\/\.pi\/workflows and .*\)\. To write one, call guide/);
   assert.deepEqual(catalog.details.workflows, []);
   assert.equal(catalog.details.searched[0], "/w/.pi/workflows");
+  const empty = await tool.execute("call-1b", { action: "list", filter: { status: ["cancelled"] } }, undefined, undefined, ctx) as ToolReply;
+  assert.equal(empty.content[0].text, 'No workflow runs. Saved workflows are listed by {"action":"catalog"}.');
 
   // Without `workflow` on PATH, the guide gives a shell command that works anyway.
   const guide = await tool.execute("call-2", { action: "guide" }, undefined, undefined, ctx) as ToolReply;
