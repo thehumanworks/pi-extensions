@@ -42,9 +42,9 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    6. ✅ Done in tick 46 (merged validate1, `6facf5c`): validate reports load errors and lint findings in one pass with path/line/column; launch throws `invalid_workflow` (exit 1) before creating a run. Not covered: `retry --allow-changed` does not lint the edited file; module-evaluation errors have no location.
    7. ✅ Done in tick 46: `nondeterministic_call` for fs, fs/promises, child_process imports and `fetch` outside `ctx.step`.
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
-   9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). Exit code for `not_found` itself is still 2.
+   9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). `not_found` exits 1 since tick 48.
    10. Low impact (axeval2: dev checkouts loaded with `-e` only). Guide says why it uses the full command (link.ts:25-29, guide.ts:46): `workflow` missing vs another install's path. guide.ts:46 already says "not on PATH here".
-   Unranked (axeval3 S1-S2 adds: `not_found` exits 2, syntax error text repeats the path, `invalid_args` JSON-string example is fixed `{"topic":"bees"}`; ✅ typebox hint separator fixed tick 48): no-model warning on agent-less workflows, `Approval 0/0`, unrounded costUsd, tool errors with `details: {}`. ✅ `1 agents` fixed in tick 45 (b788e5d).
+   Unranked (axeval3 S1-S2 adds: ✅ `not_found` exits 1 (tick 48), syntax error text repeats the path, `invalid_args` JSON-string example is fixed `{"topic":"bees"}`; ✅ typebox hint separator fixed tick 48): no-model warning on agent-less workflows, `Approval 0/0`, unrounded costUsd, tool errors with `details: {}`. ✅ `1 agents` fixed in tick 45 (b788e5d).
 
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
@@ -268,4 +268,5 @@ None.
 - Action: took axeval3's S2 finding (ledger 15:15), concrete, one line and outside its write scope: the load error read `Cannot find module '@sinclair/typebox' Use import …` with no separator. `loadMessage` (`src/loader.ts:81`) now ends the Node message with one full stop before the hint. Chosen over `retry --allow-changed` lint, which needs more than four minutes.
 - Outcome: `test/engine.test.ts:206` asserts `typebox'. Use import …` exactly; `npm test` **40/40**; with the old loader.ts the engine tests are 11/12. Commit `34b76c4`. axeval3 so far: S1 0 wrong turns (round two 0), S2 0 (round two 4); running S3.
 - Value: ✅ yielded value: small, but the hint now reads as a separate instruction.
-- Lesson: pin exact punctuation in assertions when the bug is punctuation; `.*` hid it. Next: axeval3's other S2 polish (`not_found` exits 2; syntax text repeats the path) or its final report.
+- Follow-up in the same tick: an unknown run id (`not_found`) now exits 1 like `workflow_not_found` and the other lookup typos (`src/cli.ts:186`), not 2 ("failed"); `test/process.test.ts:59` asserts it. `npm test` **40/40**; the Nix smoke test does not read this exit code.
+- Lesson: pin exact punctuation in assertions when the bug is punctuation; `.*` hid it. Next: axeval3's other S2 polish (syntax text repeats the path) or its final report.
