@@ -37,7 +37,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
    3. One `waitingLines(run, hints)` helper for presentation.ts:71-72, :134-137 and cli.ts:173-177.
-   4. Surface-neutral `result_not_ready` (engine/index.ts:500); CLI appends poll, tool appends status (extension.ts:394); tool signal reply of its own.
+   4. ⚠️ Half done in tick 37 (8fce02c): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}`. Open: tool `signal` reply of its own; a tool-path test for the status hint.
    6. Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
    7. Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
    8. `@sinclair/typebox` load error hints `typebox`; drop `Require stack:` (loader.ts:68).
@@ -255,3 +255,9 @@ None.
 - Outcome: `npm run check` clean; `npm test` **38/38**. `test/process.test.ts` gate test runs `run gate` attached without `--json` and asserts exit 0 and `waiting_signal … then: … poll`. With the old `src/cli.ts` the process tests are 1/2 (the gate test fails), so the test catches the hang.
 - Value: ✅ yielded value: a shell agent following the guide no longer hangs on a gate.
 - Lesson: one shared change key keeps `run`, `poll` and `watch` quiet the same way. Next: Backlog 00.3 (`waitingLines` helper) or 00.4 (surface-neutral `result_not_ready`).
+
+### Tick 37 · 13:56 · result_not_ready names the signal and a surface-shaped next step
+- Action: took Backlog 00.4 over 00.3, because 00.3 is a refactor with no visible effect while 00.4 fixes axeval2 session D call 6 (the tool told the model to run `poll --until done`, which the tool cannot do). `src/engine/index.ts` result now throws `Run X is waiting for signal "go"; deliver it, then read the result.` (or `Run X is running; the result is not ready.`). `src/cli.ts` result case appends `poll: <hint> poll X`; `src/extension.ts` catch appends `Check it with {"action":"status","runId":"X"}.`
+- Outcome: `npm run check` clean; `npm test` **38/38**. `test/process.test.ts` gate test asserts `result` on the waiting run exits 2 with the new message and the `poll:` hint. Commit `8fce02c`. The tool-side append has no test yet; the tool `signal` reply is unchanged.
+- Value: ✅ yielded value: neither surface names a command the other owns for an early `result`.
+- Lesson: a client-side `.catch` that appends to the message keeps the engine surface-neutral without a new error field. Next: a tool-path test for the status hint plus the tool's own `signal` reply (rest of 00.4), then 00.3.
