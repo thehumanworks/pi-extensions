@@ -36,13 +36,13 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
-   3. One `waitingLines(run, hints)` helper for presentation.ts:71-72, :134-137 and cli.ts:173-177.
+   3. One `waitingLines(run, hints)` helper for presentation.ts:71-72 (tool brief: no deliver hint), :134-137 (runTree: `Waiting for k; deliver with:`, `Expects:`) and cli.ts:173-177 (statusText: lowercase `waiting for signal`, `expects:`, `signal:`). Exact-text tests that pin today's wording: test/unit.test.ts:101-106. Plan (tick 43): helper in presentation.ts taking a deliver-hint callback; tool brief gains the `{"action":"signal",…}` hint; keep one casing and update the regexes.
    4. ✅ Done in ticks 37-38 (8fce02c, b47be74, 895d71b): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}` (tested); tool `signal` replies `Signal "k" accepted. Check the run with {"action":"status",…}.` (tested).
    6. In progress (`validate1`, tick 42). Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
    7. In progress (`validate1`, tick 42). Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
    9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). Exit code for `not_found` itself is still 2.
-   10. Guide says why it uses the full command (link.ts:25-29, guide.ts:46).
+   10. Low impact (axeval2: dev checkouts loaded with `-e` only). Guide says why it uses the full command (link.ts:25-29, guide.ts:46): `workflow` missing vs another install's path. guide.ts:46 already says "not on PATH here".
    Unranked: no-model warning on agent-less workflows, `Approval 0/0`, `1 agents`, unrounded costUsd, tool errors with `details: {}`.
 
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
@@ -253,3 +253,9 @@ None.
 - Outcome: `loop.sh spawn` took about 50 seconds; branch brain/validate1 pushed, worktree `.pi/worktrees/brain-validate1`, herdr w7:p1 `agent_status=working`. No source changed; tests not rerun (38/38 at b3a371c). Archived tick 17.
 - Value: ✅ yielded value: the largest open ranked fix is being worked in parallel with small ones.
 - Lesson: apply tick 26's rule early: a fix deferred twice as too big goes to a subagent. Next tick: 00.3 (`waitingLines`, presentation.ts/cli.ts, no overlap with validate1) or 00.10 (guide).
+
+### Tick 43 · 14:28 · Scope the waitingLines helper
+- Action: read the three waiting-signal renderers for Backlog 00.3 (presentation.ts:71-72, :134-137; cli.ts:173-177) and the tests pinning their text (test/unit.test.ts:101-106), and checked 00.10 against axeval2.md:204-208. Orientation took most of the four minutes, so I wrote the plan into Backlog 00.3 instead of starting an edit I could not test in time.
+- Outcome: no source changed; tests not rerun (38/38 at b3a371c). Found: the tool's non-verbose brief prints `Waiting for signal` with no deliver hint, while both other renderers name one; the three use different casing. 00.10 marked low impact (guide.ts:46 already says "not on PATH here").
+- Value: ⚠️ partial: the next tick can do 00.3 without re-reading; nothing shipped.
+- Lesson: with a four-minute deadline, skip the broad read and open the file:line the Backlog already names; start the edit by minute two or log a plan.
