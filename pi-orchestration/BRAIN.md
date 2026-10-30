@@ -24,7 +24,8 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `axeval3` spawned in tick 47 (herdr w8:p1, branch brain/axeval3): third evaluation round, repeats axeval2's S1-S4 with the same method to measure 00.2-00.9 and validate1; deliverable `brain/axeval3.md` with a ranked fix list. Write scope: that report and its ledger.
+- None running.
+- `axeval3` merged at `2af4ece` and retired in tick 54; its report is `brain/axeval3.md` (ranked fixes drive Backlog item 000).
 - `validate1` merged at `6facf5c` and retired in tick 46 (Backlog 00.6 and 00.7).
 - `axeval2` merged at `6ed16ed` and retired in tick 35; its report is `brain/axeval2.md` (ranked fixes drive Backlog item 00).
 - `runshape` merged at `237e912` and retired in tick 28.
@@ -34,6 +35,19 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 ## Backlog
 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
+
+000. axeval3's ranked fixes (`brain/axeval3.md`, "Ranked fixes"; round three: S1-S4 all 0 wrong turns). Open, in order:
+   1. Worker build check (worker.ts:58, protocol.ts:11, client.ts:54-57): worker reports a build id; client restarts an idle stale worker, else warns naming `worker stop`. Same as 00.11. Probably a subagent.
+   2. Ask before answering a gate: append to `toolHints.signal` (presentation.ts:95-96) `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` Measured unasked approvals 6/6 → 2/6, told-to-approve 4/4 still fine. Policy choice: see Questions.
+   3. Lint rest: `require("fs"|…)`, `randomBytes`/`randomInt` imports, `process.hrtime` (tick 52 covered performance.now, crypto.randomUUID, getRandomValues).
+   4. ✅ Widget pluralisation, done tick 51.
+   5. Guide signal line (guide.ts:78): status shows key, schema and deliver call; value is JSON, not a string.
+   6. `invalid_args` example built from the actual input (engine/index.ts:308).
+   7. Node unknown-option advice wrong for this CLI (cli.ts:426, :434-437); measured no gain, low. Do NOT ship variant (x) (measured worse).
+   8. Guide full-command reason (= 00.10), low.
+   9. Exit codes: `run_finished` → 1; `result_not_ready` own code or a help line (cli.ts:185-189).
+   10. Tool errors keep the code in `details` (extension.ts:104).
+   Other: no-model warning on agent-less workflows (cli.ts:300, extension.ts:340); `Approval 0/0` (presentation.ts:39); stacked doc comments over `waitingLines` (presentation.ts:77-78).
 
 00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
@@ -101,58 +115,10 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 ## Questions for the user
 
-None.
+- Q1 (tick 54): should agents answer `ctx.signal` gates on their own? axeval3 measured that agents approve a gate unasked 6/6 times; a one-line caution on the tool's deliver hint cut it to 2/6 without hurting sessions told to approve. Meanwhile the brain will ship that caution (reversible, one line) unless you say signals are meant for agents to answer freely.
+- Q2 (tick 54): brain/orchestration since the 0.3.0 merge (a12cb48) holds ticks 45-53 plus validate1 and axeval3 (npm test 42/42; the Nix smoke test not rerun since a12cb48). Ready for a 0.3.x release when you want one.
 
 ## Log
-
-### Tick 22 · 12:39 · result on a cancelled run exits 3 with run_cancelled
-- Action: took the exit-code part of axeval fix 9, because it fits a four-minute tick and makes the documented exit code (`3 cancelled`) true; fix 8 needs a full tick. `src/engine/index.ts` result throws `run_cancelled: Run <id> is cancelled.` before the generic `run_failed`; `errorInfo` (`src/cli.ts`) maps `run_cancelled` to exit 3.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` SIGKILL test now asserts `result` on the cancelled run exits 3 with `run_cancelled` on stderr. The tool path gets the code too via tick 18's `codedError`.
-- Value: ✅ yielded value: scripts and agents can branch on a cancelled run as the help documents.
-- Lesson: check each documented exit code against a test; the help promised 3 and the code returned 2.
-
-### Tick 23 · 12:47 · agents and worker print text, not JSON
-- Action: finished axeval fix 9, because it was the last small piece of it and fits a four-minute tick; fix 8 needs a full tick. `src/cli.ts` agents case prints one line per background agent (`runId name status [detached]`) or `No background agents. agents lists ctx.spawn() agents; ctx.agent() steps are in status --verbose.`; `worker start|status` print `worker pid N · home DIR · up 0s`, `worker stop` prints `worker stopped`. `--json` is unchanged.
-- Outcome: `npm run check` passes; `npm test` **37/37**. Local CLI (after `npm run build`) with `--home /tmp/bt23` printed all three lines. Found: `worker status` with no worker prints a raw `ENOENT` (logged under Backlog 0.9). No test asserts the new text yet.
-- Value: ✅ yielded value: no CLI command dumps JSON in text mode any more.
-- Lesson: try each command once against a fresh home after changing it; the empty case showed an error the report missed.
-
-### Tick 24 · 12:50 · worker status explains a missing worker
-- Action: fixed tick 23's follow-up because it fits a four-minute tick; fix 8 needs a full tick. `worker status` and `worker stop` on a home with no worker printed `error ENOENT: connect ENOENT …/worker.sock` (exit 4 already). In the `worker` case of `src/cli.ts`, a `running` wrapper now turns ENOENT/ECONNREFUSED into `worker_unavailable: No workflow worker is running for this home. Start one with <hint> worker start; run, poll and the other commands start it automatically.` The hint keeps `--home`.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` asserts exit 4 and the message for `worker status` before any worker starts.
-- Value: ✅ yielded value: an agent that checks the worker first gets the fix, not a socket errno.
-- Lesson: wrap errno handling at the command that knows the context (here: only `start` spawns), not in the shared rpc client.
-
-### Tick 25 · 12:56 · Archive the oldest log entries; test agents and worker text
-- Action: the Log had 26 entries, past the 25 limit, so ticks 0-4 moved to `brain/archive/2026-10-30.md` (tick 4's lesson kept under Lessons). With the remaining time, closed the gap tick 23 left: no test asserted the `agents` and `worker status` text. Fix 8 needs a full tick, so it waits.
-- Outcome: `test/process.test.ts` (after the quick run) asserts `agents` prints `No background agents. …` and `worker status` prints `worker pid N · home …`, both without `--json`. `npm test` **37/37**.
-- Value: ✅ yielded value: every text-mode command changed in ticks 20-24 is now under test, and the ledger is back within its limits.
-- Lesson: pair mandatory housekeeping with a test-sized change; both fit one four-minute tick.
-
-### Tick 26 · 13:00 · Spawn runshape for one run shape across surfaces
-- Action: spawned `runshape` for axeval fix 8, because it is the last full ranked fix, touches engine/index.ts, cli.ts, extension.ts, presentation.ts and the README, and three ticks in a row (19, 22, 23) deferred it as too big for four minutes. The brief names the JSON table (axeval.md:79-86), the four changes, the D4 no-shim rule, the 37/37 baseline and the out-of-scope files.
-- Outcome: `loop.sh spawn` finished in about 50 seconds; branch brain/runshape pushed, worktree `.pi/worktrees/brain-runshape`, herdr w5:p1 reports `agent_status=working`. No code changed this tick; tests not rerun (37/37 at 1a5871e).
-- Value: ✅ yielded value: the largest open fix is being worked without blocking the small ones.
-- Lesson: when the same item is deferred three times as too big for a tick, delegate it instead of deferring again. Next tick: fix 3's validate-time lint (src/validation.ts), which does not overlap runshape's files.
-
-### Tick 27 · 13:08 · validate reports unknown ctx.agent options
-- Action: took the static half of axeval fix 3, as tick 26 planned, because it does not overlap runshape's files and fits four minutes. `lintDeterminism` (`src/validation.ts`) checks the object-literal second argument of every `ctx.agent` call in run control flow and reports `unknown_agent_option` with line, did-you-mean and the valid list; `validateWorkflow` already marks any diagnostic as invalid. `AGENT_OPTIONS` moved from engine/execution.ts into validation.ts so both checks share one list.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts` determinism test asserts `{ tool: [], label }` yields exactly one `unknown_agent_option` naming `tools`.
-- Value: ✅ yielded value: a misspelled agent option is caught at validate, before launch.
-- Follow-up in the same tick (`64463bd` then this commit): `ctx.spawn({…})` options are linted too, accepting `name`, `initialPrompt` and `detach` on top; the test adds a `modle` typo. **37/37**.
-- Lesson: one shared constant between the lint and the run-time check keeps them from drifting. Commit at the first green, then extend; both fit the four minutes. Next: review runshape when done.
-
-### Tick 28 · 13:10 · Merge runshape: one run shape across surfaces
-- Action: reviewed and merged `brain/runshape`, done since tick 27, because a finished branch blocks nothing else and fix 8 was the last open ranked axeval fix. Diff: 12 files, +195/-57 (cli.ts, engine/index.ts, store.ts, extension.ts, presentation.ts, README, tests).
-- Outcome: `npm test` in its worktree **38/38**; after `git merge --no-ff` on top of tick 27's lint, `npm run check` clean and `npm test` **38/38**. Merge `237e912`, pushed; `loop.sh retire runshape` succeeded. All ten axeval fixes are now done. runshape's observation (terminal runs keep `waitingFor`) became Backlog 0.11.
-- Value: ✅ yielded value: an agent that learned the JSON shape on the CLI can parse the tool's details and vice versa; `list` no longer mixes model types.
-- Lesson: re-run the suite after merging, not only in the branch; tick 27 changed validation.ts and execution.ts under it. Next: Backlog 0.11, then a second axeval round to measure the fixes.
-
-### Tick 29 · 13:14 · Reproduce stale waitingFor on cancelled runs
-- Action: took Backlog 0.11, the next open item and small on paper. Added a test that cancels a run waiting on a signal and asserts `waitingFor` is gone, then cleared `waitingFor` in `Engine.mutate` for terminal statuses and in the runTask `abort` commit.
-- Outcome: the test reproduced the bug (`waitingFor` still `{key:"approve",…}` after cancel); both fixes left it failing, **38 tests, 37 pass, 1 fail** (the new assertion). Out of time, so I restored the source and the test from HEAD rather than commit a red suite; code is unchanged from 7435e3a (38/38). The reproducer and the two dead ends are in Backlog 0.11.
-- Value: ⚠️ partial: the bug is confirmed with a reproducer and two wrong fixes are ruled out; nothing shipped.
-- Lesson: trace where a field is written before patching; I patched two plausible writers without reading the signal loop and ran out of time. A hook blocks `git checkout -- <file>` and heredocs containing words like "delete"; restore files with `git show HEAD:<path>` and edit the ledger with the edit tool.
 
 ### Tick 30 · 13:19 · Terminal runs no longer show waitingFor
 - Action: retook Backlog 0.11 with tick 29's reproducer, because it was the only open ranked item and the bug was confirmed. Rewrote the test (second `gate` after the list assertions, cancel while `waiting_signal`, assert no `waitingFor`), then tried tick 29's abort-commit fix alone.
@@ -302,3 +268,9 @@ None.
 - Outcome: `npm test` **42/42**. Commit `5b9bc56`. Old-source check not run: without the extension.ts text the exact-match assertion cannot pass.
 - Value: ✅ yielded value: small; both surfaces' empty-list hints are under test.
 - Lesson: a filter branch in the fake gives an empty case without disturbing the shared run list. Next: stale worker (client.ts:56): add a build id to `ping` and decide between a clear `worker_outdated` error naming `worker stop` and an automatic restart when no run is active; or axeval3's report.
+
+### Tick 54 · 15:24 · Merge the axeval3 evaluation
+- Action: reviewed and merged `brain/axeval3`, done with a clean worktree, because a finished report-only branch blocks nothing and its ranked list should drive the next ticks. Diff: `brain/axeval3.md` +216, `ledgers/axeval3.md` +37; no src or test changes.
+- Outcome: merge `2af4ece`, pushed; `loop.sh retire axeval3` succeeded. Tests not rerun: no source changed (42/42 at 5b9bc56). Round three: S1-S4 all 0 wrong turns (round two 0/4/0/0-0-0-13); tool `wait:true` on a gate 69.3 s → 6.6 s after tick 49. Open fixes moved to Backlog 000; the gate-approval policy is Q1, a release is Q2. Archived ticks 22-29 (Log was 33 entries).
+- Value: ✅ yielded value: the second batch of fixes is measured as working, and ten new fixes are ranked with file:line.
+- Lesson: an evaluation that shares findings in its ledger as it goes lets the brain fix them before the report lands (ticks 48-53 closed four of its items early). Next: Backlog 000.2 (one-line caution on `toolHints.signal`, pending Q1) or spawn a subagent for 000.1 (worker build check).
