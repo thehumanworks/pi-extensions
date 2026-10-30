@@ -8,12 +8,12 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 - D1 (user, 2026-10-30): Workflow launches need no user approval. Remove the gate from the package entirely: the confirm dialog, `/workflow approval`, the `workflow.approval` setting, the TUI status, `PI_WORKFLOW_ALLOW_UNATTENDED`, and their docs and tests. No compatibility shim. Keep the `not_from_root` guard, which stops inner workflow agents from launching runs; it is not a user approval.
 - D2 (user, 2026-10-30): Workflow files are project source and must never be added to .gitignore. Say so where agents look: the guide (`src/guide.ts`), the tool description (`src/extension.ts`), `workflow init` output (`src/cli.ts`) and the README. Also remove the two ignore lines in `bot/.gitignore` (13 and 15) and commit those workflow files; they exist only in the main checkout (`/home/nixos/pi-extensions/bot/.pi/workflows/`), so copy them from there without modifying it.
-- D3 (user, 2026-10-30): Push freely to brain/orchestration and brain/<name> feature branches. Never push to or merge into main; the user merges to main at the end.
+- D3 (user, 2026-10-30; amended 11:30): Push freely to brain/orchestration and brain/<name> feature branches. The user then allowed merging to main: the supervisor (the interactive session) fast-forwarded main to brain/orchestration for the 0.3.0 release. The brain itself still never merges into or pushes main and never bumps versions; releases go through the supervisor and the user.
 - D4 (user, 2026-10-30): The project does not add legacy compatibility layers; use the current contract directly.
 - D5 (setup): The brain works in the worktree `.pi/worktrees/brain-orchestration` on branch brain/orchestration, based on main at f21d735. The main checkout holds the user's uncommitted work (pi-loggly, root README.md, package.json, package-lock.json) and must not be modified.
 - D6 (setup): Subagents are interactive Pi sessions in the herdr session `pi-brain`, each in its own worktree and workspace, started with `brain/loop.sh spawn`. At most 2 at a time. Model: the user's default (openai/gpt-6.1-sol, high).
 - D7 (user, 2026-10-30): The tick rules live in `brain/loop.sh` and belong to the brain; it may change them. The ledger must be updated every tick.
-- D8 (setup): Pi on this machine loads `npm:@nothumanwork/pi-orchestration` (0.2.1), not this checkout, so changes here only reach the installed tool after a publish, which is the user's call. Test changes with `npm test`, the local CLI (`node pi-orchestration/bin/workflow.mjs`) or `pi -e ./pi-orchestration/index.ts`.
+- D8 (setup; updated 11:30): Pi on this machine loads `npm:@nothumanwork/pi-orchestration` from npm, not this checkout. 0.3.0 (D1 and D2, the home_too_long error, green tests) is on main but NOT yet published; the installed Pi still runs 0.2.1 until the user publishes and updates. Keep PI_WORKFLOW_ALLOW_UNATTENDED in brain/loop.sh until the user confirms the publish. Test changes with `npm test`, the local CLI (`node pi-orchestration/bin/workflow.mjs`) or `pi -e ./pi-orchestration/index.ts`.
 
 ## Baseline
 
@@ -32,7 +32,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
 2. Workflow files are source (D2): ✅ done. Bot workflows tracked and ignore rules removed (tick 2); guide, tool description, `init` output and README state the policy (tick 5). Possible follow-up: `validate`/`catalog` warn on git-ignored workflow files (item 4).
-3. Fix baseline failures so a red test means a regression. ✅ Package source-only fixture fixed in tick 3: after the D1 merge the brain result is 33/35 passing (D1 replaced five gate tests with two matrices). Catalog isolated from the user's home in tick 6 (34/35). Remaining: refresh standalone Nix lock metadata and its dependency hash without bumping package versions.
+3. Fix baseline failures so a red test means a regression. ✅ Done: package fixture (tick 3), catalog home isolation (tick 6), Nix lock version and npmDepsHash (supervisor, 0.3.0 release). `npm test` 36/36; `nix build .#workflow` runs 36/36 and the installed smoke in the sandbox. Any red test is now a regression. Refreshing the Nix lock needs `nix develop --command bash nix/update-lock.sh` and the printed hash in nix/package.nix.
 4. Unexplored directions for the goal:
    - One output contract: the tool and the CLI return the same JSON shapes, and every CLI command supports `--json`.
    - Errors name the next command to run; error codes are stable and documented.
@@ -106,3 +106,8 @@ None.
 - Value: ✅ yielded value: an agent that picks a deep temp directory for `--home` now gets the fix in the error instead of an errno.
 - Lesson: validate inputs whose limits come from the OS before the first side effect, and name the flag or variable that fixes them.
 
+### Supervisor · 11:30 · Release 0.3.0 and fast-forward main (user request)
+- Action: the user allowed merging to main and asked for a version bump to publish. Paused the loop with brain/STOP after tick 7, bumped pi-orchestration to 0.3.0 (breaking for 0.x: `/workflow approval`, `workflow.approval` and `PI_WORKFLOW_ALLOW_UNATTENDED` are gone), regenerated nix/package-lock.json (only the version fields changed) and set the new npmDepsHash. The root package-lock.json was left alone, as in earlier bumps, because the user has uncommitted changes in it.
+- Outcome: `npm test` 36/36; `nix build .#workflow` 36/36 plus the installed smoke; `npm pack --dry-run` ships 92 files with no BRAIN, brain/, ledgers, test or nix files. main fast-forwarded to brain/orchestration in the main checkout, preserving the user's staged work; main is not pushed. Loop restarted.
+- Value: ✅
+- Lesson: the main checkout keeps staged user work, so a non-fast-forward merge there would abort. Keep brain/orchestration a descendant of main so releases stay fast-forwards.
