@@ -270,3 +270,9 @@ None.
 - Value: ✅ yielded value: small, but the hint now reads as a separate instruction.
 - Follow-up in the same tick: an unknown run id (`not_found`) now exits 1 like `workflow_not_found` and the other lookup typos (`src/cli.ts:186`), not 2 ("failed"); `test/process.test.ts:59` asserts it. `npm test` **40/40**; the Nix smoke test does not read this exit code.
 - Lesson: pin exact punctuation in assertions when the bug is punctuation; `.*` hid it. Next: axeval3's other S2 polish (syntax text repeats the path) or its final report.
+
+### Tick 49 · 15:00 · Tool run wait:true returns at a signal wait
+- Action: took axeval3's latest finding (ledger 15:40), concrete and outside its write scope: the tool's `run` with `wait:true` polled until a terminal status or `waitTimeoutMs` (default 60 s), so a gated run held the agent for a minute; the CLI's attached `run` already returns at the wait (tick 36). `src/extension.ts` wait loop now also breaks on `waiting_signal` and returns the brief (which carries `Deliver with: {"action":"signal",…}`) plus `Stopped waiting: the run needs a signal. This session gets a message when it ends.`
+- Outcome: `test/extension.test.ts` "wait:true returns at a signal wait" asserts the status and note; `npm test` **41/41**. Commit `42b1362`. First draft of the test queued `running, waiting_signal, completed` and saw `completed` (the launch or poller consumes a status); a single `waiting_signal` queue fixed it. Old-source check not run: without the fix the loop waits the full 60 s and the note differs, so the regex would fail.
+- Value: ✅ yielded value: both surfaces now stop at a gate instead of blocking.
+- Lesson: the `harness()` status queue is shared by launch, poller and status; use a single-status queue when the order is not the point. Next: axeval3's report (session E will measure this) and its remaining polish (`Approval 0/0`, no-model warning on agent-less workflows).
