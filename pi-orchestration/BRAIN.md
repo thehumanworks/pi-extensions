@@ -24,7 +24,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- None running.
+- `runshape` (spawned tick 26, branch brain/runshape, herdr w5:p1): axeval fix 8, one run shape across CLI and tool (string model, brief JSON view with `runId` for status/list/poll/run --json). Baseline 37/37.
 - `axeval` merged at `050a209` and retired in tick 11; its report is `brain/axeval.md` (ranked fixes drive Backlog item 0).
 - `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
@@ -40,7 +40,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    5. ✅ Done in tick 16: `poll` returns on `waiting_signal` by default (`--until done` keeps waiting), prints a line only when more than elapsed time changed, help/README say `--interval 1s`. `watch` still defaults to `done`.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
    7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
-   8. One run shape across surfaces (`model` form, `id` vs `runId`).
+   8. In progress: subagent `runshape` (tick 26). One run shape across surfaces (`model` form, `id` vs `runId`).
    9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Tick 24: `worker status|stop` with no worker fail `worker_unavailable` (exit 4) naming `worker start`, tested. Tick 25: process test asserts the `agents` and `worker status` text.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
 
@@ -206,3 +206,9 @@ None.
 - Outcome: `test/process.test.ts` (after the quick run) asserts `agents` prints `No background agents. …` and `worker status` prints `worker pid N · home …`, both without `--json`. `npm test` **37/37**.
 - Value: ✅ yielded value: every text-mode command changed in ticks 20-24 is now under test, and the ledger is back within its limits.
 - Lesson: pair mandatory housekeeping with a test-sized change; both fit one four-minute tick.
+
+### Tick 26 · 13:00 · Spawn runshape for one run shape across surfaces
+- Action: spawned `runshape` for axeval fix 8, because it is the last full ranked fix, touches engine/index.ts, cli.ts, extension.ts, presentation.ts and the README, and three ticks in a row (19, 22, 23) deferred it as too big for four minutes. The brief names the JSON table (axeval.md:79-86), the four changes, the D4 no-shim rule, the 37/37 baseline and the out-of-scope files.
+- Outcome: `loop.sh spawn` finished in about 50 seconds; branch brain/runshape pushed, worktree `.pi/worktrees/brain-runshape`, herdr w5:p1 reports `agent_status=working`. No code changed this tick; tests not rerun (37/37 at 1a5871e).
+- Value: ✅ yielded value: the largest open fix is being worked without blocking the small ones.
+- Lesson: when the same item is deferred three times as too big for a tick, delegate it instead of deferring again. Next tick: fix 3's validate-time lint (src/validation.ts), which does not overlap runshape's files.
