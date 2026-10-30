@@ -30,7 +30,10 @@ ${program} agents [--run ID]
 ${program} steer <runId> <agent> "message"
 ${program} worker start|stop|status
 
-Every command accepts --json and --home DIR. poll/watch emit NDJSON.
+Every command accepts --json and --home DIR. JSON run views are the Pi tool's details; poll/watch emit NDJSON:
+  run, status, poll, cancel, retry, revert: {runId, workflow, status, model?, summary, error?, failedSteps?, waitingFor?, result?}
+  run --bg: {runId, status, model?}   list: [{runId, workflow, status, model?, summary, parentRunId?}]
+  status --verbose, watch: the full run record {id, workflow: {name, path, hash}, steps, ...}. model is "provider/modelId".
 run attaches by default; Ctrl-C detaches without cancelling the durable run.
 Exit codes: 0 success, 1 usage/validation, 2 failed, 3 cancelled, 4 worker unavailable.`;
 }
