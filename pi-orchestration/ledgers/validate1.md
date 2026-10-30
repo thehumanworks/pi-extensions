@@ -15,3 +15,5 @@ Acceptance: npm run check clean; npm test passes (baseline 38/38 at b63b97e); ne
 Rules: keep engine messages surface-neutral (no CLI commands in engine errors). No compatibility shims. Do not touch brain/loop.sh, BRAIN.md, README beyond a line if behaviour docs change, or the extension's schemas. Commit on brain/validate1 and push; write progress and 'done' in your ledger.
 
 ## Log
+
+- 14:23 Read brief, axeval2 fixes 6–7 and scenario 2, loader.ts, validation.ts, engine launch, cli errorInfo (invalid_workflow already exits 1). Baseline `npm test` at 2e72547 under load avg ~27 (other agents, chromium, tsc): first run failed `a SIGKILLed worker resumes runs…` (process.test.ts, "never reached its sleep"); a second run failed the two process/package timing tests instead. These are timeouts from machine load, not the code; I'll rerun them in isolation before calling done.
