@@ -24,7 +24,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- None running.
+- `worker1` (spawned tick 55, herdr w9:p1, branch brain/worker1): Backlog 000.1, worker build check and idle-worker restart. Baseline 42/42 at b057433.
 - `axeval3` merged at `2af4ece` and retired in tick 54; its report is `brain/axeval3.md` (ranked fixes drive Backlog item 000).
 - `validate1` merged at `6facf5c` and retired in tick 46 (Backlog 00.6 and 00.7).
 - `axeval2` merged at `6ed16ed` and retired in tick 35; its report is `brain/axeval2.md` (ranked fixes drive Backlog item 00).
@@ -37,7 +37,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 000. axeval3's ranked fixes (`brain/axeval3.md`, "Ranked fixes"; round three: S1-S4 all 0 wrong turns). Open, in order:
-   1. Worker build check (worker.ts:58, protocol.ts:11, client.ts:54-57): worker reports a build id; client restarts an idle stale worker, else warns naming `worker stop`. Same as 00.11. Probably a subagent.
+   1. Worker build check (worker.ts:58, protocol.ts:11, client.ts:54-57): worker reports a build id; client restarts an idle stale worker, else warns naming `worker stop`. Same as 00.11. In progress: `worker1` (tick 55).
    2. ✅ Done tick 54 (58f2ec3), pending Q1. Ask before answering a gate: append to `toolHints.signal` (presentation.ts:95-96) `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` Measured unasked approvals 6/6 → 2/6, told-to-approve 4/4 still fine. Policy choice: see Questions.
    3. Lint rest: `require("fs"|…)`, `randomBytes`/`randomInt` imports, `process.hrtime` (tick 52 covered performance.now, crypto.randomUUID, getRandomValues).
    4. ✅ Widget pluralisation, done tick 51.
@@ -120,12 +120,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Q2 (tick 54): brain/orchestration since the 0.3.0 merge (a12cb48) holds ticks 45-53 plus validate1 and axeval3 (npm test 42/42; the Nix smoke test not rerun since a12cb48). Ready for a 0.3.x release when you want one.
 
 ## Log
-
-### Tick 30 · 13:19 · Terminal runs no longer show waitingFor
-- Action: retook Backlog 0.11 with tick 29's reproducer, because it was the only open ranked item and the bug was confirmed. Rewrote the test (second `gate` after the list assertions, cancel while `waiting_signal`, assert no `waitingFor`), then tried tick 29's abort-commit fix alone.
-- Outcome: `delete run.waitingFor` in the runTask `abort` commit (engine/index.ts ~545) fixes it; without it the test fails (checked both ways). Also cleared it in the `execute` failure commit, so a `signal_timeout` run does not keep it. `npm run check` clean; `npm test` **38/38**. Tick 29's failure came from testing it together with the `Engine.mutate` change, not from the abort fix itself.
-- Value: ✅ yielded value: a cancelled or failed run no longer prints "waiting for signal … signal: …".
-- Lesson: retest the simplest candidate fix alone before ruling it out. Next: a second axeval round to measure the ten fixes (spawn), since Backlog 0 is now empty.
 
 ### Tick 31 · 13:24 · Spawn axeval2 to measure the fixes
 - Action: spawned `axeval2`, as tick 30 planned, because every ranked axeval fix is done and the next changes should come from measured wrong turns, not guesses. The brief repeats round one's four scenarios with the same model (haiku) so counts compare, adds a parity check of `workflow guide` vs the tool's guide, and carries the D8 and tick 19 traps (`pi -e` the local index.ts, `npm run build` before using bin/workflow.mjs) and the Pi boolean-flag trap.
@@ -276,3 +270,9 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Value: ✅ yielded value: the second batch of fixes is measured as working, and ten new fixes are ranked with file:line.
 - Follow-up in the same tick: shipped 000.2 as Q1's reversible default: `toolHints.signal` (`src/presentation.ts:96`) ends `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` `test/extension.test.ts:250` asserts it; `npm test` **42/42**. Commit `58f2ec3`. The CLI hint is unchanged (unmeasured). Old-source check not run: without the text the exact regex cannot match.
 - Lesson: an evaluation that shares findings in its ledger as it goes lets the brain fix them before the report lands (ticks 48-53 closed four of its items early). Next: spawn a subagent for 000.1 (worker build check), then 000.3 lint rest.
+
+### Tick 55 · 15:29 · Spawn worker1 for the worker build check
+- Action: spawned `worker1` for Backlog 000.1, as tick 54 planned, because it is axeval3's top ranked fix and was deferred in ticks 52-53 as too big for four minutes (tick 26's rule). The brief names client.ts:54-75, protocol.ts:6/:11 and worker.ts:58, asks for a shared build id (package version plus a per-build value), transparent restart of an idle stale worker, a warning naming `worker stop` when runs are active (worded by cli.ts/extension.ts, not the engine), a test with a faked build id, the 42/42 baseline, the `npm run build` and socket-path traps, and the Nix smoke test if CLI output changes.
+- Outcome: `loop.sh spawn` took about 35 seconds; branch brain/worker1 pushed, worktree `.pi/worktrees/brain-worker1`, herdr w9:p1 `agent_status=working`. No source changed; tests not rerun (42/42 at b057433). Archived tick 30 (Log was 26 entries).
+- Value: ✅ yielded value: the last ranked fix that needs a design choice is being worked in parallel with the four-minute lint and guide items.
+- Lesson: read the three named file:line spots before writing the brief (one command, 20 seconds); the brief then names exact lines. Next: Backlog 000.3 lint rest (`require("fs")`, `randomBytes`/`randomInt` imports, `process.hrtime`) in src/validation.ts, no overlap with worker1.
