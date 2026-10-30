@@ -41,6 +41,7 @@ function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv =
     async request(request) {
       requests.push(request);
       if (request.action === "run") return { runId: `run-${++launches}`, status: "queued", ...(request.model ? { model: request.model } : {}) };
+      if (request.action === "status" && request.runId === "nope") throw new WorkflowError("not_found", "Unknown workflow run nope.");
       if (request.action === "status") {
         const queue = statuses[request.runId] ?? ["completed"];
         return runRecord(request.runId, queue.length > 1 ? queue.shift()! : queue[0]);
@@ -224,6 +225,8 @@ test("reading a finished run's outcome replaces the completion turn, and status 
     (error: Error) => error.message === 'result_not_ready: Run run-gate is waiting for signal "go"; deliver it, then read the result. Check it with {"action":"status","runId":"run-gate"}.');
   const signalled = await tool.execute("call-6", { action: "signal", runId: "run-gate", key: "go", value: { ok: true } }, undefined, undefined, ctx) as ToolReply;
   assert.equal(signalled.content[0].text, 'Signal "go" accepted. Check the run with {"action":"status","runId":"run-gate"}.');
+  await assert.rejects(tool.execute("call-7", { action: "status", runId: "nope" }, undefined, undefined, ctx),
+    (error: Error) => error.message === 'not_found: Unknown workflow run nope. List runs with {"action":"list"}.');
   await h.handlers.get("session_shutdown")!({}, ctx);
 });
 
