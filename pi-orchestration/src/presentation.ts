@@ -44,11 +44,21 @@ export function runSummary(run: RunRecord, now = Date.now()): string {
     `${failed ? ` · ${failed} failed step${failed === 1 ? "" : "s"}` : ""}`;
 }
 
+/** The fields every run view starts with, on every surface: the CLI's --json and the Pi tool's details. */
+function runHead(run: RunRecord): Record<string, unknown> {
+  return { runId: run.id, workflow: run.workflow.name, status: run.status, ...(run.model ? { model: run.model } : {}), summary: runSummary(run) };
+}
+
+/** One entry per run for list; a child names its parent. */
+export function runListView(runs: RunRecord[]): Array<Record<string, unknown>> {
+  return runs.map(run => ({ ...runHead(run), ...(run.origin.kind === "workflow" ? { parentRunId: run.origin.parentRunId } : {}) }));
+}
+
 /** The compact view of a run: outcome first, internals only on request. */
 export function runBrief(run: RunRecord, program = "workflow"): { view: Record<string, unknown>; text: string } {
   const failed = failedSteps(run).map(step => ({ key: step.key, ...(step.label ? { label: step.label } : {}), error: step.error?.message ?? "failed" }));
   const view: Record<string, unknown> = {
-    runId: run.id, workflow: run.workflow.name, status: run.status, summary: runSummary(run),
+    ...runHead(run),
     ...(run.error ? { error: run.error } : {}),
     ...(failed.length ? { failedSteps: failed } : {}),
     ...(run.waitingFor ? { waitingFor: run.waitingFor } : {}),

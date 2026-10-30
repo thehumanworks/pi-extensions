@@ -1,6 +1,6 @@
 import { defineDoc, type ConversationId, type TaskId, type JsonObject } from "@earendil-works/pi-durable";
 import type { JsonValue } from "@earendil-works/chord";
-import type { AgentOptions, ModelRef, RunRecord, StepRecord, WorkflowDefinition } from "../index.ts";
+import type { AgentOptions, RunRecord, StepRecord, WorkflowDefinition } from "../index.ts";
 
 export type JournalEntry = StepRecord & {
   fingerprint: string;
@@ -26,7 +26,6 @@ export type RunData = Omit<RunRecord, "steps" | "logs"> & {
   requestId: string;
   taskId: TaskId | null;
   cwd: string;
-  model?: ModelRef;
   thinkingLevel?: AgentOptions["thinkingLevel"];
   limits: NonNullable<WorkflowDefinition["budget"]>;
   steps: JournalEntry[];

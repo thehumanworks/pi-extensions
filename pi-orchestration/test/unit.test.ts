@@ -12,7 +12,7 @@ import { assertSocketPath } from "../src/paths.ts";
 import { rpc } from "../src/client.ts";
 import { WorkflowError } from "../src/errors.ts";
 import { lintDeterminism, validateWorkflow } from "../src/loader.ts";
-import { catalogText, modelResult, runList, runSummary, runTree, toolHints, validationText } from "../src/presentation.ts";
+import { catalogText, modelResult, runBrief, runList, runListView, runSummary, runTree, toolHints, validationText } from "../src/presentation.ts";
 
 test("determinism lint reports real control-flow calls only", () => {
   const diagnostics = lintDeterminism(`
@@ -79,11 +79,16 @@ test("summaries name the model and catalogs read as text", () => {
   const run = {
     id: "r", createdAt: 0, startedAt: 0, endedAt: 2000, status: "completed", workflow: { name: "w", path: "", hash: "" }, args: {}, cwd: "/",
     attempt: 1, phases: [], usage: { inputTokens: 1, outputTokens: 2, costUsd: 0, agents: 1 }, children: [], depth: 0, origin: { kind: "cli" },
-    model: { provider: "openai", modelId: "gpt" }, thinkingLevel: "high",
+    model: "openai/gpt", thinkingLevel: "high",
     steps: [{ key: "a", kind: "agent", status: "failed", attempts: 1, error: { message: "x" } }, { key: "p", kind: "parallel", status: "failed", attempts: 1 }],
   } as RunRecord;
   assert.equal(runSummary(run), "r w completed 2s · openai/gpt:high · 1 agents · 3 tokens · $0.0000 · 1 failed step");
   assert.match(runSummary({ ...run, model: undefined, steps: [] }), / · no model · /);
+  // Brief and list views lead with the same fields on every surface.
+  const head = { runId: "r", workflow: "w", status: "completed", model: "openai/gpt", summary: runSummary(run) };
+  assert.deepEqual(Object.entries(runBrief(run).view).slice(0, 5), Object.entries(head));
+  assert.deepEqual(runListView([run, { ...run, id: "c", model: undefined, origin: { kind: "workflow", parentRunId: "r", stepKey: "k" } }]),
+    [head, { runId: "c", workflow: "w", status: "completed", summary: runSummary({ ...run, id: "c", model: undefined }), parentRunId: "r" }]);
   assert.match(statusText(run, "workflow --home /h"), /\nresult: workflow --home \/h result r$/);
   const waiting = statusText({ ...run, status: "waiting_signal", waitingFor: { key: "ok", prompt: "Approve?" } });
   assert.match(waiting, /\nwaiting for signal "ok": Approve\?\nsignal: workflow signal r "ok" '<json>'$/);
