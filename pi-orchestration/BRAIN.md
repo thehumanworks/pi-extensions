@@ -37,7 +37,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
    3. One `waitingLines(run, hints)` helper for presentation.ts:71-72, :134-137 and cli.ts:173-177.
-   4. ⚠️ Half done in tick 37 (8fce02c): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}`. Open: tool `signal` reply of its own; a tool-path test for the status hint.
+   4. ✅ Done in ticks 37-38 (8fce02c, b47be74, 895d71b): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}` (tested); tool `signal` replies `Signal "k" accepted. Check the run with {"action":"status",…}.` (tested).
    6. Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
    7. Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
    8. `@sinclair/typebox` load error hints `typebox`; drop `Require stack:` (loader.ts:68).
@@ -261,3 +261,9 @@ None.
 - Outcome: `npm run check` clean; `npm test` **38/38**. `test/process.test.ts` gate test asserts `result` on the waiting run exits 2 with the new message and the `poll:` hint. Commit `8fce02c`. The tool-side append has no test yet; the tool `signal` reply is unchanged.
 - Value: ✅ yielded value: neither surface names a command the other owns for an early `result`.
 - Lesson: a client-side `.catch` that appends to the message keeps the engine surface-neutral without a new error field. Next: a tool-path test for the status hint plus the tool's own `signal` reply (rest of 00.4), then 00.3.
+
+### Tick 38 · 14:00 · Tool signal reply and result_not_ready hint, tested
+- Action: finished Backlog 00.4 as tick 37 planned, because its tool half was untested and the tool `signal` reply was raw JSON with no next step. `test/extension.test.ts` harness fakes `result_not_ready` for `run-gate` and a `signal` reply; the brief-status test asserts the exact tool error (`… Check it with {"action":"status","runId":"run-gate"}.`). `src/extension.ts` adds a `signal` case: `Signal "go" accepted. Check the run with {"action":"status","runId":…}.`
+- Outcome: `npm run check` clean; `npm test` **38/38**. With the pre-8fce02c extension.ts the extension tests are 8/9, so the new assertion catches a missing hint. Commits `b47be74` (test) and `895d71b` (signal reply). Not verified live in Pi (D8).
+- Value: ✅ yielded value: both tool replies around a gate now name the tool call to make next, under test.
+- Lesson: the fake client in `harness()` makes tool-path tests cheap; add a branch per action rather than an engine fixture. Next: 00.3 (`waitingLines` helper) or 00.6 (validate in one pass).
