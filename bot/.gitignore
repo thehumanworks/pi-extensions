@@ -9,7 +9,6 @@ test-results/
 .env.*.local
 .bot/
 .build/
+# .pi/workflows/*.ts are project source: track them, never ignore them.
 /.pi/NATIVE-PLAN.md
-/.pi/workflows/native-web.ts
 /.pi/IMPLEMENTATION.md
-/.pi/workflows/bot-workspace.ts

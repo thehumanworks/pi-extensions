@@ -1,0 +1,21 @@
+import { defineWorkflow } from '@nothumanwork/pi-orchestration';
+
+const shared = `You are implementing an authorized change in /home/nixos/pi-extensions/bot, now a nested npm-workspace monorepo. Other agents work concurrently in disjoint scopes. Read .pi/IMPLEMENTATION.md first. Do not modify parent manifests/lockfiles, install dependencies, move runtime files, commit, or publish. The coordinating agent owns migration and dependency installation. Work against real AI SDK 7 types once installed; inspect node_modules if needed. Never invent successful test results. Use only project dependencies; no global installs. Preserve accepted durable work across browser disconnects.`;
+
+export default defineWorkflow({
+  name: 'bot-workspace',
+  description: 'Build the independent AI SDK adapter and maintained Next.js application, then review their integration.',
+  budget: { maxAgents: 3, maxDurationMs: 5_400_000 },
+  async run(ctx) {
+    ctx.phase('Implement independent packages');
+    const implementations = await ctx.parallel([
+      () => ctx.agent(`${shared}\nImplement packages/ai-sdk exclusively: @nothumanwork/bot-ai-sdk, a framework-independent useChat-compatible UI message stream adapter over the structural BotBackend interface in the design note. It must NOT import or depend on the bot runtime, Pi, Next or React. Implement the remote /v1 NDJSON backend client, stream/event and transcript conversion, explicit cancellation, request deduplication correlation, history and reconnection. Add thorough deterministic tests and its README. You own this package only. Read existing runtime events/client code by path but do not modify them. Publish the exported API in packages/ai-sdk/API.md promptly so the UI author can reference details. The fixed API in the design note is the integration contract. Do not require Vercel hosting, model providers or a second agent loop. Reject unsupported edits/regeneration and invalid inputs explicitly; bound parsing/buffering; do not leak backend secrets in errors. Build/check/test your package when dependencies become available; otherwise report exact blockers. Finish with changed files, public API and checks.`, { label: 'adapter', timeoutMs: 3_600_000 }),
+      () => ctx.agent(`${shared}\nImplement apps/web exclusively: @nothumanwork/bot-ui, a supported Next.js 16 + React 19 application using @ai-sdk/react useChat and @nothumanwork/bot-ai-sdk. This is a maintained product component, NOT a demo. Do not import runtime/Pi packages or sibling source. Implement same-origin Node route handlers using the agreed adapter API, a polished accessible responsive session sidebar/chat UI, persisted transcript loading, text streaming, safe Markdown, tool detail rendering, run status, new session, explicit Stop, and reconnection/history reconciliation. Configure server-only BOT_SERVER_URL/BOT_SERVER_TOKEN; no provider credentials in browser. API POSTs need same-origin validation. Default local commands should bind ::1 with port 3001. No bundled mock bot or paid provider calls. Add README, .env.example, scripts, type checks and useful unit/UI tests. You own apps/web only. Coordinate against packages/ai-sdk/API.md if present; otherwise use the fixed design note. Keep implementation robust rather than elaborate. Finish with changed files and checks.`, { label: 'web-ui', timeoutMs: 3_600_000 }),
+    ], { failure: 'allSettled' });
+    ctx.phase('Await integration');
+    await ctx.signal('integration-ready', { prompt: 'Coordinator: install dependencies, integrate package APIs and run tests, then signal to start independent review.' });
+    ctx.phase('Independent integration review');
+    const review = await ctx.agent(`Review the implementation in /home/nixos/pi-extensions/bot and its parent workspace integration. Read .pi/IMPLEMENTATION.md. Do not modify files. Check package decoupling, useChat protocol correctness, durable history/reconnect/cancel, client/server races, SSRF/secrets/CSRF safety, packaging/Nix regressions, and Next production configuration. Inspect and run targeted safe checks using existing dependencies. Prioritize concrete bugs; cite files and lines and reproduction. Do not run provider calls, publish or alter source.`, { label: 'integration-review', tools: ['read', 'bash'], timeoutMs: 1_200_000 });
+    return { implementations, review };
+  },
+});

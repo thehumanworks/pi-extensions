@@ -31,7 +31,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 1. D1 approval-gate removal: delegated to `approval` in tick 1. Await implementation, then review diff, run `npm test` in its worktree and merge only if no worse than baseline. Retain `not_from_root` on all launch paths; do not confuse business `ctx.signal()` approval examples with the removed launch policy.
-2. Workflow files are source (D2): guide, tool description, `init` output, README, `bot/.gitignore`.
+2. Workflow files are source (D2): ✅ bot workflows now tracked and ignore rules removed (tick 2). Remaining: guide, tool description, `init` output and README; coordinate these edits with `approval`.
 3. Fix the 3 baseline failures so a red test means a regression.
 4. Unexplored directions for the goal:
    - One output contract: the tool and the CLI return the same JSON shapes, and every CLI command supports `--json`.
@@ -40,12 +40,15 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    - `status` shows what changed since the caller last looked; long runs get a compact progress view.
    - Parity: an agent outside Pi gets the same guide (`workflow guide`) and examples as one inside Pi.
    - Exit codes that scripts and agents can branch on.
+   - ✅ Reproduced: a long `--home` produces opaque `connect EINVAL …/worker.sock` (tick 2); diagnose Unix socket path limits with an actionable shorter-home hint.
    - An agent-experience evaluation: give fresh agents tasks through only the CLI or only the tool, and count wrong turns. This measures progress on the goal instead of guessing.
 
 ## Lessons
 
 - Supervisor, after tick 1: the approval brief told the subagent to drop PI_WORKFLOW_ALLOW_UNATTENDED from brain/loop.sh. That would break headless workflow launches here, because the installed Pi runs npm 0.2.1 (D8) until the user publishes. The subagent was told to leave loop.sh alone. Check every change to the loop's own environment against D8.
 - Tick 1: `loop.sh spawn` completed in 43 seconds (30 seconds installing dependencies). Verify Herdr `agent_status=working` after submission, not merely a successful prompt write. Keep delegated scope explicit so the brain can work on adjacent priorities without overlapping files.
+
+- Tick 2: test copied workflows via local CLI `validate`, not a live launch: historical prompts target the main checkout. A short isolated `--home` works; a socket path beyond Unix limits returns an opaque `EINVAL` before creating the home.
 
 ## Questions for the user
 
@@ -64,3 +67,9 @@ None.
 - Outcome: task committed and pushed as `efdc0f5` on `brain/approval`; Herdr workspace `w3`, pane `w3:p1`, confirmed `agent_status=working` at 10:52. Acceptance requires root interactive/headless launches without approval, nested launches still returning `not_from_root`, `npm run check`, `npm test` compared with 35/38 baseline, and `bash -n` for loop changes. No code changed in the brain worktree this tick, so no test rerun yet.
 - Value: ✅ yielded value — the largest explicit request now has an independently running implementer and verifiable acceptance criteria.
 - Lesson: delegate multi-surface removal as one coherent task; retain the recursion guard explicitly and avoid deleting unrelated signal-based approvals.
+
+### Tick 2 · 10:55 · Track bot workflow source
+- Action: completed the source-control part of D2 without overlapping `approval`'s active CLI/extension edits. Copied the two existing workflows from the main checkout, removed their individual ignore rules and documented the source policy in `bot/.gitignore`; did not modify the main checkout or run either workflow.
+- Outcome: `native-web.ts` and `bot-workspace.ts` are byte-identical to the originals (`cmp`); neither is git-ignored. Local CLI `validate --json` reports both valid with zero diagnostics. `npm test`: 38 tests, 35 pass, the same 3 baseline failures. Long isolated `--home` first reproduced `connect EINVAL`; a shorter home validated both and its worker stopped successfully. Remaining D2 authoring guidance stays in Backlog.
+- Value: ✅ yielded value — real workflow definitions will now travel with project source instead of silently disappearing from Git.
+- Lesson: split adjacent work by conflict boundaries; validate historical source without executing its old implementation prompts. Capture incidental CLI failures as reproducible backlog items.
