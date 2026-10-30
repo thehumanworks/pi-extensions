@@ -1,3 +1,4 @@
+import { readFile, stat } from "node:fs/promises";
 import { Type, type TProperties } from "typebox";
 import { Value } from "typebox/value";
 import type { ModelRef, RunBudget, RunRecord, RunStatus, StepKey, ThinkingLevel } from "./index.ts";
@@ -8,7 +9,21 @@ export const MAX_REQUEST_BYTES = 1024 * 1024;
 export const MAX_RESPONSE_BYTES = 64 * 1024 * 1024;
 export const TERMINAL_STATUSES: ReadonlySet<RunStatus> = new Set(["completed", "failed", "cancelled", "reverted", "outdated"]);
 export function isTerminal(status: RunStatus): boolean { return TERMINAL_STATUSES.has(status); }
-export interface WorkerStatus { version: number; pid: number; home: string; uptimeMs: number }
+export interface WorkerStatus { version: number; build?: string; pid: number; home: string; uptimeMs: number }
+/**
+ * The build of the worker this package spawns: the package version and when dist/worker.js was written, so an
+ * upgrade or `npm run build` changes it. The worker reports it from startup; clients compare it with the current
+ * one. PI_WORKFLOW_BUILD overrides it for tests. Undefined when dist/worker.js is missing.
+ */
+export async function workerBuild(env: NodeJS.ProcessEnv = process.env): Promise<string | undefined> {
+  if (env.PI_WORKFLOW_BUILD) return env.PI_WORKFLOW_BUILD;
+  try {
+    const [manifest, worker] = await Promise.all([
+      readFile(new URL("../package.json", import.meta.url), "utf8"), stat(new URL("../dist/worker.js", import.meta.url)),
+    ]);
+    return `${(JSON.parse(manifest) as { version: string }).version}+${worker.mtime.toISOString()}`;
+  } catch { return undefined; }
+}
 export type WorkflowRef = { path: string } | { name: string };
 export type ControlRequest =
   | { action: "ping" | "stop" }

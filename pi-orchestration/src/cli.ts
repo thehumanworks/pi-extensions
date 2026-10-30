@@ -44,6 +44,7 @@ export interface ClientOptions {
   home?: string;
   signal?: AbortSignal;
   timeoutMs?: number;
+  onStaleWorker?: (worker: WorkerStatus) => void;
 }
 
 export interface WorkflowClient {
@@ -218,7 +219,11 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
     const cwd = resolve(context.cwd ?? process.cwd(), values.cwd ?? ".");
     const home = values.home ? resolve(context.cwd ?? process.cwd(), values.home) : undefined;
     if (home) hint = `${program} --home ${/^[\w@%+=:,./-]+$/.test(home) ? home : `'${home.replaceAll("'", `'\\''`)}'`}`;
-    const options: ClientOptions = { home, signal: context.signal };
+    let stale = false;
+    const options: ClientOptions = { home, signal: context.signal, onStaleWorker: worker => {
+      if (!stale) warn(`Workflow worker runs an older build (${worker.build ?? "unknown"}); stop it with ${hint} worker stop when its runs finish.\n`);
+      stale = true;
+    } };
     const request = <T = unknown>(value: ControlRequest) => client.request(value, options) as Promise<T>;
     const count = (n: number, usage: string) => {
       if (args.length !== n) throw new CliError(`Usage: ${program} ${usage}`);
@@ -412,7 +417,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       }
       case "worker": {
         count(1, "worker start|stop|status");
-        const workerText = (worker: WorkerStatus) => `worker pid ${worker.pid} · home ${worker.home} · up ${duration(worker.uptimeMs)}`;
+        const workerText = (worker: WorkerStatus) => `worker pid ${worker.pid} · home ${worker.home} · up ${duration(worker.uptimeMs)} · build ${worker.build ?? "unknown"}`;
         // Only start spawns a worker; status and stop on an empty home explain that instead of a socket errno.
         const running = <T>(request: Promise<T>) => request.catch((error: NodeJS.ErrnoException) => {
           if (!["ENOENT", "ECONNREFUSED"].includes(error.code ?? "")) throw error;

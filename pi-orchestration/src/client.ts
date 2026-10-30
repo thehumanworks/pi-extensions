@@ -5,9 +5,15 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { WorkflowError } from "./errors.ts";
 import { assertSocketPath, workflowPaths } from "./paths.ts";
-import { MAX_REQUEST_BYTES, MAX_RESPONSE_BYTES, PROTOCOL_VERSION, validateRequest, type ControlRequest, type ControlResponse, type WorkerStatus } from "./protocol.ts";
+import { MAX_REQUEST_BYTES, MAX_RESPONSE_BYTES, PROTOCOL_VERSION, validateRequest, workerBuild, type ControlRequest, type ControlResponse, type WorkerStatus } from "./protocol.ts";
 
-export interface ClientOptions { home?: string; signal?: AbortSignal; timeoutMs?: number }
+export interface ClientOptions {
+  home?: string;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  /** Called with a worker that runs another build and was kept because it has active runs. */
+  onStaleWorker?: (worker: WorkerStatus) => void;
+}
 export function assertRootLaunch(env: NodeJS.ProcessEnv = process.env): void {
   if (env.PI_WORKFLOW_RUN_ID) throw new WorkflowError("not_from_root", `Workflows are launched by the user or the root Pi session, not from inside an agent (run ${env.PI_WORKFLOW_RUN_ID}, step ${env.PI_WORKFLOW_STEP ?? "unknown"}). Compose with ctx.workflow() in the workflow file instead.`);
 }
@@ -61,15 +67,26 @@ async function ready(options: ClientOptions): Promise<WorkerStatus | undefined> 
   }
 }
 const starting = new Map<string, Promise<WorkerStatus>>();
+/**
+ * A running worker of the current build, started if needed. A worker of another build is replaced when it has no
+ * active runs; otherwise it keeps serving them and options.onStaleWorker hears about it.
+ */
 export async function ensureWorker(options: ClientOptions = {}): Promise<WorkerStatus> {
   if (process.platform === "win32") throw new WorkflowError("unsupported_platform", "pi-orchestration supports Linux and macOS. On Windows, run it inside WSL.");
-  const status = await ready(options);
-  if (status) return status;
   const home = workflowPaths(options.home).home;
+  const status = starting.has(home) ? undefined : await ready(options);
+  if (status) {
+    if (status.build === await workerBuild()) return status;
+    const active = await rpc<unknown[]>({ action: "list", filter: { status: ["queued", "running", "waiting_signal"], all: true, limit: 1 } }, options);
+    if (active.length) {
+      options.onStaleWorker?.(status);
+      return status;
+    }
+  }
   let pending = starting.get(home);
   if (!pending) {
     // A client detaching must not abort the shared startup for other clients.
-    pending = start({ home }).finally(() => starting.delete(home));
+    pending = (status ? replace(status, { home }) : start({ home })).finally(() => starting.delete(home));
     starting.set(home, pending);
   }
   if (!options.signal) return pending;
@@ -80,6 +97,17 @@ export async function ensureWorker(options: ClientOptions = {}): Promise<WorkerS
     signal.addEventListener("abort", abort, { once: true });
     pending!.then(resolve, reject).finally(() => signal.removeEventListener("abort", abort));
   });
+}
+/** Stop an idle worker of another build and start the current one once the old process has released the home. */
+async function replace(worker: WorkerStatus, options: ClientOptions): Promise<WorkerStatus> {
+  // Whether this stop or a concurrent client's stops it, the old process must exit before another can own the home.
+  await rpc({ action: "stop" }, options).catch(() => {});
+  for (let i = 0; i < 100; i++) {
+    try { process.kill(worker.pid, 0); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === "ESRCH") return start(options); }
+    await delay(100, undefined, { signal: options.signal });
+  }
+  throw new WorkflowError("worker_unavailable", `Workflow worker ${worker.pid} runs another build and did not exit within 10 s of stop. Check ${workflowPaths(options.home).log}.`);
 }
 async function start(options: ClientOptions): Promise<WorkerStatus> {
   const paths = workflowPaths(options.home);
