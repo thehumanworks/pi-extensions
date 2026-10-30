@@ -43,7 +43,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    8. ✅ Done in tick 28 (merged `runshape`, `237e912`): model stored as `"provider/modelId"`; CLI `--json` for status/poll/run/cancel/retry/revert prints the tool's brief view, list the list view (`src/presentation.ts` `runHead`); only `status --verbose`/`watch` print the full record with `id`.
    9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Tick 24: `worker status|stop` with no worker fail `worker_unavailable` (exit 4) naming `worker start`, tested. Tick 25: process test asserts the `agents` and `worker status` text.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
-   11. Next: clear `waitingFor` when a run reaches a terminal status; a cancelled or reverted run still prints "waiting for signal … signal: …" (runshape observation, engine record). Tick 29 reproduced it: in `test/engine.test.ts` "signals are schema-checked…", launch a second `gate`, wait for `waiting_signal`, `f.request({action:"cancel"})`, `f.wait`; `waitingFor` stays set. Clearing it in `Engine.mutate` for terminal statuses AND in the runTask `abort` commit (engine/index.ts ~548) did NOT fix it. Find what writes or serves `waitingFor` after abort (the signal loop in execution.ts:364-384, or the record view) before patching.
+   11. ✅ Done in tick 30: the runTask `abort` commit and the `execute` failure commit delete `waitingFor` (engine/index.ts); test in "signals are schema-checked…". Was: clear `waitingFor` when a run reaches a terminal status; a cancelled or reverted run still prints "waiting for signal … signal: …" (runshape observation, engine record). Tick 29 reproduced it: in `test/engine.test.ts` "signals are schema-checked…", launch a second `gate`, wait for `waiting_signal`, `f.request({action:"cancel"})`, `f.wait`; `waitingFor` stays set. Clearing it in `Engine.mutate` for terminal statuses AND in the runTask `abort` commit (engine/index.ts ~548) did NOT fix it. Find what writes or serves `waitingFor` after abort (the signal loop in execution.ts:364-384, or the record view) before patching.
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
 2. Workflow files are source (D2): ✅ done. Bot workflows tracked and ignore rules removed (tick 2); guide, tool description, `init` output and README state the policy (tick 5). Possible follow-up: `validate`/`catalog` warn on git-ignored workflow files (item 4).
@@ -66,6 +66,8 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 - Tick 2: test copied workflows via local CLI `validate`, not a live launch: historical prompts target the main checkout. A short isolated `--home` works; a socket path beyond Unix limits returns an opaque `EINVAL` before creating the home.
 - Supervisor, after tick 3: in Pi 1.4.0, boolean extension flags such as `--no-memory` and `--recap-disable` swallow the next positional argument, so `pi -p --no-memory "message"` runs with no message and prints nothing. Put the message after a non-boolean flag or `--`. From tick 4 on, ticks stream Pi JSON events to brain/logs/tick-<N>.jsonl with a readable tick-<N>.log; the user asked for live awareness of each tick, and this keeps fresh-context ticks instead of an interactive pane.
+- Tick 5: small text-only guidance changes are faster done directly than delegated; spawning costs a minute plus a review tick.
+- Tick 30: a fix that "did not work" may have been tested together with a second, wrong change; retest the simplest candidate alone against the reproducer before abandoning it.
 - Tick 19: `bin/workflow.mjs` runs the git-ignored `dist/`, not `src/`. Run `npm run build` before checking a change with the local CLI, or the check exercises stale code.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
@@ -75,12 +77,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 None.
 
 ## Log
-
-### Tick 5 · 11:10 · State the workflow-source policy where agents look (D2)
-- Action: finished D2 myself instead of spawning: four one-sentence edits fit a four-minute tick and no subagent was running. Added "workflow files are project source: commit them, never add them to .gitignore" to `src/guide.ts:53`, the tool description `src/extension.ts:19`, `workflow init` output `src/cli.ts` (init case) and README.md (resolution paragraph, line 113).
-- Outcome: `npm run check` passes; `npm test` **35 tests, 33 pass, 2 fail**, the same two baseline failures (catalog home leak, Nix lock). Local CLI verified: `init demo --cwd /tmp/brain-t5` prints the new `Commit it:` line after `Next:`, and `guide` prints the policy in section 1. Existing `test/unit.test.ts:120` regex still matches the init output.
-- Value: ✅ yielded value: user decision D2 is fully implemented on brain/orchestration.
-- Lesson: small text-only guidance changes are faster done directly than delegated; spawning costs a minute plus a review tick.
 
 ### Tick 6 · 11:16 · Isolate fixture catalogs from the user's home
 - Action: fixed baseline failure 1 instead of spawning, because a one-line fix leaves exactly one known red test, so any future red is a regression signal. The in-process worker resolves user workflows through `agentDirectory()` (`src/paths.ts:5`), so the user's `~/.pi/agent/workflows/resolve-bot-main.ts` leaked into catalog fixtures. `fixture()` in `test/helpers.ts` now points `PI_CODING_AGENT_DIR` at its own temp root.
@@ -232,3 +228,9 @@ None.
 - Outcome: the test reproduced the bug (`waitingFor` still `{key:"approve",…}` after cancel); both fixes left it failing, **38 tests, 37 pass, 1 fail** (the new assertion). Out of time, so I restored the source and the test from HEAD rather than commit a red suite; code is unchanged from 7435e3a (38/38). The reproducer and the two dead ends are in Backlog 0.11.
 - Value: ⚠️ partial: the bug is confirmed with a reproducer and two wrong fixes are ruled out; nothing shipped.
 - Lesson: trace where a field is written before patching; I patched two plausible writers without reading the signal loop and ran out of time. A hook blocks `git checkout -- <file>` and heredocs containing words like "delete"; restore files with `git show HEAD:<path>` and edit the ledger with the edit tool.
+
+### Tick 30 · 13:19 · Terminal runs no longer show waitingFor
+- Action: retook Backlog 0.11 with tick 29's reproducer, because it was the only open ranked item and the bug was confirmed. Rewrote the test (second `gate` after the list assertions, cancel while `waiting_signal`, assert no `waitingFor`), then tried tick 29's abort-commit fix alone.
+- Outcome: `delete run.waitingFor` in the runTask `abort` commit (engine/index.ts ~545) fixes it; without it the test fails (checked both ways). Also cleared it in the `execute` failure commit, so a `signal_timeout` run does not keep it. `npm run check` clean; `npm test` **38/38**. Tick 29's failure came from testing it together with the `Engine.mutate` change, not from the abort fix itself.
+- Value: ✅ yielded value: a cancelled or failed run no longer prints "waiting for signal … signal: …".
+- Lesson: retest the simplest candidate fix alone before ruling it out. Next: a second axeval round to measure the ten fixes (spawn), since Backlog 0 is now empty.

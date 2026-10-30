@@ -270,6 +270,7 @@ export class Engine {
         const current = storedRun((await tx.doc(RunStore)).runs[runId]);
         current.status = "failed";
         current.endedAt = runtime.now();
+        delete current.waitingFor;
         current.error = { reason: failure.code, message: failure.message, ...(failure.stepKey ? { stepKey: failure.stepKey } : {}) };
         for (const step of current.steps) {
           if (step.status === "pending") step.status = "skipped";
@@ -543,6 +544,7 @@ export async function openEngine(storage: Storage, models: Models, options: Engi
         const run = storedRun((await tx.doc(RunStore)).runs[task.input.runId]);
         run.status = "cancelled";
         run.endedAt = runtime.now();
+        delete run.waitingFor;
         for (const step of run.steps) if (["pending", "running"].includes(step.status)) step.status = "cancelled";
         return { status: "terminal", outcome: { status: "aborted" } };
       }, ctx);

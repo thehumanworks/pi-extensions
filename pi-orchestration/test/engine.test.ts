@@ -143,6 +143,12 @@ test("signals are schema-checked and children charge their parent", async () => 
     const all = await f.request<RunRecord[]>({ action: "list", filter: { all: true } });
     assert.deepEqual(roots.map(run => run.id), [runId]);
     assert.equal(all.length, 2);
+    const gated = await f.launch("gate");
+    await f.wait(gated, run => run.status === "waiting_signal");
+    await f.request({ action: "cancel", runId: gated });
+    const cancelled = await f.wait(gated);
+    assert.equal(cancelled.status, "cancelled");
+    assert.equal(cancelled.waitingFor, undefined, "a terminal run is not waiting for a signal");
   } finally { await f.close(); }
 });
 
