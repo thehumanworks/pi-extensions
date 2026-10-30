@@ -106,6 +106,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
+- Ticks 22-29: check each documented exit code against a test; try each changed command once against a fresh home; handle errno at the command that knows the context; delegate an item deferred three times; share one constant between lint and run-time checks; rerun the suite after every merge; trace where a field is written before patching. A hook blocks `git checkout -- <file>` and heredocs with delete-like words: restore with `git show HEAD:<path>`, edit the ledger with the edit tool.
 - Ticks 18-21: in a four-minute tick, ship the edit with the suite green and log the missing test as the next step; `npm test` prints `ℹ tests N`, so grep `^ℹ (tests|pass|fail)` for counts.
 - Tick 16: a four-minute tick fits one ranked fix when the report already names file:line.
 - Tick 15: TypeBox's `IsSchema` is a weak structural check; use the kind-specific guard (`IsObject`) where the contract needs one shape.
