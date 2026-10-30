@@ -1,0 +1,99 @@
+{
+  "name": "@nothumanwork/pi-create-document",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Create and convert PDF, Word, PowerPoint, Excel, CSV, HTML, Markdown and PNG documents from Pi, with no system dependencies",
+  "keywords": [
+    "pi-package",
+    "pdf",
+    "docx",
+    "pptx",
+    "xlsx",
+    "mermaid",
+    "documents"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-create-document"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./pi": "./index.ts"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "check": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@expo-google-fonts/noto-emoji": "0.4.8",
+    "@expo-google-fonts/noto-sans-math": "0.4.2",
+    "@expo-google-fonts/noto-sans-symbols-2": "0.4.1",
+    "@expo-google-fonts/roboto-mono": "0.4.2",
+    "@napi-rs/canvas": "1.1.0",
+    "@resvg/resvg-js": "2.6.2",
+    "@xmldom/xmldom": "0.9.12",
+    "beautiful-mermaid": "1.1.3",
+    "docx": "9.15.0",
+    "exceljs": "4.4.0",
+    "fontkit": "2.0.4",
+    "hast-util-from-html": "2.0.3",
+    "hast-util-to-html": "9.0.6",
+    "hast-util-to-mdast": "10.1.2",
+    "jszip": "3.10.2",
+    "mammoth": "1.13.0",
+    "mdast-util-from-markdown": "2.1.0",
+    "mdast-util-frontmatter": "2.0.1",
+    "mdast-util-gfm": "3.1.0",
+    "mdast-util-to-hast": "13.2.1",
+    "mdast-util-to-markdown": "2.2.1",
+    "mdast-util-to-string": "4.0.0",
+    "micromark-extension-frontmatter": "2.0.0",
+    "micromark-extension-gfm": "3.0.0",
+    "pdfjs-dist": "6.4.299",
+    "pdfmake": "0.3.13",
+    "pptxgenjs": "4.0.1",
+    "word-extractor": "1.0.4",
+    "yaml": "2.9.1"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-tui": "1.4.0",
+    "@types/fontkit": "2.0.9",
+    "@types/hast": "3.0.5",
+    "@types/mdast": "4.0.4",
+    "@types/node": "^22.19.0",
+    "@types/pdfmake": "0.3.3",
+    "@types/word-extractor": "1.0.6",
+    "tsx": "^4.20.0",
+    "typebox": "1.3.27",
+    "typescript": "^5.9.3"
+  }
+}

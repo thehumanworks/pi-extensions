@@ -24,6 +24,7 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | `@nothumanwork/pi-bot` | [pi-bot](pi-bot/README.md) |
 | `@nothumanwork/pi-canary` | [pi-canary](pi-canary/README.md) |
 | `@nothumanwork/pi-fast` | [pi-fast](pi-fast/README.md) |
+| `@nothumanwork/pi-loggly` | [pi-loggly](pi-loggly/README.md) — Loggly log tools, health dashboard and status line |
 | `@nothumanwork/pi-loop` | [pi-loop](pi-loop/README.md) |
 | `@nothumanwork/pi-memory` | [pi-memory](pi-memory/README.md) |
 | `@nothumanwork/pi-orchestration` | [pi-orchestration](pi-orchestration/README.md) |

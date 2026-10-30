@@ -1,0 +1,60 @@
+{
+  "name": "@nothumanwork/pi-loggly",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Loggly log search, error-pattern analysis, a health dashboard and a status line for Pi, with a typed Loggly SDK",
+  "keywords": [
+    "pi-package",
+    "loggly",
+    "logs",
+    "observability"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-loggly"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    "./sdk": {
+      "types": "./dist/src/sdk/index.d.ts",
+      "default": "./dist/src/sdk/index.js"
+    },
+    "./pi": "./index.ts"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "check": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-tui": "1.4.0",
+    "@types/node": "^22.19.0",
+    "tsx": "^4.20.0",
+    "typebox": "1.3.27",
+    "typescript": "^5.9.3"
+  }
+}
