@@ -24,7 +24,8 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `axeval2` (tick 31): second agent-experience evaluation, repeating axeval's four scenarios against 3fb3137 to measure the ten fixes and rank the next ones; report goes to `brain/axeval2.md`, no src/ changes. Worktree `.pi/worktrees/brain-axeval2`, herdr w6:p1.
+- None running.
+- `axeval2` merged at `6ed16ed` and retired in tick 35; its report is `brain/axeval2.md` (ranked fixes drive Backlog item 00).
 - `runshape` merged at `237e912` and retired in tick 28.
 - `axeval` merged at `050a209` and retired in tick 11; its report is `brain/axeval.md` (ranked fixes drive Backlog item 0).
 - `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
@@ -32,6 +33,17 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 ## Backlog
 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
+
+00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
+   2. Attached `run` stops on `waiting_signal` (prints `statusText` + poll hint, exit 0; `--json` emits the brief view) and prints only changes (cli.ts:241-251). Top item: the guide's default shell command hangs on a gate.
+   3. One `waitingLines(run, hints)` helper for presentation.ts:71-72, :134-137 and cli.ts:173-177.
+   4. Surface-neutral `result_not_ready` (engine/index.ts:500); CLI appends poll, tool appends status (extension.ts:394); tool signal reply of its own.
+   6. Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
+   7. Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
+   8. `@sinclair/typebox` load error hints `typebox`; drop `Require stack:` (loader.ts:68).
+   9. Exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` hint keeps `--home` (cli.ts:189-192).
+   10. Guide says why it uses the full command (link.ts:25-29, guide.ts:46).
+   Unranked: no-model warning on agent-less workflows, `Approval 0/0`, `1 agents`, unrounded costUsd, tool errors with `details: {}`.
 
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
@@ -44,7 +56,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    8. ✅ Done in tick 28 (merged `runshape`, `237e912`): model stored as `"provider/modelId"`; CLI `--json` for status/poll/run/cancel/retry/revert prints the tool's brief view, list the list view (`src/presentation.ts` `runHead`); only `status --verbose`/`watch` print the full record with `id`.
    9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Tick 24: `worker status|stop` with no worker fail `worker_unavailable` (exit 4) naming `worker start`, tested. Tick 25: process test asserts the `agents` and `worker status` text.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
-   12. In progress (tick 31): `axeval2` measures fixes 1-11 and ranks the next ones. Its report should reorder this backlog.
+   12. ✅ Done in tick 35: `axeval2` measured fixes 1-11 (merged `6ed16ed`); its list is item 00.
    11. ✅ Done in tick 30: the runTask `abort` commit and the `execute` failure commit delete `waitingFor` (engine/index.ts); test in "signals are schema-checked…". Was: clear `waitingFor` when a run reaches a terminal status; a cancelled or reverted run still prints "waiting for signal … signal: …" (runshape observation, engine record). Tick 29 reproduced it: in `test/engine.test.ts` "signals are schema-checked…", launch a second `gate`, wait for `waiting_signal`, `f.request({action:"cancel"})`, `f.wait`; `waitingFor` stays set. Clearing it in `Engine.mutate` for terminal statuses AND in the runTask `abort` commit (engine/index.ts ~548) did NOT fix it. Find what writes or serves `waitingFor` after abort (the signal loop in execution.ts:364-384, or the record view) before patching.
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
@@ -77,29 +89,13 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
+- Ticks 8-10: read the surface's own help before adding a backlog item; act on a subagent's concrete partial findings outside its write scope without waiting for the final report.
+
 ## Questions for the user
 
 None.
 
 ## Log
-
-### Tick 8 · 11:30 · Spawn the agent-experience evaluation
-- Action: spawned `axeval` to run 4 scenarios as a fresh agent (CLI author-validate-run-poll-result, broken-workflow errors, signal discovery from status, the Pi tool headless) and rank fixes by wrong turns. Chosen over another small fix because the backlog's remaining items are guesses; an evaluation turns them into evidence, and it is too long for one tick.
-- Outcome: `loop.sh spawn` took 44 seconds; task committed as `303a9c1` on `brain/axeval`, Herdr w4:p1 confirmed `agent_status=working`. Found while writing the brief: `workflow --help` already documents exit codes, so that backlog item shrinks to a parity check. No code changed; tests not rerun (36/36 at aeb0bc2).
-- Value: ✅ yielded value: the next code changes will be chosen from observed wrong turns, not guesses.
-- Lesson: read the surface's own help before adding a backlog item; one listed gap was already closed.
-
-### Tick 9 · 11:34 · Next-step hints keep --home
-- Action: fixed the first wrong turn `axeval` logged in scenario 1 (its ledger): hints printed after `run --bg`, detach, `init`, `watch`/`status --verbose` trees and the foreground run dropped `--home`, so a copied `workflow poll <id>` hit the default worker and returned `not_found`. Chosen over waiting for the full report because it is observed, small and independent of axeval's remaining scenarios (axeval changes no src/). `src/cli.ts:184-207` builds a `hint` prefix (`workflow --home DIR`, shell-quoted when needed) used at every hint site; usage and help text keep the bare program.
-- Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (new test in `test/unit.test.ts` covers quoted, plain and absent `--home`). Committed `4eb0dc1`; axeval was told via herdr prompt (still `working`) to list it as fixed.
-- Value: ✅ yielded value: an agent with an isolated home can now copy-paste every next step.
-- Lesson: act on a subagent's partial findings when they are concrete and outside its write scope; no need to wait for the final report.
-
-### Tick 10 · 11:39 · Status and poll say what to do next
-- Action: fixed axeval's scenario 3 and part of its scenario 1 and 2 findings in one helper. The plain `status` and `poll` text was only `runSummary`, so a run in `waiting_signal` gave no key, a failed run gave no error message, and a completed run did not say how to read the result. Chosen over waiting for the final report because it is observed, small and outside axeval's write scope. `statusText` (`src/cli.ts`, before `errorInfo`) adds `reason: message`, `waiting for signal "key": prompt` plus a copyable `signal: <hint> signal <id> "key" '<json>'`, and `result: <hint> result <id>`; `poll` (non-watch) and `status` (non-verbose) use it. JSON output is unchanged.
-- Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (`test/unit.test.ts` "summaries name the model…" now covers the result, signal and error lines). Committed `9b8f46a`, pushed.
-- Value: ✅ yielded value: an agent can now answer a signal or read a failure from plain `status` without knowing about `--verbose` or `--json`.
-- Lesson: act on concrete partial findings before the full report; one helper fixed three wrong turns in two scenarios.
 
 ### Tick 11 · 11:44 · Merge the axeval evaluation
 - Action: reviewed and merged `brain/axeval`, done since the last tick, because its ranked fix list is the evidence the backlog was waiting for; a code fix first would have guessed at priorities the report already settles.
@@ -247,3 +243,9 @@ None.
 - Value: ✅ yielded value: the tool schema now shows the model that `value` is a JSON value, which removed the scenario's wrong turns in the experiment.
 - Follow-up in the same tick: `runTree` (`src/presentation.ts:137`) prints `Expects: <schema>` under `deliver with:`, so verbose `status` (tool and CLI) and `watch` show the signal schema (axeval2 S3 a, D-x2's one error). `test/unit.test.ts:106` asserts it; **38/38**.
 - Lesson: let an evaluation subagent run a reverted experiment; it turns a guess into a measured one-line fix. Next: attached `run` stops at a signal wait and prints only changes (cli.ts:241-247), then merge axeval2 when done.
+
+### Tick 35 · 13:45 · Merge the axeval2 evaluation
+- Action: reviewed and merged `brain/axeval2`, done since tick 34, because a finished docs-only branch blocks nothing and its ranked list replaces guesses for the next ticks. Diff: `brain/axeval2.md` +214, `ledgers/axeval2.md` +32; its worktree was clean.
+- Outcome: merge `6ed16ed`, pushed; `loop.sh retire axeval2` succeeded. Tests not rerun: no source changed (axeval2 reported 38/38; 38/38 at 341efca). Round two: S1 0 wrong turns (was 5), S2 4 (was 8), S3 0 (was 7), S4 A/B/C 0/0/0 (was 11/5/0), D 13 (was 11, fixed by tick 34's typed `value` in a measured experiment: 4 calls/0 errors). Open ranked fixes moved to Backlog 00.
+- Value: ✅ yielded value: round one's fixes are measured as working, and the next eight are ranked with file:line.
+- Lesson: an evaluation round after a batch of fixes is worth its cost; it confirmed 7 of 10 fixes held fully and found the one remaining hang (attached `run` on a signal). Next: Backlog 00.2, attached `run` stops on a signal wait (cli.ts:241-251).
