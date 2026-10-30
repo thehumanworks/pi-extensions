@@ -283,3 +283,9 @@ None.
 - Outcome: `test/process.test.ts:60` asserts the CLI text on a home with no runs; `npm test` **41/41**. Commit `ad724c3`. The Nix smoke test reads only `list --all` JSON. Not tested: the tool-side text (the `harness()` fake always returns runs).
 - Value: ✅ yielded value: the run/workflow naming confusion now resolves in one step.
 - Lesson: when a noun is ambiguous (list = runs), make the empty case name the other command. Next: a tool-path test for the empty list, then axeval3's report.
+
+### Tick 51 · 15:09 · Pi widget pluralises agents and runs
+- Action: took axeval3's side finding (ledger 16:45): the Pi TUI widget (`widgetLine`, `src/extension.ts:36`) still printed `1 agents` and `+1 runs`, which tick 45 fixed only in `runSummary`. Chosen over the empty-list tool test and axeval3's unprompted-approval experiment (c), which should wait for its report. `widgetLine` is now exported and pluralises both.
+- Outcome: `test/extension.test.ts` "widget line pluralises agents and other runs" asserts `· 1 agent · $0.0000 · +1 run` and `· 0 agents · … · +2 runs`. First `npm test` run: **42 tests, 40 pass, 2 fail** (failures not captured); the second and third runs **42/42**. Commit `9ec61ad`. The 2 failures look like a flake; not investigated.
+- Value: ✅ yielded value: small; no surface prints `1 agents` now.
+- Lesson: capture failing test names on the first run (`npm test > file`), a flake cannot be named afterwards. Next: watch for the flake; axeval3's report (experiment (c), a `toolHints.signal` line telling agents to ask before approving, measured 2/3).
