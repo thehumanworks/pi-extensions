@@ -86,6 +86,8 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
       const callName = name(callee);
       if (member(callee, "Date", "now") || callName === "Date") report(value, "Date.now()/Date()");
       if (member(callee, "Math", "random")) report(value, "Math.random()");
+      if (member(callee, "performance", "now")) report(value, "performance.now()");
+      if (callName === "randomUUID" || member(callee, "crypto", "randomUUID") || member(callee, "crypto", "getRandomValues")) report(value, "crypto.randomUUID()/getRandomValues()");
       if (timerAliases.has(callName ?? "") || (node(callee) && timerNamespaces.has(name(callee.object) ?? "") && timerNames.includes(name(callee.property) ?? ""))) report(value, "Timer call");
       const io = dotted(callee);
       if (io === "fetch" || io === "globalThis.fetch" || ioNames.has(io?.split(".")[0] ?? "")) {
