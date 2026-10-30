@@ -36,7 +36,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
-   3. ✅ Done in tick 44 (a549d14): one `waitingLines(run, hints)` in presentation.ts used by runBrief, runTree and cli.ts statusText (`Waiting for signal "k": prompt`, `Expects:`, `Deliver with:`); the tool brief now names the `{"action":"signal",…}` call. Open: no test asserts the tool brief's deliver hint (add via `harness()` in test/extension.test.ts).
+   3. ✅ Done in tick 44 (a549d14): one `waitingLines(run, hints)` in presentation.ts used by runBrief, runTree and cli.ts statusText (`Waiting for signal "k": prompt`, `Expects:`, `Deliver with:`); the tool brief now names the `{"action":"signal",…}` call, asserted in test/extension.test.ts (tick 44).
    4. ✅ Done in ticks 37-38 (8fce02c, b47be74, 895d71b): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}` (tested); tool `signal` replies `Signal "k" accepted. Check the run with {"action":"status",…}.` (tested).
    6. In progress (`validate1`, tick 42). Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
    7. In progress (`validate1`, tick 42). Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
@@ -263,6 +263,6 @@ None.
 
 ### Tick 44 · 14:35 · Commit the waitingLines helper
 - Action: finished tick 43's uncommitted Backlog 00.3 work first, as the rules require, instead of discarding it: the diff was small (4 files, +20/-18) and `tsc` had passed.
-- Outcome: `npm test` **38/38** (under 30 s this time), including the process gate test (`then: … poll`) and the updated unit regexes. Committed `a549d14`. Not done: an assertion for the tool brief's new deliver hint, and the old-source check for it.
+- Outcome: `npm test` **38/38** (under 30 s this time), including the process gate test (`then: … poll`) and the updated unit regexes. Committed `a549d14`. Then added the missing assertion: the `harness()` fake gives `waiting_signal` records a `waitingFor`, and the brief-status test asserts the tool brief prints `Deliver with: {"action":"signal","runId":"run-gate","key":"go",…`. Against the old briefResult the extension tests are 8/9; with it, `npm test` **38/38**.
 - Value: ✅ yielded value: all three waiting-signal renderers share one casing, and a tool agent reading the brief status sees the signal call without asking for `verbose`.
-- Lesson: a killed tick's diff with a passing typecheck is worth one `npm test` before deciding; it took seconds. Next: test the tool brief deliver hint via `harness()`, then check validate1.
+- Lesson: a killed tick's diff with a passing typecheck is worth one `npm test` before deciding; it took seconds. Next: check validate1; otherwise the unranked items under 00 (`1 agents`, unrounded costUsd).

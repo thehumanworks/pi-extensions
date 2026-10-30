@@ -17,6 +17,7 @@ function runRecord(id: string, status: RunStatus): RunRecord {
     id, status, workflow: { name: "flow", path: "/w/flow.ts", hash: "h" }, args: {}, cwd: "/w", model: "faux/faux-1", createdAt: 1, attempt: 1,
     phases: [], steps: [], usage: { inputTokens: 0, outputTokens: 0, costUsd: 0, agents: 0 }, origin: { kind: "cli" },
     depth: 0, children: [], ...(status === "completed" ? { result: "done", endedAt: 2 } : {}),
+    ...(status === "waiting_signal" ? { waitingFor: { key: "go" } } : {}),
   };
 }
 
@@ -201,7 +202,7 @@ test("the tool explains every action and an empty catalog teaches authoring", as
 });
 
 test("reading a finished run's outcome replaces the completion turn, and status stays brief", async () => {
-  const h = harness({ "run-1": ["running"], "run-2": ["completed"] });
+  const h = harness({ "run-1": ["running"], "run-2": ["completed"], "run-gate": ["waiting_signal"] });
   const ctx = { ...h.context(), model: undefined } as ExtensionContext;
   await h.handlers.get("session_start")!({}, ctx);
   const tool = h.tools.get("workflow")!;
@@ -225,6 +226,8 @@ test("reading a finished run's outcome replaces the completion turn, and status 
     (error: Error) => error.message === 'result_not_ready: Run run-gate is waiting for signal "go"; deliver it, then read the result. Check it with {"action":"status","runId":"run-gate"}.');
   const signalled = await tool.execute("call-6", { action: "signal", runId: "run-gate", key: "go", value: { ok: true } }, undefined, undefined, ctx) as ToolReply;
   assert.equal(signalled.content[0].text, 'Signal "go" accepted. Check the run with {"action":"status","runId":"run-gate"}.');
+  const gate = await tool.execute("call-7", { action: "status", runId: "run-gate" }, undefined, undefined, ctx) as ToolReply;
+  assert.match(gate.content[0].text, /Deliver with: \{"action":"signal","runId":"run-gate","key":"go"/);
   await assert.rejects(tool.execute("call-7", { action: "status", runId: "nope" }, undefined, undefined, ctx),
     (error: Error) => error.message === 'not_found: Unknown workflow run nope. List runs with {"action":"list"}.');
   await h.handlers.get("session_shutdown")!({}, ctx);
