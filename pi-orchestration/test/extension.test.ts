@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { WorkflowClient } from "../src/cli.ts";
+import { WorkflowError } from "../src/errors.ts";
 import { registerOrchestration } from "../src/extension.ts";
 import { BIN_PATH, README_PATH } from "../src/guide.ts";
 import type { RunRecord, RunStatus } from "../src/index.ts";
@@ -44,6 +45,7 @@ function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv =
         const queue = statuses[request.runId] ?? ["completed"];
         return runRecord(request.runId, queue.length > 1 ? queue.shift()! : queue[0]);
       }
+      if (request.action === "result" && request.runId === "run-gate") throw new WorkflowError("result_not_ready", 'Run run-gate is waiting for signal "go"; deliver it, then read the result.');
       // The run finishes just as the agent asks for its result.
       if (request.action === "result") { statuses[request.runId] = ["completed"]; return "done"; }
       if (request.action === "catalog") return [];
@@ -217,6 +219,8 @@ test("reading a finished run's outcome replaces the completion turn, and status 
   const verbose = await tool.execute("call-4", { action: "status", runId: "run-2", verbose: true }, undefined, undefined, ctx) as ToolReply;
   assert.ok(Array.isArray(verbose.details.steps));
   assert.match(verbose.content[0].text, /\n\nResult:\ndone$/);
+  await assert.rejects(tool.execute("call-5", { action: "result", runId: "run-gate" }, undefined, undefined, ctx),
+    (error: Error) => error.message === 'result_not_ready: Run run-gate is waiting for signal "go"; deliver it, then read the result. Check it with {"action":"status","runId":"run-gate"}.');
   await h.handlers.get("session_shutdown")!({}, ctx);
 });
 
