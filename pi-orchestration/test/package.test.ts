@@ -9,21 +9,23 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
-/** npm installs may be package-local or hoisted to any enclosing workspace. */
-async function installedNodeModules(root: string): Promise<string> {
+/** Ignore partial package-local installs when the complete dependency set is hoisted. */
+async function installedNodeModules(root: string, required: string[]): Promise<string> {
   for (let directory = root; ; directory = dirname(directory)) {
     const candidate = join(directory, "node_modules");
     try {
-      if ((await stat(candidate)).isDirectory()) return candidate;
+      if ((await stat(candidate)).isDirectory() && (await Promise.all(required.map(name =>
+        access(join(candidate, name, "package.json")).then(() => true, () => false)
+      ))).every(Boolean)) return candidate;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
     if (dirname(directory) === directory) break;
   }
-  throw new Error(`No installed node_modules found at or above ${root}; install the package's dependencies before testing prepack.`);
+  throw new Error(`No complete node_modules found at or above ${root}; install the package's dependencies before testing prepack.`);
 }
 
-test("package fixtures select an existing local or hoisted dependency directory", async () => {
+test("package fixtures select a complete local or hoisted dependency directory", async () => {
   const root = await mkdtemp(join(tmpdir(), "pi-package-layout-"));
   try {
     const project = join(root, "packages", "orchestration");
@@ -32,11 +34,20 @@ test("package fixtures select an existing local or hoisted dependency directory"
     await mkdir(project, { recursive: true });
     // A dangling symlink must not be selected merely because symlink() accepts it.
     await symlink(join(root, "missing"), local, "junction");
-    await mkdir(hoisted);
-    assert.equal(await installedNodeModules(project), hoisted);
+    const required = ["jiti", "@types/node"];
+    const install = async (directory: string, name: string) => {
+      await mkdir(join(directory, name), { recursive: true });
+      await writeFile(join(directory, name, "package.json"), "{}");
+    };
+    for (const name of required) await install(hoisted, name);
+    assert.equal(await installedNodeModules(project, required), hoisted);
     await rm(local);
-    await mkdir(local);
-    assert.equal(await installedNodeModules(project), local);
+    await install(local, "jiti");
+    // A workspace-local jiti exists here too, but @types/node is hoisted.
+    assert.equal(await installedNodeModules(project, required), hoisted);
+    await install(local, "@types/node");
+    assert.equal(await installedNodeModules(project, required), local);
+    await assert.rejects(installedNodeModules(project, ["missing"]), /No complete node_modules/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -49,7 +60,9 @@ test("prepack builds a source-only checkout with usable compiled entry points", 
     for (const path of ["package.json", "tsconfig.json", "tsconfig.build.json", "index.ts", "src", "bin", "examples", "README.md"]) {
       await cp(join(packageRoot, path), join(directory, path), { recursive: true });
     }
-    await symlink(await installedNodeModules(packageRoot), join(directory, "node_modules"), "junction");
+    const manifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
+    const required = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies, ...manifest.peerDependencies });
+    await symlink(await installedNodeModules(packageRoot, required), join(directory, "node_modules"), "junction");
     execFileSync(npm, ["run", "check"], {
       cwd: directory, encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "pipe"],
     });

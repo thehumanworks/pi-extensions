@@ -24,15 +24,15 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `approval`: working (spawned tick 1), branch `brain/approval`, worktree `/home/nixos/pi-extensions/.pi/worktrees/brain-approval`, ledger `pi-orchestration/ledgers/approval.md`. Owns D1 gate removal across CLI/extension/docs/tests and obsolete loop environment/rules. Verified Herdr `agent_status=working` at 10:52. Review and test before merging.
+- `approval`: done, awaiting review (spawned tick 1), branch `brain/approval` at `53b421f`, worktree `/home/nixos/pi-extensions/.pi/worktrees/brain-approval`, ledger `pi-orchestration/ledgers/approval.md`. D1 implementation/docs/tests finished; reports 32/35 passing with only the original baseline failures, plus 32/32 focused tests with an isolated agent directory. Loop environment intentionally unchanged (D8). Review diff, rerun tests and merge next tick.
 
 ## Backlog
 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
-1. D1 approval-gate removal: delegated to `approval` in tick 1. Await implementation, then review diff, run `npm test` in its worktree and merge only if no worse than baseline. Retain `not_from_root` on all launch paths; do not confuse business `ctx.signal()` approval examples with the removed launch policy.
+1. D1 approval-gate removal: `approval` finished during tick 3. Next: review diff, run `npm test` in its worktree and merge only if no worse than the original baseline (its branch does not yet have tick 3's package fixture fix). Retain `not_from_root` on all launch paths; do not confuse business `ctx.signal()` approval examples with the removed launch policy. After publication, remove the obsolete loop environment workaround (D8).
 2. Workflow files are source (D2): ✅ bot workflows now tracked and ignore rules removed (tick 2). Remaining: guide, tool description, `init` output and README; coordinate these edits with `approval`.
-3. Fix the 3 baseline failures so a red test means a regression.
+3. Fix baseline failures so a red test means a regression. ✅ Package source-only fixture fixed in tick 3: current brain result is 36/38 passing. Remaining: isolate catalog from the user's home; refresh standalone Nix lock metadata and its dependency hash without bumping package versions.
 4. Unexplored directions for the goal:
    - One output contract: the tool and the CLI return the same JSON shapes, and every CLI command supports `--json`.
    - Errors name the next command to run; error codes are stable and documented.
@@ -49,6 +49,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 1: `loop.sh spawn` completed in 43 seconds (30 seconds installing dependencies). Verify Herdr `agent_status=working` after submission, not merely a successful prompt write. Keep delegated scope explicit so the brain can work on adjacent priorities without overlapping files.
 
 - Tick 2: test copied workflows via local CLI `validate`, not a live launch: historical prompts target the main checkout. A short isolated `--home` works; a socket path beyond Unix limits returns an opaque `EINVAL` before creating the home.
+- Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
 ## Questions for the user
 
@@ -73,3 +74,9 @@ None.
 - Outcome: committed and pushed `42887ba`. `native-web.ts` and `bot-workspace.ts` are byte-identical to the originals (`cmp`); neither is git-ignored. Local CLI `validate --json` reports both valid with zero diagnostics. `npm test`: 38 tests, 35 pass, the same 3 baseline failures. Long isolated `--home` first reproduced `connect EINVAL`; a shorter home validated both and its worker stopped successfully. Remaining D2 authoring guidance stays in Backlog. Cleanup of untracked `.b2/` (only `runs.sqlite`, `runs.sqlite.owner`, `worker.log`) was refused by the harness's agent-definition deletion guard even with exact filenames; no agents or definitions were involved. Leave it alone unless a safe cleanup path is available.
 - Value: ✅ yielded value — real workflow definitions will now travel with project source instead of silently disappearing from Git.
 - Lesson: split adjacent work by conflict boundaries; validate historical source without executing its old implementation prompts. Capture incidental CLI failures as reproducible backlog items.
+
+### Tick 3 · 11:03 · Repair source-only package verification
+- Action: fixed dependency selection in `test/package.test.ts` while `approval` finished adjacent launch-policy work. The fixture now checks every declared dependency before selecting local or hoisted node_modules; regression assertions cover a dangling local link, a partial local install, a complete local install and no complete install. Existing scratch `.b2/` was not modified by this tick.
+- Outcome: `npm run check` and `git diff --check` passed. `npm test`: **38 tests, 36 pass, 2 fail**, improving the original 35/38 baseline. The source-only copied package now passes its real typecheck, prepack, compiled CLI/guide and loader validation checks. Remaining failures are the original global-catalog leak and stale Nix lock version. `approval` became done at `53b421f` during verification; review/merge is deliberately deferred to the next tick rather than rushed into this action.
+- Value: ✅ yielded value — packaging regressions are now detectable instead of hidden behind a broken workspace fixture.
+- Lesson: dependency directories are not necessarily complete installs; exercise the hoisted-plus-local-override layout explicitly.
