@@ -1,4 +1,4 @@
-Status: working — baseline 38/38, built dist; starting scenario 1
+Status: working — scenario 1 done (0 wrong turns, was 5); starting scenario 2
 
 # Subagent axeval2
 
@@ -11,3 +11,4 @@ Goal: a second agent-experience evaluation of pi-orchestration, measuring whethe
 ## Log
 
 - 13:30 Baseline at 7635854: `npm run build` ok, `npm test` 38/38. Read brain/axeval.md (round-one scenarios and 10 fixes). Fixes landed in ticks 12–24 and runshape (fix 8). Next: scenario 1 from a clean cwd, fresh-agent mode (help/guide/README/errors only).
+- 13:40 Scenario 1 (/tmp/axb1, home /tmp/axb1/h): help → guide → init pair → rewrite to 2× ctx.parallel tools:[] → validate → catalog → run --bg (haiku-4-5) → poll → status [--verbose|--json] → result [--json] → list [--json] → agents --run → worker status [--json] → poll --json; also attached run, run --bg --json, attached run --json. **0 wrong turns** (round one 5). Held: guide shell lifecycle (fix 10), --home in hints, poll ends with `result:` hint, agents explains ctx.spawn, worker status one line, one JSON shape (runId everywhere, string model, attached --json one doc). New: attached `run` (text) reprints the full step tree every 1 s tick even when only elapsed changed (nap.ts, 6 s sleep → 7 trees); poll and watch print only on change. Spend ~$0.002.
