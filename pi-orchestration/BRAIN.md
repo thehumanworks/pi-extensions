@@ -37,7 +37,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    2. ✅ Done in tick 13: expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
    3. ⚠️ Half done in tick 14: unknown `ctx.agent`/`ctx.spawn` options now fail with `unknown_agent_option` and a did-you-mean (execution.ts `AGENT_OPTIONS`, `resolveOptions`). Remaining: lint unknown `ctx.*` members and unknown options at `validate` time (src/validation.ts), so the author learns before launching.
    4. ✅ Done in tick 15: args must be `Type.Object` (loader.ts:72); plain objects and `Type.String()` fail validate/catalog with the offending value.
-   5. `poll` returns on `waiting_signal` by default; print only changes; help says `--interval 1s` (cli.ts:22, 227-247).
+   5. ✅ Done in tick 16: `poll` returns on `waiting_signal` by default (`--until done` keeps waiting), prints a line only when more than elapsed time changed, help/README say `--interval 1s`. `watch` still defaults to `done`.
    6. Tool-shaped hints in tool results, not CLI commands (extension.ts:358, presentation.ts:110-113).
    7. Tool errors carry a code; fix dead `run_not_found` branch (extension.ts:179, 318).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
@@ -174,4 +174,10 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts` catalog test adds `plainargs` and `stringargs` fixtures and asserts both errors. Not verified live in Pi (D8).
 - Value: ✅ yielded value: a malformed args schema is caught at validate, before an agent runs with unchecked input.
 - Lesson: TypeBox's `IsSchema` is a weak structural check; use the kind-specific guard (`IsObject`) where the contract needs one shape.
+
+### Tick 16 · 12:10 · poll stops at a signal wait and prints only changes
+- Action: took axeval fix 5, next in order and one function. In scenario 3 a plain `workflow poll <id>` on a gate printed the same line every second and never returned, so the agent's bash needed `timeout`. `src/cli.ts` poll now defaults `--until` to `signal` (terminal or `waiting_signal` returns 0 after printing the `signal:` line); `watch` keeps `done`. A line is emitted only when the status text changes apart from duration tokens. Help and README say `[--interval 1s] [--until signal|done]`, matching the real default.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts:97` now polls the waiting run without `--until` and asserts `waiting_signal`; the two post-signal polls pass `--until done` explicitly. Not verified live in Pi (D8; CLI only anyway).
+- Value: ✅ yielded value: `workflow poll` can no longer hang an agent on a gate.
+- Lesson: a four-minute tick fits one axeval fix when the report already names file:line; read the report section, edit, test, commit.
 

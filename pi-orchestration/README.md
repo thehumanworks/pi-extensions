@@ -350,7 +350,7 @@ workflow run <path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR]
   [--model PROVIDER/MODEL[:THINKING]] [--thinking LEVEL] [--bg] [--request-id ID]
   [--max-agents N] [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
 workflow status <runId> [--verbose]
-workflow poll <runId> [--interval 5s] [--until done|signal] [--once]
+workflow poll <runId> [--interval 1s] [--until signal|done] [--once]
 workflow watch <runId> [--interval 1s]
 workflow list [--status running,failed] [--all]
 workflow result|cancel|revert <runId>

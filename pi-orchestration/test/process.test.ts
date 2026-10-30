@@ -59,7 +59,7 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     assert.equal((await s.cli(["poll", runId, "--until", "signal", "--interval", "20ms"])).code, 0);
     assert.equal((await s.cli(["signal", runId, "go", '"yes"'])).code, 1);
     assert.equal((await s.cli(["signal", runId, "go", "true"])).code, 0);
-    const done = await s.cli(["poll", runId, "--interval", "20ms"]);
+    const done = await s.cli(["poll", runId, "--until", "done", "--interval", "20ms"]);
     assert.equal(done.code, 0);
     assert.equal(done.json.result, true);
   } finally { await s.close(); }
@@ -94,10 +94,10 @@ test("a SIGKILLed worker resumes runs without repeating committed steps", { time
     const cancelled = await s.cli(["cancel", doomed.json.runId]);
     assert.equal(cancelled.json.status, "cancelled");
     assert.equal((await s.cli(["poll", doomed.json.runId, "--interval", "20ms"])).code, 3);
-    const waiting = await s.cli(["poll", runId, "--until", "signal", "--interval", "50ms"]);
+    const waiting = await s.cli(["poll", runId, "--interval", "50ms"]);
     assert.equal(waiting.json.status, "waiting_signal");
     assert.equal((await s.cli(["signal", runId, "finish", "null"])).code, 0);
-    const done = await s.cli(["poll", runId, "--interval", "50ms"]);
+    const done = await s.cli(["poll", runId, "--until", "done", "--interval", "50ms"]);
     assert.equal(done.code, 0, done.stderr);
     const run = done.json as RunRecord;
     const result = run.result as { before: number; after: number };

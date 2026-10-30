@@ -19,7 +19,7 @@ ${program} validate <path.ts|name> [--cwd DIR]
 ${program} run <path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR] [--model PROVIDER/MODEL[:THINKING]] [--thinking LEVEL]
   [--bg|--background] [--request-id ID] [--max-agents N] [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
 ${program} status <runId> [--verbose]
-${program} poll <runId> [--interval 5s] [--until done|signal] [--once]
+${program} poll <runId> [--interval 1s] [--until signal|done] [--once]
 ${program} watch <runId> [--interval 1s]
 ${program} list [--status running,failed] [--all]
 ${program} result|cancel <runId>
@@ -226,7 +226,8 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
     const status = (runId: string) => request<RunRecord>({ action: "status", runId, verbose: true });
     const poll = async (runId: string, foreground = false): Promise<number> => {
       const interval = intervalMs(values.interval ?? "1s");
-      const until = values.until ?? "done";
+      const until = values.until ?? (action === "watch" ? "done" : "signal");
+      let last: string | undefined;
       if (until !== "done" && until !== "signal") throw new CliError("--until must be done or signal.");
       try {
         for (;;) {
@@ -242,7 +243,11 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
             }
             if (!jsonMode) warn(runTree(run, Date.now(), hint) + "\n");
           } else {
-            emit(run, action === "watch" ? runTree(run, Date.now(), hint) : statusText(run, hint));
+            const text = action === "watch" ? runTree(run, Date.now(), hint) : statusText(run, hint);
+            // Elapsed time alone is not a change worth a line.
+            const key = text.replace(/\b\d+(?:\.\d+)?(?:ms|s|m|h)\b/g, "");
+            if (key !== last) emit(run, text);
+            last = key;
             if (values.once) return 0;
             if (terminal) return statusExitCode(run.status);
             if (until === "signal" && run.status === "waiting_signal") return 0;
