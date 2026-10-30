@@ -22,7 +22,7 @@ Lessons from building this package with agents. The full record is in `BRAIN.md`
 - `examples/workflows` is the lint's regression suite: a new lint rule must pass every example.
 - Tool-path tests use the fake client in `harness()` (`test/extension.test.ts`): add one branch per action or error code rather than an engine fixture.
 - TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer. Use the kind-specific guard (`IsObject`) where the contract needs one shape, not `IsSchema`.
-- Measure agent experience instead of guessing: give fresh agents a task through only the CLI or only the Pi tool and count wrong turns. `brain/axeval3.md` has the method and the scenarios.
+- Measure agent experience instead of guessing: give fresh agents a task through only the CLI or only the Pi tool and count wrong turns. `brain/axeval3.md` has the method and the results, and `brain/eval/` has the scenario files and session scripts to rerun it.
 
 ## Releasing
 

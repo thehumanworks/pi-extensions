@@ -1,0 +1,24 @@
+diff --git a/pi-orchestration/src/extension.ts b/pi-orchestration/src/extension.ts
+index fc99e79..042e720 100644
+--- a/pi-orchestration/src/extension.ts
++++ b/pi-orchestration/src/extension.ts
+@@ -357,7 +357,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
+                 signal: waitSignal, timeoutMs: Math.max(1, deadline - Date.now()),
+               }) as RunRecord;
+               terminal = TERMINAL_STATUSES.has(last.status);
+-              if (terminal || Date.now() >= deadline) break;
++              if (terminal || last.status === "waiting_signal" || Date.now() >= deadline) break;
+               onUpdate?.(toolResult({ runId: last.id, status: last.status, progress: runSummary(last) }, last.id));
+               await delay(Math.min(pollInterval, Math.max(1, deadline - Date.now())), undefined, { signal: waitSignal });
+             } while (Date.now() < deadline);
+@@ -366,7 +366,9 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
+           } finally { release(terminal); }
+           if (!last) return toolResult(result, launched.runId, `Run ${launched.runId} ${launched.status}. ${model}\n` +
+             "Stopped waiting; the run continues and this session gets a message when it ends.");
+-          return briefResult(last, terminal ? undefined : "Stopped waiting; the run continues and this session gets a message when it ends.");
++          return briefResult(last, terminal ? undefined : last.status === "waiting_signal"
++            ? "The run waits for this signal; deliver it, and this session gets a message when the run ends."
++            : "Stopped waiting; the run continues and this session gets a message when it ends.");
+         }
+         switch (request.action) {
+           case "status": {

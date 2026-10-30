@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec node /home/nixos/pi-extensions/.pi/worktrees/brain-axeval3/pi-orchestration/bin/workflow.mjs "$@"
