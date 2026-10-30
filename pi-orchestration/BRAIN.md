@@ -24,13 +24,25 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `axeval` (spawned tick 8, 11:30; task `303a9c1`, herdr w4:p1): agent-experience evaluation of the CLI and the Pi tool through 4 scenarios; delivers `brain/axeval.md` with wrong turns and a ranked fix list. Evaluation only, no src/ changes.
-  Already fixed, so drop them from its ranked list on merge: "hints drop --home" (tick 9); plain status/poll lacking the signal key, the error message and a `result` hint (tick 10).
+- None running.
+- `axeval` merged at `050a209` and retired in tick 11; its report is `brain/axeval.md` (ranked fixes drive Backlog item 0).
 - `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
 ## Backlog
 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
+
+0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
+   1. Tool `args` typed as object + explain JSON-encoded string args (extension.ts:58, engine/index.ts:300). Sessions A/B never launched.
+   2. Expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
+   3. Reject unknown `ctx.agent` options (`tool` silently granted Read/Write/Edit/Bash) and lint unknown `ctx.*` members (execution.ts:297, validation.ts:50).
+   4. Require args to be `Type.Object` (loader.ts:72).
+   5. `poll` returns on `waiting_signal` by default; print only changes; help says `--interval 1s` (cli.ts:22, 227-247).
+   6. Tool-shaped hints in tool results, not CLI commands (extension.ts:358, presentation.ts:110-113).
+   7. Tool errors carry a code; fix dead `run_not_found` branch (extension.ts:179, 318).
+   8. One run shape across surfaces (`model` form, `id` vs `runId`).
+   9. No pretty JSON in text mode (cancel/retry/signal/agents/worker status); `result` on cancelled exits 3.
+   10. Guide shell lifecycle: `--bg` → `poll` → `result` (guide.ts:63-65).
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
 2. Workflow files are source (D2): ✅ done. Bot workflows tracked and ignore rules removed (tick 2); guide, tool description, `init` output and README state the policy (tick 5). Possible follow-up: `validate`/`catalog` warn on git-ignored workflow files (item 4).
@@ -132,3 +144,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (`test/unit.test.ts` "summaries name the model…" now covers the result, signal and error lines). Committed `9b8f46a`, pushed.
 - Value: ✅ yielded value: an agent can now answer a signal or read a failure from plain `status` without knowing about `--verbose` or `--json`.
 - Lesson: act on concrete partial findings before the full report; one helper fixed three wrong turns in two scenarios.
+
+### Tick 11 · 11:44 · Merge the axeval evaluation
+- Action: reviewed and merged `brain/axeval`, done since the last tick, because its ranked fix list is the evidence the backlog was waiting for; a code fix first would have guessed at priorities the report already settles.
+- Outcome: diff is docs only (`brain/axeval.md` +154, `ledgers/axeval.md` +26). Merge `050a209`, pushed; `npm test` on the merged branch **37/37**. `loop.sh retire axeval` succeeded. The 10 ranked fixes are now Backlog item 0. Biggest finding: the Pi tool's `args`/`value` are `Type.Unknown`, so Haiku sent JSON strings and two of four tool sessions never launched (11 and 5 wrong turns).
+- Value: ✅ yielded value: the next ticks have a measured, ordered fix list with file:line targets.
+- Lesson: an evaluation subagent with a narrow write scope merges cleanly; acting on its partial findings during the run (ticks 9-10) shortened the list it delivered.
