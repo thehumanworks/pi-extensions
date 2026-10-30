@@ -282,6 +282,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 ### Supervisor · 15:50 · Merge worker1, clean up, prepare 0.4.0 on main (user request)
 - Action: the user's 0.3.1 edit in this worktree was a mistake (they published 0.3.1 and 0.3.2 from main); restored it. Reviewed and merged `brain/worker1` (build id in the ping reply, idle worker of another build replaced, busy one kept with a one-line warning on both surfaces); retired it. Stopped 34 orphaned evaluation workers. Rules: subagents stop every worker they start; `retire` stops workers still running from the retired worktree.
-- Outcome: `npm test` 44/44 after the merge. Next: merge into main as 0.4.0 with a refreshed Nix lock.
+- Outcome: `npm test` 44/44 after the merge. Added `AGENTS.md` with the development lessons. Merged into main as 0.4.0 (npm had 0.3.2): Nix lock, `npmDepsHash` and the root lock entry refreshed; `npm test` 44/44, `nix build .#workflow` 44/44 plus the installed smoke, pack 95 files without brain, ledger, test or Nix files. brain/orchestration fast-forwarded to the same commit.
 - Value: ✅
 - Lesson: a stopped loop still needs a reviewer for its last subagent; check for running subagents before stopping.
