@@ -7,7 +7,7 @@ import { ModelRuntime } from "pi-workflow-runtime";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { errorDetails } from "./errors.ts";
 import { assertSocketPath, workflowPaths } from "./paths.ts";
-import { MAX_REQUEST_BYTES, PROTOCOL_VERSION, validateRequest, type ControlResponse } from "./protocol.ts";
+import { MAX_REQUEST_BYTES, PROTOCOL_VERSION, validateRequest, workerBuild, type ControlResponse } from "./protocol.ts";
 import { catalog, validateWorkflow } from "./loader.ts";
 import { openEngine, type EngineOptions } from "./engine/index.ts";
 import { workerSettings } from "./settings.ts";
@@ -15,6 +15,8 @@ import { workerSettings } from "./settings.ts";
 export interface WorkerOptions extends Omit<EngineOptions, "home"> { home?: string; models?: Models }
 /** Returns undefined when another live worker owns this data directory. */
 export async function startWorker(options: WorkerOptions = {}) {
+  // The code this process loaded; a later build changes the file but not what runs here.
+  const build = await workerBuild();
   const paths = workflowPaths(options.home);
   assertSocketPath(paths.socket);
   await mkdir(paths.home, { recursive: true, mode: 0o700 });
@@ -55,7 +57,7 @@ export async function startWorker(options: WorkerOptions = {}) {
             if (stopping) throw new Error("Worker is stopping. Retry after it exits.");
             let data: unknown;
             switch (request.action) {
-              case "ping": data = { version: PROTOCOL_VERSION, pid: process.pid, home: paths.home, uptimeMs: Date.now() - started }; break;
+              case "ping": data = { version: PROTOCOL_VERSION, build, pid: process.pid, home: paths.home, uptimeMs: Date.now() - started }; break;
               case "stop": data = { stopped: true }; break;
               case "catalog": data = await catalog(request.cwd); break;
               case "validate": data = await validateWorkflow(request.workflow, request.cwd); break;
