@@ -181,6 +181,8 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
   const warn = context.stderr ?? (text => process.stderr.write(text));
   const client = context.client ?? defaultClient;
   const program = context.program ?? "workflow";
+  /** The prefix for next-step hints: keeps --home so a copied command reaches the same worker. */
+  let hint = program;
   let jsonMode = argv.includes("--json");
   const emit = (value: unknown, human?: string) => write((jsonMode ? JSON.stringify(value ?? null) : human ?? json(value)) + "\n");
   try {
@@ -202,6 +204,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
     if (values.help || !action || action === "help") { const text = help(program); emit({ help: text }, text); return 0; }
     const cwd = resolve(context.cwd ?? process.cwd(), values.cwd ?? ".");
     const home = values.home ? resolve(context.cwd ?? process.cwd(), values.home) : undefined;
+    if (home) hint = `${program} --home ${/^[\w@%+=:,./-]+$/.test(home) ? home : `'${home.replaceAll("'", `'\\''`)}'`}`;
     const options: ClientOptions = { home, signal: context.signal };
     const request = <T = unknown>(value: ControlRequest) => client.request(value, options) as Promise<T>;
     const count = (n: number, usage: string) => {
@@ -221,12 +224,12 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           if (foreground) {
             if (terminal) {
               const outcome = run.result === undefined ? "" : `\n\n${typeof run.result === "string" ? run.result : json(run.result)}`;
-              emit({ ...run, runId: run.id }, runTree(run, Date.now(), program) + outcome);
+              emit({ ...run, runId: run.id }, runTree(run, Date.now(), hint) + outcome);
               return statusExitCode(run.status);
             }
-            if (!jsonMode) warn(runTree(run, Date.now(), program) + "\n");
+            if (!jsonMode) warn(runTree(run, Date.now(), hint) + "\n");
           } else {
-            emit(run, action === "watch" ? runTree(run, Date.now(), program) : runSummary(run));
+            emit(run, action === "watch" ? runTree(run, Date.now(), hint) : runSummary(run));
             if (values.once) return 0;
             if (terminal) return statusExitCode(run.status);
             if (until === "signal" && run.status === "waiting_signal") return 0;
@@ -270,7 +273,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         const release = context.onLaunch?.(result.runId, home, attached);
         if (!result.model && !jsonMode) warn(`No model is set for run ${result.runId}: agents fail unless the workflow chooses one. Pass --model provider/model.\n`);
         if (!attached) {
-          emit(result, `run ${result.runId} ${result.status} · ${modelLabel(result.model, launch.thinkingLevel)}\npoll: ${program} poll ${result.runId}\ncancel: ${program} cancel ${result.runId}`);
+          emit(result, `run ${result.runId} ${result.status} · ${modelLabel(result.model, launch.thinkingLevel)}\npoll: ${hint} poll ${result.runId}\ncancel: ${hint} cancel ${result.runId}`);
           return 0;
         }
         if (!jsonMode) warn(`run ${result.runId} started · ${modelLabel(result.model, launch.thinkingLevel)}\n`);
@@ -288,7 +291,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         count(1, "status <runId> [--verbose]");
         const run = await request<RunRecord>({ action, runId: args[0], verbose: values.verbose });
         if (TERMINAL_STATUSES.has(run.status)) context.onSettled?.(run.id);
-        emit(run, values.verbose ? runTree(run, Date.now(), program) : runSummary(run));
+        emit(run, values.verbose ? runTree(run, Date.now(), hint) : runSummary(run));
         return 0;
       }
       case "list": {
@@ -353,7 +356,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           throw error;
         }
         const model = program.startsWith("/") ? "" : " --model provider/model";
-        emit({ path, name }, `Created ${path}\nNext: ${program} validate ${name}\n      ${program} run ${name} --args '{"path":"README.md"}'${model}\nCommit it: workflow files are project source, never add them to .gitignore.`);
+        emit({ path, name }, `Created ${path}\nNext: ${hint} validate ${name}\n      ${hint} run ${name} --args '{"path":"README.md"}'${model}\nCommit it: workflow files are project source, never add them to .gitignore.`);
         return 0;
       }
       case "validate": {
@@ -375,7 +378,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
   } catch (error) {
     if (error instanceof DetachedError) {
       if (jsonMode) emit({ runId: error.runId, status: "detached" });
-      warn(`${error.message}\npoll: ${program} poll ${error.runId}\ncancel: ${program} cancel ${error.runId}\n`);
+      warn(`${error.message}\npoll: ${hint} poll ${error.runId}\ncancel: ${hint} cancel ${error.runId}\n`);
       return 0;
     }
     const info = errorInfo(error);

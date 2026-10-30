@@ -144,6 +144,21 @@ test("--model takes a thinking suffix as pi --model does", async () => {
   assert.equal(await runCli(["run", "demo", "--thinking", "huge", "--bg"], options), 1);
 });
 
+test("next-step hints keep --home so copied commands reach the same worker", async () => {
+  const out: string[] = [];
+  const client: WorkflowClient = {
+    request: async () => ({ runId: "r", status: "queued", model: "openai/gpt" }),
+    rpc: async () => ({}), ensure: async () => ({}),
+  };
+  const options = { client, env: {}, stdout: (text: string) => { out.push(text); }, stderr: () => {} };
+  assert.equal(await runCli(["run", "demo", "--bg", "--home", "/tmp/w h"], options), 0);
+  assert.equal(await runCli(["run", "demo", "--bg", "--home", "/tmp/wh"], options), 0);
+  assert.equal(await runCli(["run", "demo", "--bg"], options), 0);
+  assert.match(out[0], /poll: workflow --home '\/tmp\/w h' poll r\ncancel: workflow --home '\/tmp\/w h' cancel r/);
+  assert.match(out[1], /poll: workflow --home \/tmp\/wh poll r/);
+  assert.match(out[2], /poll: workflow poll r/);
+});
+
 test("the CLI is linked onto PATH once, never over another command", async () => {
   const home = await mkdtemp(join(tmpdir(), "po-"));
   const local = join(home, ".local", "bin"), other = join(home, "other"), state = join(home, "state");

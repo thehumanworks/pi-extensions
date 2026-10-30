@@ -25,6 +25,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 ## Agents
 
 - `axeval` (spawned tick 8, 11:30; task `303a9c1`, herdr w4:p1): agent-experience evaluation of the CLI and the Pi tool through 4 scenarios; delivers `brain/axeval.md` with wrong turns and a ranked fix list. Evaluation only, no src/ changes.
+  Its scenario 1 finding "hints drop --home" was fixed in tick 9; drop it from its ranked list on merge.
 - `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
 ## Backlog
@@ -119,3 +120,9 @@ None.
 - Outcome: `loop.sh spawn` took 44 seconds; task committed as `303a9c1` on `brain/axeval`, Herdr w4:p1 confirmed `agent_status=working`. Found while writing the brief: `workflow --help` already documents exit codes, so that backlog item shrinks to a parity check. No code changed; tests not rerun (36/36 at aeb0bc2).
 - Value: ✅ yielded value: the next code changes will be chosen from observed wrong turns, not guesses.
 - Lesson: read the surface's own help before adding a backlog item; one listed gap was already closed.
+
+### Tick 9 · 11:34 · Next-step hints keep --home
+- Action: fixed the first wrong turn `axeval` logged in scenario 1 (its ledger): hints printed after `run --bg`, detach, `init`, `watch`/`status --verbose` trees and the foreground run dropped `--home`, so a copied `workflow poll <id>` hit the default worker and returned `not_found`. Chosen over waiting for the full report because it is observed, small and independent of axeval's remaining scenarios (axeval changes no src/). `src/cli.ts:184-207` builds a `hint` prefix (`workflow --home DIR`, shell-quoted when needed) used at every hint site; usage and help text keep the bare program.
+- Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (new test in `test/unit.test.ts` covers quoted, plain and absent `--home`).
+- Value: ✅ yielded value: an agent with an isolated home can now copy-paste every next step.
+- Lesson: act on a subagent's partial findings when they are concrete and outside its write scope; no need to wait for the final report.
