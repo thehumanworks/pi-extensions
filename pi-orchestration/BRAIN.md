@@ -69,6 +69,9 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 2: test copied workflows via local CLI `validate`, not a live launch: historical prompts target the main checkout. A short isolated `--home` works; a socket path beyond Unix limits returns an opaque `EINVAL` before creating the home.
 - Supervisor, after tick 3: in Pi 1.4.0, boolean extension flags such as `--no-memory` and `--recap-disable` swallow the next positional argument, so `pi -p --no-memory "message"` runs with no message and prints nothing. Put the message after a non-boolean flag or `--`. From tick 4 on, ticks stream Pi JSON events to brain/logs/tick-<N>.jsonl with a readable tick-<N>.log; the user asked for live awareness of each tick, and this keeps fresh-context ticks instead of an interactive pane.
 - Tick 5: small text-only guidance changes are faster done directly than delegated; spawning costs a minute plus a review tick.
+- Tick 6: in-process workers read `process.env` at call time, so fixtures must isolate every path that env resolves, not only `--home`.
+- Tick 7: validate inputs whose limits come from the OS before the first side effect, and name the flag or variable that fixes them.
+- Supervisor, 11:30: the main checkout keeps staged user work; keep brain/orchestration a descendant of main so releases stay fast-forwards.
 - Tick 30: a fix that "did not work" may have been tested together with a second, wrong change; retest the simplest candidate alone against the reproducer before abandoning it.
 - Tick 19: `bin/workflow.mjs` runs the git-ignored `dist/`, not `src/`. Run `npm run build` before checking a change with the local CLI, or the check exercises stale code.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
@@ -79,24 +82,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 None.
 
 ## Log
-
-### Tick 6 · 11:16 · Isolate fixture catalogs from the user's home
-- Action: fixed baseline failure 1 instead of spawning, because a one-line fix leaves exactly one known red test, so any future red is a regression signal. The in-process worker resolves user workflows through `agentDirectory()` (`src/paths.ts:5`), so the user's `~/.pi/agent/workflows/resolve-bot-main.ts` leaked into catalog fixtures. `fixture()` in `test/helpers.ts` now points `PI_CODING_AGENT_DIR` at its own temp root.
-- Outcome: `npm run check` passes; `npm test` **35 tests, 34 pass, 1 fail**. The only failure is the stale `nix/package-lock.json` version (0.2.0 vs 0.2.1).
-- Value: ✅ yielded value: the suite no longer depends on the machine's home directory.
-- Lesson: in-process workers read `process.env` at call time, so fixtures must isolate every path that env resolves, not only `--home`.
-
-### Tick 7 · 11:21 · Actionable error for over-long workflow homes
-- Action: replaced the opaque `connect EINVAL …/worker.sock` (reproduced in tick 2) with a stable error, because it was the only backlog item that was concrete, small and directly about what an agent sees. The Nix lock fix needs `nix develop` and a hash prefetch, which does not fit a four-minute tick. `assertSocketPath` in `src/paths.ts` checks the socket path against sun_path (107 bytes on Linux, 103 on macOS); `rpc` (`src/client.ts`) and `startWorker` (`src/worker.ts`) call it before connecting or creating the home.
-- Outcome: `npm run check` passes; `npm test` **36 tests, 35 pass, 1 fail**, the only failure the known Nix lock. New test in `test/unit.test.ts` covers both limits and the client path. Local CLI with a 110-character home prints `Error home_too_long: … is 127 bytes, the limit is 107. Pass a shorter --home or set PI_WORKFLOW_HOME to a shorter directory.` and creates no directory.
-- Value: ✅ yielded value: an agent that picks a deep temp directory for `--home` now gets the fix in the error instead of an errno.
-- Lesson: validate inputs whose limits come from the OS before the first side effect, and name the flag or variable that fixes them.
-
-### Supervisor · 11:30 · Release 0.3.0 and fast-forward main (user request)
-- Action: the user allowed merging to main and asked for a version bump to publish. Paused the loop with brain/STOP after tick 7, bumped pi-orchestration to 0.3.0 (breaking for 0.x: `/workflow approval`, `workflow.approval` and `PI_WORKFLOW_ALLOW_UNATTENDED` are gone), regenerated nix/package-lock.json (only the version fields changed) and set the new npmDepsHash. The root package-lock.json was left alone, as in earlier bumps, because the user has uncommitted changes in it.
-- Outcome: `npm test` 36/36; `nix build .#workflow` 36/36 plus the installed smoke; `npm pack --dry-run` ships 92 files with no BRAIN, brain/, ledgers, test or nix files. main fast-forwarded to brain/orchestration in the main checkout, preserving the user's staged work; main is not pushed. Loop restarted.
-- Value: ✅
-- Lesson: the main checkout keeps staged user work, so a non-fast-forward merge there would abort. Keep brain/orchestration a descendant of main so releases stay fast-forwards.
 
 ### Tick 8 · 11:30 · Spawn the agent-experience evaluation
 - Action: spawned `axeval` to run 4 scenarios as a fresh agent (CLI author-validate-run-poll-result, broken-workflow errors, signal discovery from status, the Pi tool headless) and rank fixes by wrong turns. Chosen over another small fix because the backlog's remaining items are guesses; an evaluation turns them into evidence, and it is too long for one tick.
@@ -241,4 +226,5 @@ None.
 - Action: spawned `axeval2`, as tick 30 planned, because every ranked axeval fix is done and the next changes should come from measured wrong turns, not guesses. The brief repeats round one's four scenarios with the same model (haiku) so counts compare, adds a parity check of `workflow guide` vs the tool's guide, and carries the D8 and tick 19 traps (`pi -e` the local index.ts, `npm run build` before using bin/workflow.mjs) and the Pi boolean-flag trap.
 - Outcome: `loop.sh spawn` took about 50 seconds; branch brain/axeval2 pushed, worktree `.pi/worktrees/brain-axeval2`, herdr w6:p1 reports `agent_status=working`. No code changed; tests not rerun (38/38 at 3fb3137).
 - Value: ✅ yielded value: the effect of ticks 9-30 will be measured against round one's 5/8/…-wrong-turn baseline.
+- Also archived ticks 6, 7 and the 11:30 supervisor entry (Log was 27 entries), keeping their lessons.
 - Lesson: put the known environment traps in the brief; round one lost turns to them. Next tick: act on axeval2's partial findings if concrete and outside its scope, otherwise a Backlog 4 item (git-ignored workflow warning in validate/catalog).
