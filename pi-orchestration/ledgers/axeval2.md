@@ -1,4 +1,4 @@
-Status: working — all scenarios run; writing brain/axeval2.md
+Status: done — brain/axeval2.md: wrong turns S1 0 (was 5), S2 4 (was 8), S3 0 (was 7), S4 A/B/C/D 0/0/0/13 (was 11/5/0/11); ranked fix 2 (attached run hangs on a signal) is the open top item; npm test 38/38
 
 # Subagent axeval2
 
@@ -19,3 +19,14 @@ Goal: a second agent-experience evaluation of pi-orchestration, measuring whethe
 - 14:35 Experiment (temporary edit of src/extension.ts:79, reverted with the edit tool; tree clean): `value` as `Type.Union([Object(additionalProperties), Array(Unknown), String, Number, Boolean, Null])`. Session D-x1: 4 calls/0 errors, `"value": {"ok": true}` first time. D-x2: 5/1, it used status verbose:true (no Expects line), sent `true`, read the schema in the error, then `{"ok": true}`. So typing `value` fixes D; the remaining error is the verbose-status gap from S3.
 - 14:40 Parity: tool `guide` text (captured from session G's tool result) vs `workflow guide`: same guide() (guide.ts:44); differences only the shell line (tool: "`workflow` is not on PATH here, so use the full command: node …/bin/workflow.mjs", though the installed 0.2.1 `workflow` IS on PATH: link.ts:25 compares realpaths) and the tool adds "This session's model is …".
 - 14:45 New: attached `workflow run gate` (the guide's default shell command) never returns on waiting_signal: `timeout 6` → 32 lines (5-line tree each second), exit 124; `run --json` prints nothing at all until killed (cli.ts:241-247 foreground branch has no signal stop and no change filter). Runs survive the kill. Spend total: Pi sessions $0.152 (7 sessions incl. 2 experiments + guide), workflow agents $0.006.
+- 14:55 Wrote pi-orchestration/brain/axeval2.md. `npm test` 38/38; no src/, test/ or README changes.
+- 15:00 Brain ticks 33–34: ranked fixes 1 (typed `value`, ec5ca3d), 3 (verbose status and watch print `Expects:`, 341efca) and 5 (signals to finished runs fail with `run_finished`, e858e23) are now on brain/orchestration. The report marks them fixed after the runs; not re-run.
+
+## Summary
+
+- Deliverable: pi-orchestration/brain/axeval2.md. It covers each scenario's wrong turns in round one and now, which fixes held (with quoted output), a status table for fixes 1–10, the tool/CLI guide parity check, 10 new ranked fixes with file:line, expected effect and evidence, and unranked observations.
+- Headline wrong turns: S1 0 (was 5); S2 4 (was 8; 3 with ctx.runAgent fixed at 2cb15bb); S3 0 (was 7); S4 sessions A 0 (was 11), B 0 (was 5), C 0 (was 0), D 13 (was 11). Fixes 1, 3, 4, 5, 8, 9 and 10 held; 2, 6 and 7 held in part. No regressions.
+- D's cause was the tool's untyped signal `value` (extension.ts:79). A temporary, reverted edit typing it took D from 16 calls/4 errors/a cancelled run/a bash fallback to 4/0, and to 5/1 when the model used verbose status, which lacked the schema. Both are now fixed (ec5ca3d, 341efca).
+- Open top item, ranked fix 2: attached `workflow run`, the guide's default shell command, never returns on a signal wait (cli.ts:241–247). `timeout 6` gives 32 lines and exit 124; `--json` gives 0 bytes. It also reprints the full tree every second.
+- Parity: the tool's guide and `workflow guide` are the same guide() text. Two differences: the tool adds the session model, and it says "`workflow` is not on PATH" when a different install is on PATH (link.ts:25).
+- Verification: all four scenarios re-run as a fresh agent from /tmp/axb1–4 with short homes. The Pi sessions used openrouter/anthropic/claude-haiku-4.5, because anthropic/* returned "out of extra usage" in pi, as in round one; workflow agents used anthropic/claude-haiku-4-5. Spend $0.158. `npm test` 38/38 at the end.
