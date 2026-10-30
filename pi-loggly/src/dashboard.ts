@@ -1,7 +1,7 @@
 import type { Theme } from "@earendil-works/pi-coding-agent";
 import { hyperlink, Key, matchesKey, visibleWidth, type Component, type KeybindingsManager, type TUI, type TuiMouseEvent } from "@earendil-works/pi-tui";
 import { formatAge, formatClock, formatCount, formatPercent, formatRatio, sparkline } from "./analysis/format.ts";
-import { allOf, fieldMatch, type HealthIssue, type HealthRules, type HealthSnapshot, type SystemHealth, type SystemStatus, type TimeRange } from "./analysis/health.ts";
+import { allOf, valueMatch, type HealthIssue, type HealthRules, type HealthSnapshot, type SystemHealth, type SystemStatus, type TimeRange } from "./analysis/health.ts";
 import { clusterMessages, type MessagePattern } from "./analysis/patterns.ts";
 import { describeError, type HealthMonitor } from "./monitor.ts";
 import type { LogglyClient } from "./sdk/client.ts";
@@ -274,7 +274,7 @@ export class LogglyDashboard implements Component {
       detail.error = describeError(error);
       return;
     }
-    const query = allOf(rules.scope, rules.errorQuery, fieldMatch(rules.groupBy, system));
+    const query = allOf(rules.scope, rules.errorQuery, valueMatch(rules.groupBy, system, snapshot.systems.map((s) => s.name)));
     client.search({ query, from: new Date(range.from), until: new Date(range.until), order: "desc" }, { limit: rules.sampleSize, signal: controller.signal }).then(
       (events) => {
         if (controller.signal.aborted) return;
@@ -459,7 +459,7 @@ export class LogglyDashboard implements Component {
       }
     }
     const rules = snapshot.rules;
-    const query = issue?.query ?? allOf(rules.scope, rules.errorQuery, fieldMatch(rules.groupBy, detail.system));
+    const query = issue?.query ?? allOf(rules.scope, rules.errorQuery, valueMatch(rules.groupBy, detail.system, snapshot.systems.map((s) => s.name)));
     body.push("", t.bold("Query"));
     body.push(...wrap(t.fg("muted", query), width, "  ", "  "));
     try {
@@ -498,7 +498,7 @@ export function investigationPrompt(snapshot: HealthSnapshot, system: SystemHeal
     `- System: ${system.name} (${rules.groupBy}), scope: ${rules.scope}`,
     `- Problem: ${issue ? issue.summary : `${formatCount(system.errorsNow)} errors and ${formatCount(system.volumeNow)} events in ${formatDuration(snapshot.windowMs)}, usually ${formatCount(system.errorsBaseline)} errors`}`,
     `- Window: ${new Date(range.from).toISOString()} to ${new Date(range.until).toISOString()}`,
-    `- Error query: ${issue?.query ?? allOf(rules.scope, rules.errorQuery, fieldMatch(rules.groupBy, system.name))}`,
+    `- Error query: ${issue?.query ?? allOf(rules.scope, rules.errorQuery, valueMatch(rules.groupBy, system.name, snapshot.systems.map((s) => s.name)))}`,
   ];
   if (top.length) lines.push(`- Top error patterns: ${top.map((pattern) => `${formatPercent(pattern.share)} “${pattern.template}”`).join("; ")}`);
   lines.push(

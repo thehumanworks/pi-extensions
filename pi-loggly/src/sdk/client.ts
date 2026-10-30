@@ -16,7 +16,7 @@ import type {
   VolumeMetricsParams,
 } from "./types.ts";
 
-export const SDK_VERSION = "0.2.1";
+export const SDK_VERSION = "0.2.2";
 
 export interface LogglyClientOptions {
   /** The account's subdomain label, e.g. "acme" for acme.loggly.com. */

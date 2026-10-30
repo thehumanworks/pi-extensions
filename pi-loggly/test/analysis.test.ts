@@ -10,6 +10,8 @@ import {
   healthWindows,
   median,
   recurrences,
+  valueMatch,
+  valueMatcher,
   type HealthRules,
   type WindowCounts,
 } from "../src/analysis/health.ts";
@@ -77,6 +79,27 @@ test("query helpers quote exact matches and combine clauses", () => {
   assert.equal(allOf("*", "env:prod", "level:(error OR fatal)", fieldMatch("app", "x")), 'env:prod AND (level:(error OR fatal)) AND app:"x"');
   assert.equal(allOf("*", undefined, " "), "*");
   assert.equal(allOf("(a OR b)"), "(a OR b)");
+});
+
+test("a value's query leaves out the other known values Loggly's word matching would also find", () => {
+  // Loggly matches quoted values word by word, splitting at punctuation, underscores and camelCase.
+  const known = ["data", "data-extraction-worker", "typhoon-report-data", "dataviews", "export", "export_visitorlist", "exportVisitorDetail", "exporthandler", "InsightsReporting", "reporting", "web\\prod\\api"];
+  const match = valueMatcher("derived.AppName", known);
+  assert.equal(match("data"), '(derived.AppName:"data" AND NOT derived.AppName:"data-extraction-worker" AND NOT derived.AppName:"typhoon-report-data")', "dataviews is one word, so it does not match");
+  assert.equal(match("export"), '(derived.AppName:"export" AND NOT derived.AppName:"export_visitorlist" AND NOT derived.AppName:"exportVisitorDetail")');
+  assert.equal(match("reporting"), '(derived.AppName:"reporting" AND NOT derived.AppName:"InsightsReporting")');
+  assert.equal(match("data-extraction-worker"), 'derived.AppName:"data-extraction-worker"', "nothing else contains all its words");
+  assert.equal(match("web\\prod\\api"), 'derived.AppName:"web\\\\prod\\\\api"');
+  assert.equal(valueMatch("app", "api", ["api", "api-gateway", "api"]), '(app:"api" AND NOT app:"api-gateway")');
+  assert.equal(valueMatch("app", "api", []), 'app:"api"', "unknown values match as before");
+});
+
+test("health queries for a system exclude other systems containing its name", () => {
+  const snapshot = evaluateHealth(windows({
+    data: { errors: [10, 12, 9, 11, 400], volume: steady.volume },
+    "data-extraction-worker": steady,
+  }), rules, 1);
+  assert.equal(snapshot.issues[0]!.query, 'env:prod AND level:error AND (app:"data" AND NOT app:"data-extraction-worker")');
 });
 
 test("formatting helpers stay compact", () => {

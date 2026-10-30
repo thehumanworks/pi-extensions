@@ -1,6 +1,6 @@
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import type { Code, Image, Nodes, Root } from "mdast";
-import { imageAsset, svgAsset } from "./assets.ts";
+import { imageAsset, rasterSize, svgAsset, svgSize } from "./assets.ts";
 import { looksLikeMermaid, renderMermaid, svgToPng } from "./diagram.ts";
 import { readDoc, readDocx, writeDocx } from "./docx.ts";
 import { extensionFor, FORMATS, formatFromPath, sniffFormat, type InputFormat, type OutputFormat } from "./formats.ts";
@@ -351,7 +351,12 @@ export async function renderModel(model: Model, format: OutputFormat, outputPath
     }
     case "png":
     case "svg": {
-      if (model.kind === "image") return single(await imageBytes(model, format, options));
+      if (model.kind === "image") {
+        const data = await imageBytes(model, format, options);
+        const size = format === "png" ? rasterSize(data) : svgSize(new TextDecoder().decode(data));
+        if (size) facts.push(`${Math.round(size.width)}x${Math.round(size.height)} ${format === "png" ? "px" : "units"}`);
+        return single(data);
+      }
       if (format === "svg") throw new ConversionError("SVG output needs a Mermaid diagram or SVG input. Write PNG to render document pages");
       let pdf: Uint8Array;
       if (model.kind === "pdf") pdf = model.data;

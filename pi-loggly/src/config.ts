@@ -20,6 +20,8 @@ export interface StatusLineConfig {
 export interface TrendsConfig {
   /** At Pi start, save daily trends when this many complete days are waiting. 0 turns it off. */
   saveEveryDays: number;
+  /** Random windows sampled per day to estimate error patterns, about one request each. 0 saves exact counts only. */
+  sampleWindows: number;
 }
 
 export interface LogglyConfig {
@@ -32,7 +34,7 @@ export interface LogglyConfig {
 export const DEFAULT_CONFIG: LogglyConfig = {
   statusLine: { enabled: false, refreshSeconds: 300, rotateSeconds: 8, notify: true },
   health: DEFAULT_HEALTH_RULES,
-  trends: { saveEveryDays: 0 },
+  trends: { saveEveryDays: 0, sampleWindows: 288 },
   tools: { exposure: "direct" },
 };
 
@@ -122,6 +124,8 @@ export function normalizeConfig(raw: unknown, problems: string[] = []): LogglyCo
     },
     trends: {
       saveEveryDays: read(trends, "trends", "saveEveryDays", d.trends.saveEveryDays, integer(0, 365)),
+      // Fewer than 20 windows cannot meet the 10-window rule for any pattern.
+      sampleWindows: read(trends, "trends", "sampleWindows", d.trends.sampleWindows, (v) => v === 0 || integer(20, 1440)(v)),
     },
     tools: {
       exposure: read(tools, "tools", "exposure", d.tools.exposure, (v) => v === "direct" || v === "codemode"),

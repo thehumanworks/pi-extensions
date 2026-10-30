@@ -64,7 +64,7 @@ In RPC and other non-TUI modes, `/loggly` prints the same report as text. `/logg
 
 ## How health is judged
 
-Every check splits recent time into windows (default: 10 minutes, ending 2 minutes ago to allow for indexing), and compares the latest with the median of the 12 before it (2 hours). Systems are the values of one field (`health.groupBy`). Two facet queries per window count errors and events for every system at once. A check costs about 30 Loggly requests however many systems there are: 26 facets, one for volume since the window, and a sample of errors for up to three issues.
+Every check splits recent time into windows (default: 10 minutes, ending 2 minutes ago to allow for indexing), and compares the latest with the median of the 12 before it (2 hours). Systems are the values of one field (`health.groupBy`). Two facet queries per window count errors and events for every system at once. Loggly matches a quoted value word by word, so a query for one system, such as a search link, leaves out other systems whose names contain all its words: `data` would otherwise also find `data-extraction-worker`. A check costs about 30 Loggly requests however many systems there are: 26 facets, one for volume since the window, and a sample of errors for up to three issues.
 
 | Issue | Severity | Raised when |
 | --- | --- | --- |
@@ -90,8 +90,9 @@ Loggly keeps logs for a limited period (30 days on many plans). pi-loggly saves 
 - errors and events for each system: the 300 largest by events and the 300 largest by errors
 - total errors and events
 - the most frequent error messages, grouped by pattern, with one example each
+- estimated patterns of the remaining errors, with 95% intervals (see below)
 
-Counts are true totals, not estimates from a sample. Raw logs are never stored. A day costs three requests and takes a few seconds, and its file is about 35 KB, roughly 12 MB a year.
+These counts are true totals, not estimates from a sample. Raw logs are never stored. The counts cost three requests a day and take a few seconds; with pattern estimates a day takes about 2 minutes and 320 requests. A day's file is 30–45 KB, about 8 KB of it estimated patterns: roughly 15 MB a year.
 
 Message counts are partial. Loggly counts a field's values with a facet query, which returns at most 300 values and treats each distinct string as its own value; patterns are formed afterwards, on this machine. So a day's messages cover:
 
@@ -100,21 +101,32 @@ Message counts are partial. Loggly counts a field's values with a facet query, w
 
 The report shows the share of errors covered, typically 40–70%.
 
+### Estimated patterns
+
+The errors those messages leave out are often the interesting ones: plain-text lines, stack traces, and messages carrying IDs. Their patterns are estimated from a sample, and labelled as estimates:
+
+- **how**: the day is cut into 288 equal slices (`trends.sampleWindows`), each with one short window at a random time, sized to hold about 60 errors. Every error has the same chance of falling in a window, so the errors found, scaled up, estimate the day's without bias. A window holding more than a page of errors is counted, and a random stretch of it is sampled the same way.
+- **what is stated**: only patterns seen in at least 10 windows with a relative standard error of at most 30%, each with a 95% interval. Growth is listed only when it exceeds the sampling error of both periods.
+- **checks**: the same sample also estimates counts Loggly knows exactly (errors per system, and the listed messages). The report says how many of those intervals held the exact count, about 95% if the estimates are sound, and whether the sample's estimate of the remaining errors held their exact number.
+- **limits**: a pattern that comes in a few dense minutes is missed, or seen in too few windows to state. The report says how much of the remainder the stated patterns account for, typically about half.
+
+Tested against Loggly's exact counts on two days of about 1.5 million errors each, 47 of 47 intervals held the exact count. On one of the two days the sample's estimate of the remaining errors fell short of their exact number: bursts of rare errors that no window hit.
+
 Days are saved:
 
-- **with `/loggly trends`**: saves every missing day in the background and reports when done. The first run saves all the days Loggly still keeps, a few minutes for 30 days.
+- **with `/loggly trends`**: saves every missing day in the background, shows progress in the footer and reports when done. It also saves again the days Loggly still keeps that were saved with other settings, or without pattern estimates while they are on; their earlier files move to `replaced/`, never deleted. A first run with pattern estimates takes about an hour for 30 days, or a few minutes without.
 - **on a schedule**: `/loggly trends every 7` saves at Pi start whenever 7 or more complete days are waiting, and reports what it saved. Pi start only reads the trends directory; Loggly is asked only when days are due. `/loggly trends off` stops it. Typing `/loggly trends` suggests a value: a quarter of Loggly's retention (7 for 30 days), alongside any current schedule. The setting is `trends.saveEveryDays`. Keep it well under Loggly's retention to allow for days Pi is not opened; pi-loggly warns when it is too long.
-- **while the status line is on**: at the start and then hourly, a session saves any complete day Loggly still keeps. Checks make no requests when nothing is missing.
+- **while the status line is on**: at the start and then hourly, a session saves any missing complete day Loggly still keeps. Checks make no requests when nothing is missing. These saves are unannounced, so they keep to exact counts; `/loggly trends` adds pattern estimates later. Days saved earlier are left as they are; only `/loggly trends` saves days again.
 
 A day not saved before Loggly deletes it is lost, and reports list it as not saved. One process saves at a time, using a lock file next to the data.
 
 Files live in `$XDG_DATA_HOME/pi-loggly/trends` (normally `~/.local/share/pi-loggly/trends`), one JSON file per day, readable only by you. Message examples are log text, so treat the directory like logs. Delete files to forget days.
 
-Each day records the `health.scope`, `health.groupBy` and `health.errorQuery` it was saved with. Reports only compare days saved with the current settings, so changing them starts a new series. The `loggly_trends` tool and the dashboard read these files without contacting Loggly.
+Each day records the `health.scope`, `health.groupBy` and `health.errorQuery` it was saved with. Reports only compare days saved with the current settings, so changing them starts a new series; `/loggly trends` then saves the days Loggly still keeps again with the new settings. The `loggly_trends` tool and the dashboard read these files without contacting Loggly.
 
 ## Reports
 
-`/loggly report <timeframe>` writes a report on what happened in Loggly over a timeframe written in words. Without one it covers the last 24 hours. It runs in the background, shows its progress in the footer, and sends a notification with the file paths when done: about 20 seconds for 2 hours, 30 for a week.
+`/loggly report <timeframe>` writes a report on what happened in Loggly over a timeframe written in words. Without one it covers the last 24 hours. It runs in the background, shows its progress in the footer, and sends a notification with the file paths when done: about 25 seconds for 2 hours, 35 for a week.
 
 | Timeframe | Covers | Compared with |
 |---|---|---|
@@ -174,6 +186,7 @@ Optional. Settings live in `loggly.json` in Pi's agent directory (normally `~/.p
 | `health.maxSystems` | `300` | Systems tracked per window (Loggly's facet limit) |
 | `health.muted` | `[]` | Systems shown but never raised as issues |
 | `trends.saveEveryDays` | `0` (off) | At Pi start, save daily trends when this many complete days are waiting. Set with `/loggly trends every <days>` |
+| `trends.sampleWindows` | `288` | Random windows per day for estimated patterns, about one request each (20–1440). `0` saves exact counts only |
 | `tools.exposure` | `direct` | `codemode` keeps the tools out of the model's direct tool list and exposes them to code mode only |
 
 Run `loggly_facet` without a field, or `/loggly config`, to find field names in your account.
@@ -190,7 +203,7 @@ All tools are read-only and share the `loggly` namespace. Its guidance tells the
 | `loggly_timeline` | Counts in equal time buckets, optionally split by a field's top values |
 | `loggly_facet` | Top values of a field with counts and shares, or the fields present |
 | `loggly_patterns` | Error messages grouped by pattern, with estimated totals and affected systems |
-| `loggly_trends` | Saved daily trends: top and fastest-growing systems and messages, messages first seen recently, or one system's or message's days |
+| `loggly_trends` | Saved daily trends: top and fastest-growing systems and messages, messages first seen recently, estimated patterns of the other errors, or one system's or message's days |
 
 Times accept Loggly's relative syntax (`-15m`, `-2h`, `-1d`, `now`) or ISO 8601. When `loggly_search` output is truncated, or `full` is set, the complete events are written to a JSON-lines file readable only by you, in a private directory under `/tmp`. These files hold log data, so they are deleted after a day.
 

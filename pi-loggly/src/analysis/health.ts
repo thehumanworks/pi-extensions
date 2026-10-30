@@ -158,6 +158,41 @@ export function fieldMatch(field: string, value: string): string {
   return `${field}:"${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"`;
 }
 
+/**
+ * Queries for single values of a field. Loggly matches a quoted value word by
+ * word, so "data" also finds "data-extraction-worker"; known values whose words
+ * contain the asked value's words are excluded.
+ */
+export function valueMatcher(field: string, known: Iterable<string>): (value: string) => string {
+  const others = [...new Set(known)].map((value) => ({ value, words: words(value) }));
+  return (value) => {
+    const target = words(value);
+    const exclude = others.filter((other) => other.words.length > target.length && containsRun(other.words, target)).map((other) => fieldMatch(field, other.value));
+    return exclude.length ? `(${[fieldMatch(field, value), ...exclude].join(" AND NOT ")})` : fieldMatch(field, value);
+  };
+}
+
+/** A query for one value of a field, given the field's other known values. */
+export function valueMatch(field: string, value: string, known: Iterable<string>): string {
+  return valueMatcher(field, known)(value);
+}
+
+/** Lowercase words, as Loggly splits field values: at punctuation, underscores and camelCase humps. */
+function words(text: string): string[] {
+  return text
+    .replace(/(\p{Ll}|\p{N})(\p{Lu})/gu, "$1 $2")
+    .replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, "$1 $2")
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+}
+
+function containsRun(list: readonly string[], run: readonly string[]): boolean {
+  if (!run.length) return false;
+  for (let i = 0; i + run.length <= list.length; i++) if (run.every((word, j) => list[i + j] === word)) return true;
+  return false;
+}
+
 /** Combine query clauses with AND, dropping match-all clauses. */
 export function allOf(...clauses: Array<string | undefined>): string {
   const parts = clauses.map((clause) => clause?.trim()).filter((clause): clause is string => !!clause && clause !== "*");
@@ -209,6 +244,7 @@ export function evaluateHealth(windows: readonly WindowCounts[], rules: HealthRu
 
   const names = new Set<string>();
   for (const window of windows) for (const facet of [window.errors, window.volume]) for (const term of facet.terms) names.add(term.term);
+  const systemQuery = valueMatcher(rules.groupBy, names);
   const lookups = windows.map((w) => ({ errors: termCounts(w.errors), volume: termCounts(w.volume) }));
   // Too short a period says nothing about the rate.
   const recentMs = recent ? recent.until - recent.from : 0;
@@ -229,7 +265,7 @@ export function evaluateHealth(windows: readonly WindowCounts[], rules: HealthRu
       continue;
     }
     const base = { system: name, from: current.from, until: current.until, ...pick(stats), ratio, errorRate };
-    const errorQuery = allOf(rules.scope, rules.errorQuery, fieldMatch(rules.groupBy, name));
+    const errorQuery = allOf(rules.scope, rules.errorQuery, systemQuery(name));
     const volumeKnown = lookups[last]!.volume.has(name) || volumeComplete;
     const volumeUpperBound = volumeKnown ? stats.volumeNow : smallestListed;
     const baselineErrors = errors.slice(0, last);
@@ -253,7 +289,7 @@ export function evaluateHealth(windows: readonly WindowCounts[], rules: HealthRu
         summary: stopped
           ? `stopped logging: no events in ${label}, ${usual}`
           : `log volume down ${volumeKnown ? formatPercent(1 - stats.volumeNow / stats.volumeBaseline) : `over ${formatPercent(1 - rules.silentRatio)}`}: ${volumeKnown ? formatCount(stats.volumeNow) : `<${formatCount(smallestListed)}`} events in ${label}, ${usual}${persisted ? "; also low in the previous window" : ""}`,
-        query: allOf(rules.scope, fieldMatch(rules.groupBy, name)),
+        query: allOf(rules.scope, systemQuery(name)),
       };
     } else if (stats.errorsNow >= rules.minErrors && stats.errorsNow - stats.errorsBaseline >= rules.minErrors && ratio >= rules.spikeRatio) {
       const fresh = stats.errorsBaseline === 0;

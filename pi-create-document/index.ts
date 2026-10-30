@@ -37,6 +37,9 @@ const Layout = {
   overwrite: Type.Optional(Type.Boolean({ description: "Replace existing output files. Default false: existing files are an error" })),
 };
 
+// Writing tools replace existing files when given overwrite: true, so they are declared destructive.
+const WRITES = { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false } as const;
+
 const FileResult = Type.Object({
   format: Type.String(),
   files: Type.Array(Type.Object({ path: Type.String(), bytes: Type.Number() })),
@@ -114,7 +117,7 @@ export function registerCreateDocument(pi: ExtensionAPI, options: CreateDocument
       ...Layout,
     }),
     outputSchema: FileResult,
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    annotations: WRITES,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const { createDocument } = await sdk();
       const result = details(await createDocument({
@@ -153,7 +156,7 @@ export function registerCreateDocument(pi: ExtensionAPI, options: CreateDocument
       ...Layout,
     }),
     outputSchema: FileResult,
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    annotations: WRITES,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const { convertDocument } = await sdk();
       const result = details(await convertDocument({

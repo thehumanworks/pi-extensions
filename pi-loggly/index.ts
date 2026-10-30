@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { configPath, loadConfig, section, updateConfigFile, type LoadedConfig } from "./src/config.ts";
 import { LogglyDashboard } from "./src/dashboard.ts";
@@ -51,6 +52,7 @@ const TRENDS_CHECK_MS = 3_600_000;
 
 /** Footer entry showing a report's progress. */
 const REPORT_STATUS_KEY = "loggly-report";
+const TRENDS_STATUS_KEY = "loggly-trends";
 
 const REPORT_EXAMPLES: Completion[] = [
   { value: "report last 2h", label: "report last 2h", description: "the last 2 hours, compared with the 2 before" },
@@ -79,7 +81,7 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
   const getRules = () => loaded.config.health;
   const { now } = options;
   const monitor = new HealthMonitor({ getClient, getRules, now });
-  const trends = new TrendRecorder(options.trendsDir ?? defaultTrendsDir(), { getClient, getRules, now });
+  const trends = new TrendRecorder(options.trendsDir ?? defaultTrendsDir(), { getClient, getRules, getSampleWindows: () => loaded.config.trends.sampleWindows, now });
   // Pi rebuilds the extension for /new, /resume, /fork and /reload, so this lasts one session.
   let statusEnabled = false;
   let statusLine: StatusLine | undefined;
@@ -91,8 +93,14 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
   const reportsDir = options.reportsDir ?? defaultReportsDir();
 
   const updateTrends = async (ctx: ExtensionContext, report: TrendReport): Promise<TrendUpdate | undefined> => {
+    const signal = trendController.signal;
+    // Asked for: also save again out-of-date days, with progress in the footer, since sampling takes minutes a day.
+    const asked = report === "always";
     try {
-      const update = await trends.update(trendController.signal);
+      // Unannounced saves (the status line's) keep to exact counts: sampling a day takes minutes and hundreds of requests.
+      const update = await trends.update(signal, asked
+        ? { replace: true, onProgress: ({ done, days }) => !signal.aborted && ctx.ui.setStatus(TRENDS_STATUS_KEY, `loggly trends ${done}/${days} days`) }
+        : { sample: report !== "never" });
       const every = loaded.config.trends.saveEveryDays;
       if (report === "always" || (report === "saved" && update.captured.length)) ctx.ui.notify(describeTrendUpdate(update, trends.dir, every), update.busy ? "warning" : "info");
       const risk = scheduleRisk(every, trends.retentionDays);
@@ -104,6 +112,8 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
       if (report === "always" || !trendFailureShown) ctx.ui.notify(`Could not save Loggly trends: ${describeError(error)}`, report === "always" ? "error" : "warning");
       trendFailureShown = true;
       return undefined;
+    } finally {
+      if (asked && !signal.aborted) ctx.ui.setStatus(TRENDS_STATUS_KEY, undefined);
     }
   };
   const stopStatus = () => {
@@ -229,7 +239,7 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
         if (arg !== undefined) return ctx.ui.notify(TRENDS_USAGE, "warning");
         // Pi waits for command handlers before taking input, and a first run takes minutes.
         // A running update is joined, so this reports when it ends.
-        ctx.ui.notify(trends.running ? "Loggly trends are already being saved; a notification follows when done." : "Saving Loggly trends in the background, about 10 seconds per missing day.", "info");
+        ctx.ui.notify(trends.running ? "Loggly trends are already being saved; a notification follows when done." : savingNotice(loaded.config.trends.sampleWindows), "info");
         void updateTrends(ctx, "always");
         return;
       }
@@ -323,10 +333,21 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
 
 const TRENDS_USAGE = "Usage: /loggly trends [every <days> | off]: no argument saves now; every <days> saves at Pi start when that many complete days are waiting (1 to 365).";
 
+/** What /loggly trends is about to do, and how long it takes. */
+export function savingNotice(sampleWindows: number): string {
+  const pace = sampleWindows
+    ? `about 2 minutes per day, most of it estimating error patterns from ${sampleWindows} random windows (trends.sampleWindows)`
+    : "about 10 seconds per day";
+  return `Saving Loggly trends in the background: missing days, and days Loggly still keeps that were saved with other rules or without pattern estimates. It takes ${pace}; progress shows in the footer, and a notification follows.`;
+}
+
 function describeTrendUpdate(update: TrendUpdate, dir: string, every: number): string {
   if (update.busy) return "Another Pi session is saving Loggly trends. Try again in a few minutes.";
   const span = update.stored.length ? `${plural(update.stored.length, "day")} stored, ${update.stored[0]} to ${update.stored.at(-1)}` : "no days stored";
-  const saved = update.captured.length ? `saved ${plural(update.captured.length, "new day")}` : "up to date";
+  const added = update.captured.length - update.replaced.length;
+  const saved = update.captured.length
+    ? [added ? `saved ${plural(added, "new day")}` : "", update.replaced.length ? `saved ${plural(update.replaced.length, "day")} again (earlier files in ${join(dir, "replaced")})` : ""].filter(Boolean).join(" and ")
+    : "up to date";
   const schedule = every ? `Saved at Pi start when ${every} or more complete days are waiting.` : "Run /loggly trends every <days> to save them at Pi start.";
   return `Loggly trends ${saved}: ${span} (${dir}). ${schedule}`;
 }

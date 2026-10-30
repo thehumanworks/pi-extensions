@@ -1,5 +1,5 @@
 import { formatClock, formatCount, formatPercent, formatRatio } from "../analysis/format.ts";
-import { allOf, fieldMatch, median, type HealthRules } from "../analysis/health.ts";
+import { allOf, fieldMatch, median, valueMatcher, type HealthRules } from "../analysis/health.ts";
 import { extractMessage, fieldText, getField, singleLine, templateOf } from "../analysis/patterns.ts";
 import type { FacetResult } from "../sdk/types.ts";
 import type { PeriodData, Span } from "./collect.ts";
@@ -135,6 +135,7 @@ export function analyzePeriod(data: PeriodData, rules: HealthRules, context: Ana
   const volumeMaps = buckets.map((b) => termMap(b.volume));
   const names = new Set<string>();
   for (const map of [...errorMaps, ...volumeMaps]) for (const name of map.keys()) names.add(name);
+  const systemQuery = valueMatcher(rules.groupBy, names);
   const previousErrors = data.previous && termMap(data.previous.errors);
   const previousVolume = data.previous && termMap(data.previous.volume);
   const known = (map: Map<string, number> | undefined, facet: FacetResult | undefined, name: string) => map?.get(name) ?? (facet && !facet.truncated ? 0 : undefined);
@@ -156,7 +157,7 @@ export function analyzePeriod(data: PeriodData, rules: HealthRules, context: Ana
       eventSeries,
       peak: { from: buckets[peakIndex]?.from ?? plan.from, errors: errorSeries[peakIndex] ?? 0 },
       flags: [],
-      url: url(allOf(errorQuery, fieldMatch(rules.groupBy, name))),
+      url: url(allOf(errorQuery, systemQuery(name))),
     };
   });
   systems.sort((a, b) => b.errors - a.errors || (b.events ?? 0) - (a.events ?? 0) || a.name.localeCompare(b.name));
@@ -203,10 +204,10 @@ export function analyzePeriod(data: PeriodData, rules: HealthRules, context: Ana
       const since = buckets[buckets.length - silence.length]!.from;
       flag("stopped");
       const what = silence.events ? `Only ${formatCount(silence.events)} events` : "No events";
-      add({ severity: "critical", kind: "stopped", system: name, title: `${name} stopped logging`, detail: `${what} since ${clock(since)}; it usually logs about ${formatCount(median(before))} ${per(plan.bucketMs)}.`, weight: median(before), url: url(allOf(rules.scope, fieldMatch(rules.groupBy, name))) });
+      add({ severity: "critical", kind: "stopped", system: name, title: `${name} stopped logging`, detail: `${what} since ${clock(since)}; it usually logs about ${formatCount(median(before))} ${per(plan.bucketMs)}.`, weight: median(before), url: url(allOf(rules.scope, systemQuery(name))) });
     } else if (system.previousEvents !== undefined && system.previousEvents >= busyPerBucket * buckets.length && system.events !== undefined && system.events <= system.previousEvents * rules.silentRatio) {
       flag("quiet");
-      add({ severity: "warning", kind: "quiet", system: name, title: `${name} went quiet`, detail: `${formatCount(system.events)} events, against ${formatCount(system.previousEvents)} in ${previousLabel} (down ${formatPercent(1 - system.events / system.previousEvents)}).`, weight: system.previousEvents, url: url(allOf(rules.scope, fieldMatch(rules.groupBy, name))) });
+      add({ severity: "warning", kind: "quiet", system: name, title: `${name} went quiet`, detail: `${formatCount(system.events)} events, against ${formatCount(system.previousEvents)} in ${previousLabel} (down ${formatPercent(1 - system.events / system.previousEvents)}).`, weight: system.previousEvents, url: url(allOf(rules.scope, systemQuery(name))) });
     }
     if (system.errors === 0) continue;
     const peakText = `Peak ${formatCount(system.peak.errors)} at ${clock(system.peak.from)}.`;
@@ -235,7 +236,7 @@ export function analyzePeriod(data: PeriodData, rules: HealthRules, context: Ana
           recurring.push({ severity: "notice", kind: "recurring", system: name, title: `${name} has recurring error bursts`, detail: `${bursts} of ${buckets.length} periods of ${formatSpan(plan.bucketMs)} had ${formatCount(Math.ceil(threshold))} errors or more; usually ${formatCount(usual)}. ${peakText}`, weight: system.peak.errors, url: system.url });
         } else {
           flag("burst");
-          add({ severity: "warning", kind: "burst", system: name, title: `${name} error burst at ${clock(system.peak.from)}`, detail: `${formatCount(system.peak.errors)} errors in ${formatSpan(plan.bucketMs)}; usually ${formatCount(usual)} ${per(plan.bucketMs)}.`, weight: system.peak.errors - usual, url: url(allOf(errorQuery, fieldMatch(rules.groupBy, name)), { from: system.peak.from, until: system.peak.from + plan.bucketMs }) });
+          add({ severity: "warning", kind: "burst", system: name, title: `${name} error burst at ${clock(system.peak.from)}`, detail: `${formatCount(system.peak.errors)} errors in ${formatSpan(plan.bucketMs)}; usually ${formatCount(usual)} ${per(plan.bucketMs)}.`, weight: system.peak.errors - usual, url: url(allOf(errorQuery, systemQuery(name)), { from: system.peak.from, until: system.peak.from + plan.bucketMs }) });
         }
       }
     }

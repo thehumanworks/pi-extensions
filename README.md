@@ -23,6 +23,7 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | `@nothumanwork/pi-background-compaction` | [pi-background-compaction](pi-background-compaction/README.md) |
 | `@nothumanwork/pi-bot` | [pi-bot](pi-bot/README.md) |
 | `@nothumanwork/pi-canary` | [pi-canary](pi-canary/README.md) |
+| `@nothumanwork/pi-create-document` | [pi-create-document](pi-create-document/README.md) — create, convert and read PDF, Word, PowerPoint, Excel, CSV and PNG files with no system tools |
 | `@nothumanwork/pi-fast` | [pi-fast](pi-fast/README.md) |
 | `@nothumanwork/pi-loggly` | [pi-loggly](pi-loggly/README.md) — Loggly log tools, health dashboard and status line |
 | `@nothumanwork/pi-loop` | [pi-loop](pi-loop/README.md) |

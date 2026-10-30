@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync as makeTemp, readdirSync, rmSync, readFileSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import { registerLoggly, scheduleRisk } from "../index.ts";
+import { registerLoggly, savingNotice, scheduleRisk } from "../index.ts";
 import { DEFAULT_HEALTH_RULES } from "../src/analysis/health.ts";
 import { DEFAULT_CONFIG, type LogglyConfig } from "../src/config.ts";
 import { HealthMonitor } from "../src/monitor.ts";
@@ -45,6 +45,8 @@ const theme = { fg: (_color: string, text: string) => text, bg: (_color: string,
 function fakeCtx(mode: "tui" | "print" = "tui") {
   // The text of the status row each time it changes, undefined when removed.
   const statuses: Array<string | undefined> = [];
+  // Pi's shared footer line: [key, text] for each change.
+  const footer: Array<[string, string | undefined]> = [];
   const notes: Array<{ message: string; type?: string }> = [];
   let widget: { render(width: number): string[]; dispose?(): void } | undefined;
   const ctx = {
@@ -52,7 +54,7 @@ function fakeCtx(mode: "tui" | "print" = "tui") {
     hasUI: mode === "tui",
     ui: {
       theme,
-      setStatus: () => {},
+      setStatus: (key: string, text: string | undefined) => footer.push([key, text]),
       setWidget: (key: string, content: unknown, options?: { placement?: string }) => {
         assert.equal(key, "loggly");
         widget?.dispose?.();
@@ -67,7 +69,7 @@ function fakeCtx(mode: "tui" | "print" = "tui") {
       setEditorText: () => {},
     },
   };
-  return { ctx, statuses, notes };
+  return { ctx, statuses, footer, notes };
 }
 
 const ev = (id: string, message: string, app: string, timestamp = Date.UTC(2026, 9, 30, 9, 30)): LogEvent => ({
@@ -296,12 +298,19 @@ test("/loggly trends saves missing days in the background and reports when done"
   const trendsDir = join(dir, "trends");
   const client = fakeClient();
   registerLoggly(pi, { configPath: join(dir, "loggly.json"), env: { LOGGLY_SUBDOMAIN: "acme", LOGGLY_API_TOKEN: "t" }, createClient: () => client as never, trendsDir, resultsDir: join(dir, "results") });
-  const { ctx, notes } = fakeCtx();
+  const { ctx, notes, footer } = fakeCtx();
   await emit("session_start", ctx);
   await commands.get("loggly")!.handler("trends", ctx);
-  assert.equal(notes.at(-1)!.message, "Saving Loggly trends in the background, about 10 seconds per missing day.");
+  assert.equal(notes.at(-1)!.message, savingNotice(288));
+  assert.match(savingNotice(288), /about 2 minutes per day, most of it estimating error patterns from 288 random windows \(trends\.sampleWindows\)/);
+  assert.match(savingNotice(0), /about 10 seconds per day;/);
   await eventually(() => /^Loggly trends saved/.test(notes.at(-1)!.message));
   assert.match(notes.at(-1)!.message, new RegExp(`^Loggly trends saved [12] new days?: [12] days? stored, .* \\(${escape(trendsDir)}\\)\\. Run /loggly trends every <days> to save them at Pi start\\.$`));
+  const progress = footer.filter(([key]) => key === "loggly-trends").map(([, text]) => text);
+  assert.match(progress[0]!, /^loggly trends 0\/[12] days$/);
+  assert.equal(progress.at(-1), undefined, "the footer is cleared when done");
+  const saved = JSON.parse(readFileSync(join(trendsDir, readdirSync(trendsDir).find((name) => name.endsWith(".json"))!), "utf8"));
+  assert.equal(saved.patterns.design.windows, 288, "days are saved with pattern estimates by default");
   await commands.get("loggly")!.handler("trends", ctx);
   await eventually(() => /^Loggly trends up to date/.test(notes.at(-1)!.message));
   assert.match(notes.at(-1)!.message, /^Loggly trends up to date: [12] days stored/);

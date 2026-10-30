@@ -88,6 +88,13 @@ test("config keeps valid settings, reports invalid ones and defaults the rest", 
   assert.deepEqual(problems.map((p) => p.split(" ")[0]), ["statusLine.refreshSeconds", "health.window"]);
   assert.equal(normalizeConfig({ trends: { saveEveryDays: 1.5 } }, problems).trends.saveEveryDays, 0, "a fractional schedule is invalid");
   assert.match(problems.at(-1)!, /^trends.saveEveryDays is invalid; using 0/);
+  assert.equal(DEFAULT_CONFIG.trends.sampleWindows, 288);
+  assert.equal(normalizeConfig({ trends: { sampleWindows: 0 } }).trends.sampleWindows, 0, "0 turns sampling off");
+  assert.equal(normalizeConfig({ trends: { sampleWindows: 96 } }).trends.sampleWindows, 96);
+  for (const invalid of [10, 2000, 50.5, "288"]) {
+    assert.equal(normalizeConfig({ trends: { sampleWindows: invalid } }, problems).trends.sampleWindows, 288);
+    assert.match(problems.at(-1)!, /^trends.sampleWindows is invalid; using 288/);
+  }
   assert.deepEqual(normalizeConfig(undefined), DEFAULT_CONFIG);
 });
 

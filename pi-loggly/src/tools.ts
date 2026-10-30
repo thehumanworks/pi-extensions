@@ -1,7 +1,7 @@
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { formatCount, formatPercent, sparkline } from "./analysis/format.ts";
-import { allOf, fieldMatch, type HealthRules } from "./analysis/health.ts";
+import { allOf, valueMatch, type HealthRules } from "./analysis/health.ts";
 import { clusterMessages, extractMessage, fieldText, getField, singleLine } from "./analysis/patterns.ts";
 import type { LogglyConfig } from "./config.ts";
 import type { HealthMonitor } from "./monitor.ts";
@@ -243,7 +243,7 @@ export function registerLogglyTools(pi: ExtensionAPI, deps: ToolDeps): void {
       if (params.system && !snapshot.issues.some((issue) => issue.system === params.system && issue.patterns)) {
         const r = snapshot.rules;
         const events = await deps.getClient().search(
-          { query: allOf(r.scope, r.errorQuery, fieldMatch(r.groupBy, params.system)), from: new Date(snapshot.windows[0]!.from), until: new Date(snapshot.current.until), order: "desc" },
+          { query: allOf(r.scope, r.errorQuery, valueMatch(r.groupBy, params.system, snapshot.systems.map((s) => s.name))), from: new Date(snapshot.windows[0]!.from), until: new Date(snapshot.current.until), order: "desc" },
           { limit: r.sampleSize, signal },
         );
         if (events.length) systemPatterns = { patterns: clusterMessages(events, { messageFields: r.messageFields, limit: 5 }), sampled: events.length };
@@ -257,11 +257,11 @@ export function registerLogglyTools(pi: ExtensionAPI, deps: ToolDeps): void {
     ...common,
     name: "loggly_trends",
     label: "Loggly trends",
-    description: "Daily errors and events per system, and daily counts of the most frequent error messages, from files saved on this machine, including days Loggly has deleted. Shows the top and fastest-growing systems and messages, and messages first seen recently. Use loggly_timeline for detail within Loggly's retention.",
+    description: "Daily errors and events per system, and daily counts of the most frequent error messages, from files saved on this machine, including days Loggly has deleted. Shows the top and fastest-growing systems and messages, messages first seen recently, and estimated patterns of the other errors with 95% intervals, when saved. Use loggly_timeline for detail within Loggly's retention.",
     parameters: Type.Object({
       days: Type.Optional(Type.Integer({ minimum: 2, maximum: 730, description: "Days to report, ending yesterday (UTC). Default 30" })),
       system: Type.Optional(Type.String({ minLength: 1, description: `Daily counts for one system (a ${rules.groupBy} value)` })),
-      message: Type.Optional(Type.String({ minLength: 1, description: "Daily counts of saved error messages containing this text" })),
+      message: Type.Optional(Type.String({ minLength: 1, description: "Daily counts of saved error messages, and estimated patterns, containing this text" })),
       top: Type.Optional(Type.Integer({ minimum: 1, maximum: 50, description: "Rows per list. Default 10" })),
     }),
     async execute(_id, params) {
