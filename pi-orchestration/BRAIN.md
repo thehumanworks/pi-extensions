@@ -36,7 +36,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
    2. ✅ Done in tick 13: expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
    3. ⚠️ Half done in tick 14: unknown `ctx.agent`/`ctx.spawn` options now fail with `unknown_agent_option` and a did-you-mean (execution.ts `AGENT_OPTIONS`, `resolveOptions`). Remaining: lint unknown `ctx.*` members and unknown options at `validate` time (src/validation.ts), so the author learns before launching.
-   4. Require args to be `Type.Object` (loader.ts:72).
+   4. ✅ Done in tick 15: args must be `Type.Object` (loader.ts:72); plain objects and `Type.String()` fail validate/catalog with the offending value.
    5. `poll` returns on `waiting_signal` by default; print only changes; help says `--interval 1s` (cli.ts:22, 227-247).
    6. Tool-shaped hints in tool results, not CLI commands (extension.ts:358, presentation.ts:110-113).
    7. Tool errors carry a code; fix dead `run_not_found` branch (extension.ts:179, 318).
@@ -168,4 +168,10 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts` "agents return text…" adds a fifth parallel call with `tool` and asserts the code and the hint. The static half (lint in `validate`) is not done.
 - Value: ✅ yielded value: a misspelled option can no longer widen an agent's tools silently.
 - Lesson: check option names at the one function every agent path goes through; the run-time check is cheap, the validate-time lint is the follow-up.
+
+### Tick 15 · 12:07 · Workflow args must be an object schema
+- Action: took axeval fix 4, next in order and one function. axeval saw `args: { topic: "string" }` pass validate (`Type.IsSchema` accepts any object) and run with `{topic:5}` unchecked, and `Type.String()` pass validate then fail every run. `src/loader.ts:72` now uses `Type.IsObject` and says `args must be Type.Object({...}) from "typebox"; got {"topic":"string"}` (value truncated to 120 chars). No workflow in the repo uses non-object args.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts` catalog test adds `plainargs` and `stringargs` fixtures and asserts both errors. Not verified live in Pi (D8).
+- Value: ✅ yielded value: a malformed args schema is caught at validate, before an agent runs with unchecked input.
+- Lesson: TypeBox's `IsSchema` is a weak structural check; use the kind-specific guard (`IsObject`) where the contract needs one shape.
 

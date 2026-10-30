@@ -69,10 +69,14 @@ export async function loadWorkflow(ref: WorkflowRef | string, cwd: string): Prom
   if (!definition || typeof definition !== "object" || typeof definition.run !== "function" || typeof definition.name !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(definition.name)) {
     throw new WorkflowError("invalid_workflow", `${path} must export default defineWorkflow({ name: 'kebab-case', async run(ctx) { ... } }).`);
   }
-  if (definition.args !== undefined && !Type.IsSchema(definition.args)) {
-    throw new WorkflowError("invalid_workflow", `${path}: args must be a TypeBox schema.`);
+  // Args always arrive as a JSON object (tool `args`, CLI --args), so only an object schema can check them.
+  if (definition.args !== undefined && !Type.IsObject(definition.args)) {
+    throw new WorkflowError("invalid_workflow", `${path}: args must be Type.Object({...}) from "typebox"; got ${describeArgs(definition.args)}.`);
   }
   return { definition, path, hash };
+}
+function describeArgs(args: unknown): string {
+  try { return JSON.stringify(args)?.slice(0, 120) ?? String(args); } catch { return String(args); }
 }
 export async function validateWorkflow(ref: WorkflowRef | string, cwd: string): Promise<ValidationResult> {
   try {

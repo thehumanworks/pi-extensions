@@ -169,11 +169,15 @@ test("catalog reports a broken file without hiding valid workflows", async () =>
   const f = await fixture({ workflows: {
     good: workflow(`{ name: "good", description: "Works", async run() { return 1; } }`),
     broken: "export default { oops",
+    plainargs: workflow(`{ name: "plainargs", args: { topic: "string" }, async run() { return 1; } }`),
+    stringargs: workflow(`{ name: "stringargs", args: Type.String(), async run() { return 1; } }`),
   } });
   try {
     const entries = await f.request<CatalogEntry[]>({ action: "catalog", cwd: f.project });
-    assert.deepEqual(entries.map(entry => [entry.name, entry.error === undefined]), [["broken", false], ["good", true]]);
+    assert.deepEqual(entries.map(entry => [entry.name, entry.error === undefined]), [["broken", false], ["good", true], ["plainargs", false], ["stringargs", false]]);
     assert.match(entries[0].error!, /Cannot load/);
+    assert.match(entries[2].error!, /args must be Type\.Object\(\{\.\.\.\}\) from "typebox"; got \{"topic":"string"\}/);
+    assert.match(entries[3].error!, /args must be Type\.Object/);
     assert.equal((await f.run("good")).result, 1);
   } finally { await f.close(); }
 });
