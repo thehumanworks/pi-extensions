@@ -36,7 +36,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
    2. ✅ Done in tick 13: expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
-   3. ✅ Done in ticks 14 and 27: unknown `ctx.agent`/`ctx.spawn` options fail at run time (`resolveOptions`), and `validate` reports literal `ctx.agent(p, {…})` and `ctx.spawn({…})` options as `unknown_agent_option` (`src/validation.ts`, `AGENT_OPTIONS` now lives there). Not linted: unknown `ctx.*` members, options passed as variables.
+   3. ✅ Done in ticks 14, 27 and 32: unknown `ctx.agent`/`ctx.spawn` options fail at run time (`resolveOptions`), and `validate` reports literal `ctx.agent(p, {…})` and `ctx.spawn({…})` options as `unknown_agent_option` and unknown `ctx.*` members as `unknown_context_member` (`src/validation.ts`). Not linted: options passed as variables.
    4. ✅ Done in tick 15: args must be `Type.Object` (loader.ts:72); plain objects and `Type.String()` fail validate/catalog with the offending value.
    5. ✅ Done in tick 16: `poll` returns on `waiting_signal` by default (`--until done` keeps waiting), prints a line only when more than elapsed time changed, help/README say `--interval 1s`. `watch` still defaults to `done`.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
@@ -228,3 +228,9 @@ None.
 - Value: ✅ yielded value: the effect of ticks 9-30 will be measured against round one's 5/8/…-wrong-turn baseline.
 - Also archived ticks 6, 7 and the 11:30 supervisor entry (Log was 27 entries), keeping their lessons.
 - Lesson: put the known environment traps in the brief; round one lost turns to them. Next tick: act on axeval2's partial findings if concrete and outside its scope, otherwise a Backlog 4 item (git-ignored workflow warning in validate/catalog).
+
+### Tick 32 · 13:29 · validate reports unknown ctx members
+- Action: took axeval2's scenario 2 finding (a), concrete and outside its write scope: `ctx.runAgent(…)` validated as Valid and failed at run time with `ctx.runAgent is not a function`, no line. `lintDeterminism` (`src/validation.ts`) now takes the context name from the outer `run`'s first parameter and reports any `ctx.<member>` not in the new `CONTEXT_MEMBERS` as `unknown_context_member` with its line and the member list. Nested DAG `run(deps)` functions are ignored (only a `run` entered outside run control flow sets the name).
+- Outcome: first try flagged `deps.web` in `examples/02-dag.ts` (37/38); restricting to the outer run fixed it. `npm run check` clean; `npm test` **38/38**; `test/unit.test.ts` asserts `ctx.runAgent` yields exactly one `unknown_context_member` naming `agent`. Commit `2cb15bb`.
+- Value: ✅ yielded value: a misnamed ctx method is caught at validate with a line number.
+- Lesson: the examples are the lint's regression suite; a new lint must pass them before it ships. Next: axeval2's other scenario 2 items (b) `readFileSync` in run, (c) wrong typebox import hint, (d) load errors stop at the first; or attached `run` reprinting the full tree every second (scenario 1).
