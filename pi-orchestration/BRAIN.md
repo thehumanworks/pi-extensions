@@ -24,7 +24,8 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- None active. `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
+- `axeval` (spawned tick 8, 11:30; task `303a9c1`, herdr w4:p1): agent-experience evaluation of the CLI and the Pi tool through 4 scenarios; delivers `brain/axeval.md` with wrong turns and a ranked fix list. Evaluation only, no src/ changes.
+- `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
 ## Backlog
 
@@ -41,7 +42,8 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    - Parity: an agent outside Pi gets the same guide (`workflow guide`) and examples as one inside Pi.
    - Exit codes that scripts and agents can branch on.
    - ✅ Done in tick 7: a long `--home` now fails with `home_too_long` naming the byte limit and the fix, before any directory is created.
-   - An agent-experience evaluation: give fresh agents tasks through only the CLI or only the tool, and count wrong turns. This measures progress on the goal instead of guessing.
+   - An agent-experience evaluation: give fresh agents tasks through only the CLI or only the tool, and count wrong turns. This measures progress on the goal instead of guessing. In progress: `axeval` (tick 8). Its ranked fix list should reorder this backlog.
+   - Exit codes are already documented in `workflow --help` (0 success, 1 usage, 2 failed, 3 cancelled, 4 worker unavailable); check the docs and the tool agree rather than adding them.
 
 ## Lessons
 
@@ -111,3 +113,9 @@ None.
 - Outcome: `npm test` 36/36; `nix build .#workflow` 36/36 plus the installed smoke; `npm pack --dry-run` ships 92 files with no BRAIN, brain/, ledgers, test or nix files. main fast-forwarded to brain/orchestration in the main checkout, preserving the user's staged work; main is not pushed. Loop restarted.
 - Value: ✅
 - Lesson: the main checkout keeps staged user work, so a non-fast-forward merge there would abort. Keep brain/orchestration a descendant of main so releases stay fast-forwards.
+
+### Tick 8 · 11:30 · Spawn the agent-experience evaluation
+- Action: spawned `axeval` to run 4 scenarios as a fresh agent (CLI author-validate-run-poll-result, broken-workflow errors, signal discovery from status, the Pi tool headless) and rank fixes by wrong turns. Chosen over another small fix because the backlog's remaining items are guesses; an evaluation turns them into evidence, and it is too long for one tick.
+- Outcome: `loop.sh spawn` took 44 seconds; task committed as `303a9c1` on `brain/axeval`, Herdr w4:p1 confirmed `agent_status=working`. Found while writing the brief: `workflow --help` already documents exit codes, so that backlog item shrinks to a parity check. No code changed; tests not rerun (36/36 at aeb0bc2).
+- Value: ✅ yielded value: the next code changes will be chosen from observed wrong turns, not guesses.
+- Lesson: read the surface's own help before adding a backlog item; one listed gap was already closed.
