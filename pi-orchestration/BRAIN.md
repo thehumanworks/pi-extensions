@@ -277,3 +277,9 @@ None.
 - Value: ✅ yielded value: both surfaces now stop at a gate instead of blocking.
 - Lesson: the `harness()` status queue is shared by launch, poller and status; use a single-status queue when the order is not the point. Next: axeval3's report (session E will measure this) and its remaining polish (`Approval 0/0`, no-model warning on agent-less workflows).
 - Also steered axeval3 to measure session E before and after merging brain/orchestration (42b1362).
+
+### Tick 50 · 15:06 · Empty list points to catalog
+- Action: took axeval3's F2 finding (ledger 16:10), its only wrong turn in the new probes: asked to "list the available workflows", an agent ran `workflow list`, got `No workflow runs.` and had to read `--help` to find `catalog`. Chosen over `Approval 0/0` and the no-model warning because it is a measured wrong turn and fits four minutes. Empty `list` now prints `No workflow runs. Saved workflows are listed by: <program> catalog` (`src/cli.ts` list case) and the tool `No workflow runs. Saved workflows are listed by {"action":"catalog"}.` (`src/extension.ts` list case); `runList` stays surface-neutral.
+- Outcome: `test/process.test.ts:60` asserts the CLI text on a home with no runs; `npm test` **41/41**. Commit `ad724c3`. The Nix smoke test reads only `list --all` JSON. Not tested: the tool-side text (the `harness()` fake always returns runs).
+- Value: ✅ yielded value: the run/workflow naming confusion now resolves in one step.
+- Lesson: when a noun is ambiguous (list = runs), make the empty case name the other command. Next: a tool-path test for the empty list, then axeval3's report.
