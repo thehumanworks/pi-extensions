@@ -181,6 +181,7 @@ test("the tool explains every action and an empty catalog teaches authoring", as
     assert.match(tool.description, new RegExp(`\\b${action}\\b`), action);
   assert.ok(tool.promptGuidelines?.some(line => /`pi workflow` is not a command/.test(line)));
   assert.match(tool.parameters.properties.budget.properties.maxAgents.description, /Cap only/);
+  assert.deepEqual(tool.parameters.properties.value.anyOf.map((item: { type: string }) => item.type), ["object", "array", "string", "number", "boolean", "null"]);
 
   const catalog = await tool.execute("call-1", { action: "catalog" }, undefined, undefined, ctx) as ToolReply;
   assert.match(catalog.content[0].text, /^No saved workflows \(searched \/w\/\.pi\/workflows and .*\)\. To write one, call guide/);

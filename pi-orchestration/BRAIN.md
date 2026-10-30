@@ -240,3 +240,9 @@ None.
 - Outcome: `npm run check` clean; `npm test` **38/38**. `test/engine.test.ts` (cancelled gate in "signals are schema-checked…") asserts `run_finished`; with the old engine/index.ts the suite is 37/38, so the test catches the bug.
 - Value: ✅ yielded value: an agent no longer gets a false "accepted" for a signal that nothing will read.
 - Lesson: check a new assertion against the old source before trusting it; swapping one file via `git show HEAD:` takes seconds. Next: axeval2's other open items: `status --verbose`/`watch` lack `expects:`, `result_not_ready` gives a CLI hint in tool results, signal exit codes (unknown_signal 2 vs invalid_signal 1), attached `run` reprints the tree each second.
+
+### Tick 34 · 13:41 · Tool signal value is typed
+- Action: took axeval2's scenario 4 finding, its costliest (session D: 13 wrong turns, three `value` JSON strings, a cancel and a bash fallback), because axeval2's own experiment showed the fix. `src/extension.ts` `value` is now a union of object, array, string, number, boolean and null instead of `Type.Unknown`, as `args` became in tick 12.
+- Outcome: axeval2's temporary experiment with this schema: D-x1 4 calls/0 errors, `"value": {"ok": true}` first time. `npm run check` clean; `npm test` **38/38**; `test/extension.test.ts:184` asserts the six member types. Not verified live in Pi (D8).
+- Value: ✅ yielded value: the tool schema now shows the model that `value` is a JSON value, which removed the scenario's wrong turns in the experiment.
+- Lesson: let an evaluation subagent run a reverted experiment; it turns a guess into a measured one-line fix. Next: `status --verbose`/`watch` print `expects:` (S3 a; also D-x2's one error), then attached `run` stops at a signal wait.
