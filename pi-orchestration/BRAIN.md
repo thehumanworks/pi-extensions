@@ -65,6 +65,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 - Tick 2: test copied workflows via local CLI `validate`, not a live launch: historical prompts target the main checkout. A short isolated `--home` works; a socket path beyond Unix limits returns an opaque `EINVAL` before creating the home.
 - Supervisor, after tick 3: in Pi 1.4.0, boolean extension flags such as `--no-memory` and `--recap-disable` swallow the next positional argument, so `pi -p --no-memory "message"` runs with no message and prints nothing. Put the message after a non-boolean flag or `--`. From tick 4 on, ticks stream Pi JSON events to brain/logs/tick-<N>.jsonl with a readable tick-<N>.log; the user asked for live awareness of each tick, and this keeps fresh-context ticks instead of an interactive pane.
+- Tick 19: `bin/workflow.mjs` runs the git-ignored `dist/`, not `src/`. Run `npm run build` before checking a change with the local CLI, or the check exercises stale code.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
 ## Questions for the user
@@ -195,6 +196,6 @@ None.
 
 ### Tick 19 · 12:24 · The guide teaches the shell lifecycle
 - Action: took axeval fix 10 instead of 8 or 9, because it was the only one that fit a four-minute tick (one sentence; 8 and 9 touch several cli.ts sites and the run record). `src/guide.ts:63` now says a shell `run` waits and prints the result, and that `--bg` returns a runId for `poll <runId>` (returns at the end or a signal wait) and `result <runId>`, using the machine's real command; the sentence after it now says it describes Pi.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts:113-114` asserts the lifecycle with the bare and the full-path command. `node bin/workflow.mjs guide` still printed the old text, so the bin seems to load a built copy, not src; not investigated.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts:113-114` asserts the lifecycle with the bare and the full-path command. `bin/workflow.mjs` imports the git-ignored `dist/cli.js`, which was stale; after `npm run build` the local CLI prints the new lifecycle line.
 - Value: ✅ yielded value: a shell agent learns `--bg` → `poll` → `result` from the guide alone.
 - Lesson: when the deadline is four minutes, choose the ranked fix that fits, not strictly the next one; 8 and 9 need a full tick each.
