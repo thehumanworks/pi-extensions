@@ -52,14 +52,16 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
     if (effectOptions && (value.type === "ObjectMethod" || value.type === "ObjectProperty") && key === "compensate") return;
     if (active && (value.type === "CallExpression" || value.type === "OptionalCallExpression")) {
       const callee = value.callee;
-      const options = node(callee) && name(callee.property) === "agent" ? (value.arguments as unknown[])[1] : undefined;
+      const method = node(callee) ? name(callee.property) : undefined;
+      const options = method === "agent" ? (value.arguments as unknown[])[1] : method === "spawn" ? (value.arguments as unknown[])[0] : undefined;
+      const known = method === "spawn" ? [...AGENT_OPTIONS, "name", "initialPrompt", "detach"] : AGENT_OPTIONS;
       if (node(options) && options.type === "ObjectExpression") {
         for (const property of options.properties as Node[]) {
           const option = property.type === "ObjectProperty" && !property.computed ? name(property.key) : undefined;
-          if (option === undefined || AGENT_OPTIONS.includes(option)) continue;
-          const near = AGENT_OPTIONS.find(known => known.startsWith(option) || option.startsWith(known));
+          if (option === undefined || known.includes(option)) continue;
+          const near = known.find(valid => valid.startsWith(option) || option.startsWith(valid));
           const loc = property.loc as { start?: { line?: number } } | undefined;
-          diagnostics.push({ code: "unknown_agent_option", line: loc?.start?.line, message: `Unknown agent option '${option}'${near ? ` (did you mean '${near}'?)` : ""}. Valid options: ${AGENT_OPTIONS.join(", ")}.` });
+          diagnostics.push({ code: "unknown_agent_option", line: loc?.start?.line, message: `Unknown agent option '${option}'${near ? ` (did you mean '${near}'?)` : ""}. Valid options: ${known.join(", ")}.` });
         }
       }
       const callName = name(callee);
