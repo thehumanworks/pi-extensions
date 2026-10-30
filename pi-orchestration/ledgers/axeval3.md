@@ -1,4 +1,4 @@
-Status: working — S1 done (0 wrong turns); running S2
+Status: working — S1 0, S2 0 wrong turns; running S3
 
 # Subagent axeval3
 
@@ -12,3 +12,4 @@ Goal: measure the agent experience of pi-orchestration after the axeval2 fixes, 
 
 - 14:55 Read brain/axeval2.md. Round-two artefacts still in /tmp (ax2, axb1-4: workflow files, session.sh, prompts in logs), so S1-S4 can repeat exactly. Built; `npm test` 40/40 at cc9dc0c (baseline matches). Plan: copy files to /tmp/axc1..4, same commands, same model (openrouter/anthropic/claude-haiku-4.5 --thinking off for Pi; anthropic/claude-haiku-4-5 for workflow agents).
 - 15:05 S1 (CLI, /tmp/axc1): same sequence as round two (help, guide, init, pair.ts copied, validate, catalog, run --bg, poll, status/verbose/json, result/json, list/json, agents --run, worker status, poll --json, attached run, run --bg --json, attached run --json, nap attached). **0 wrong turns** (round two 0). Attached nap printed 2 trees (round two 7): print-only-changes fix holds. Still open polish: `Nap 0/0`; guide's signal line still only says "delivered with the signal action".
+- 15:15 S2 (CLI, /tmp/axc2, round one's start state: nondet named "Non Det" with Date.now/Math.random/readFileSync; typeerr with ctx.runAgent(…,{tool:[]}); plus round two's clock.ts). **0 wrong turns** (round two 4). All 8 round-one items hold: one-pass validate shows the name error + 3 lint lines; readFileSync flagged, and passes once inside ctx.step; ctx.runAgent → unknown_context_member line 9; launch refuses with `invalid_workflow … no run was created` exit 1 (typeerr, clock, nondet); sinclair hint; syntax JSON has path/line/column; failed run text status shows `step_failed: ENOENT …`. Minor new: sinclair message lacks a separator (`'@sinclair/typebox' Use import`); syntax text repeats the path; `not_found` exits 2 ("failed"); invalid_args JSON-string example still fixed `{"topic":"bees"}` (check with gate's `plan` in S3). Note: a hook blocks shell commands whose text contains delete/rename verbs, even in heredocs; use the edit tool for the ledger.
