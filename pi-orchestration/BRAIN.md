@@ -89,6 +89,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
+- Tick 16: a four-minute tick fits one ranked fix when the report already names file:line.
 - Tick 15: TypeBox's `IsSchema` is a weak structural check; use the kind-specific guard (`IsObject`) where the contract needs one shape.
 - Tick 14: check option names at the one function every agent path goes through (`resolveOptions`); lint at validate as the follow-up.
 - Ticks 11-13: an evaluation subagent with a narrow write scope merges cleanly. TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer. Keep error formatting shared across surfaces (`src/engine/mismatch.ts`).
@@ -99,12 +100,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 None.
 
 ## Log
-
-### Tick 16 · 12:10 · poll stops at a signal wait and prints only changes
-- Action: took axeval fix 5, next in order and one function. In scenario 3 a plain `workflow poll <id>` on a gate printed the same line every second and never returned, so the agent's bash needed `timeout`. `src/cli.ts` poll now defaults `--until` to `signal` (terminal or `waiting_signal` returns 0 after printing the `signal:` line); `watch` keeps `done`. A line is emitted only when the status text changes apart from duration tokens. Help and README say `[--interval 1s] [--until signal|done]`, matching the real default.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts:97` now polls the waiting run without `--until` and asserts `waiting_signal`; the two post-signal polls pass `--until done` explicitly. Not verified live in Pi (D8; CLI only anyway).
-- Value: ✅ yielded value: `workflow poll` can no longer hang an agent on a gate.
-- Lesson: a four-minute tick fits one axeval fix when the report already names file:line; read the report section, edit, test, commit.
 
 ### Tick 17 · 12:14 · Tool results give tool-shaped next steps
 - Action: took axeval fix 6, next in order and one module. In session D the model read the CLI command `workflow signal …` from a tool result and fell back to bash. `src/presentation.ts:69-79` adds a `Hints` interface with `cliHints(program)` and `toolHints`; `runTree`/`runDetail` take `string | Hints`, so the CLI keeps its `--home`-aware commands and the extension's verbose `status` (`src/extension.ts:361`) now says `deliver with: {"action":"signal","runId":…,"key":…,"value":<JSON value, not a string>}` and `Resume with: {"action":"retry","runId":…}`.
@@ -252,3 +247,9 @@ None.
 - Outcome: `npm run check` clean; `npm test` **38/38**. `test/process.test.ts:57-58` asserts `status nope` prints `error not_found: Unknown workflow run nope. List runs: … list.` The first regex expected `--home`, but the sandbox sets the home by environment, so the hint is the bare program; loosened. Not tested: the tool-side hint, and the new exit-1 codes (no assertion). Commit `8e2aaa5`.
 - Value: ✅ yielded value: exit codes for lookup typos match the help, and neither surface names the other's command for a missing run.
 - Lesson: keep the engine's messages surface-neutral and let each client append its own next step; this is the third time (result_not_ready, signal, not_found). Next: 00.6 (validate in one pass) or a test for the tool `not_found` hint via the `harness()` fake.
+
+### Tick 41 · 14:14 · Test the tool not_found hint
+- Action: closed tick 40's untested gap, because it fits four minutes and the tool-side `not_found` hint (`src/extension.ts:404`) had no assertion. The `harness()` fake client throws `not_found` for `status nope`; the brief-status test asserts the tool error is exactly `not_found: Unknown workflow run nope. List runs with {"action":"list"}.`
+- Outcome: `npm test` **38/38**. With line 404 removed the extension tests are 8/9, so the assertion catches a missing hint. Commit `b3a371c`.
+- Value: ✅ yielded value: all three surface-specific hints (result_not_ready, signal, not_found) are under test on the tool path.
+- Lesson: one fake branch per error code in `harness()` keeps tool-path tests to two lines. Next: 00.6 (validate in one pass) needs a full tick or a subagent; or 00.3 (`waitingLines` helper).
