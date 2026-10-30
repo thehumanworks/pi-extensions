@@ -4,13 +4,19 @@ import { setTimeout as delay } from "node:timers/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { WorkflowClient } from "../src/cli.ts";
 import { WorkflowError } from "../src/errors.ts";
-import { registerOrchestration } from "../src/extension.ts";
+import { registerOrchestration, widgetLine } from "../src/extension.ts";
 import { BIN_PATH, README_PATH } from "../src/guide.ts";
 import type { RunRecord, RunStatus } from "../src/index.ts";
 import type { ControlRequest } from "../src/protocol.ts";
 
 type Handler = (event: unknown, ctx: ExtensionContext) => Promise<void>;
 type Entry = { type: "custom"; customType: string; data: unknown } | { type: "custom_message"; customType: string; details: unknown };
+
+test("widget line pluralises agents and other runs", () => {
+  const one = { ...runRecord("run-one", "running"), usage: { inputTokens: 0, outputTokens: 0, costUsd: 0, agents: 1 } };
+  assert.match(widgetLine(one, 1, 200), / · 1 agent · \$0\.0000 · \+1 run$/u);
+  assert.match(widgetLine(runRecord("run-two", "running"), 2, 200), / · 0 agents · \$0\.0000 · \+2 runs$/u);
+});
 
 function runRecord(id: string, status: RunStatus): RunRecord {
   return {

@@ -33,13 +33,13 @@ export const PROMPT_GUIDELINES = [
   "Users run workflows from a terminal with the `workflow` command (the guide action shows the exact command for this machine) and inside Pi with /workflow. `pi workflow` is not a command.",
 ];
 
-function widgetLine(run: RunRecord, otherRuns: number, width: number): string {
+export function widgetLine(run: RunRecord, otherRuns: number, width: number): string {
   const phase = run.phases.findLast(item => item.done < item.agents) ?? run.phases.at(-1);
   const clean = (text: string) => stripTerminalSequences(text).replace(/\s+/gu, " ").trim();
   const name = clean(run.workflow.name), title = clean(phase?.title ?? run.status);
   const prefix = `workflow ${run.id.slice(0, 8)} `;
   const cost = run.usage.costUsd === undefined ? "cost n/a" : `$${run.usage.costUsd.toFixed(4)}`;
-  const suffix = `${phase ? ` ${phase.done}/${phase.agents}` : ""} · ${run.usage.agents} agents · ${cost}${otherRuns ? ` · +${otherRuns} runs` : ""}`;
+  const suffix = `${phase ? ` ${phase.done}/${phase.agents}` : ""} · ${run.usage.agents} agent${run.usage.agents === 1 ? "" : "s"} · ${cost}${otherRuns ? ` · +${otherRuns} run${otherRuns === 1 ? "" : "s"}` : ""}`;
   const available = Math.max(0, width - visibleWidth(prefix + " · " + suffix));
   const nameWidth = Math.min(visibleWidth(name), available - Math.min(visibleWidth(title), Math.floor(available / 2)));
   return truncateToWidth(prefix + truncateToWidth(name, nameWidth) + " · " +
