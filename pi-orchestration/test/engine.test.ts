@@ -203,7 +203,7 @@ test("catalog reports a broken file without hiding valid workflows", async () =>
     assert.deepEqual(entries.map(entry => [entry.name, entry.error === undefined]), [["broken", false], ["good", true], ["plainargs", false], ["sinclair", false], ["stringargs", false]]);
     assert.match(entries[0].error!, /Cannot load/);
     assert.match(entries[2].error!, /args must be Type\.Object\(\{\.\.\.\}\) from "typebox"; got \{"topic":"string"\}/);
-    assert.match(entries[3].error!, /Cannot find module '@sinclair\/typebox'.*Use import \{ Type \} from "typebox" \(bundled with pi-orchestration\)\.$/s);
+    assert.match(entries[3].error!, /Cannot find module '@sinclair\/typebox'\. Use import \{ Type \} from "typebox" \(bundled with pi-orchestration\)\.$/s);
     assert.doesNotMatch(entries[3].error!, /Require stack/);
     assert.match(entries[4].error!, /args must be Type\.Object/);
     assert.equal((await f.run("good")).result, 1);

@@ -78,7 +78,7 @@ export async function loadWorkflow(ref: WorkflowRef | string, cwd: string): Prom
 // Node's "Require stack:" lists loader internals, not the workflow's mistake.
 function loadMessage(error: unknown): string {
   const message = (error instanceof Error ? error.message : String(error)).replace(/\n\s*Require stack:[\s\S]*$/, "");
-  return /Cannot find module '@sinclair\/typebox/.test(message) ? `${message} Use import { Type } from "typebox" (bundled with pi-orchestration).` : message;
+  return /Cannot find module '@sinclair\/typebox/.test(message) ? `${message.replace(/\.?\s*$/, ".")} Use import { Type } from "typebox" (bundled with pi-orchestration).` : message;
 }
 function describeArgs(args: unknown): string {
   try { return JSON.stringify(args)?.slice(0, 120) ?? String(args); } catch { return String(args); }
