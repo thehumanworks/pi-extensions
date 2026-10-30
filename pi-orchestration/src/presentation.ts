@@ -40,7 +40,7 @@ export function runSummary(run: RunRecord, now = Date.now()): string {
   const tokens = run.usage.inputTokens + run.usage.outputTokens;
   const failed = failedSteps(run).length;
   return `${run.id} ${run.workflow.name} ${run.status} ${duration(elapsed)} · ${modelLabel(run.model, run.thinkingLevel)}` +
-    `${phases ? ` · ${phases}` : ""} · ${run.usage.agents} agents · ${tokens} tokens · ${cost(run.usage.costUsd)}` +
+    `${phases ? ` · ${phases}` : ""} · ${run.usage.agents} agent${run.usage.agents === 1 ? "" : "s"} · ${tokens} tokens · ${cost(run.usage.costUsd)}` +
     `${failed ? ` · ${failed} failed step${failed === 1 ? "" : "s"}` : ""}`;
 }
 

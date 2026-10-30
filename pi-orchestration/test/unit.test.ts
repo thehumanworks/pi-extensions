@@ -89,7 +89,7 @@ test("summaries name the model and catalogs read as text", () => {
     model: "openai/gpt", thinkingLevel: "high",
     steps: [{ key: "a", kind: "agent", status: "failed", attempts: 1, error: { message: "x" } }, { key: "p", kind: "parallel", status: "failed", attempts: 1 }],
   } as RunRecord;
-  assert.equal(runSummary(run), "r w completed 2s · openai/gpt:high · 1 agents · 3 tokens · $0.0000 · 1 failed step");
+  assert.equal(runSummary(run), "r w completed 2s · openai/gpt:high · 1 agent · 3 tokens · $0.0000 · 1 failed step");
   assert.match(runSummary({ ...run, model: undefined, steps: [] }), / · no model · /);
   // Brief and list views lead with the same fields on every surface.
   const head = { runId: "r", workflow: "w", status: "completed", model: "openai/gpt", summary: runSummary(run) };
