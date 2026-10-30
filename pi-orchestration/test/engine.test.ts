@@ -42,8 +42,13 @@ test("control flow keeps authored order and journals helpers", async () => {
     assert.equal(run.phases[0]?.title, "Compute");
 
     const invalid = await f.request<RunRecord>({ action: "run", requestId: "bad-args", workflow: { name: "flow" }, args: { n: "x" }, cwd: f.project, origin: { kind: "cli" } })
-      .then(() => undefined, (error: { code: string }) => error.code);
-    assert.equal(invalid, "invalid_args");
+      .then(() => undefined, (error: { code: string; message: string }) => error);
+    assert.equal(invalid?.code, "invalid_args");
+    assert.match(invalid?.message ?? "", /args\/n: .*\(got "x"\)/);
+    const encoded = await f.request<RunRecord>({ action: "run", requestId: "string-args", workflow: { name: "flow" }, args: '{"n":2}', cwd: f.project, origin: { kind: "cli" } })
+      .then(() => undefined, (error: { code: string; message: string }) => error);
+    assert.equal(encoded?.code, "invalid_args");
+    assert.match(encoded?.message ?? "", /JSON-encoded string; pass the object itself/);
   } finally { await f.close(); }
 });
 

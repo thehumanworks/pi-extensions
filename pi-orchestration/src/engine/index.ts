@@ -296,8 +296,17 @@ export class Engine {
       throw new WorkflowError("invalid_cwd", "cwd must be an existing absolute directory.");
     const loaded = await loadWorkflow(request.workflow, request.cwd);
     const argsSchema = loaded.definition.args ?? Type.Object({}, { additionalProperties: false });
-    if (!Value.Check(argsSchema, request.args ?? {}))
-      throw new WorkflowError("invalid_args", `Arguments do not match the workflow schema: ${JSON.stringify([...Value.Errors(argsSchema, request.args ?? {})]).slice(0, 2000)}`);
+    if (typeof request.args === "string")
+      throw new WorkflowError("invalid_args", `args is a JSON-encoded string; pass the object itself, e.g. {"topic":"bees"}, not "{\\"topic\\":\\"bees\\"}".`);
+    if (!Value.Check(argsSchema, request.args ?? {})) {
+      const problems = [...Value.Errors(argsSchema, request.args ?? {})].slice(0, 10)
+        .map(error => {
+          const got = error.instancePath.split("/").slice(1)
+            .reduce<unknown>((value, key) => (value as Record<string, unknown> | undefined)?.[key.replace(/~1/g, "/").replace(/~0/g, "~")], request.args ?? {});
+          return `args${error.instancePath}: ${error.message} (got ${JSON.stringify(got) ?? "undefined"})`;
+        });
+      throw new WorkflowError("invalid_args", `Arguments do not match the workflow schema ${JSON.stringify(argsSchema)}:\n${problems.join("\n")}`.slice(0, 2000));
+    }
     // Definition defaults outrank the launch model for every agent, so record the model agents will actually use.
     const model = loaded.definition.defaults?.model ?? request.model ?? this.options.defaultModel;
     if (model) this.resolveModel(model);

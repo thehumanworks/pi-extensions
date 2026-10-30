@@ -33,7 +33,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
-   1. Tool `args` typed as object + explain JSON-encoded string args (extension.ts:58, engine/index.ts:300). Sessions A/B never launched.
+   1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
    2. Expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
    3. Reject unknown `ctx.agent` options (`tool` silently granted Read/Write/Edit/Bash) and lint unknown `ctx.*` members (execution.ts:297, validation.ts:50).
    4. Require args to be `Type.Object` (loader.ts:72).
@@ -150,3 +150,9 @@ None.
 - Outcome: diff is docs only (`brain/axeval.md` +154, `ledgers/axeval.md` +26). Merge `050a209`, pushed; `npm test` on the merged branch **37/37**. `loop.sh retire axeval` succeeded. The 10 ranked fixes are now Backlog item 0. Biggest finding: the Pi tool's `args`/`value` are `Type.Unknown`, so Haiku sent JSON strings and two of four tool sessions never launched (11 and 5 wrong turns).
 - Value: ✅ yielded value: the next ticks have a measured, ordered fix list with file:line targets.
 - Lesson: an evaluation subagent with a narrow write scope merges cleanly; acting on its partial findings during the run (ticks 9-10) shortened the list it delivered.
+
+### Tick 12 · 11:49 · Tool args are an object; string and schema errors explain themselves
+- Action: took axeval fix 1, the top-ranked one (two of four tool sessions never launched because `args` was `Type.Unknown` and Haiku sent JSON strings). Small enough to do directly. `src/extension.ts:58` types `args` as an open object whose description says "pass the object itself, not a JSON-encoded string". `src/engine/index.ts:299-309` rejects a string `args` with `invalid_args: args is a JSON-encoded string; pass the object itself…` and turns schema errors into lines like `args/n: must be number (got "x")` after the schema JSON, instead of a raw TypeBox error dump.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts:44-51` now asserts the per-field line and the string-args message. Not verified live in Pi (installed Pi runs npm 0.3.0-or-earlier, D8).
+- Value: ✅ yielded value: the most expensive observed wrong turn now either cannot happen (schema says object) or gets a one-line fix.
+- Lesson: TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer.

@@ -55,7 +55,10 @@ const workflowSchema = Type.Union([
 const parameters = Type.Object({
   action: Type.Union(actions.map(value => Type.Literal(value))),
   workflow: Type.Optional(workflowSchema),
-  args: Type.Optional(Type.Unknown({ description: "For run: arguments matching the workflow's args schema (see catalog). Default {}." })),
+  args: Type.Optional(Type.Object({}, {
+    additionalProperties: true,
+    description: "For run: a JSON object matching the workflow's args schema (see catalog), e.g. {\"topic\":\"bees\"}. Pass the object itself, not a JSON-encoded string. Default {}.",
+  })),
   cwd: Type.Optional(Type.String({ description: "Project directory for run, catalog and validate; agents work here. Default: this session's cwd." })),
   model: Type.Optional(Type.Union([Type.String(), Type.Object({ provider: Type.String(), modelId: Type.String() })], {
     description: "For run: \"provider/model\" for agents that choose none. Default: this session's model. The workflow's defaults.model takes precedence.",
