@@ -185,7 +185,7 @@ class RtfBuilder {
         const cell = row.children[column];
         return `\\pard\\plain\\intbl${align(node.align?.[column])}\\f0\\fs${size}\\cf${C.text}${rowIndex === 0 ? "\\b" : ""} ${cell ? this.inlines(cell.children) : ""}\\cell`;
       }).join("");
-      return `\\trowd\\trgaph100\\trleft${indent}${rowIndex === 0 ? "\\trhdr" : ""}\\trkeep${cells}\n${content}\\row\n`;
+      return `\\trowd\\trgaph100\\trpaddl100\\trpaddr100\\trpaddt50\\trpaddb50\\trpaddfl3\\trpaddfr3\\trpaddft3\\trpaddfb3\\trleft${indent}${rowIndex === 0 ? "\\trhdr" : ""}\\trkeep${cells}\n${content}\\row\n`;
     });
     return `${rows.join("")}{\\pard\\plain\\sa80\\fs8 \\par}\n`;
   }
@@ -246,6 +246,8 @@ interface ReadParagraph {
   inTable: boolean;
   /** Every visible character is in a monospaced font. */
   code?: boolean;
+  /** Left indent in twips, which nests list items. */
+  indent?: number;
 }
 
 /** Decode the text of a simple RTF group such as {\title ...}: escapes and \uN, no nested groups. */
@@ -295,6 +297,7 @@ export function readRtf(data: Uint8Array): DocumentModel {
   let visible = 0;
   let monoVisible = 0;
   let outline: number | undefined;
+  let indent = 0;
   let inTable = false;
   let cells: string[] = [];
   const append = (value: string) => {
@@ -305,7 +308,7 @@ export function readRtf(data: Uint8Array): DocumentModel {
   };
   const endParagraph = () => {
     if (inTable) return;
-    paragraphs.push({ text, outline, inTable: false, code: visible > 0 && monoVisible === visible });
+    paragraphs.push({ text, outline, inTable: false, code: visible > 0 && monoVisible === visible, indent });
     text = "";
     visible = 0;
     monoVisible = 0;
@@ -363,7 +366,11 @@ export function readRtf(data: Uint8Array): DocumentModel {
           break;
         case "pard":
           outline = undefined;
+          indent = 0;
           inTable = false;
+          break;
+        case "li":
+          indent = Number(param ?? 0);
           break;
         case "intbl":
           inTable = true;
@@ -420,12 +427,13 @@ export function readRtf(data: Uint8Array): DocumentModel {
 function toBlocks(paragraphs: ReadParagraph[], rows: { cells: string[] }[]): RootContent[] {
   const blocks: RootContent[] = [];
   let table: Table | undefined;
-  let list: List | undefined;
+  // Open lists, outermost first, each with the indent of its items.
+  let lists: { list: List; indent: number }[] = [];
   const phrasing = (value: string): PhrasingContent[] => value.split("\n").flatMap((line, index): PhrasingContent[] => (index ? [{ type: "break" }, { type: "text", value: line }] : [{ type: "text", value: line }]));
   for (const paragraph of paragraphs) {
     const rowMatch = /^\u0000row(\d+)$/.exec(paragraph.text);
     if (rowMatch) {
-      list = undefined;
+      lists = [];
       const row: TableRow = { type: "tableRow", children: rows[Number(rowMatch[1])]!.cells.map((cell) => ({ type: "tableCell", children: phrasing(cell) })) };
       if (!table) {
         table = { type: "table", children: [] };
@@ -436,7 +444,7 @@ function toBlocks(paragraphs: ReadParagraph[], rows: { cells: string[] }[]): Roo
     }
     table = undefined;
     if (paragraph.code) {
-      list = undefined;
+      lists = [];
       const value = paragraph.text.replace(/\t/g, "    ").replace(/\s+$/, "");
       const last = blocks[blocks.length - 1];
       if (last?.type === "code") last.value += `\n${value}`;
@@ -446,7 +454,7 @@ function toBlocks(paragraphs: ReadParagraph[], rows: { cells: string[] }[]): Roo
     const value = paragraph.text.replace(/[ \t]+$/g, "").trim();
     if (!value) continue;
     if (paragraph.outline !== undefined && paragraph.outline < 6) {
-      list = undefined;
+      lists = [];
       blocks.push({ type: "heading", depth: (paragraph.outline + 1) as Heading["depth"], children: phrasing(value) });
       continue;
     }
@@ -455,14 +463,26 @@ function toBlocks(paragraphs: ReadParagraph[], rows: { cells: string[] }[]): Roo
       const ordered = /\d/.test(bullet[1]!);
       const box = /^([☐☒☑])\s*(.*)$/s.exec(bullet[2]!);
       const item: ListItem = { type: "listItem", spread: false, checked: box ? box[1] !== "☐" : null, children: [{ type: "paragraph", children: phrasing(box ? box[2]! : bullet[2]!) }] };
-      if (!list || list.ordered !== ordered) {
-        list = { type: "list", ordered, spread: false, start: ordered ? Number.parseInt(bullet[1]!, 10) : null, children: [] };
-        blocks.push(list);
+      const itemIndent = paragraph.indent ?? 0;
+      // Lists indented further than an open list nest in its last item; others close.
+      while (lists.length && lists[lists.length - 1]!.indent > itemIndent) lists.pop();
+      let open: { list: List; indent: number } | undefined = lists[lists.length - 1];
+      if (open && open.indent === itemIndent && open.list.ordered !== ordered) {
+        lists.pop();
+        open = undefined;
       }
-      list.children.push(item);
+      if (!open || open.indent < itemIndent) {
+        const list: List = { type: "list", ordered, spread: false, start: ordered ? Number.parseInt(bullet[1]!, 10) : null, children: [] };
+        const parent = lists[lists.length - 1]?.list.children.at(-1);
+        if (parent) parent.children.push(list);
+        else blocks.push(list);
+        open = { list, indent: itemIndent };
+        lists.push(open);
+      }
+      open.list.children.push(item);
       continue;
     }
-    list = undefined;
+    lists = [];
     blocks.push({ type: "paragraph", children: phrasing(value) });
   }
   // Pad ragged rows so every table is rectangular.

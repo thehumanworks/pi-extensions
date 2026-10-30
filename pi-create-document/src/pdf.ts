@@ -6,7 +6,7 @@ import { dataUri, fit } from "./assets.ts";
 import { bundledFonts, fontRuns, type FontName } from "./fonts.ts";
 import type { PageSize } from "./formats.ts";
 import { documentTitle } from "./html.ts";
-import { figureImage, isPageBreak, slugger, type PreparedDocument } from "./prepare.ts";
+import { figureImage, isPageBreak, slugger, titleIndex, type PreparedDocument } from "./prepare.ts";
 
 export { PAGE_SIZES, type PageSize } from "./formats.ts";
 
@@ -106,6 +106,10 @@ class PdfBuilder {
   private readonly accent: string;
   readonly contentWidth: number;
   readonly contentHeight: number;
+  /** The document's title heading, which the table of contents leaves out. */
+  title?: Nodes;
+  /** The level of the table of contents' top entries. */
+  tocTop = 1;
 
   constructor(prepared: PreparedDocument, options: PageOptions, accent: string) {
     this.prepared = prepared;
@@ -192,7 +196,7 @@ class PdfBuilder {
           style: `h${node.depth}`,
           headlineLevel: node.depth,
           id,
-          ...(this.options.toc && node.depth <= 3 ? { tocItem: true, tocStyle: { fontSize: node.depth === 1 ? 11 : 10, bold: node.depth === 1 }, tocMargin: [(node.depth - 1) * 14, node.depth === 1 ? 6 : 2, 0, 0] } : {}),
+          ...(this.options.toc && node.depth <= 3 && node !== this.title ? { tocItem: true, tocStyle: { fontSize: node.depth === this.tocTop ? 11 : 10, bold: node.depth === this.tocTop }, tocMargin: [(node.depth - this.tocTop) * 14, node.depth === this.tocTop ? 6 : 2, 0, 0] } : {}),
         } as Content;
       }
       case "paragraph": {
@@ -229,20 +233,34 @@ class PdfBuilder {
     }
   }
 
-  private list(node: List, width: number): Content {
+  private list(node: List, width: number, nested = false): Content {
+    // Tight lists set their paragraphs close together; loose ones (blank lines between items) as paragraphs.
+    const loose = node.spread === true || node.children.some((item) => item.spread);
     const items = node.children.map((item): Content => {
-      const children = this.blocks(item.children, width - 18);
-      const first = children[0];
-      if (item.checked !== null && item.checked !== undefined) {
-        const box = this.runs(item.checked ? "☑ " : "☐ ", { color: MUTED });
-        const firstText = first && typeof first === "object" && "text" in first ? (first.text as Run[]) : [];
-        return { stack: [{ text: [...box, ...firstText], style: "li" }, ...children.slice(1)], listType: "none" } as Content;
-      }
-      // Tight list items: drop paragraph spacing so bullets sit close together.
-      return children.length === 1 && first && typeof first === "object" && "text" in first ? ({ ...first, style: "li" } as Content) : { stack: children };
+      const children = item.children.map((child, index): Content => {
+        if (child.type === "list") return this.list(child, width - 18, true);
+        const content = this.blocks([child], width - 18)[0]!;
+        return !loose && child.type === "paragraph" && typeof content === "object" && "style" in content && content.style === "p" ? { ...content, style: index === item.children.length - 1 ? "li" : "liTight" } : content;
+      });
+      return children.length === 1 ? children[0]! : { stack: children };
     });
-    if (node.ordered) return { ol: items, start: node.start ?? 1, margin: [0, 0, 0, 8], markerColor: MUTED } as Content;
-    return { ul: items, margin: [0, 0, 0, 8], markerColor: MUTED } as Content;
+    const margin: [number, number, number, number] = nested ? [0, 2, 0, 0] : [0, 0, 0, 8];
+    if (node.children.some((item) => item.checked !== null && item.checked !== undefined)) {
+      // pdfmake's list markers can't be ballot boxes, so task lists are laid out as marker and content columns.
+      const number = node.start ?? 1;
+      return {
+        stack: node.children.map((item, index) => ({
+          columns: [
+            { width: 14, text: item.checked == null ? (node.ordered ? `${number + index}.` : "•") : this.runs(item.checked ? "☑" : "☐", {}), color: MUTED },
+            { width: "*", stack: [items[index]!] },
+          ],
+          columnGap: 4,
+        })),
+        margin,
+      } as Content;
+    }
+    if (node.ordered) return { ol: items, start: node.start ?? 1, margin, markerColor: MUTED } as Content;
+    return { ul: items, margin, markerColor: MUTED } as Content;
   }
 
   private table(node: Table, width: number): Content {
@@ -291,7 +309,9 @@ export async function writePdf(prepared: PreparedDocument, options: PageOptions 
   engine.addTableLayouts({ report: reportLayout(accent) });
   const builder = new PdfBuilder(prepared, options, accent);
   const nodes = prepared.tree.children;
-  const lead = nodes[0]?.type === "heading" && nodes[0].depth === 1 ? 1 : 0;
+  const lead = titleIndex(nodes) + 1;
+  builder.title = lead > 0 ? nodes[lead - 1] : undefined;
+  builder.tocTop = Math.min(3, ...nodes.flatMap((node) => (node.type === "heading" && node !== builder.title ? [node.depth] : [])));
   const content: Content[] = builder.blocks(nodes.slice(0, lead));
   if (options.toc) {
     content.push({ toc: { title: { text: "Contents", style: "tocTitle" } }, margin: [0, 0, 0, 12] } as Content);
@@ -322,6 +342,7 @@ export async function writePdf(prepared: PreparedDocument, options: PageOptions 
       h6: { fontSize: 10.5, bold: true, color: MUTED, margin: [0, 6, 0, 2] },
       p: { margin: [0, 0, 0, 8] },
       li: { margin: [0, 0, 0, 3] },
+      liTight: { margin: [0, 0, 0, 1] },
       tocTitle: { fontSize: 14, bold: true, color: accent, margin: [0, 6, 0, 8] },
     },
     footer: options.pageNumbers === false ? undefined : (page: number, pages: number) => (pages > 1 ? { text: `${page} / ${pages}`, alignment: "center", fontSize: 8, color: MUTED, margin: [0, 24, 0, 0] } : null),

@@ -158,6 +158,16 @@ async function excel(): Promise<ExcelJS> {
   return loaded.default ?? loaded;
 }
 
+/** The number format most of a column's formatted numbers share, if any. */
+function columnFormat(sheet: Sheet, column: number): string | undefined {
+  const counts = new Map<string, number>();
+  for (const row of sheet.rows) {
+    const cell = row[column];
+    if (cell !== null && typeof cell === "object" && !(cell instanceof Date) && cell.format && typeof cell.value === "number") counts.set(cell.format, (counts.get(cell.format) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+}
+
 /** Column width in characters that fits the longest displayed value, within 8-60. */
 function columnWidth(sheet: Sheet, column: number): number {
   const longest = Math.max(0, ...sheet.rows.map((row) => Math.max(...cellText(row[column] ?? null).split("\n").map((line) => line.length))));
@@ -182,20 +192,24 @@ export async function writeXlsx(workbook: WorkbookModel, options: { accent?: str
   if (workbook.meta.description) book.description = workbook.meta.description;
   if (workbook.meta.keywords?.length) book.keywords = workbook.meta.keywords.join(", ");
   book.created = new Date();
+  // Formulas are written without results: have Excel work them out when it opens the file.
+  book.calcProperties.fullCalcOnLoad = true;
   const accent = `FF${(options.accent ?? "#1F4E79").replace("#", "").toUpperCase()}`;
   const sheets = workbook.sheets.length ? workbook.sheets : [{ name: "Sheet1", rows: [], header: false }];
   for (const sheet of sheets) {
     const header = sheet.header !== false && sheet.rows.length > 1;
     const ws = book.addWorksheet(sheet.name, header ? { views: [{ state: "frozen", ySplit: 1 }] } : {});
     const width = Math.max(0, ...sheet.rows.map((row) => row.length));
+    const formats = Array.from({ length: width }, (_, column) => columnFormat(sheet, column));
     sheet.rows.forEach((row, rowIndex) => {
       const excelRow = ws.getRow(rowIndex + 1);
       row.forEach((cell, column) => {
         const target = excelRow.getCell(column + 1);
         target.value = excelValue(cell) as never;
-        const format = cell !== null && typeof cell === "object" && !(cell instanceof Date) ? cell.format : undefined;
-        const columnFormat = sheet.columns?.[column]?.format;
-        if (format ?? columnFormat) target.numFmt = (format ?? columnFormat)!;
+        const own = cell !== null && typeof cell === "object" && !(cell instanceof Date) ? cell : undefined;
+        // A formula without a format of its own shows its result as the column's numbers are shown.
+        const format = own?.format ?? sheet.columns?.[column]?.format ?? (own?.formula !== undefined ? formats[column] : undefined);
+        if (format) target.numFmt = format;
         else if (cellValue(cell) instanceof Date) target.numFmt = "yyyy-mm-dd";
         if (typeof cellValue(cell) === "string" && String(cellValue(cell)).includes("\n")) target.alignment = { wrapText: true, vertical: "top" };
         if (cell !== null && typeof cell === "object" && !(cell instanceof Date) && cell.hyperlink) target.font = { color: { argb: accent }, underline: true };
@@ -214,8 +228,18 @@ export async function writeXlsx(workbook: WorkbookModel, options: { accent?: str
       ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: Math.max(1, width) } };
     }
   }
-  const buffer = await book.xlsx.writeBuffer();
-  return new Uint8Array(buffer as ArrayBuffer);
+  const buffer = new Uint8Array((await book.xlsx.writeBuffer()) as ArrayBuffer);
+  return workbook.meta.author ? buffer : withoutUnknownAuthor(buffer);
+}
+
+/** exceljs names the author "Unknown" when there is none; leave the author out instead. */
+async function withoutUnknownAuthor(data: Uint8Array): Promise<Uint8Array> {
+  const JSZip = (await import("jszip")).default;
+  const zip = await JSZip.loadAsync(data);
+  const core = await zip.file("docProps/core.xml")?.async("string");
+  if (!core) return data;
+  zip.file("docProps/core.xml", core.replace(/<dc:creator>Unknown<\/dc:creator>|<cp:lastModifiedBy>Unknown<\/cp:lastModifiedBy>/g, ""));
+  return zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
 }
 
 /** Read an Excel workbook: every visible sheet, with values, number formats, formulas (with cached results) and hyperlinks. */
@@ -252,7 +276,7 @@ export async function readXlsx(data: Uint8Array): Promise<{ workbook: WorkbookMo
     const header = rows.length > 1 && rows[0]!.slice(0, used).every((cell) => typeof cellValue(cell) === "string" && cellValue(cell) !== "");
     sheets.push({ name: sheetName(ws.name, taken), rows: rows.map((row) => row.slice(0, used)), header });
   }
-  const meta = { title: book.title || undefined, author: book.creator || undefined, subject: book.subject || undefined, description: book.description || undefined, keywords: book.keywords ? book.keywords.split(/[,;]\s*/) : undefined };
+  const meta = { title: book.title || undefined, author: book.creator && book.creator !== "Unknown" ? book.creator : undefined, subject: book.subject || undefined, description: book.description || undefined, keywords: book.keywords ? book.keywords.split(/[,;]\s*/) : undefined };
   return { workbook: { kind: "workbook", meta, sheets }, warnings };
 }
 

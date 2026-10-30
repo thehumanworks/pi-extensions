@@ -339,6 +339,8 @@ test("/loggly report makes a report in the background, shows progress and says w
     resultsDir: join(dir, "results"),
     reportsDir,
     printPdf: async (_html, pdf) => writeFileSync(pdf, "%PDF-1.4"),
+    // The scripted client answers for NOW's periods.
+    now: () => NOW,
   });
   const { ctx, statuses, notes } = fakeCtx();
   await emit("session_start", ctx);

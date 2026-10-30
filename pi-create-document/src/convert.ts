@@ -72,6 +72,12 @@ export interface ConversionResult {
 export function resolveSourceFormat(data: Uint8Array, declared: InputFormat | undefined, path: string | undefined): InputFormat {
   const fromName = path ? formatFromPath(path) : undefined;
   const sniffed = sniffFormat(data, declared ?? fromName);
+  // Office 97-2003 files share one container format; only Word's can be read.
+  const legacy = path ? /\.(xl[st]|pp[st]|pot)$/i.exec(path) : null;
+  if (sniffed === "doc" && legacy && !declared) {
+    const app = legacy[1]!.toLowerCase().startsWith("x") ? ["Excel", "xlsx"] : ["PowerPoint", "pptx"];
+    throw new ConversionError(`${app[0]} 97-2003 files (.${legacy[1]}) cannot be read; save the file as .${app[1]} first`);
+  }
   if (sniffed) {
     // Our .doc files are RTF; a declared or named .doc that is RTF reads as RTF.
     if (sniffed === "rtf") return "rtf";
@@ -257,11 +263,13 @@ function pdfPageCount(pdf: Uint8Array): number {
   return (Buffer.from(pdf).toString("latin1").match(/\/Type\s*\/Page(?![s\w])/g) ?? []).length;
 }
 
-/** Numbered file names for multi-file outputs: report.png becomes report-1.png, report-2.png, ... */
-export function numberedPath(path: string, index: number, count: number): string {
-  if (count <= 1) return path;
+/**
+ * The file for one page of several: report.png becomes report-2.png for page 2, with the number
+ * padded to the width of the last page's (report-02.png of 12) so the files sort in page order.
+ */
+export function numberedPath(path: string, page: number, lastPage: number): string {
   const extension = extname(path);
-  return `${path.slice(0, path.length - extension.length)}-${index}${extension}`;
+  return `${path.slice(0, path.length - extension.length)}-${String(page).padStart(String(lastPage).length, "0")}${extension}`;
 }
 
 /** Convert a model to an output format. outputPath names the main file; extra files (pages, images) are placed beside it. */
@@ -295,8 +303,11 @@ export async function renderModel(model: Model, format: OutputFormat, outputPath
       facts.push(`${pdfPageCount(pdf)} page${pdfPageCount(pdf) === 1 ? "" : "s"}`);
       return single(pdf);
     }
-    case "docx":
-      return single(await writeDocx(await prepare(await toDocument(model, options, warnings)), page));
+    case "docx": {
+      const written = await writeDocx(await prepare(await toDocument(model, options, warnings)), page);
+      warnings.push(...written.warnings);
+      return single(written.data);
+    }
     case "doc":
       warnings.push("Saved as Rich Text Format under a .doc name, which Word and LibreOffice open as a Word document. Write .docx for full fidelity and for Google Docs.");
       return single(await writeRtf(await prepare(await toDocument(model, options, warnings)), page));
@@ -354,7 +365,9 @@ export async function renderModel(model: Model, format: OutputFormat, outputPath
       const { pages, pageCount } = await pdfToPng(pdf, { pages: options.pages, scale: options.scale, background });
       facts.push(pages.length === pageCount ? `${pageCount} page${pageCount === 1 ? "" : "s"}` : `pages ${pages.map((p) => p.page).join(", ")} of ${pageCount}`);
       facts.push(`${pages[0]!.width}x${pages[0]!.height} px`);
-      return { format, files: pages.map((p, index) => ({ path: numberedPath(outputPath, index + 1, pages.length), data: p.data })), warnings, facts };
+      // One page keeps the requested name; several are numbered by their page.
+      const files = pages.map((p) => ({ path: pages.length === 1 ? outputPath : numberedPath(outputPath, p.page, pageCount), data: p.data }));
+      return { format, files, warnings, facts };
     }
   }
 }

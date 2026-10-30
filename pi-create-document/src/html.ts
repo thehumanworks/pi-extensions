@@ -7,7 +7,7 @@ import { toHast, type Handler } from "mdast-util-to-hast";
 import { toString as nodeText } from "mdast-util-to-string";
 import { dataUri } from "./assets.ts";
 import type { DocumentModel, Metadata } from "./model.ts";
-import { commentText, isPageBreak, slugger, type PreparedDocument } from "./prepare.ts";
+import { commentText, isPageBreak, slugger, titleIndex, type PreparedDocument } from "./prepare.ts";
 
 const svgToImage = (_state: unknown, element: Element) => {
   const markup = toHtml(element, { space: "svg" });
@@ -56,12 +56,27 @@ export function parseHtml(html: string): DocumentModel {
 
 /**
  * Remove conversion noise: anchors without a target (Word bookmarks), empty paragraphs, and bold
- * that only repeats a table header's own emphasis.
+ * that only repeats a table header's own emphasis. Items led by a ballot box become task items,
+ * and lists whose items hold one paragraph each (and perhaps sublists) are tight.
  */
 function tidy(node: Parent): void {
   const children: Nodes[] = [];
   for (const child of node.children as Nodes[]) {
     if ("children" in child) tidy(child);
+    if (child.type === "listItem" && child.checked == null) {
+      const first = child.children[0]?.type === "paragraph" ? child.children[0] : undefined;
+      const head = first?.children[0];
+      const box = head?.type === "text" ? /^([☐☑☒])[\s\u00a0]*/.exec(head.value) : null;
+      if (head?.type === "text" && box) {
+        child.checked = box[1] !== "☐";
+        head.value = head.value.slice(box[0].length);
+        if (!head.value) first!.children.shift();
+      }
+    }
+    if (child.type === "list" && child.children.every((item) => item.children.filter((block) => block.type !== "list").length <= 1)) {
+      child.spread = false;
+      for (const item of child.children) item.spread = false;
+    }
     if (child.type === "link" && !child.url) {
       children.push(...child.children);
       continue;
@@ -123,12 +138,13 @@ export function writeHtml(prepared: PreparedDocument, options: HtmlOptions = {})
   const slug = slugger();
   const toc: { depth: number; id: string; text: string }[] = [];
   const tree = structuredClone(prepared.tree);
-  for (const node of tree.children) {
+  const lead = titleIndex(tree.children) + 1;
+  for (const [index, node] of tree.children.entries()) {
     if (node.type !== "heading") continue;
     const text = nodeText(node).trim();
     const id = slug(text);
     node.data = { ...node.data, hProperties: { ...node.data?.hProperties, id } };
-    if (node.depth <= 3) toc.push({ depth: node.depth, id, text });
+    if (node.depth <= 3 && index !== lead - 1) toc.push({ depth: node.depth, id, text });
   }
   let diagramIndex = 0;
   const image: Handler = (_state, node: { url: string; alt?: string | null; title?: string | null }) => {
@@ -147,13 +163,12 @@ export function writeHtml(prepared: PreparedDocument, options: HtmlOptions = {})
   };
   const render = (children: RootContent[]) => toHtml(toHast({ type: "root", children }, { allowDangerousHtml: true, handlers: { image, html }, footnoteLabel: "Notes" }), { allowDangerousHtml: true });
   // The contents go after a leading title heading.
-  const lead = tree.children[0]?.type === "heading" && tree.children[0].depth === 1 ? 1 : 0;
   const heading = render(tree.children.slice(0, lead));
   const body = render(tree.children.slice(lead));
   const title = documentTitle(prepared) ?? "Document";
   const accent = options.accent ?? "#1F4E79";
   const contents = options.toc && toc.length > 0
-    ? `<nav class="toc"><h2>Contents</h2><ul>${toc.map((entry) => `<li class="toc-${entry.depth}"><a href="#${escapeHtml(entry.id)}">${escapeHtml(entry.text)}</a></li>`).join("")}</ul></nav>\n`
+    ? `<nav class="toc"><h2>Contents</h2><ul>${toc.map((entry) => `<li class="toc-${entry.depth - Math.min(...toc.map((other) => other.depth)) + 1}"><a href="#${escapeHtml(entry.id)}">${escapeHtml(entry.text)}</a></li>`).join("")}</ul></nav>\n`
     : "";
   const meta = [
     prepared.meta.author ? `<meta name="author" content="${escapeHtml(prepared.meta.author)}">` : "",

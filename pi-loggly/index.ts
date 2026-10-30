@@ -28,6 +28,8 @@ export interface LogglyExtensionOptions {
   reportsDir?: string;
   /** Prints report PDFs; null skips them. Default: a headless Chromium-family browser. */
   printPdf?: PdfPrinter | null;
+  /** Clock for health checks, trends, tools and reports. Default: Date.now. */
+  now?: () => number;
 }
 
 interface Completion {
@@ -75,8 +77,9 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
     return client.value;
   };
   const getRules = () => loaded.config.health;
-  const monitor = new HealthMonitor({ getClient, getRules });
-  const trends = new TrendRecorder(options.trendsDir ?? defaultTrendsDir(), { getClient, getRules });
+  const { now } = options;
+  const monitor = new HealthMonitor({ getClient, getRules, now });
+  const trends = new TrendRecorder(options.trendsDir ?? defaultTrendsDir(), { getClient, getRules, now });
   // Pi rebuilds the extension for /new, /resume, /fork and /reload, so this lasts one session.
   let statusEnabled = false;
   let statusLine: StatusLine | undefined;
@@ -140,7 +143,7 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
     if (reportRunning) return ctx.ui.notify(`A Loggly report (${reportRunning}) is still being made; a notification follows when it is ready.`, "warning");
     let timeframe: Timeframe;
     try {
-      timeframe = parseTimeframe(input);
+      timeframe = parseTimeframe(input, now && new Date(now()));
     } catch (error) {
       return ctx.ui.notify(describeError(error), "warning");
     }
@@ -159,6 +162,7 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
           dir: reportsDir,
           retentionDays: trends.retentionDays,
           printPdf: options.printPdf,
+          now: now?.(),
           signal,
           onProgress: (done, total) => {
             if (!signal.aborted) ctx.ui.setStatus(REPORT_STATUS_KEY, `loggly report ${Math.floor((done / total) * 100)}%`);
@@ -174,7 +178,7 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
     })();
   };
 
-  registerLogglyTools(pi, { getClient, getConfig: () => loaded.config, monitor, outputDir: resultsDir, trendsDir: trends.dir });
+  registerLogglyTools(pi, { getClient, getConfig: () => loaded.config, monitor, outputDir: resultsDir, trendsDir: trends.dir, now });
 
   pi.registerCommand("loggly", {
     description: "Loggly health dashboard; /loggly status on|off toggles the status line for this session",
@@ -285,6 +289,7 @@ export function registerLoggly(pi: ExtensionAPI, options: LogglyExtensionOptions
             ctx.ui.notify("Investigation prompt is in the editor: edit it or press Enter to send.", "info");
           },
           loadTrends: async () => (await loadTrends(trends.dir)).days,
+          now,
           maxAgeMs: loaded.config.statusLine.refreshSeconds * 1000,
         }),
       // Full screen: a partial overlay lets the transcript show around it.

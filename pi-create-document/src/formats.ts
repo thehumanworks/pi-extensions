@@ -91,8 +91,8 @@ export function extensionFor(format: OutputFormat): string {
 }
 
 /**
- * Identify a file by its leading bytes. Office Open XML files are all ZIP archives, so the
- * extension (when it names one of them) decides between DOCX, PPTX and XLSX.
+ * Identify a file by its leading bytes. Office Open XML files are all ZIP archives, told apart by
+ * the parts they hold; the hint decides only when those are not found.
  */
 export function sniffFormat(data: Uint8Array, hint?: InputFormat): InputFormat | undefined {
   const starts = (...bytes: number[]) => bytes.every((byte, index) => data[index] === byte);
@@ -101,14 +101,13 @@ export function sniffFormat(data: Uint8Array, hint?: InputFormat): InputFormat |
   if (starts(0xff, 0xd8, 0xff)) return "jpeg";
   if (starts(0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1)) return "doc";
   if (starts(0x50, 0x4b, 0x03, 0x04)) {
-    if (hint === "docx" || hint === "pptx" || hint === "xlsx") return hint;
     // Entry names appear in the local headers and in the central directory at the end.
     const latin1 = new TextDecoder("latin1");
     const names = latin1.decode(data.subarray(0, 4096)) + latin1.decode(data.subarray(Math.max(0, data.length - 65_536)));
     if (names.includes("word/document")) return "docx";
     if (names.includes("ppt/presentation")) return "pptx";
     if (names.includes("xl/workbook")) return "xlsx";
-    return hint;
+    return hint === "docx" || hint === "pptx" || hint === "xlsx" ? hint : undefined;
   }
   const text = new TextDecoder().decode(data.subarray(0, 512)).replace(/^\uFEFF/, "").trimStart();
   if (text.startsWith("{\\rtf")) return "rtf";

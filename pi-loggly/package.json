@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-loggly",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "type": "module",
   "description": "Loggly log search, error-pattern analysis, a health dashboard and a status line for Pi, with a typed Loggly SDK",
   "keywords": [

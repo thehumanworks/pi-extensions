@@ -32,6 +32,18 @@ export function commentText(node: Nodes): string | undefined {
   return match ? match[1]!.trim() : undefined;
 }
 
+/**
+ * The index of the document's title: its only level 1 heading, when nothing but front matter and
+ * comments comes before it, else -1. Writers set it as the title, ahead of and outside the table
+ * of contents.
+ */
+export function titleIndex(nodes: readonly RootContent[]): number {
+  const index = nodes.findIndex((node) => node.type !== "yaml" && node.type !== "definition" && commentText(node) === undefined);
+  const node = nodes[index];
+  if (node?.type !== "heading" || node.depth !== 1) return -1;
+  return nodes.filter((other) => other.type === "heading" && other.depth === 1).length === 1 ? index : -1;
+}
+
 /** The image of a paragraph that holds only an image, the Markdown idiom for a figure. */
 export function figureImage(node: Nodes): Image | undefined {
   if (node.type !== "paragraph") return undefined;

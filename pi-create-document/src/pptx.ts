@@ -32,7 +32,7 @@ const TEXT = "1F2328";
 const MUTED = "59636E";
 const RULE = "D0D7DE";
 const CODE_BG = "F6F8FA";
-const BODY_SIZE = 18;
+const BODY_SIZE = 20;
 const TITLED = "Title and Content";
 const COVER = "Title Slide";
 
