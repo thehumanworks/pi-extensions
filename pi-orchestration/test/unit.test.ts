@@ -29,8 +29,8 @@ test("determinism lint reports real control-flow calls only", () => {
     });
   `);
   assert.deepEqual(diagnostics.map(item => item.line), [9, 10, 10]);
-  const clocks = lintDeterminism(`export default { async run(ctx) { return [performance.now(), crypto.randomUUID(), randomUUID(), await ctx.step("id", async () => randomUUID())]; } };`);
-  assert.deepEqual(clocks.map(item => item.message.split(" is ")[0]), ["performance.now()", "crypto.randomUUID()/getRandomValues()", "crypto.randomUUID()/getRandomValues()"]);
+  const clocks = lintDeterminism(`export default { async run(ctx) { return [performance.now(), crypto.randomUUID(), randomUUID(), process.hrtime(), randomBytes(4), crypto.randomInt(9), await ctx.step("id", async () => randomUUID())]; } };`);
+  assert.deepEqual(clocks.map(item => item.message.split(" is ")[0]), ["performance.now()", "crypto.randomUUID()/getRandomValues()", "crypto.randomUUID()/getRandomValues()", "process.hrtime()", "crypto.randomBytes()/randomInt()", "crypto.randomBytes()/randomInt()"]);
   assert.equal(lintDeterminism("export default {")[0].code, "syntax_error");
   const members = lintDeterminism(`export default { async run(ctx) { await ctx.runAgent("p"); return ctx.args; } };`);
   assert.deepEqual(members.map(item => item.code), ["unknown_context_member"]);
