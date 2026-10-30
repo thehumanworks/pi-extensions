@@ -56,6 +56,11 @@ for (const { directory: dir } of workspaces) {
       assert.equal(pkg.dependencies['@earendil-works/pi-durable'], '1.4.0');
       assert.equal(pkg.dependencies['@earendil-works/pi-coding-agent'], '1.4.0');
     }
+    if (dir === 'pi-agent') {
+      for (const file of ['src/definitions.ts', 'src/store.ts', 'src/storage.ts', 'src/runtime.ts', 'src/tools.ts', 'src/loops.ts', 'src/output.ts', 'src/drafts.ts', 'src/draft-tools.ts', 'src/draft-commands.ts']) assert.ok(files.has(file), `missing ${file}`);
+      assert.equal(pkg.dependencies['@nothumanwork/bot'], undefined, 'agents use the host SDK, not a second bot runtime');
+      assert.ok(!files.has('PLAN.md'));
+    }
     if (dir === 'pi-atlassian') {
       assert.ok(files.has('docs/catalog/index.json'));
       assert.ok([...files].some(f => f.startsWith('docs/catalog/jira/operations/')));
