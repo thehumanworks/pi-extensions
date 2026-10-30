@@ -36,7 +36,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
-   3. One `waitingLines(run, hints)` helper for presentation.ts:71-72 (tool brief: no deliver hint), :134-137 (runTree: `Waiting for k; deliver with:`, `Expects:`) and cli.ts:173-177 (statusText: lowercase `waiting for signal`, `expects:`, `signal:`). Exact-text tests that pin today's wording: test/unit.test.ts:101-106. Plan (tick 43): helper in presentation.ts taking a deliver-hint callback; tool brief gains the `{"action":"signal",…}` hint; keep one casing and update the regexes.
+   3. ✅ Done in tick 44 (a549d14): one `waitingLines(run, hints)` in presentation.ts used by runBrief, runTree and cli.ts statusText (`Waiting for signal "k": prompt`, `Expects:`, `Deliver with:`); the tool brief now names the `{"action":"signal",…}` call. Open: no test asserts the tool brief's deliver hint (add via `harness()` in test/extension.test.ts).
    4. ✅ Done in ticks 37-38 (8fce02c, b47be74, 895d71b): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}` (tested); tool `signal` replies `Signal "k" accepted. Check the run with {"action":"status",…}.` (tested).
    6. In progress (`validate1`, tick 42). Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
    7. In progress (`validate1`, tick 42). Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
@@ -260,3 +260,9 @@ None.
 - Value: ⚠️ partial: the next tick can do 00.3 without re-reading; nothing shipped.
 - Lesson: with a four-minute deadline, skip the broad read and open the file:line the Backlog already names; start the edit by minute two or log a plan.
 - Addendum (14:34): after the ledger commit I started 00.3 and left it UNCOMMITTED for tick 44: `waitingLines(run, hints)` in src/presentation.ts (one casing: `Waiting for signal "k": prompt`, `Expects:`, `Deliver with: <hint>`), used by runBrief (tool brief now passes `toolHints`, src/extension.ts briefResult), runTree and cli.ts statusText; test/unit.test.ts:101-105 regexes updated. `tsc --noEmit` exit 0 (it took ~100 s; `npm run check` hit a 120 s tool timeout). `npm test` NOT run. Tick 44: run `npm test`, check test/process.test.ts:101 and the extension brief tests, then commit or discard.
+
+### Tick 44 · 14:35 · Commit the waitingLines helper
+- Action: finished tick 43's uncommitted Backlog 00.3 work first, as the rules require, instead of discarding it: the diff was small (4 files, +20/-18) and `tsc` had passed.
+- Outcome: `npm test` **38/38** (under 30 s this time), including the process gate test (`then: … poll`) and the updated unit regexes. Committed `a549d14`. Not done: an assertion for the tool brief's new deliver hint, and the old-source check for it.
+- Value: ✅ yielded value: all three waiting-signal renderers share one casing, and a tool agent reading the brief status sees the signal call without asking for `verbose`.
+- Lesson: a killed tick's diff with a passing typecheck is worth one `npm test` before deciding; it took seconds. Next: test the tool brief deliver hint via `harness()`, then check validate1.
