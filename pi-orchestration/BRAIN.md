@@ -123,6 +123,6 @@ None.
 
 ### Tick 9 · 11:34 · Next-step hints keep --home
 - Action: fixed the first wrong turn `axeval` logged in scenario 1 (its ledger): hints printed after `run --bg`, detach, `init`, `watch`/`status --verbose` trees and the foreground run dropped `--home`, so a copied `workflow poll <id>` hit the default worker and returned `not_found`. Chosen over waiting for the full report because it is observed, small and independent of axeval's remaining scenarios (axeval changes no src/). `src/cli.ts:184-207` builds a `hint` prefix (`workflow --home DIR`, shell-quoted when needed) used at every hint site; usage and help text keep the bare program.
-- Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (new test in `test/unit.test.ts` covers quoted, plain and absent `--home`).
+- Outcome: `npm run check` passes; `npm test` **37 tests, 37 pass** (new test in `test/unit.test.ts` covers quoted, plain and absent `--home`). Committed `4eb0dc1`; axeval was told via herdr prompt (still `working`) to list it as fixed.
 - Value: ✅ yielded value: an agent with an isolated home can now copy-paste every next step.
 - Lesson: act on a subagent's partial findings when they are concrete and outside its write scope; no need to wait for the final report.
