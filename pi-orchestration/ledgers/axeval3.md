@@ -1,4 +1,4 @@
-Status: working — baseline taken; running S1
+Status: working — S1 done (0 wrong turns); running S2
 
 # Subagent axeval3
 
@@ -11,3 +11,4 @@ Goal: measure the agent experience of pi-orchestration after the axeval2 fixes, 
 ## Log
 
 - 14:55 Read brain/axeval2.md. Round-two artefacts still in /tmp (ax2, axb1-4: workflow files, session.sh, prompts in logs), so S1-S4 can repeat exactly. Built; `npm test` 40/40 at cc9dc0c (baseline matches). Plan: copy files to /tmp/axc1..4, same commands, same model (openrouter/anthropic/claude-haiku-4.5 --thinking off for Pi; anthropic/claude-haiku-4-5 for workflow agents).
+- 15:05 S1 (CLI, /tmp/axc1): same sequence as round two (help, guide, init, pair.ts copied, validate, catalog, run --bg, poll, status/verbose/json, result/json, list/json, agents --run, worker status, poll --json, attached run, run --bg --json, attached run --json, nap attached). **0 wrong turns** (round two 0). Attached nap printed 2 trees (round two 7): print-only-changes fix holds. Still open polish: `Nap 0/0`; guide's signal line still only says "delivered with the signal action".
