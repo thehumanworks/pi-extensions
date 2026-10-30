@@ -1,6 +1,11 @@
 import { parse } from "@babel/parser";
 import type { ValidationResult } from "./index.ts";
 
+/** Option names ctx.agent() and ctx.spawn() accept; checked at validate time and again at run time. */
+/** Members of the run context; validate reports any other `ctx.<name>` the run reads. */
+export const CONTEXT_MEMBERS = ["runId", "args", "cwd", "depth", "budget", "agent", "parallel", "pipeline", "step", "workflow", "signal", "sleep", "spawn", "swarm", "phase", "log", "now", "random"];
+export const AGENT_OPTIONS = ["model", "thinkingLevel", "instructions", "tools", "cwd", "isolation", "budget", "timeoutMs", "retries", "label", "phase", "agentType", "key", "schema"];
+
 type Node = { type: string; [key: string]: unknown };
 function node(value: unknown): value is Node { return value !== null && typeof value === "object" && "type" in value && typeof value.type === "string"; }
 function name(value: unknown): string | undefined {
@@ -39,16 +44,32 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
     const loc = value.loc as { start?: { line?: number } } | undefined;
     diagnostics.push({ code: "nondeterministic_call", line: loc?.start?.line, message: `${label} is not replay-safe in workflow control flow. Use ctx.now(), ctx.random() or ctx.sleep(); place external effects inside ctx.step().` });
   }
+  let ctxName: string | undefined;
   function visit(value: unknown, active = false, effectOptions = false): void {
     if (!node(value)) return;
     const key = name(value.key);
     if ((value.type === "ObjectMethod" || value.type === "ObjectProperty") && key === "run") {
+      const fn = value.type === "ObjectMethod" ? value : functionNode(value.value) ? value.value : undefined;
+      const param = fn ? (fn.params as Node[])[0] : undefined;
+      if (!active) ctxName = param?.type === "Identifier" ? name(param) : undefined;
       if (value.type === "ObjectMethod") { visit(value.body, true); return; }
       if (functionNode(value.value)) { visit(value.value.body, true); return; }
     }
     if (effectOptions && (value.type === "ObjectMethod" || value.type === "ObjectProperty") && key === "compensate") return;
     if (active && (value.type === "CallExpression" || value.type === "OptionalCallExpression")) {
       const callee = value.callee;
+      const method = node(callee) ? name(callee.property) : undefined;
+      const options = method === "agent" ? (value.arguments as unknown[])[1] : method === "spawn" ? (value.arguments as unknown[])[0] : undefined;
+      const known = method === "spawn" ? [...AGENT_OPTIONS, "name", "initialPrompt", "detach"] : AGENT_OPTIONS;
+      if (node(options) && options.type === "ObjectExpression") {
+        for (const property of options.properties as Node[]) {
+          const option = property.type === "ObjectProperty" && !property.computed ? name(property.key) : undefined;
+          if (option === undefined || known.includes(option)) continue;
+          const near = known.find(valid => valid.startsWith(option) || option.startsWith(valid));
+          const loc = property.loc as { start?: { line?: number } } | undefined;
+          diagnostics.push({ code: "unknown_agent_option", line: loc?.start?.line, message: `Unknown agent option '${option}'${near ? ` (did you mean '${near}'?)` : ""}. Valid options: ${known.join(", ")}.` });
+        }
+      }
       const callName = name(callee);
       if (member(callee, "Date", "now") || callName === "Date") report(value, "Date.now()/Date()");
       if (member(callee, "Math", "random")) report(value, "Math.random()");
@@ -60,6 +81,13 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
           visit(arg, active, index === 2);
         });
         return;
+      }
+    }
+    if (active && ctxName && ["MemberExpression", "OptionalMemberExpression"].includes(value.type) && !value.computed && name(value.object) === ctxName) {
+      const member = name(value.property);
+      if (member && !CONTEXT_MEMBERS.includes(member)) {
+        const loc = value.loc as { start?: { line?: number } } | undefined;
+        diagnostics.push({ code: "unknown_context_member", line: loc?.start?.line, message: `${ctxName}.${member} does not exist on the workflow context. Members: ${CONTEXT_MEMBERS.join(", ")}.` });
       }
     }
     if (active && value.type === "NewExpression" && name(value.callee) === "Date" && (value.arguments as unknown[]).length === 0) report(value, "new Date()");

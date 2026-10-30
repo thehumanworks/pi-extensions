@@ -9,11 +9,11 @@ import { assertRootLaunch } from "./client.ts";
 import { defaultClient, runCli, splitCommand, type WorkflowClient } from "./cli.ts";
 import { WorkflowError } from "./errors.ts";
 import { EXAMPLES_DIR, guide } from "./guide.ts";
-import type { CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
+import type { CatalogEntry, ModelName, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
 import { linkCli, shellCommand } from "./link.ts";
 import { agentDirectory, workflowPaths } from "./paths.ts";
 import type { ControlRequest } from "./protocol.ts";
-import { catalogText, modelLabel, modelResult, runBrief, runDetail, runList, runSummary, TERMINAL_STATUSES, validationText } from "./presentation.ts";
+import { catalogText, modelLabel, modelResult, runBrief, runDetail, runList, runListView, runSummary, TERMINAL_STATUSES, toolHints, validationText } from "./presentation.ts";
 
 export const TOOL_DESCRIPTION = `Run and manage durable multi-agent workflows. A workflow is a TypeScript file whose run(ctx) calls ctx.agent(), ctx.parallel() and similar; a separate worker runs it, so it outlives this session.
 Start with catalog. Before writing a workflow, call guide: it gives a starter file, the ctx API and which model runs. Save workflows as .pi/workflows/<name>.ts and commit them: they are project source, never add them to .gitignore.
@@ -55,7 +55,10 @@ const workflowSchema = Type.Union([
 const parameters = Type.Object({
   action: Type.Union(actions.map(value => Type.Literal(value))),
   workflow: Type.Optional(workflowSchema),
-  args: Type.Optional(Type.Unknown({ description: "For run: arguments matching the workflow's args schema (see catalog). Default {}." })),
+  args: Type.Optional(Type.Object({}, {
+    additionalProperties: true,
+    description: "For run: a JSON object matching the workflow's args schema (see catalog), e.g. {\"topic\":\"bees\"}. Pass the object itself, not a JSON-encoded string. Default {}.",
+  })),
   cwd: Type.Optional(Type.String({ description: "Project directory for run, catalog and validate; agents work here. Default: this session's cwd." })),
   model: Type.Optional(Type.Union([Type.String(), Type.Object({ provider: Type.String(), modelId: Type.String() })], {
     description: "For run: \"provider/model\" for agents that choose none. Default: this session's model. The workflow's defaults.model takes precedence.",
@@ -73,7 +76,9 @@ const parameters = Type.Object({
   allowChanged: Type.Optional(Type.Boolean({ description: "For retry: allow the workflow file to have changed since launch." })),
   keepWorktrees: Type.Optional(Type.Boolean({ description: "For revert: keep agent worktrees." })),
   key: Type.Optional(Type.String({ description: "For signal: the key the run waits on (status shows it)." })),
-  value: Type.Optional(Type.Unknown({ description: "For signal: JSON value to deliver, including null." })),
+  value: Type.Optional(Type.Union([
+    Type.Object({}, { additionalProperties: true }), Type.Array(Type.Unknown()), Type.String(), Type.Number(), Type.Boolean(), Type.Null(),
+  ], { description: "For signal: the JSON value itself (object, array, string, number, boolean or null), not a JSON-encoded string. Must match waitingFor.schema when status shows one." })),
   agent: Type.Optional(Type.String({ description: "For steer: background agent name." })),
   message: Type.Optional(Type.String({ description: "For steer: message to send." })),
   filter: Type.Optional(Type.Object({
@@ -95,6 +100,17 @@ interface SessionWatch {
   polling: boolean;
 }
 
+// Pi shows only the message of a thrown error; lead with the code, as the CLI's {"error":{"code"}} does.
+function codedError(error: unknown): unknown {
+  if (error instanceof WorkflowError && !error.message.startsWith(`${error.code}:`)) error.message = `${error.code}: ${error.message}`;
+  return error;
+}
+
+/** The session's model in the form run records store. */
+function sessionModel(ctx: ExtensionContext): ModelName | undefined {
+  return ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
+}
+
 function nonempty(value: string | undefined, name: string): string {
   if (!value?.trim()) throw new WorkflowError("invalid_request", `${name} is required.`);
   return value;
@@ -114,7 +130,7 @@ function toolResult(value: unknown, runId?: string, text?: string) {
 }
 
 function briefResult(run: RunRecord, note?: string) {
-  const brief = runBrief(run);
+  const brief = runBrief(run, undefined, toolHints);
   return toolResult(brief.view, run.id, note ? `${brief.text}\n${note}` : brief.text);
 }
 
@@ -176,7 +192,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
             session.runs.delete(run.id);
           } else live.push(run);
         } catch (error) {
-          if ((error as { code?: string }).code === "run_not_found") session.runs.delete(tracked.runId);
+          if ((error as { code?: string }).code === "not_found") session.runs.delete(tracked.runId);
           // A disconnected worker is recoverable; retain the subscription for the next poll.
         }
       }
@@ -278,109 +294,115 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     promptGuidelines: PROMPT_GUIDELINES,
     parameters, outputSchema: Type.Unknown(), annotations: { readOnlyHint: false, openWorldHint: true },
     async execute(toolCallId, args, signal, onUpdate, ctx) {
-      signal?.throwIfAborted();
-      const cwd = resolve(ctx.cwd, args.cwd ?? ".");
-      let request: ControlRequest;
-      if (args.action === "run") {
-        assertRootLaunch(env);
-        if (!args.workflow) throw new WorkflowError("invalid_request", "run requires workflow.path or workflow.name.");
-        request = {
-          action: "run", requestId: `${ctx.sessionManager.getSessionId()}:${toolCallId}`,
-          workflow: "path" in args.workflow ? { path: resolve(cwd, args.workflow.path) } : args.workflow,
-          args: args.args ?? {}, cwd, origin: { kind: "tool", sessionId: ctx.sessionManager.getSessionId() },
-          model: (args.model ?? (ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined)) as ModelRef | undefined,
-          thinkingLevel: pi.getThinkingLevel() as ThinkingLevel, budget: args.budget,
-        };
-      } else if (args.action === "guide") {
-        const sessionModel = ctx.model ? modelLabel({ provider: ctx.model.provider, modelId: ctx.model.id }, pi.getThinkingLevel()) : undefined;
-        const text = guide({ shell: await shellCommand(env), sessionModel });
-        return toolResult({ guide: text }, undefined, text);
-      } else if (args.action === "catalog") request = { action: "catalog", cwd };
-      else if (args.action === "validate") {
-        if (!args.workflow) throw new WorkflowError("invalid_request", "validate requires workflow.path or workflow.name.");
-        request = { action: "validate", workflow: args.workflow, cwd };
-      } else if (args.action === "list") request = { action: "list", filter: args.filter };
-      else if (args.action === "agents") request = { action: "agents", runId: args.runId };
-      else {
-        const runId = nonempty(args.runId, "runId");
-        switch (args.action) {
-          case "status": request = { action: "status", runId, verbose: args.verbose }; break;
-          case "retry": request = { action: "retry", runId, from: args.from, allowChanged: args.allowChanged }; break;
-          case "revert": request = { action: "revert", runId, keepWorktrees: args.keepWorktrees }; break;
+      try {
+        signal?.throwIfAborted();
+        const cwd = resolve(ctx.cwd, args.cwd ?? ".");
+        let request: ControlRequest;
+        if (args.action === "run") {
+          assertRootLaunch(env);
+          if (!args.workflow) throw new WorkflowError("invalid_request", "run requires workflow.path or workflow.name.");
+          request = {
+            action: "run", requestId: `${ctx.sessionManager.getSessionId()}:${toolCallId}`,
+            workflow: "path" in args.workflow ? { path: resolve(cwd, args.workflow.path) } : args.workflow,
+            args: args.args ?? {}, cwd, origin: { kind: "tool", sessionId: ctx.sessionManager.getSessionId() },
+            model: (args.model ?? sessionModel(ctx)) as ModelRef | undefined,
+            thinkingLevel: pi.getThinkingLevel() as ThinkingLevel, budget: args.budget,
+          };
+        } else if (args.action === "guide") {
+          const model = sessionModel(ctx);
+          const text = guide({ shell: await shellCommand(env), sessionModel: model && modelLabel(model, pi.getThinkingLevel()) });
+          return toolResult({ guide: text }, undefined, text);
+        } else if (args.action === "catalog") request = { action: "catalog", cwd };
+        else if (args.action === "validate") {
+          if (!args.workflow) throw new WorkflowError("invalid_request", "validate requires workflow.path or workflow.name.");
+          request = { action: "validate", workflow: args.workflow, cwd };
+        } else if (args.action === "list") request = { action: "list", filter: args.filter };
+        else if (args.action === "agents") request = { action: "agents", runId: args.runId };
+        else {
+          const runId = nonempty(args.runId, "runId");
+          switch (args.action) {
+            case "status": request = { action: "status", runId, verbose: args.verbose }; break;
+            case "retry": request = { action: "retry", runId, from: args.from, allowChanged: args.allowChanged }; break;
+            case "revert": request = { action: "revert", runId, keepWorktrees: args.keepWorktrees }; break;
+            case "signal":
+              if (!Object.hasOwn(args, "value")) throw new WorkflowError("invalid_request", "signal requires value (JSON, including null).");
+              request = { action: "signal", runId, key: nonempty(args.key, "key"), value: args.value }; break;
+            case "steer": request = { action: "steer", runId, agent: nonempty(args.agent, "agent"), message: nonempty(args.message, "message") }; break;
+            default: request = { action: args.action, runId };
+          }
+        }
+        signal?.throwIfAborted();
+        const result = await client.request(request, { signal });
+        if (request.action === "run") {
+          const launched = result as { runId: string; status: RunStatus; model?: ModelName };
+          const model = launched.model
+            ? `Agents use ${modelLabel(launched.model, request.thinkingLevel)} unless the workflow chooses another model.`
+            : "No model is set: agents fail unless the workflow chooses one. Pass model.";
+          if (!args.wait) {
+            track(ctx, launched.runId);
+            return toolResult(result, launched.runId, `Run ${launched.runId} ${launched.status}. ${model}\n` +
+              "This session gets a message when it ends; status and result take this runId.");
+          }
+          const release = attach(ctx, launched.runId);
+          let terminal = false;
+          const timeout = Math.min(600_000, Math.max(1, args.waitTimeoutMs ?? 60_000));
+          const deadline = Date.now() + timeout;
+          const timeoutSignal = AbortSignal.timeout(timeout);
+          const waitSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+          let last: RunRecord | undefined;
+          try {
+            do {
+              waitSignal.throwIfAborted();
+              last = await client.request({ action: "status", runId: launched.runId }, {
+                signal: waitSignal, timeoutMs: Math.max(1, deadline - Date.now()),
+              }) as RunRecord;
+              terminal = TERMINAL_STATUSES.has(last.status);
+              if (terminal || Date.now() >= deadline) break;
+              onUpdate?.(toolResult({ runId: last.id, status: last.status, progress: runSummary(last) }, last.id));
+              await delay(Math.min(pollInterval, Math.max(1, deadline - Date.now())), undefined, { signal: waitSignal });
+            } while (Date.now() < deadline);
+          } catch (error) {
+            if (signal?.aborted || !timeoutSignal.aborted) throw error;
+          } finally { release(terminal); }
+          if (!last) return toolResult(result, launched.runId, `Run ${launched.runId} ${launched.status}. ${model}\n` +
+            "Stopped waiting; the run continues and this session gets a message when it ends.");
+          return briefResult(last, terminal ? undefined : "Stopped waiting; the run continues and this session gets a message when it ends.");
+        }
+        switch (request.action) {
+          case "status": {
+            const run = result as RunRecord;
+            if (TERMINAL_STATUSES.has(run.status)) settle(ctx, run.id);
+            return args.verbose ? toolResult(run, run.id, runDetail(run, toolHints)) : briefResult(run);
+          }
+          case "result":
+            settle(ctx, request.runId);
+            return toolResult(result, request.runId);
+          case "cancel": case "retry": case "revert":
+            return briefResult(result as RunRecord);
           case "signal":
-            if (!Object.hasOwn(args, "value")) throw new WorkflowError("invalid_request", "signal requires value (JSON, including null).");
-            request = { action: "signal", runId, key: nonempty(args.key, "key"), value: args.value }; break;
-          case "steer": request = { action: "steer", runId, agent: nonempty(args.agent, "agent"), message: nonempty(args.message, "message") }; break;
-          default: request = { action: args.action, runId };
+            return toolResult(result, request.runId, `Signal ${JSON.stringify(request.key)} accepted. ` +
+              `Check the run with {"action":"status","runId":${JSON.stringify(request.runId)}}.`);
+          case "list": {
+            const runs = result as RunRecord[];
+            return toolResult(runListView(runs), undefined, runList(runs));
+          }
+          case "catalog": {
+            const entries = result as CatalogEntry[];
+            const searched = [join(cwd, ".pi", "workflows"), join(agentDirectory(env), "workflows")];
+            const view = { workflows: entries, searched, examples: EXAMPLES_DIR };
+            return toolResult(view, undefined, entries.length ? `${catalogText(entries)}\nTo write a new workflow, call guide.`
+              : `No saved workflows (searched ${searched.join(" and ")}). To write one, call guide: it has a starter file to adapt.`);
+          }
+          case "validate":
+            return toolResult(result, undefined, validationText(result as ValidationResult));
+          default:
+            return toolResult(result, args.runId);
         }
-      }
-      signal?.throwIfAborted();
-      const result = await client.request(request, { signal });
-      if (request.action === "run") {
-        const launched = result as { runId: string; status: RunStatus; model?: ModelRef };
-        const model = launched.model
-          ? `Agents use ${modelLabel(launched.model, request.thinkingLevel)} unless the workflow chooses another model.`
-          : "No model is set: agents fail unless the workflow chooses one. Pass model.";
-        if (!args.wait) {
-          track(ctx, launched.runId);
-          return toolResult(result, launched.runId, `Run ${launched.runId} ${launched.status}. ${model}\n` +
-            "This session gets a message when it ends; status and result take this runId.");
-        }
-        const release = attach(ctx, launched.runId);
-        let terminal = false;
-        const timeout = Math.min(600_000, Math.max(1, args.waitTimeoutMs ?? 60_000));
-        const deadline = Date.now() + timeout;
-        const timeoutSignal = AbortSignal.timeout(timeout);
-        const waitSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
-        let last: RunRecord | undefined;
-        try {
-          do {
-            waitSignal.throwIfAborted();
-            last = await client.request({ action: "status", runId: launched.runId }, {
-              signal: waitSignal, timeoutMs: Math.max(1, deadline - Date.now()),
-            }) as RunRecord;
-            terminal = TERMINAL_STATUSES.has(last.status);
-            if (terminal || Date.now() >= deadline) break;
-            onUpdate?.(toolResult({ runId: last.id, status: last.status, progress: runSummary(last) }, last.id));
-            await delay(Math.min(pollInterval, Math.max(1, deadline - Date.now())), undefined, { signal: waitSignal });
-          } while (Date.now() < deadline);
-        } catch (error) {
-          if (signal?.aborted || !timeoutSignal.aborted) throw error;
-        } finally { release(terminal); }
-        if (!last) return toolResult(result, launched.runId, `Run ${launched.runId} ${launched.status}. ${model}\n` +
-          "Stopped waiting; the run continues and this session gets a message when it ends.");
-        return briefResult(last, terminal ? undefined : "Stopped waiting; the run continues and this session gets a message when it ends.");
-      }
-      switch (request.action) {
-        case "status": {
-          const run = result as RunRecord;
-          if (TERMINAL_STATUSES.has(run.status)) settle(ctx, run.id);
-          return args.verbose ? toolResult(run, run.id, runDetail(run)) : briefResult(run);
-        }
-        case "result":
-          settle(ctx, request.runId);
-          return toolResult(result, request.runId);
-        case "cancel": case "retry": case "revert":
-          return briefResult(result as RunRecord);
-        case "list": {
-          const runs = result as RunRecord[];
-          const view = runs.map(run => ({
-            runId: run.id, workflow: run.workflow.name, status: run.status, summary: runSummary(run),
-            ...(run.origin.kind === "workflow" ? { parentRunId: run.origin.parentRunId } : {}),
-          }));
-          return toolResult(view, undefined, runList(runs));
-        }
-        case "catalog": {
-          const entries = result as CatalogEntry[];
-          const searched = [join(cwd, ".pi", "workflows"), join(agentDirectory(env), "workflows")];
-          const view = { workflows: entries, searched, examples: EXAMPLES_DIR };
-          return toolResult(view, undefined, entries.length ? `${catalogText(entries)}\nTo write a new workflow, call guide.`
-            : `No saved workflows (searched ${searched.join(" and ")}). To write one, call guide: it has a starter file to adapt.`);
-        }
-        case "validate":
-          return toolResult(result, undefined, validationText(result as ValidationResult));
-        default:
-          return toolResult(result, args.runId);
+      } catch (error) {
+        if (error instanceof WorkflowError && error.code === "result_not_ready" && args.runId)
+          error.message += ` Check it with {"action":"status","runId":${JSON.stringify(args.runId)}}.`;
+        if (error instanceof WorkflowError && error.code === "not_found") error.message += ` List runs with {"action":"list"}.`;
+        throw codedError(error);
       }
     },
   });
@@ -399,7 +421,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
         const argv = splitCommand(args);
         const exitCode = await runCli(argv, {
           cwd: ctx.cwd, env, client, signal: session.controller.signal,
-          model: ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined,
+          model: sessionModel(ctx),
           thinkingLevel: pi.getThinkingLevel() as ThinkingLevel,
           origin: { kind: "tool", sessionId: ctx.sessionManager.getSessionId() },
           program: "/workflow",

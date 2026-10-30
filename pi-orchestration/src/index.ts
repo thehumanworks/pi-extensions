@@ -3,7 +3,9 @@ import type { ToolRegistration } from "@earendil-works/pi-durable";
 
 export type RunId = string;
 export type StepKey = string;
-export type ModelRef = { provider: string; modelId: string } | `${string}/${string}`;
+/** A model as `provider/modelId`, the form run records store. */
+export type ModelName = `${string}/${string}`;
+export type ModelRef = { provider: string; modelId: string } | ModelName;
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 export interface RunBudget { maxAgents?: number; maxCostUsd?: number; maxTokens?: number; maxDurationMs?: number }
 export interface AgentSpec {
@@ -114,7 +116,7 @@ export interface RunRecord {
   args: unknown;
   cwd: string;
   /** The model agents use unless their options, agentType or the definition's defaults choose one. */
-  model?: ModelRef;
+  model?: ModelName;
   thinkingLevel?: ThinkingLevel;
   budget?: RunBudget;
   status: RunStatus;
@@ -133,7 +135,7 @@ export interface RunRecord {
   children: RunId[];
   logs?: Array<{ time: number; message: string; data?: unknown }>;
   parked?: boolean;
-  waitingFor?: { key: string; prompt?: string; deadline?: number };
+  waitingFor?: { key: string; prompt?: string; schema?: unknown; deadline?: number };
   worktrees?: Array<{ path: string; branch: string }>;
 }
 export interface BackgroundAgentRecord {

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { test } from "node:test";
-import { help, intervalMs, modelOption, runCli, splitCommand, type WorkflowClient } from "../src/cli.ts";
+import { help, intervalMs, modelOption, runCli, splitCommand, statusText, type WorkflowClient } from "../src/cli.ts";
 import { EXAMPLES_DIR, guide, README_PATH, template } from "../src/guide.ts";
 import type { RunRecord } from "../src/index.ts";
 import { linkCli, shellCommand } from "../src/link.ts";
@@ -12,7 +12,7 @@ import { assertSocketPath } from "../src/paths.ts";
 import { rpc } from "../src/client.ts";
 import { WorkflowError } from "../src/errors.ts";
 import { lintDeterminism, validateWorkflow } from "../src/loader.ts";
-import { catalogText, modelResult, runList, runSummary, validationText } from "../src/presentation.ts";
+import { catalogText, modelResult, runBrief, runList, runListView, runSummary, runTree, toolHints, validationText } from "../src/presentation.ts";
 
 test("determinism lint reports real control-flow calls only", () => {
   const diagnostics = lintDeterminism(`
@@ -30,6 +30,13 @@ test("determinism lint reports real control-flow calls only", () => {
   `);
   assert.deepEqual(diagnostics.map(item => item.line), [9, 10, 10]);
   assert.equal(lintDeterminism("export default {")[0].code, "syntax_error");
+  const members = lintDeterminism(`export default { async run(ctx) { await ctx.runAgent("p"); return ctx.args; } };`);
+  assert.deepEqual(members.map(item => item.code), ["unknown_context_member"]);
+  assert.match(members[0].message, /ctx\.runAgent does not exist.*agent/);
+  const options = lintDeterminism(`export default { async run(ctx) { await ctx.agent("p", { tool: [], label: "x" }); await ctx.spawn({ name: "b", detach: true, modle: "m" }); } };`);
+  assert.deepEqual(options.map(item => item.code), ["unknown_agent_option", "unknown_agent_option"]);
+  assert.match(options[1].message, /'modle'/);
+  assert.match(options[0].message, /'tool' \(did you mean 'tools'\?\)/);
 });
 
 test("command parsing and intervals", () => {
@@ -79,11 +86,25 @@ test("summaries name the model and catalogs read as text", () => {
   const run = {
     id: "r", createdAt: 0, startedAt: 0, endedAt: 2000, status: "completed", workflow: { name: "w", path: "", hash: "" }, args: {}, cwd: "/",
     attempt: 1, phases: [], usage: { inputTokens: 1, outputTokens: 2, costUsd: 0, agents: 1 }, children: [], depth: 0, origin: { kind: "cli" },
-    model: { provider: "openai", modelId: "gpt" }, thinkingLevel: "high",
+    model: "openai/gpt", thinkingLevel: "high",
     steps: [{ key: "a", kind: "agent", status: "failed", attempts: 1, error: { message: "x" } }, { key: "p", kind: "parallel", status: "failed", attempts: 1 }],
   } as RunRecord;
   assert.equal(runSummary(run), "r w completed 2s · openai/gpt:high · 1 agents · 3 tokens · $0.0000 · 1 failed step");
   assert.match(runSummary({ ...run, model: undefined, steps: [] }), / · no model · /);
+  // Brief and list views lead with the same fields on every surface.
+  const head = { runId: "r", workflow: "w", status: "completed", model: "openai/gpt", summary: runSummary(run) };
+  assert.deepEqual(Object.entries(runBrief(run).view).slice(0, 5), Object.entries(head));
+  assert.deepEqual(runListView([run, { ...run, id: "c", model: undefined, origin: { kind: "workflow", parentRunId: "r", stepKey: "k" } }]),
+    [head, { runId: "c", workflow: "w", status: "completed", summary: runSummary({ ...run, id: "c", model: undefined }), parentRunId: "r" }]);
+  assert.match(statusText(run, "workflow --home /h"), /\nresult: workflow --home \/h result r$/);
+  const waiting = statusText({ ...run, status: "waiting_signal", waitingFor: { key: "ok", prompt: "Approve?" } });
+  assert.match(waiting, /\nWaiting for signal "ok": Approve\?\nDeliver with: workflow signal r "ok" '<json>'$/);
+  const gate = { ...run, status: "waiting_signal", waitingFor: { key: "ok", schema: { type: "boolean" } }, parked: true } as RunRecord;
+  assert.match(runTree(gate, 0, toolHints), /Deliver with: \{"action":"signal","runId":"r","key":"ok","value":<JSON value, not a string>\}/);
+  assert.match(runTree(gate, 0, toolHints), /Resume with: \{"action":"retry","runId":"r"\}/);
+  assert.match(runTree(gate, 0, "workflow --home /h"), /Deliver with: workflow --home \/h signal r "ok" '<json>'/);
+  assert.match(runTree(gate, 0, toolHints), /Expects: \{"type":"boolean"\}/);
+  assert.match(statusText({ ...run, status: "failed", error: { reason: "budget", message: "over" } } as RunRecord), /\nbudget: over$/);
   assert.equal(catalogText([
     { name: "ok", description: "Does it.", path: "/a", args: { type: "object" } as never, source: "project" },
     { name: "broken", path: "/b", args: {} as never, source: "user", error: "SyntaxError" },
@@ -102,6 +123,8 @@ test("the starter template is a valid workflow and the guide points at shipped f
   assert.ok(text.includes(template().trimEnd()));
   assert.ok(text.includes("Shell: `workflow` is not on PATH here, so use the full command: node /x/workflow.mjs run review-file"));
   assert.ok(guide().includes("Shell: workflow run review-file"));
+  assert.ok(guide().includes("Add --bg to get a runId at once, then workflow poll <runId>"));
+  assert.ok(text.includes("node /x/workflow.mjs result <runId>"));
   assert.equal(validationText({ valid: true, name: "a", path: "/a.ts", diagnostics: [] }), "Valid: a (/a.ts).");
   assert.equal(validationText({ valid: false, diagnostics: [{ line: 3, message: "Use ctx.now()", code: "nondeterministic_call" }] }),
     "Invalid:\nline 3: Use ctx.now() (nondeterministic_call)");
@@ -142,6 +165,21 @@ test("--model takes a thinking suffix as pi --model does", async () => {
   assert.deepEqual(launches.map(item => [(item as { model: string }).model, (item as { thinkingLevel?: string }).thinkingLevel]),
     [["openai/gpt", "high"], ["openai/gpt", "low"]]);
   assert.equal(await runCli(["run", "demo", "--thinking", "huge", "--bg"], options), 1);
+});
+
+test("next-step hints keep --home so copied commands reach the same worker", async () => {
+  const out: string[] = [];
+  const client: WorkflowClient = {
+    request: async () => ({ runId: "r", status: "queued", model: "openai/gpt" }),
+    rpc: async () => ({}), ensure: async () => ({}),
+  };
+  const options = { client, env: {}, stdout: (text: string) => { out.push(text); }, stderr: () => {} };
+  assert.equal(await runCli(["run", "demo", "--bg", "--home", "/tmp/w h"], options), 0);
+  assert.equal(await runCli(["run", "demo", "--bg", "--home", "/tmp/wh"], options), 0);
+  assert.equal(await runCli(["run", "demo", "--bg"], options), 0);
+  assert.match(out[0], /poll: workflow --home '\/tmp\/w h' poll r\ncancel: workflow --home '\/tmp\/w h' cancel r/);
+  assert.match(out[1], /poll: workflow --home \/tmp\/wh poll r/);
+  assert.match(out[2], /poll: workflow poll r/);
 });
 
 test("the CLI is linked onto PATH once, never over another command", async () => {

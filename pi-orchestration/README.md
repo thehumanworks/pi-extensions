@@ -92,7 +92,7 @@ The tool's launch request is:
 {"action":"run","workflow":{"name":"review"},"args":{"path":"src"}}
 ```
 
-It returns the run ID and the model its agents will use, immediately. When the run ends, the originating Pi session gets a completion message. That message waits for the agent's current turn to end, and is skipped when the outcome was already seen: through `wait: true`, a foreground `/workflow run`, or a `status` or `result` call. The extension reattaches after a session restart. TUI mode also displays a one-line progress widget. The worker continues when Pi closes.
+It returns `{runId, status, model}` immediately; `model` is the one its agents will use. When the run ends, the originating Pi session gets a completion message. That message waits for the agent's current turn to end, and is skipped when the outcome was already seen: through `wait: true`, a foreground `/workflow run`, or a `status` or `result` call. The extension reattaches after a session restart. TUI mode also displays a one-line progress widget. The worker continues when Pi closes.
 
 From a shell, select an available model:
 
@@ -169,7 +169,7 @@ Structured agents must finish with a valid `submit_result` tool call. Prose alon
 | `key` | Explicit step key when a stable authored identity is needed. |
 | `schema` | TypeBox result schema; controls the return type. |
 
-Options merge in this order: worker defaults, definition `defaults`, named `agents[agentType]`, call options. An agent without a model then uses the run's model: the definition's `defaults.model` when set, otherwise the launch model. Launches from Pi use the session's model and thinking level. Shell launches need `--model` unless the definition sets `defaults.model`; as with `pi --model`, a suffix such as `openai/gpt-6.1-sol:high` (or `--thinking high`) sets the thinking level. A child started with `ctx.workflow()` gets its parent's run model as its launch model. The launch reply, every status line and Pi's launch confirmation name the run's model, for example `openai/gpt-6.1-sol:high`. There is no silent model substitution.
+Options merge in this order: worker defaults, definition `defaults`, named `agents[agentType]`, call options. An agent without a model then uses the run's model: the definition's `defaults.model` when set, otherwise the launch model. Launches from Pi use the session's model and thinking level. Shell launches need `--model` unless the definition sets `defaults.model`; as with `pi --model`, a suffix such as `openai/gpt-6.1-sol:high` (or `--thinking high`) sets the thinking level. A child started with `ctx.workflow()` gets its parent's run model as its launch model. The launch reply, every status line and Pi's launch confirmation name the run's model, for example `openai/gpt-6.1-sol:high`. Run records store it as `"provider/modelId"` (the thinking level is a separate field), whichever surface launched the run. There is no silent model substitution.
 
 ### Parallel, pipelines and recipes
 
@@ -337,7 +337,7 @@ The guarantees have practical limits:
 
 The tool's actions are `catalog`, `guide`, `validate`, `run`, `status`, `result`, `list`, `cancel`, `retry`, `revert`, `signal`, `steer` and `agents`. Its description explains each action's fields, and `guide` returns the same text as `workflow guide`. `run` accepts `wait: true` with `waitTimeoutMs` up to 600,000; timeout returns the current run state instead of cancelling it. Session tool calls use a stable session/tool-call launch request ID.
 
-Tool results are compact. `status` returns the summary line, failed steps, any awaited signal and the result. `verbose: true` adds the step tree and each step's own result. `list` returns one line per run. Codemode scripts receive the same views as structured data. Neither the tool nor the worker returns journal bookkeeping such as fingerprints or sequence numbers.
+Tool results are compact. `status` returns the summary line, failed steps, any awaited signal and the result. `verbose: true` adds the step tree and each step's own result. `list` returns one line per run. Codemode scripts receive the same views as structured data, and the CLI's `--json` prints them too (see below). Neither the tool nor the worker returns journal bookkeeping such as fingerprints or sequence numbers.
 
 The shell command and `/workflow` share one interface:
 
@@ -350,7 +350,7 @@ workflow run <path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR]
   [--model PROVIDER/MODEL[:THINKING]] [--thinking LEVEL] [--bg] [--request-id ID]
   [--max-agents N] [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
 workflow status <runId> [--verbose]
-workflow poll <runId> [--interval 5s] [--until done|signal] [--once]
+workflow poll <runId> [--interval 1s] [--until signal|done] [--once]
 workflow watch <runId> [--interval 1s]
 workflow list [--status running,failed] [--all]
 workflow result|cancel|revert <runId>
@@ -363,6 +363,17 @@ workflow worker start|stop|status
 ```
 
 Every command accepts `--home DIR` and `--json`. Single actions emit one JSON document on stdout; `poll` and `watch` emit NDJSON. Progress/errors intended for humans stay off JSON stdout. Socket envelopes are `{ ok: true, data }` / `{ ok: false, error }`; CLI JSON unwraps successful data and prints `{ error: { code, message } }` for errors. The result action returns the complete workflow result directly.
+
+Runs have the same JSON shape in the CLI and in the tool's `details`, so a parser written against one works on the other:
+
+| CLI `--json` | Tool action | Shape |
+|---|---|---|
+| `run --bg` | `run` | `{runId, status, model?}` |
+| `run` (attached), `status`, `poll`, `cancel`, `retry`, `revert` | `run` with `wait: true`, `status`, `cancel`, `retry`, `revert` | `{runId, workflow, status, model?, summary, error?, failedSteps?, waitingFor?, parked?, result? \| resultStored?}` |
+| `list` | `list` | `[{runId, workflow, status, model?, summary, parentRunId?}]` |
+| `status --verbose`, `watch` | `status` with `verbose: true` | the full run record: `id`, `workflow: {name, path, hash}`, `args`, `steps`, `usage`, timestamps |
+
+`workflow` is the workflow's name except in the full record. `model` is always the string `"provider/modelId"`, whichever surface launched the run.
 
 | Exit | Meaning |
 |---|---|
@@ -447,7 +458,7 @@ The composition example verifies the current checkout; isolated worker branches 
 
 ## Design decisions
 
-- `RunRecord.id` is canonical; launch replies use `runId`. `parallel({failure:"allSettled"})` has a discriminated return type rather than an inaccurate nullable-success type.
+- `RunRecord.id` is canonical inside the full record; every other run view (launch replies, brief status, list entries, tool details and CLI `--json`) uses `runId`. `parallel({failure:"allSettled"})` has a discriminated return type rather than an inaccurate nullable-success type.
 - One worker, SQLite store and control protocol serve every entry point. No sibling workspace imports are used.
 - `jiti` handles fresh TypeScript module loading. `@babel/parser` handles deterministic-call linting so comments, strings and valid step callbacks are not rejected by a text search.
 - The worker is a plain Node process outside Pi, so it carries its own copy of Pi 1.4.0, installed as `pi-workflow-runtime`, for credential and model resolution. Inside Pi, the extension uses the host's packages; they remain peer dependencies. pi-durable and chord are pinned runtime dependencies.

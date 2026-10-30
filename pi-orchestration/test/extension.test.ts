@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { WorkflowClient } from "../src/cli.ts";
+import { WorkflowError } from "../src/errors.ts";
 import { registerOrchestration } from "../src/extension.ts";
 import { BIN_PATH, README_PATH } from "../src/guide.ts";
 import type { RunRecord, RunStatus } from "../src/index.ts";
@@ -13,9 +14,10 @@ type Entry = { type: "custom"; customType: string; data: unknown } | { type: "cu
 
 function runRecord(id: string, status: RunStatus): RunRecord {
   return {
-    id, status, workflow: { name: "flow", path: "/w/flow.ts", hash: "h" }, args: {}, cwd: "/w", createdAt: 1, attempt: 1,
+    id, status, workflow: { name: "flow", path: "/w/flow.ts", hash: "h" }, args: {}, cwd: "/w", model: "faux/faux-1", createdAt: 1, attempt: 1,
     phases: [], steps: [], usage: { inputTokens: 0, outputTokens: 0, costUsd: 0, agents: 0 }, origin: { kind: "cli" },
     depth: 0, children: [], ...(status === "completed" ? { result: "done", endedAt: 2 } : {}),
+    ...(status === "waiting_signal" ? { waitingFor: { key: "go" } } : {}),
   };
 }
 
@@ -39,14 +41,18 @@ function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv =
   const client: WorkflowClient = {
     async request(request) {
       requests.push(request);
-      if (request.action === "run") return { runId: `run-${++launches}`, status: "queued" };
+      if (request.action === "run") return { runId: `run-${++launches}`, status: "queued", ...(request.model ? { model: request.model } : {}) };
+      if (request.action === "status" && request.runId === "nope") throw new WorkflowError("not_found", "Unknown workflow run nope.");
       if (request.action === "status") {
         const queue = statuses[request.runId] ?? ["completed"];
         return runRecord(request.runId, queue.length > 1 ? queue.shift()! : queue[0]);
       }
+      if (request.action === "result" && request.runId === "run-gate") throw new WorkflowError("result_not_ready", 'Run run-gate is waiting for signal "go"; deliver it, then read the result.');
+      if (request.action === "signal") return { runId: request.runId, key: request.key, accepted: true };
       // The run finishes just as the agent asks for its result.
       if (request.action === "result") { statuses[request.runId] = ["completed"]; return "done"; }
       if (request.action === "catalog") return [];
+      if (request.action === "list") return [runRecord("run-2", "completed"), { ...runRecord("run-3", "running"), origin: { kind: "workflow", parentRunId: "run-2", stepKey: "child" } }];
       throw new Error(`unexpected ${request.action}`);
     },
     rpc: async () => ({}),
@@ -124,7 +130,7 @@ test("a foreground /workflow run does not trigger a completion turn", async () =
   await delay(30);
   assert.deepEqual(h.completions(), []);
   const launch = h.requests.find(request => request.action === "run") as Extract<ControlRequest, { action: "run" }>;
-  assert.deepEqual(launch.model, { provider: "faux", modelId: "faux-1" });
+  assert.equal(launch.model, "faux/faux-1");
   assert.equal(launch.thinkingLevel, "medium");
   await h.handlers.get("session_shutdown")!({}, ctx);
 });
@@ -159,7 +165,7 @@ test("inner tool and /workflow launches still fail with not_from_root in any Pi 
         await h.handlers.get("session_start")!({}, ctx);
         await assert.rejects(h.tools.get("workflow")!.execute("call-1",
           { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx),
-          (error: { code?: string }) => error.code === "not_from_root");
+          (error: { code?: string; message: string }) => error.code === "not_from_root" && error.message.startsWith("not_from_root: "));
         await h.commands.get("workflow")!.handler("run flow --bg --json", ctx);
         const reply = h.messages.find(item => item.message.details.kind === "command");
         assert.equal(JSON.parse(reply!.message.content).error.code, "not_from_root", mode);
@@ -180,6 +186,7 @@ test("the tool explains every action and an empty catalog teaches authoring", as
     assert.match(tool.description, new RegExp(`\\b${action}\\b`), action);
   assert.ok(tool.promptGuidelines?.some(line => /`pi workflow` is not a command/.test(line)));
   assert.match(tool.parameters.properties.budget.properties.maxAgents.description, /Cap only/);
+  assert.deepEqual(tool.parameters.properties.value.anyOf.map((item: { type: string }) => item.type), ["object", "array", "string", "number", "boolean", "null"]);
 
   const catalog = await tool.execute("call-1", { action: "catalog" }, undefined, undefined, ctx) as ToolReply;
   assert.match(catalog.content[0].text, /^No saved workflows \(searched \/w\/\.pi\/workflows and .*\)\. To write one, call guide/);
@@ -195,8 +202,8 @@ test("the tool explains every action and an empty catalog teaches authoring", as
 });
 
 test("reading a finished run's outcome replaces the completion turn, and status stays brief", async () => {
-  const h = harness({ "run-1": ["running"], "run-2": ["completed"] });
-  const ctx = h.context();
+  const h = harness({ "run-1": ["running"], "run-2": ["completed"], "run-gate": ["waiting_signal"] });
+  const ctx = { ...h.context(), model: undefined } as ExtensionContext;
   await h.handlers.get("session_start")!({}, ctx);
   const tool = h.tools.get("workflow")!;
   const launched = await tool.execute("call-1", { action: "run", workflow: { name: "flow" } }, undefined, undefined, ctx) as ToolReply;
@@ -210,11 +217,19 @@ test("reading a finished run's outcome replaces the completion turn, and status 
   assert.ok(h.entries.some(entry => entry.type === "custom" && (entry.data as { done?: boolean }).done && (entry.data as { runId: string }).runId === "run-1"));
 
   const status = await tool.execute("call-3", { action: "status", runId: "run-2" }, undefined, undefined, ctx) as ToolReply;
-  assert.deepEqual(Object.keys(status.details).sort(), ["result", "runId", "status", "summary", "workflow"]);
+  assert.deepEqual(Object.keys(status.details).sort(), ["model", "result", "runId", "status", "summary", "workflow"]);
   assert.equal(status.content[0].text, `${status.details.summary}\ndone`);
   const verbose = await tool.execute("call-4", { action: "status", runId: "run-2", verbose: true }, undefined, undefined, ctx) as ToolReply;
   assert.ok(Array.isArray(verbose.details.steps));
   assert.match(verbose.content[0].text, /\n\nResult:\ndone$/);
+  await assert.rejects(tool.execute("call-5", { action: "result", runId: "run-gate" }, undefined, undefined, ctx),
+    (error: Error) => error.message === 'result_not_ready: Run run-gate is waiting for signal "go"; deliver it, then read the result. Check it with {"action":"status","runId":"run-gate"}.');
+  const signalled = await tool.execute("call-6", { action: "signal", runId: "run-gate", key: "go", value: { ok: true } }, undefined, undefined, ctx) as ToolReply;
+  assert.equal(signalled.content[0].text, 'Signal "go" accepted. Check the run with {"action":"status","runId":"run-gate"}.');
+  const gate = await tool.execute("call-7", { action: "status", runId: "run-gate" }, undefined, undefined, ctx) as ToolReply;
+  assert.match(gate.content[0].text, /Deliver with: \{"action":"signal","runId":"run-gate","key":"go"/);
+  await assert.rejects(tool.execute("call-7", { action: "status", runId: "nope" }, undefined, undefined, ctx),
+    (error: Error) => error.message === 'not_found: Unknown workflow run nope. List runs with {"action":"list"}.');
   await h.handlers.get("session_shutdown")!({}, ctx);
 });
 
@@ -236,5 +251,47 @@ test("a run that ends mid-turn waits for the turn, in case the agent reads it fi
   await h.handlers.get("agent_settled")!({}, ctx);
   await delay(30);
   assert.deepEqual(h.completions().map(item => item.message.details.runId), ["run-2"]);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
+test("the CLI's --json and the tool's details share one run shape, with the model as a string", async () => {
+  const h = harness({ "run-1": ["completed"], "run-2": ["waiting_signal"] });
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  const tool = h.tools.get("workflow")!;
+  const call = async (args: Record<string, unknown>) => (await tool.execute("call", args, undefined, undefined, ctx) as ToolReply).details;
+  const command = async (line: string) => {
+    const before = h.messages.length;
+    await h.commands.get("workflow")!.handler(`${line} --json`, ctx);
+    const replies = h.messages.slice(before).filter(item => item.message.details.kind === "command");
+    assert.equal(replies.length, 1, line);
+    return JSON.parse(replies[0].message.content);
+  };
+
+  assert.deepEqual(await call({ action: "run", workflow: { name: "flow" } }), { runId: "run-1", status: "queued", model: "faux/faux-1" });
+  assert.deepEqual(await command("run flow --bg"), { runId: "run-2", status: "queued", model: "faux/faux-1" });
+  assert.deepEqual(h.requests.filter(request => request.action === "run").map(request => (request as { model?: unknown }).model), ["faux/faux-1", "faux/faux-1"]);
+
+  for (const runId of ["run-1", "run-2"]) {
+    const brief = await call({ action: "status", runId });
+    assert.equal(brief.runId, runId);
+    assert.equal(brief.workflow, "flow");
+    assert.equal(brief.model, "faux/faux-1");
+    assert.deepEqual(await command(`status ${runId}`), brief);
+    assert.deepEqual(await command(`poll ${runId} --once`), brief);
+  }
+  const verbose = await call({ action: "status", runId: "run-1", verbose: true });
+  assert.deepEqual(await command("status run-1 --verbose"), verbose);
+  assert.equal(verbose.id, "run-1");
+
+  const list = await call({ action: "list" });
+  assert.deepEqual(list.map((item: { runId: string; model: string; parentRunId?: string }) => [item.runId, item.model, item.parentRunId]),
+    [["run-2", "faux/faux-1", undefined], ["run-3", "faux/faux-1", "run-2"]]);
+  assert.deepEqual(await command("list"), list);
+
+  // A foreground launch prints the same brief view once, without a second id field.
+  h.statuses["run-3"] = ["completed"];
+  const attached = await command("run flow --interval 10ms");
+  assert.deepEqual(attached, await call({ action: "status", runId: "run-3" }));
   await h.handlers.get("session_shutdown")!({}, ctx);
 });

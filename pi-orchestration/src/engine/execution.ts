@@ -7,14 +7,18 @@ import type { TSchema } from "typebox";
 import { Value } from "typebox/value";
 import type { AgentOptions, PipelineStage, Settled, StepContext, StepRecord, WorkflowContext, WorkflowDefinition } from "../index.ts";
 import { WorkflowError } from "../errors.ts";
+import { AGENT_OPTIONS } from "../validation.ts";
 import type { Engine, RunRuntime } from "./index.ts";
 import { AgentMeta, copy, json, RunStore, storedRun, StructuredResult, type JournalEntry, type RunData } from "./store.ts";
 import { outsideScript, randomValue, scopedSignal, scriptScope, structuralKey } from "./scopes.ts";
+import { signalMismatch } from "./mismatch.ts";
 import { Semaphore } from "./semaphore.ts";
 import { structuredTool } from "./structured.ts";
 import { ensureWorktree, worktreeSuffix } from "./worktrees.ts";
 import { BackgroundRuntime } from "./background.ts";
 import { runSwarm } from "./swarm.ts";
+
+// Options ctx.agent and ctx.spawn accept; a misspelled one must not silently fall back to defaults.
 
 function fingerprint(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -295,6 +299,12 @@ export class Execution {
   }
 
   resolveOptions(call: AgentOptions): AgentOptions {
+    const unknown = Object.keys(call).filter(name => !AGENT_OPTIONS.includes(name));
+    if (unknown.length) {
+      const near = (name: string) => AGENT_OPTIONS.find(known => known.startsWith(name) || name.startsWith(known));
+      const hints = unknown.map(name => near(name) ? `'${name}' (did you mean '${near(name)}'?)` : `'${name}'`);
+      throw new WorkflowError("unknown_agent_option", `Unknown agent option ${hints.join(", ")}. Valid options: ${AGENT_OPTIONS.join(", ")}.`);
+    }
     const spec = call.agentType ? this.definition.agents?.[call.agentType] : undefined;
     if (call.agentType && !spec) throw new WorkflowError("unknown_agent_type", `Unknown agentType '${call.agentType}'. Define it in workflow.agents.`);
     return { retries: this.engine.options.defaultRetries ?? 0, timeoutMs: this.engine.options.defaultTimeoutMs ?? 600_000,
@@ -358,14 +368,14 @@ export class Execution {
       if (options.schema) current.schema = json(options.schema) as NonNullable<JournalEntry["schema"]>;
       if (options.prompt) current.signalPrompt = options.prompt;
       run.status = "waiting_signal";
-      run.waitingFor = { key: name, ...(options.prompt ? { prompt: options.prompt } : {}), ...(current.deadline === undefined ? {} : { deadline: current.deadline }) };
+      run.waitingFor = { key: name, ...(options.prompt ? { prompt: options.prompt } : {}), ...(current.schema ? { schema: current.schema } : {}), ...(current.deadline === undefined ? {} : { deadline: current.deadline }) };
       return current.deadline;
     });
     for (;;) {
       const run = await this.engine.get(this.runId);
       if (Object.hasOwn(run.signals, name)) {
         const value = run.signals[name];
-        if (options.schema && !Value.Check(options.schema, value)) throw new WorkflowError("invalid_signal", `Signal '${name}' does not match its schema.`, key);
+        if (options.schema && !Value.Check(options.schema, value)) throw new WorkflowError("invalid_signal", signalMismatch(name, options.schema, value), key);
         await this.complete(key, value);
         await this.engine.mutate(this.runId, current => { current.status = "running"; delete current.waitingFor; });
         return copy(value);

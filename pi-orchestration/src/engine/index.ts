@@ -13,11 +13,12 @@ import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { NodeExecutionEnv } from "@earendil-works/pi-durable/env/node";
 import { Value } from "typebox/value";
 import { Type } from "typebox";
-import type { ModelRef, RunId, RunRecord, StepRecord, WorkflowDefinition } from "../index.ts";
+import type { ModelName, ModelRef, RunId, RunRecord, StepRecord, WorkflowDefinition } from "../index.ts";
 import type { ControlRequest } from "../protocol.ts";
 import { loadWorkflow } from "../loader.ts";
 import { WorkflowError } from "../errors.ts";
 import { Execution } from "./execution.ts";
+import { mismatchLines, signalMismatch } from "./mismatch.ts";
 import { AgentMeta, copy, json, publicRun, RunStore, storedRun, type RunData } from "./store.ts";
 import { installDeterminismGuard, outsideScript, wallNow } from "./scopes.ts";
 import { Semaphore } from "./semaphore.ts";
@@ -218,7 +219,7 @@ export class Engine {
 
   async get(id: string): Promise<RunData> {
     const value = (await this.harness.snapshot(RunStore, context))?.runs[id];
-    if (!value) throw new WorkflowError("not_found", `Unknown workflow run ${id}. Use workflow list.`);
+    if (!value) throw new WorkflowError("not_found", `Unknown workflow run ${id}.`);
     return copy(storedRun(value));
   }
 
@@ -269,6 +270,7 @@ export class Engine {
         const current = storedRun((await tx.doc(RunStore)).runs[runId]);
         current.status = "failed";
         current.endedAt = runtime.now();
+        delete current.waitingFor;
         current.error = { reason: failure.code, message: failure.message, ...(failure.stepKey ? { stepKey: failure.stepKey } : {}) };
         for (const step of current.steps) {
           if (step.status === "pending") step.status = "skipped";
@@ -283,7 +285,7 @@ export class Engine {
     }
   }
 
-  async launch(request: Launch, owner?: { taskId: TaskId; parentRunId: string; stepKey: string }): Promise<{ runId: RunId; status: RunRecord["status"]; model?: ModelRef }> {
+  async launch(request: Launch, owner?: { taskId: TaskId; parentRunId: string; stepKey: string }): Promise<{ runId: RunId; status: RunRecord["status"]; model?: ModelName }> {
     if (!owner && request.callerRunId)
       throw new WorkflowError("not_from_root", `Workflows are launched by the user or root Pi session, not from inside run ${request.callerRunId}, step ${request.callerStep ?? "unknown"}. Compose with ctx.workflow() instead.`);
     const canonicalCwd = await realpath(request.cwd);
@@ -296,11 +298,17 @@ export class Engine {
       throw new WorkflowError("invalid_cwd", "cwd must be an existing absolute directory.");
     const loaded = await loadWorkflow(request.workflow, request.cwd);
     const argsSchema = loaded.definition.args ?? Type.Object({}, { additionalProperties: false });
-    if (!Value.Check(argsSchema, request.args ?? {}))
-      throw new WorkflowError("invalid_args", `Arguments do not match the workflow schema: ${JSON.stringify([...Value.Errors(argsSchema, request.args ?? {})]).slice(0, 2000)}`);
-    // Definition defaults outrank the launch model for every agent, so record the model agents will actually use.
-    const model = loaded.definition.defaults?.model ?? request.model ?? this.options.defaultModel;
-    if (model) this.resolveModel(model);
+    if (typeof request.args === "string")
+      throw new WorkflowError("invalid_args", `args is a JSON-encoded string; pass the object itself, e.g. {"topic":"bees"}, not "{\\"topic\\":\\"bees\\"}".`);
+    if (!Value.Check(argsSchema, request.args ?? {})) {
+      const problems = mismatchLines(argsSchema, request.args ?? {}, "args");
+      throw new WorkflowError("invalid_args", `Arguments do not match the workflow schema ${JSON.stringify(argsSchema)}:\n${problems.join("\n")}`.slice(0, 2000));
+    }
+    // Definition defaults outrank the launch model for every agent, so record the model agents will actually use,
+    // always as "provider/modelId" whichever surface launched the run.
+    const chosen = loaded.definition.defaults?.model ?? request.model ?? this.options.defaultModel;
+    const resolved = chosen ? this.resolveModel(chosen) : undefined;
+    const model = resolved ? `${resolved.provider}/${resolved.modelId}` as ModelName : undefined;
     const parent = owner ? await this.get(owner.parentRunId) : undefined;
     const depth = parent ? parent.depth + 1 : 0;
     if (depth > this.settings.maxDepth)
@@ -406,9 +414,13 @@ export class Engine {
 
   async signal(runId: string, key: string, value: unknown): Promise<{ runId: string; key: string; accepted: true }> {
     await this.mutate(runId, run => {
+      if (["completed", "cancelled", "reverted"].includes(run.status))
+        throw new WorkflowError("run_finished", `Run ${run.id} is ${run.status} and accepts no more signals.`);
       const step = run.steps.find(item => item.kind === "signal" && item.signalKey === key);
-      if (!step) throw new WorkflowError("unknown_signal", `No waiting signal '${key}'. Use status --verbose to see the requested key.`);
-      if (step.schema && !Value.Check(step.schema, value)) throw new WorkflowError("invalid_signal", `Signal '${key}' does not match its schema.`);
+      if (!step) throw new WorkflowError("unknown_signal", run.waitingFor
+        ? `No waiting signal '${key}'. The run is waiting for '${run.waitingFor.key}'.`
+        : `No waiting signal '${key}'. The run is not waiting for a signal (status ${run.status}).`);
+      if (step.schema && !Value.Check(step.schema, value)) throw new WorkflowError("invalid_signal", signalMismatch(key, step.schema, value));
       const data = json(value);
       if (Object.hasOwn(run.signals, key) && JSON.stringify(run.signals[key]) !== JSON.stringify(data))
         throw new WorkflowError("signal_already_set", `Signal '${key}' already has a different durable value.`);
@@ -487,7 +499,10 @@ export class Engine {
     if (request.action === "result") {
       const run = await this.get(request.runId);
       if (["queued", "running", "waiting_signal"].includes(run.status))
-        throw new WorkflowError("result_not_ready", `Run ${run.id} is ${run.status}. Use poll ${run.id} --until done.`);
+        throw new WorkflowError("result_not_ready", run.status === "waiting_signal" && run.waitingFor
+          ? `Run ${run.id} is waiting for signal "${run.waitingFor.key}"; deliver it, then read the result.`
+          : `Run ${run.id} is ${run.status}; the result is not ready.`);
+      if (run.status === "cancelled") throw new WorkflowError("run_cancelled", `Run ${run.id} is cancelled.${run.error?.message ? ` ${run.error.message}` : ""}`);
       if (run.status !== "completed") throw new WorkflowError(run.error?.reason ?? "run_failed", run.error?.message ?? `Run ${run.id} is ${run.status}.`);
       return this.readResult(run);
     }
@@ -533,6 +548,7 @@ export async function openEngine(storage: Storage, models: Models, options: Engi
         const run = storedRun((await tx.doc(RunStore)).runs[task.input.runId]);
         run.status = "cancelled";
         run.endedAt = runtime.now();
+        delete run.waitingFor;
         for (const step of run.steps) if (["pending", "running"].includes(step.status)) step.status = "cancelled";
         return { status: "terminal", outcome: { status: "aborted" } };
       }, ctx);

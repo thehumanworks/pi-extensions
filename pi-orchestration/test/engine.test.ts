@@ -42,8 +42,13 @@ test("control flow keeps authored order and journals helpers", async () => {
     assert.equal(run.phases[0]?.title, "Compute");
 
     const invalid = await f.request<RunRecord>({ action: "run", requestId: "bad-args", workflow: { name: "flow" }, args: { n: "x" }, cwd: f.project, origin: { kind: "cli" } })
-      .then(() => undefined, (error: { code: string }) => error.code);
-    assert.equal(invalid, "invalid_args");
+      .then(() => undefined, (error: { code: string; message: string }) => error);
+    assert.equal(invalid?.code, "invalid_args");
+    assert.match(invalid?.message ?? "", /args\/n: .*\(got "x"\)/);
+    const encoded = await f.request<RunRecord>({ action: "run", requestId: "string-args", workflow: { name: "flow" }, args: '{"n":2}', cwd: f.project, origin: { kind: "cli" } })
+      .then(() => undefined, (error: { code: string; message: string }) => error);
+    assert.equal(encoded?.code, "invalid_args");
+    assert.match(encoded?.message ?? "", /JSON-encoded string; pass the object itself/);
   } finally { await f.close(); }
 });
 
@@ -120,9 +125,14 @@ test("signals are schema-checked and children charge their parent", async () => 
   try {
     const runId = await f.launch("gate");
     const waiting = await f.wait(runId, run => run.status === "waiting_signal");
-    assert.deepEqual(waiting.waitingFor, { key: "approve", prompt: "Approve?" });
-    const invalid = await f.request({ action: "signal", runId, key: "approve", value: { ok: "yes" } }).then(() => "", (error: { code: string }) => error.code);
-    assert.equal(invalid, "invalid_signal");
+    assert.equal(waiting.waitingFor?.key, "approve");
+    assert.equal(waiting.waitingFor?.prompt, "Approve?");
+    assert.ok(waiting.waitingFor?.schema, "waitingFor exposes the signal schema");
+    const failure = (error: { code: string; message: string }) => `${error.code}: ${error.message}`;
+    const invalid = await f.request({ action: "signal", runId, key: "approve", value: { ok: "yes" } }).then(() => "", failure);
+    assert.match(invalid, /^invalid_signal: Signal 'approve' expects \{.*\}; got \{"ok":"yes"\}\.\nvalue\/ok: .* \(got "yes"\)/);
+    assert.match(await f.request({ action: "signal", runId, key: "approve", value: "{}" }).then(() => "", failure), /not a JSON-encoded string/);
+    assert.match(await f.request({ action: "signal", runId, key: "aprove", value: {} }).then(() => "", failure), /^unknown_signal: .*waiting for 'approve'/);
     await f.request({ action: "signal", runId, key: "approve", value: { ok: true } });
     const done = await f.wait(runId);
     assert.equal(done.status, "completed", JSON.stringify(done.error));
@@ -133,6 +143,13 @@ test("signals are schema-checked and children charge their parent", async () => 
     const all = await f.request<RunRecord[]>({ action: "list", filter: { all: true } });
     assert.deepEqual(roots.map(run => run.id), [runId]);
     assert.equal(all.length, 2);
+    const gated = await f.launch("gate");
+    await f.wait(gated, run => run.status === "waiting_signal");
+    await f.request({ action: "cancel", runId: gated });
+    const cancelled = await f.wait(gated);
+    assert.equal(cancelled.status, "cancelled");
+    assert.equal(cancelled.waitingFor, undefined, "a terminal run is not waiting for a signal");
+    assert.match(await f.request({ action: "signal", runId: gated, key: "approve", value: { ok: true } }).then(() => "", failure), /^run_finished: .*cancelled/);
   } finally { await f.close(); }
 });
 
@@ -159,11 +176,18 @@ test("catalog reports a broken file without hiding valid workflows", async () =>
   const f = await fixture({ workflows: {
     good: workflow(`{ name: "good", description: "Works", async run() { return 1; } }`),
     broken: "export default { oops",
+    plainargs: workflow(`{ name: "plainargs", args: { topic: "string" }, async run() { return 1; } }`),
+    stringargs: workflow(`{ name: "stringargs", args: Type.String(), async run() { return 1; } }`),
+    sinclair: `import { Type } from "@sinclair/typebox";\nexport default { name: "sinclair", args: Type.Object({}), async run() { return 1; } };\n`,
   } });
   try {
     const entries = await f.request<CatalogEntry[]>({ action: "catalog", cwd: f.project });
-    assert.deepEqual(entries.map(entry => [entry.name, entry.error === undefined]), [["broken", false], ["good", true]]);
+    assert.deepEqual(entries.map(entry => [entry.name, entry.error === undefined]), [["broken", false], ["good", true], ["plainargs", false], ["sinclair", false], ["stringargs", false]]);
     assert.match(entries[0].error!, /Cannot load/);
+    assert.match(entries[2].error!, /args must be Type\.Object\(\{\.\.\.\}\) from "typebox"; got \{"topic":"string"\}/);
+    assert.match(entries[3].error!, /Cannot find module '@sinclair\/typebox'.*Use import \{ Type \} from "typebox" \(bundled with pi-orchestration\)\.$/s);
+    assert.doesNotMatch(entries[3].error!, /Require stack/);
+    assert.match(entries[4].error!, /args must be Type\.Object/);
     assert.equal((await f.run("good")).result, 1);
   } finally { await f.close(); }
 });
@@ -178,6 +202,7 @@ test("agents return text or validated structured results with one repair turn", 
         () => ctx.agent('SUBMIT {"value":1}', { tools: [], schema: Result }),
         () => ctx.agent('REPAIR {"value":2}', { tools: [], schema: Result }),
         () => ctx.agent("NEVER", { tools: [], schema: Result }),
+        () => ctx.agent("ECHO typo", { tool: [] } as never),
       ], { failure: "allSettled" });
     },
   }`) } });
@@ -187,6 +212,8 @@ test("agents return text or validated structured results with one repair turn", 
     const results = run.result as Array<{ status: string; value?: unknown; reason?: { code?: string } }>;
     assert.deepEqual(results.slice(0, 3).map(item => item.value), ["plain", { value: 1 }, { value: 2 }]);
     assert.equal(results[3].reason?.code, "invalid_structured_output");
+    assert.equal(results[4].reason?.code, "unknown_agent_option");
+    assert.match((results[4].reason as { message: string }).message, /'tool' \(did you mean 'tools'\?\)/);
     assert.equal(run.usage.agents, 4);
     assert.ok(run.usage.inputTokens > 0);
   } finally { await f.close(); }
@@ -314,5 +341,13 @@ test("status names the model, surfaces failed branches and hides journal bookkee
     const done = await f.wait(pinned.runId);
     assert.equal(done.status, "completed", JSON.stringify(done.error));
     assert.equal(done.model, "faux/faux-1");
+
+    // Whichever surface launched it, the run stores its model as "provider/modelId".
+    const object = await f.request<{ runId: string; model?: string }>({
+      action: "run", requestId: "object", workflow: { name: "partial" }, args: {}, cwd: f.project,
+      model: { provider: "faux", modelId: "faux-1" }, origin: { kind: "tool", sessionId: "s" },
+    });
+    assert.equal(object.model, "faux/faux-1");
+    assert.equal((await f.wait(object.runId)).model, "faux/faux-1");
   } finally { await f.close(); }
 });
