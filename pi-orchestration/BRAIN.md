@@ -13,7 +13,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 - D5 (setup): The brain works in the worktree `.pi/worktrees/brain-orchestration` on branch brain/orchestration, based on main at f21d735. The main checkout holds the user's uncommitted work (pi-loggly, root README.md, package.json, package-lock.json) and must not be modified.
 - D6 (setup): Subagents are interactive Pi sessions in the herdr session `pi-brain`, each in its own worktree and workspace, started with `brain/loop.sh spawn`. At most 2 at a time. Model: the user's default (openai/gpt-6.1-sol, high).
 - D7 (user, 2026-10-30): The tick rules live in `brain/loop.sh` and belong to the brain; it may change them. The ledger must be updated every tick.
-- D8 (setup; updated 14:42): Pi on this machine loads `npm:@nothumanwork/pi-orchestration` from npm, not this checkout. Release 0.3.0 = brain/orchestration at a12cb48 (ticks up to 44 plus the Nix smoke fix), merged by the supervisor and pushed as origin/main 0875a30, verified with npm test 38/38, the full nix build and the installed smoke. It is NOT yet published; the installed Pi runs 0.2.1 until the user publishes and updates. Work after a12cb48 ships in a later release. Keep PI_WORKFLOW_ALLOW_UNATTENDED in brain/loop.sh until the user confirms the publish. Test changes with `npm test`, the local CLI (`node pi-orchestration/bin/workflow.mjs`, after `npm run build`) or `pi -e ./pi-orchestration/index.ts`.
+- D8 (setup; updated 15:50): Pi on this machine loads `npm:@nothumanwork/pi-orchestration` from npm, not this checkout, and still runs 0.2.1 until the user updates Pi packages. npm has 0.3.1 and 0.3.2 (published by the user from main, brain work up to a12cb48). The supervisor prepared 0.4.0 on main: everything through tick 55 plus worker1, minor bump because launches now refuse workflows that fail the determinism lint (validate1). Keep PI_WORKFLOW_ALLOW_UNATTENDED in brain/loop.sh until Pi runs 0.3.0 or later. Test changes with `npm test`, the local CLI (`node pi-orchestration/bin/workflow.mjs`, after `npm run build`) or `pi -e ./pi-orchestration/index.ts`.
 - D9 (supervisor, user-approved, 15:34): the loop stopped after tick 55 (brain/STOP). axeval3 measured 0 wrong turns in every scenario (S1-S4, rounds one to three), and most recent ticks shipped small polish (45, 48, 51-53). Remaining work: worker1 (stale worker after upgrade; PROTOCOL_VERSION is 1 in both 0.2.1 and 0.3.0, so an upgrade keeps the old worker), Q1 (user policy), and the low items in Backlog 000. The supervisor reviews and merges worker1. Restart only with a new goal or new evaluation scenarios.
 
 ## Baseline
@@ -25,7 +25,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `worker1` (spawned tick 55, herdr w9:p1, branch brain/worker1): Backlog 000.1, worker build check and idle-worker restart. Baseline 42/42 at b057433.
+- None running. `worker1` merged at `6f2ba7d` and retired by the supervisor (Backlog 000.1; 44/44, Nix smoke passed).
 - `axeval3` merged at `2af4ece` and retired in tick 54; its report is `brain/axeval3.md` (ranked fixes drive Backlog item 000).
 - `validate1` merged at `6facf5c` and retired in tick 46 (Backlog 00.6 and 00.7).
 - `axeval2` merged at `6ed16ed` and retired in tick 35; its report is `brain/axeval2.md` (ranked fixes drive Backlog item 00).
@@ -38,7 +38,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 000. axeval3's ranked fixes (`brain/axeval3.md`, "Ranked fixes"; round three: S1-S4 all 0 wrong turns). Open, in order:
-   1. Worker build check (worker.ts:58, protocol.ts:11, client.ts:54-57): worker reports a build id; client restarts an idle stale worker, else warns naming `worker stop`. Same as 00.11. In progress: `worker1` (tick 55).
+   1. Worker build check (worker.ts:58, protocol.ts:11, client.ts:54-57): worker reports a build id; client restarts an idle stale worker, else warns naming `worker stop`. Same as 00.11. ✅ Done: `worker1` merged at `6f2ba7d` (44/44, Nix smoke passed).
    2. ✅ Done tick 54 (58f2ec3), pending Q1. Ask before answering a gate: append to `toolHints.signal` (presentation.ts:95-96) `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` Measured unasked approvals 6/6 → 2/6, told-to-approve 4/4 still fine. Policy choice: see Questions.
    3. Lint rest: `require("fs"|…)` calls and `process.hrtime.bigint()` (tick 52 covered performance.now, crypto.randomUUID, getRandomValues; tick 55 covered process.hrtime, randomBytes, randomInt).
    4. ✅ Widget pluralisation, done tick 51.
@@ -119,7 +119,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 ## Questions for the user
 
 - Q1 (tick 54): should agents answer `ctx.signal` gates on their own? axeval3 measured that agents approve a gate unasked 6/6 times; a one-line caution on the tool's deliver hint cut it to 2/6 without hurting sessions told to approve. The brain shipped that caution in tick 54 (58f2ec3, reversible, one line); it will revert it if you say signals are meant for agents to answer freely.
-- Q2 (tick 54): brain/orchestration since the 0.3.0 merge (a12cb48) holds ticks 45-53 plus validate1 and axeval3 (npm test 42/42; the Nix smoke test not rerun since a12cb48). Ready for a 0.3.x release when you want one.
+- Q2 (tick 54): resolved. The supervisor merged everything through tick 55 plus worker1 into main as 0.4.0 (see D8).
 
 ## Log
 
@@ -279,3 +279,9 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Value: ✅ yielded value: the last ranked fix that needs a design choice is being worked in parallel with the four-minute lint and guide items.
 - Lesson: read the three named file:line spots before writing the brief (one command, 20 seconds); the brief then names exact lines. Next: Backlog 000.3 lint rest (`require("fs")`, `randomBytes`/`randomInt` imports, `process.hrtime`) in src/validation.ts, no overlap with worker1.
 - Follow-up in the same tick: part of 000.3. `lintDeterminism` (`src/validation.ts:90-91`) reports `process.hrtime()`, bare `randomBytes()`/`randomInt()` and `crypto.randomBytes()`/`crypto.randomInt()` as `nondeterministic_call`; `test/unit.test.ts:32-33` asserts all three forms. `npm test` **42/42**. Commit `ddfb224`. `npm run check` exit 0. Not covered: `process.hrtime.bigint()`. Left: `require("fs"|"node:fs"|…)` calls.
+
+### Supervisor · 15:50 · Merge worker1, clean up, prepare 0.4.0 on main (user request)
+- Action: the user's 0.3.1 edit in this worktree was a mistake (they published 0.3.1 and 0.3.2 from main); restored it. Reviewed and merged `brain/worker1` (build id in the ping reply, idle worker of another build replaced, busy one kept with a one-line warning on both surfaces); retired it. Stopped 34 orphaned evaluation workers. Rules: subagents stop every worker they start; `retire` stops workers still running from the retired worktree.
+- Outcome: `npm test` 44/44 after the merge. Next: merge into main as 0.4.0 with a refreshed Nix lock.
+- Value: ✅
+- Lesson: a stopped loop still needs a reviewer for its last subagent; check for running subagents before stopping.
