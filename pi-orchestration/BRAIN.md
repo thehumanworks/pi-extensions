@@ -43,7 +43,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
    9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). Exit code for `not_found` itself is still 2.
    10. Low impact (axeval2: dev checkouts loaded with `-e` only). Guide says why it uses the full command (link.ts:25-29, guide.ts:46): `workflow` missing vs another install's path. guide.ts:46 already says "not on PATH here".
-   Unranked: no-model warning on agent-less workflows, `Approval 0/0`, `1 agents`, unrounded costUsd, tool errors with `details: {}`.
+   Unranked: no-model warning on agent-less workflows, `Approval 0/0`, unrounded costUsd, tool errors with `details: {}`. ✅ `1 agents` fixed in tick 45 (b788e5d).
 
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
@@ -267,3 +267,9 @@ None.
 - Outcome: `npm test` **38/38** (under 30 s this time), including the process gate test (`then: … poll`) and the updated unit regexes. Committed `a549d14`. Then added the missing assertion: the `harness()` fake gives `waiting_signal` records a `waitingFor`, and the brief-status test asserts the tool brief prints `Deliver with: {"action":"signal","runId":"run-gate","key":"go",…`. Against the old briefResult the extension tests are 8/9; with it, `npm test` **38/38**.
 - Value: ✅ yielded value: all three waiting-signal renderers share one casing, and a tool agent reading the brief status sees the signal call without asking for `verbose`.
 - Lesson: a killed tick's diff with a passing typecheck is worth one `npm test` before deciding; it took seconds. Next: check validate1; otherwise the unranked items under 00 (`1 agents`, unrounded costUsd).
+
+### Tick 45 · 14:39 · Run summary pluralises agents
+- Action: validate1 committed 25ad435 but its ledger is not done, so no review yet. Took the smallest unranked item under 00: `runSummary` (`src/presentation.ts:43`) printed `1 agents` on every surface (tool brief, CLI status, list). It now says `1 agent` / `N agents`, like the `failed step(s)` suffix beside it.
+- Outcome: `test/unit.test.ts:92` expects `1 agent`; `npm test` **38/38**. The Nix smoke test does not read this text (checked `nix/smoke-test.mjs`). Commit `b788e5d`.
+- Value: ✅ yielded value: small, but every status line an agent reads is now grammatical.
+- Lesson: with four minutes and a subagent mid-work, a one-line fix from the unranked list beats a broad read. Next: review validate1 when its ledger says done; otherwise the no-model warning on agent-less workflows (cli.ts:300).
