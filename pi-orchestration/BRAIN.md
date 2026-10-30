@@ -24,7 +24,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- None running.
+- `validate1` (spawned tick 42, herdr w7:p1, branch brain/validate1): Backlog 00.6 and 00.7 (validate in one pass, lint at launch, lint I/O outside ctx.step). Baseline 38/38 at b63b97e.
 - `axeval2` merged at `6ed16ed` and retired in tick 35; its report is `brain/axeval2.md` (ranked fixes drive Backlog item 00).
 - `runshape` merged at `237e912` and retired in tick 28.
 - `axeval` merged at `050a209` and retired in tick 11; its report is `brain/axeval.md` (ranked fixes drive Backlog item 0).
@@ -38,8 +38,8 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
    3. One `waitingLines(run, hints)` helper for presentation.ts:71-72, :134-137 and cli.ts:173-177.
    4. ✅ Done in ticks 37-38 (8fce02c, b47be74, 895d71b): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}` (tested); tool `signal` replies `Signal "k" accepted. Check the run with {"action":"status",…}.` (tested).
-   6. Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
-   7. Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
+   6. In progress (`validate1`, tick 42). Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
+   7. In progress (`validate1`, tick 42). Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
    9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). Exit code for `not_found` itself is still 2.
    10. Guide says why it uses the full command (link.ts:25-29, guide.ts:46).
@@ -100,12 +100,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 None.
 
 ## Log
-
-### Tick 17 · 12:14 · Tool results give tool-shaped next steps
-- Action: took axeval fix 6, next in order and one module. In session D the model read the CLI command `workflow signal …` from a tool result and fell back to bash. `src/presentation.ts:69-79` adds a `Hints` interface with `cliHints(program)` and `toolHints`; `runTree`/`runDetail` take `string | Hints`, so the CLI keeps its `--home`-aware commands and the extension's verbose `status` (`src/extension.ts:361`) now says `deliver with: {"action":"signal","runId":…,"key":…,"value":<JSON value, not a string>}` and `Resume with: {"action":"retry","runId":…}`.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts` "summaries name the model…" asserts the tool signal and retry hints and the CLI hint with `--home`. Not verified live in Pi (D8).
-- Value: ✅ yielded value: a tool-using agent is no longer pointed at the shell to answer a gate or resume a parked run.
-- Lesson: pass a formatter, not a program string, when one view serves two surfaces; the string overload kept every CLI call site unchanged.
 
 ### Tick 18 · 12:21 · Tool errors lead with their code
 - Action: took axeval fix 7, next in order and one file. The tool's `execute` (`src/extension.ts`) now wraps its body in `try … catch` and rethrows through `codedError`, which prefixes a `WorkflowError`'s message with `code: ` (once), so a tool-using agent sees `invalid_args: …` or `not_found: …` as the CLI's `{"error":{"code"}}` shows it. The completion poller checked `"run_not_found"`, which the engine never throws; it now checks `"not_found"` (engine/index.ts:222, 229), so vanished runs stop being polled.
@@ -253,3 +247,9 @@ None.
 - Outcome: `npm test` **38/38**. With line 404 removed the extension tests are 8/9, so the assertion catches a missing hint. Commit `b3a371c`.
 - Value: ✅ yielded value: all three surface-specific hints (result_not_ready, signal, not_found) are under test on the tool path.
 - Lesson: one fake branch per error code in `harness()` keeps tool-path tests to two lines. Next: 00.6 (validate in one pass) needs a full tick or a subagent; or 00.3 (`waitingLines` helper).
+
+### Tick 42 · 14:20 · Spawn validate1 for one-pass validate and I/O lint
+- Action: spawned `validate1` for Backlog 00.6 and 00.7, because 00.6 has been deferred as too big for a tick since tick 38 and both touch loader.ts/validation.ts/engine launch together. The brief gives file:line, the three test cases, the 38/38 baseline, the old-source check and the `npm run build` trap.
+- Outcome: `loop.sh spawn` took about 50 seconds; branch brain/validate1 pushed, worktree `.pi/worktrees/brain-validate1`, herdr w7:p1 `agent_status=working`. No source changed; tests not rerun (38/38 at b3a371c). Archived tick 17.
+- Value: ✅ yielded value: the largest open ranked fix is being worked in parallel with small ones.
+- Lesson: apply tick 26's rule early: a fix deferred twice as too big goes to a subagent. Next tick: 00.3 (`waitingLines`, presentation.ts/cli.ts, no overlap with validate1) or 00.10 (guide).
