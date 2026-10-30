@@ -401,6 +401,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
       } catch (error) {
         if (error instanceof WorkflowError && error.code === "result_not_ready" && args.runId)
           error.message += ` Check it with {"action":"status","runId":${JSON.stringify(args.runId)}}.`;
+        if (error instanceof WorkflowError && error.code === "not_found") error.message += ` List runs with {"action":"list"}.`;
         throw codedError(error);
       }
     },

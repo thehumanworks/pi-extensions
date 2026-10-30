@@ -219,7 +219,7 @@ export class Engine {
 
   async get(id: string): Promise<RunData> {
     const value = (await this.harness.snapshot(RunStore, context))?.runs[id];
-    if (!value) throw new WorkflowError("not_found", `Unknown workflow run ${id}. Use workflow list.`);
+    if (!value) throw new WorkflowError("not_found", `Unknown workflow run ${id}.`);
     return copy(storedRun(value));
   }
 

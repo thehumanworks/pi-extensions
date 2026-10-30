@@ -54,6 +54,8 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     assert.equal(refused.code, 2);
     assert.equal(refused.json.error.code, "not_from_root");
     assert.equal((await s.cli(["run", "quick", "--args", '{"n":"x"}'])).code, 1);
+    const missing = await s.cli(["status", "nope"], {}, false);
+    assert.match(missing.stderr, /^error not_found: Unknown workflow run nope\. List runs: \S*workflow\b.* list\.$/m);
     assert.equal((await s.cli(["nope"])).code, 1);
     assert.equal((await s.cli(["validate", "clock"])).code, 1);
 
