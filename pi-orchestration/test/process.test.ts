@@ -15,8 +15,8 @@ async function sandbox() {
   const root = await mkdtemp(join(tmpdir(), "po-"));
   const project = join(root, "p");
   await mkdir(join(project, ".pi", "workflows"), { recursive: true });
-  const env: NodeJS.ProcessEnv = { ...process.env, PI_WORKFLOW_HOME: join(root, "h"), PI_CODING_AGENT_DIR: join(root, "agent"), PI_WORKFLOW_NODE: process.execPath };
-  for (const key of ["PI_WORKFLOW_ALLOW_UNATTENDED", "PI_WORKFLOW_RUN_ID", "PI_WORKFLOW_STEP"]) delete env[key];
+  const inherited = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PI_WORKFLOW_")));
+  const env: NodeJS.ProcessEnv = { ...inherited, PI_WORKFLOW_HOME: join(root, "h"), PI_CODING_AGENT_DIR: join(root, "agent"), PI_WORKFLOW_NODE: process.execPath };
   const cli = (args: string[], extra: NodeJS.ProcessEnv = {}) => new Promise<Result>(resolve => {
     execFile(process.execPath, [CLI, ...args, "--json"], { cwd: project, env: { ...env, ...extra }, timeout: 30_000 }, (error, stdout, stderr) => {
       const code = error ? typeof error.code === "number" ? error.code : 1 : 0;
@@ -26,34 +26,34 @@ async function sandbox() {
       resolve({ code, stdout, stderr, json });
     });
   });
-  const unattended = { PI_WORKFLOW_ALLOW_UNATTENDED: "1" };
   return {
-    root, project, cli, unattended,
+    root, project, cli,
     write: (name: string, source: string) => writeFile(join(project, ".pi", "workflows", `${name}.ts`), source),
     close: async () => { await cli(["worker", "stop"]); await rm(root, { recursive: true, force: true }); },
   };
 }
 
-test("the compiled CLI enforces headless opt-in and documented exit codes", { timeout: 60_000 }, async () => {
+test("the compiled CLI launches root workflows without opt-in, rejects inner launches and preserves exit codes", { timeout: 60_000 }, async () => {
   const s = await sandbox();
   try {
     await s.write("quick", workflow(`{ name: "quick", args: Type.Object({ n: Type.Number() }), async run(ctx) { return ctx.args.n * 2; } }`));
     await s.write("gate", workflow(`{ name: "gate", async run(ctx) { return ctx.signal("go", { schema: Type.Boolean() }); } }`));
     await s.write("clock", workflow(`{ name: "clock", async run() { return Date.now(); } }`));
 
-    const refused = await s.cli(["run", "quick", "--args", '{"n":1}']);
+    const refused = await s.cli(["run", "quick", "--args", '{"n":1}'],
+      { PI_WORKFLOW_RUN_ID: "parent", PI_WORKFLOW_STEP: "root/agent#0" });
     assert.equal(refused.code, 2);
-    assert.equal(refused.json.error.code, "unattended_forbidden");
-    assert.equal((await s.cli(["run", "quick", "--args", '{"n":"x"}'], s.unattended)).code, 1);
+    assert.equal(refused.json.error.code, "not_from_root");
+    assert.equal((await s.cli(["run", "quick", "--args", '{"n":"x"}'])).code, 1);
     assert.equal((await s.cli(["nope"])).code, 1);
     assert.equal((await s.cli(["validate", "clock"])).code, 1);
 
-    const quick = await s.cli(["run", "quick", "--args", '{"n":21}'], s.unattended);
+    const quick = await s.cli(["run", "quick", "--args", '{"n":21}']);
     assert.equal(quick.code, 0, quick.stderr);
     assert.equal(quick.json.status, "completed");
     assert.equal((await s.cli(["result", quick.json.id])).json, 42);
 
-    const gate = await s.cli(["run", "gate", "--bg"], s.unattended);
+    const gate = await s.cli(["run", "gate", "--bg"]);
     assert.equal(gate.code, 0);
     const runId = gate.json.runId as string;
     assert.equal((await s.cli(["poll", runId, "--until", "signal", "--interval", "20ms"])).code, 0);
@@ -78,8 +78,8 @@ test("a SIGKILLed worker resumes runs without repeating committed steps", { time
         return { before, after: await ctx.step("after", async () => process.pid) };
       },
     }`));
-    const launched = await s.cli(["run", "slow", "--bg"], s.unattended);
-    const doomed = await s.cli(["run", "slow", "--bg"], s.unattended);
+    const launched = await s.cli(["run", "slow", "--bg"]);
+    const doomed = await s.cli(["run", "slow", "--bg"]);
     const runId = launched.json.runId as string;
     for (let deadline = Date.now() + 10_000; ;) {
       const status = await s.cli(["status", runId]);

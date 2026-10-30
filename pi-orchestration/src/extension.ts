@@ -5,7 +5,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import type { JsonValue } from "@earendil-works/pi-ai";
 import { stripTerminalSequences, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
-import { assertRootLaunch, assertUnattended } from "./client.ts";
+import { assertRootLaunch } from "./client.ts";
 import { defaultClient, runCli, splitCommand, type WorkflowClient } from "./cli.ts";
 import { WorkflowError } from "./errors.ts";
 import { EXAMPLES_DIR, guide } from "./guide.ts";
@@ -13,7 +13,7 @@ import type { CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, Valid
 import { linkCli, shellCommand } from "./link.ts";
 import { agentDirectory, workflowPaths } from "./paths.ts";
 import type { ControlRequest } from "./protocol.ts";
-import { catalogText, json, modelLabel, modelResult, runBrief, runDetail, runList, runSummary, TERMINAL_STATUSES, validationText } from "./presentation.ts";
+import { catalogText, modelLabel, modelResult, runBrief, runDetail, runList, runSummary, TERMINAL_STATUSES, validationText } from "./presentation.ts";
 
 export const TOOL_DESCRIPTION = `Run and manage durable multi-agent workflows. A workflow is a TypeScript file whose run(ctx) calls ctx.agent(), ctx.parallel() and similar; a separate worker runs it, so it outlives this session.
 Start with catalog. Before writing a workflow, call guide: it gives a starter file, the ctx API and which model runs. Save workflows as .pi/workflows/<name>.ts.
@@ -86,8 +86,6 @@ const parameters = Type.Object({
 
 /** attached counts foreground waiters that report the outcome themselves. */
 interface TrackedRun { runId: string; home?: string; attached: number }
-/** ask confirms each launch; auto launches without asking, including from headless Pi sessions. */
-type Approval = "ask" | "auto";
 interface SessionWatch {
   id: string;
   context: ExtensionContext;
@@ -95,8 +93,6 @@ interface SessionWatch {
   controller: AbortController;
   timer?: ReturnType<typeof setTimeout>;
   polling: boolean;
-  /** Set by /workflow approval; overrides settings for this session. */
-  approval?: Approval;
 }
 
 function nonempty(value: string | undefined, name: string): string {
@@ -106,10 +102,6 @@ function nonempty(value: string | undefined, name: string): string {
 
 function record(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
-}
-
-function modelName(value: ModelRef | undefined): string {
-  return value === undefined ? "workflow default" : typeof value === "string" ? value : `${value.provider}/${value.modelId}`;
 }
 
 /** text is what the model reads; structured is what codemode scripts receive. */
@@ -258,10 +250,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
     dispose();
     const session = sessionFor(ctx);
     for (const entry of ctx.sessionManager.getBranch()) {
-      if (entry.type === "custom" && entry.customType === "workflow_approval") {
-        const mode = record(entry.data)?.mode;
-        session.approval = mode === "ask" || mode === "auto" ? mode : undefined;
-      } else if (entry.type === "custom" && entry.customType === "workflow_run") {
+      if (entry.type === "custom" && entry.customType === "workflow_run") {
         const data = record(entry.data);
         if (typeof data?.runId !== "string") continue;
         if (data.done === true) session.runs.delete(data.runId);
@@ -273,55 +262,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
         if (data?.kind === "completion" && typeof data.runId === "string") session.runs.delete(data.runId);
       }
     }
-    showApproval(ctx);
     if (session.runs.size) await pollSession(session);
-  }
-
-  /** The session's choice wins; Pi merges trusted project settings over agent-directory settings. */
-  function approval(ctx: ExtensionContext): { mode: Approval; source: "session" | "settings" | "default" } {
-    const override = active?.id === ctx.sessionManager.getSessionId() ? active.approval : undefined;
-    if (override) return { mode: override, source: "session" };
-    const value = record(record(pi.getSettings())?.workflow)?.approval;
-    if (value === undefined) return { mode: "ask", source: "default" };
-    if (value !== "ask" && value !== "auto") throw new WorkflowError("invalid_setting", `settings.json workflow.approval must be "ask" or "auto", not ${JSON.stringify(value)}.`);
-    return { mode: value, source: "settings" };
-  }
-
-  function showApproval(ctx: ExtensionContext) {
-    if (!ctx.hasUI) return;
-    let mode: Approval = "ask";
-    try { mode = approval(ctx).mode; } catch (error) { ctx.ui.notify((error as Error).message, "warning"); }
-    ctx.ui.setStatus("workflow-approval", mode === "auto" ? "workflows auto-approved" : undefined);
-  }
-
-  function approvalCommand(ctx: ExtensionContext, session: SessionWatch, args: string[]): string {
-    const [choice, ...rest] = args;
-    if (rest.length || (choice !== undefined && choice !== "ask" && choice !== "auto" && choice !== "reset"))
-      throw new WorkflowError("invalid_request", "Usage: /workflow approval [ask|auto|reset]");
-    if (choice) {
-      session.approval = choice === "reset" ? undefined : choice;
-      pi.appendEntry("workflow_approval", session.approval ? { mode: session.approval } : {});
-      showApproval(ctx);
-    }
-    const { mode, source } = approval(ctx);
-    const from = source === "session" ? "this session; /workflow approval reset follows settings"
-      : source === "settings" ? "settings.json workflow.approval" : "default";
-    return `Workflow launches ${mode === "auto" ? "start without asking" : "ask for approval"} (${from}).`;
-  }
-
-  async function authorize(ctx: ExtensionContext, launch: Extract<ControlRequest, { action: "run" }>) {
-    assertRootLaunch(env);
-    if (approval(ctx).mode === "auto") return;
-    if (!ctx.hasUI) { assertUnattended(env); return; }
-    const workflow = "path" in launch.workflow ? launch.workflow.path : launch.workflow.name;
-    const accepted = await ctx.ui.confirm("Run durable workflow?", [
-      `Workflow: ${workflow}`, `Args: ${json(launch.args ?? {})}`, `Cwd: ${launch.cwd}`,
-      `Model: ${modelName(launch.model)}${launch.thinkingLevel ? `:${launch.thinkingLevel}` : ""}, unless the workflow sets defaults.model`,
-      `Budget overrides: ${json(launch.budget ?? {})}; workflow/worker limits also apply.`,
-      "Runs trusted code and agents with shell/file access after this session closes.",
-      `To stop asking: /workflow approval auto for this session, or "workflow": { "approval": "auto" } in settings.json.`,
-    ].join("\n"));
-    if (!accepted) throw new WorkflowError("cancelled", "Workflow launch cancelled.");
   }
 
   pi.on("session_start", async (_event, ctx) => { await restore(ctx); await link(ctx); });
@@ -341,6 +282,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
       const cwd = resolve(ctx.cwd, args.cwd ?? ".");
       let request: ControlRequest;
       if (args.action === "run") {
+        assertRootLaunch(env);
         if (!args.workflow) throw new WorkflowError("invalid_request", "run requires workflow.path or workflow.name.");
         request = {
           action: "run", requestId: `${ctx.sessionManager.getSessionId()}:${toolCallId}`,
@@ -349,7 +291,6 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
           model: (args.model ?? (ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined)) as ModelRef | undefined,
           thinkingLevel: pi.getThinkingLevel() as ThinkingLevel, budget: args.budget,
         };
-        await authorize(ctx, request);
       } else if (args.action === "guide") {
         const sessionModel = ctx.model ? modelLabel({ provider: ctx.model.provider, modelId: ctx.model.id }, pi.getThinkingLevel()) : undefined;
         const text = guide({ shell: await shellCommand(env), sessionModel });
@@ -456,15 +397,12 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
           if (ctx.mode === "print") (options.printOutput ?? (value => { writeSync(1, value); }))(text);
         };
         const argv = splitCommand(args);
-        // Pi-only: the shell command has no session or settings to change.
-        if (argv[0] === "approval") { stdout(approvalCommand(ctx, session, argv.slice(1)) + "\n"); return; }
         const exitCode = await runCli(argv, {
           cwd: ctx.cwd, env, client, signal: session.controller.signal,
           model: ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined,
           thinkingLevel: pi.getThinkingLevel() as ThinkingLevel,
           origin: { kind: "tool", sessionId: ctx.sessionManager.getSessionId() },
           program: "/workflow",
-          authorizeRun: launch => authorize(ctx, launch),
           onLaunch: (runId, home, attached) => attached ? attach(ctx, runId, home) : void track(ctx, runId, home),
           onSettled: runId => settle(ctx, runId),
           stdout,

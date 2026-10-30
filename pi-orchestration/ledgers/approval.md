@@ -1,4 +1,4 @@
-Status: working — launch paths and Pi extension contracts reviewed; removing the gate next
+Status: working — source gate removed and launch/recursion tests pass; docs and Nix smoke policy next
 
 # Subagent approval
 
@@ -14,3 +14,9 @@ Goal: implement user decision D1: workflow launches never need user approval, th
 - Read the task and inspected CLI, client, extension/session restoration, worker guards, tests, docs and brain launch rules. Read Pi's extension guide completely plus the relevant TUI, settings, configuration, packages and RPC UI contracts and permission-gate/hello/todo examples before changing registration behavior.
 - Root enforcement is independent: retain `assertRootLaunch` in CLI/tool/client and worker caller/worktree checks, along with inner-agent run/step markers. Only the launch-authorization plumbing is obsolete.
 - Found extra obsolete policy in `nix/smoke-test.mjs` and `nix/README.md`; these must be updated too so installed-wrapper acceptance does not require the removed gate. No source edits yet; no blockers. BRAIN.md and D2 source-authoring changes are out of scope.
+
+### Source removal and regression coverage
+- Removed the CLI/client unattended assertion, extension confirmation/settings/session-state/footer command, and the authorize-only CLI hook. The extension tool now calls `assertRootLaunch` directly; slash-command/CLI and worker guards remain independent. Removed obsolete engine variable stripping while preserving run/step markers, and simplified the guide's launch command.
+- Replaced five old gate/settings tests with root-launch and nested-refusal matrices across TUI, RPC, print and JSON modes for both the tool and slash command. The fake host has no settings API; confirmation returns false if called, and setting footer status fails the test. Compiled CLI coverage launches without special environment, still rejects inner caller markers, and preserves documented exit codes. Worker regression checks direct caller metadata, inherited agent run/step markers, and recursive CLI refusal; existing owned-worktree and ctx.workflow composition tests still pass.
+- Verification: `npm run check` passed. `npm test`: 35 total, 32 pass, 3 fail; replacing five obsolete gate tests with two matrices accounts for the reduction from 38. All three failures match the supplied baseline: catalog includes global `resolve-bot-main`, Nix lock 0.2.0 differs from package 0.2.1, and source-only package fixture cannot find local `@types/node` (only jiti is workspace-local). No new failures.
+- Supervisor correction: leave `pi-orchestration/brain/loop.sh` entirely unchanged (exports, workspace env and generated brain/subagent rules). Installed Pi runs published 0.2.1, which still needs the variable. **Follow-up after publication:** remove that variable and stale launch-approval guidance from loop.sh. Package source, docs and tests will not retain the gate.
