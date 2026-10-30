@@ -89,6 +89,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
+- Tick 15: TypeBox's `IsSchema` is a weak structural check; use the kind-specific guard (`IsObject`) where the contract needs one shape.
 - Tick 14: check option names at the one function every agent path goes through (`resolveOptions`); lint at validate as the follow-up.
 - Ticks 11-13: an evaluation subagent with a narrow write scope merges cleanly. TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer. Keep error formatting shared across surfaces (`src/engine/mismatch.ts`).
 - Ticks 8-10: read the surface's own help before adding a backlog item; act on a subagent's concrete partial findings outside its write scope without waiting for the final report.
@@ -98,12 +99,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 None.
 
 ## Log
-
-### Tick 15 · 12:07 · Workflow args must be an object schema
-- Action: took axeval fix 4, next in order and one function. axeval saw `args: { topic: "string" }` pass validate (`Type.IsSchema` accepts any object) and run with `{topic:5}` unchecked, and `Type.String()` pass validate then fail every run. `src/loader.ts:72` now uses `Type.IsObject` and says `args must be Type.Object({...}) from "typebox"; got {"topic":"string"}` (value truncated to 120 chars). No workflow in the repo uses non-object args.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts` catalog test adds `plainargs` and `stringargs` fixtures and asserts both errors. Not verified live in Pi (D8).
-- Value: ✅ yielded value: a malformed args schema is caught at validate, before an agent runs with unchecked input.
-- Lesson: TypeBox's `IsSchema` is a weak structural check; use the kind-specific guard (`IsObject`) where the contract needs one shape.
 
 ### Tick 16 · 12:10 · poll stops at a signal wait and prints only changes
 - Action: took axeval fix 5, next in order and one function. In scenario 3 a plain `workflow poll <id>` on a gate printed the same line every second and never returned, so the agent's bash needed `timeout`. `src/cli.ts` poll now defaults `--until` to `signal` (terminal or `waiting_signal` returns 0 after printing the `signal:` line); `watch` keeps `done`. A line is emitted only when the status text changes apart from duration tokens. Help and README say `[--interval 1s] [--until signal|done]`, matching the real default.
