@@ -296,3 +296,9 @@ None.
 - Outcome: `test/unit.test.ts` determinism test asserts the three calls are flagged and `randomUUID()` inside `ctx.step` is not; `npm test` **42/42** (no flake this run). Examples still validate. Commit `1a90795`. Old-source check not run: without the change the list is empty.
 - Value: ✅ yielded value: small; two more replay breakers are caught at validate instead of on retry.
 - Lesson: an evaluation's probe list of misses is a ready queue of four-minute fixes. Next: stale worker after upgrade (compare package version in client.ts:56, restart the worker), or axeval3's report when done.
+
+### Tick 53 · 15:21 · Test the tool's empty list hint
+- Action: closed tick 50's untested gap, because it fits four minutes; the stale-worker fix (Backlog 00.11) needs a design choice (restarting a worker with live runs) that does not fit. The `harness()` fake returns no runs for a `cancelled` filter; the catalog test asserts the tool's empty `list` text is exactly `No workflow runs. Saved workflows are listed by {"action":"catalog"}.`
+- Outcome: `npm test` **42/42**. Commit `5b9bc56`. Old-source check not run: without the extension.ts text the exact-match assertion cannot pass.
+- Value: ✅ yielded value: small; both surfaces' empty-list hints are under test.
+- Lesson: a filter branch in the fake gives an empty case without disturbing the shared run list. Next: stale worker (client.ts:56): add a build id to `ping` and decide between a clear `worker_outdated` error naming `worker stop` and an automatic restart when no run is active; or axeval3's report.
