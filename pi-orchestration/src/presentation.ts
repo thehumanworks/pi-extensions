@@ -97,8 +97,15 @@ export function runDetail(run: RunRecord, program: string | Hints = "workflow"):
   return modelResult(sections.join("\n\n"), run.id, RESULT_BYTES, typeof program === "string" ? program : "workflow").text;
 }
 
+/** One diagnostic as a line of text: where, what and the code. */
+export function diagnosticText(item: ValidationResult["diagnostics"][number]): string {
+  const at = item.path ? `${[item.path, item.line, item.column].filter(part => part !== undefined).join(":")}: `
+    : item.line === undefined ? "" : `line ${item.line}: `;
+  return `${at}${item.message}${item.code ? ` (${item.code})` : ""}`;
+}
+
 export function validationText(result: ValidationResult): string {
-  const problems = result.diagnostics.map(item => `${item.line === undefined ? "" : `line ${item.line}: `}${item.message}${item.code ? ` (${item.code})` : ""}`);
+  const problems = result.diagnostics.map(diagnosticText);
   return result.valid ? [`Valid: ${result.name} (${result.path}).`, ...problems].join("\n") : ["Invalid:", ...problems].join("\n");
 }
 

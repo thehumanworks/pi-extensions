@@ -16,6 +16,8 @@ import { Type } from "typebox";
 import type { ModelName, ModelRef, RunId, RunRecord, StepRecord, WorkflowDefinition } from "../index.ts";
 import type { ControlRequest } from "../protocol.ts";
 import { loadWorkflow } from "../loader.ts";
+import { lintDeterminism } from "../validation.ts";
+import { diagnosticText } from "../presentation.ts";
 import { WorkflowError } from "../errors.ts";
 import { Execution } from "./execution.ts";
 import { mismatchLines, signalMismatch } from "./mismatch.ts";
@@ -297,6 +299,10 @@ export class Engine {
     if (!isAbsolute(request.cwd) || !(await stat(request.cwd)).isDirectory())
       throw new WorkflowError("invalid_cwd", "cwd must be an existing absolute directory.");
     const loaded = await loadWorkflow(request.workflow, request.cwd);
+    // Refuse what validation rejects before anything exists, rather than failing the run later.
+    const problems = lintDeterminism(loaded.source);
+    if (problems.length)
+      throw new WorkflowError("invalid_workflow", `${loaded.path} is not a valid workflow; no run was created:\n${problems.map(diagnosticText).join("\n")}`.slice(0, 2000));
     const argsSchema = loaded.definition.args ?? Type.Object({}, { additionalProperties: false });
     if (typeof request.args === "string")
       throw new WorkflowError("invalid_args", `args is a JSON-encoded string; pass the object itself, e.g. {"topic":"bees"}, not "{\\"topic\\":\\"bees\\"}".`);

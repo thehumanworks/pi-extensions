@@ -156,4 +156,8 @@ export interface CatalogEntry {
   /** Present when the file could not be loaded; name is then the file's base name. */
   error?: string;
 }
-export interface ValidationResult { valid: boolean; path?: string; name?: string; hash?: string; args?: TSchema; diagnostics: Array<{ message: string; line?: number; code?: string }> }
+export interface ValidationResult {
+  valid: boolean; path?: string; name?: string; hash?: string; args?: TSchema;
+  /** Lint findings carry the workflow line. A load failure located in a file (the workflow or a module it imports) carries its path, line and 1-based column. */
+  diagnostics: Array<{ message: string; code?: string; path?: string; line?: number; column?: number }>;
+}
