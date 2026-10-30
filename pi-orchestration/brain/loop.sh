@@ -83,6 +83,7 @@ Optimise what an agent sees and experiences when it uses pi-orchestration throug
 - You may launch workflows without approval; PI_WORKFLOW_ALLOW_UNATTENDED=1 is set. Do not create scheduled loops: this script is the loop. Do not save memories: BRAIN.md is your memory.
 - Verify before claiming: run `npm test` in pi-orchestration before committing code changes, and record failures honestly against the baseline in BRAIN.md.
 - Put questions for the user in BRAIN.md under Questions for the user, and carry on with the best reversible choice meanwhile.
+- Earlier ticks are on disk: pi-orchestration/brain/logs/tick-<N>.jsonl is the full Pi event stream and tick-<N>.log the readable view. Read them when the ledger is not enough, for example after an AUTO entry.
 - Keep BRAIN.md under about 300 lines. When the Log passes 25 entries, move the oldest to pi-orchestration/brain/archive/<YYYY-MM-DD>.md and keep their lessons under Lessons.
 - These rules are yours. Change them in the rules() function of pi-orchestration/brain/loop.sh when a lesson shows they should, and record why under Decisions. Changes apply from the next tick; keep `bash -n` passing.
 - The user stops the loop by creating pi-orchestration/brain/STOP. Never create or delete it yourself.
@@ -162,22 +163,41 @@ ensure_ledger() {  # <tick> <HEAD before the tick> <exit code>: every tick leave
       printf -- '- Action: unknown. The session exited with code %s (124 means it hit the %s-minute limit) without updating BRAIN.md.\n' "$rc" "$HARD"
       printf -- '- Outcome: uncommitted changes: %s\n' "$(git_wt status --short | head -10 | tr '\n' ' ' | sed 's/ *$//' | grep . || echo none)"
       printf -- '- Value: ❌\n'
-      printf -- '- Lesson: find out why in pi-orchestration/brain/logs/tick-%s.log before choosing the next action.\n' "$n"
+      printf -- '- Lesson: find out why in pi-orchestration/brain/logs/tick-%s.jsonl before choosing the next action.\n' "$n"
     } >> "$LEDGER"
   fi
   git_wt diff --quiet HEAD -- "$LEDGER" || git_wt commit -q -m "brain: tick $n — ledger (auto)" -- "$LEDGER"
 }
 
+render() {  # a readable live view of pi's JSON event stream; other lines pass through
+  jq -R --unbuffered -r '
+    def clip($n): if length > $n then .[0:$n] + "…" else . end;
+    (fromjson? // { type: "raw", text: . })
+    | if .type == "raw" then .text | clip(400)
+      elif .type == "tool_execution_start" then "→ \(.toolName) \(.args | tojson | clip(200))"
+      elif .type == "tool_execution_end" and .isError then "  ✗ \(.toolName) failed: \(.result | tojson | clip(200))"
+      elif .type == "message_end" and .message.role == "assistant" then
+        ([.message.content[]? | select(.type == "text") | .text] | join("\n") | select(length > 0)),
+        (.message | select(.stopReason == "error" or .stopReason == "aborted") | "✗ \(.stopReason): \(.errorMessage // "")")
+      else empty end'
+}
+
 tick() {  # <tick>
-  local n=$1 before rc model=()
+  local n=$1 before rc last model=()
   before=$(git_wt rev-parse HEAD)
   [[ ${BRAIN_MODEL:-} ]] && model=(--model "$BRAIN_MODEL")
   system_prompt > "$LOGS/tick-$n.system.md"
   tick_message "$n" > "$LOGS/tick-$n.prompt.md"
   printf '\n=== tick %s · %s ===\n' "$n" "$(date -Is)"
-  ( cd "$WT" && BRAIN_TICK=$n timeout --kill-after=30s "${HARD}m" pi -p "${model[@]}" --recap-disable --name "brain tick $n" \
-      --append-system-prompt "$LOGS/tick-$n.system.md" "$(cat "$LOGS/tick-$n.prompt.md")" 9>&- ) 2>&1 | tee "$LOGS/tick-$n.log"
+  # Pi's boolean extension flags (--recap-disable, --no-memory) swallow a following positional
+  # argument, so the message must never directly follow one.
+  ( cd "$WT" && BRAIN_TICK=$n timeout --kill-after=30s "${HARD}m" pi -p --mode json "${model[@]}" --recap-disable --name "brain tick $n" \
+      --append-system-prompt "$LOGS/tick-$n.system.md" "$(cat "$LOGS/tick-$n.prompt.md")" 9>&- ) 2>&1 \
+    | tee "$LOGS/tick-$n.jsonl" | render | tee "$LOGS/tick-$n.log"
   rc=${PIPESTATUS[0]}
+  # JSON mode exits 0 even when the model call failed.
+  last=$(jq -R -r 'fromjson? | select(.type == "message_end" and .message.role == "assistant") | .message.stopReason' "$LOGS/tick-$n.jsonl" | tail -1)
+  [[ $rc == 0 && ( $last == error || $last == aborted ) ]] && rc=1
   ensure_ledger "$n" "$before" "$rc"
   git_wt push -q -u origin "$BRANCH" 2>&1 | tee -a "$LOGS/tick-$n.log"
   echo "$n" > "$LOGS/tick"
