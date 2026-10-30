@@ -231,6 +231,8 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       const interval = intervalMs(values.interval ?? "1s");
       const until = values.until ?? (action === "watch" ? "done" : "signal");
       let last: string | undefined;
+      // Elapsed time alone is not a change worth a line.
+      const unchanged = (text: string) => text.replace(/\b\d+(?:\.\d+)?(?:ms|s|m|h)\b/g, "");
       if (until !== "done" && until !== "signal") throw new CliError("--until must be done or signal.");
       try {
         for (;;) {
@@ -244,11 +246,16 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
               emit(runBrief(run).view, runTree(run, Date.now(), hint) + outcome);
               return statusExitCode(run.status);
             }
-            if (!jsonMode) warn(runTree(run, Date.now(), hint) + "\n");
+            if (until === "signal" && run.status === "waiting_signal") {
+              emit(runBrief(run).view, `${statusText(run, hint)}\nthen: ${hint} poll ${run.id}`);
+              return 0;
+            }
+            const text = runTree(run, Date.now(), hint);
+            if (!jsonMode && unchanged(text) !== last) warn(text + "\n");
+            last = unchanged(text);
           } else {
             const text = action === "watch" ? runTree(run, Date.now(), hint) : statusText(run, hint);
-            // Elapsed time alone is not a change worth a line.
-            const key = text.replace(/\b\d+(?:\.\d+)?(?:ms|s|m|h)\b/g, "");
+            const key = unchanged(text);
             // poll prints the brief view, as status does; watch prints the full record, as status --verbose does.
             if (key !== last) emit(action === "watch" ? run : runBrief(run).view, text);
             last = key;

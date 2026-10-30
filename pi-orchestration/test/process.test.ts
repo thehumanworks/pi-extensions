@@ -90,6 +90,10 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     const done = await s.cli(["poll", runId, "--until", "done", "--interval", "20ms"]);
     assert.equal(done.code, 0);
     assert.equal(done.json.result, true);
+    // An attached run returns at a signal wait instead of hanging on it.
+    const attached = await s.cli(["run", "gate", "--model", "local/m1", "--interval", "20ms"], {}, false);
+    assert.equal(attached.code, 0, attached.stderr);
+    assert.match(attached.stdout, /waiting_signal[\s\S]*then: .*poll /);
   } finally { await s.close(); }
 });
 

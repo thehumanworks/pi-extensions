@@ -35,7 +35,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 00. ✅ axeval2's ranked fixes (`brain/axeval2.md:160-208`; wrong turns S1 0, S2 4, S3 0, S4 D 13 before ticks 33-34). Done: 1 typed `value` (ec5ca3d), 3 schema part (341efca), 5 `run_finished` (e858e23), S2(a) `unknown_context_member` (2cb15bb). Open, in order:
-   2. Attached `run` stops on `waiting_signal` (prints `statusText` + poll hint, exit 0; `--json` emits the brief view) and prints only changes (cli.ts:241-251). Top item: the guide's default shell command hangs on a gate.
+   2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
    3. One `waitingLines(run, hints)` helper for presentation.ts:71-72, :134-137 and cli.ts:173-177.
    4. Surface-neutral `result_not_ready` (engine/index.ts:500); CLI appends poll, tool appends status (extension.ts:394); tool signal reply of its own.
    6. Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
@@ -249,3 +249,9 @@ None.
 - Outcome: merge `6ed16ed`, pushed; `loop.sh retire axeval2` succeeded. Tests not rerun: no source changed (axeval2 reported 38/38; 38/38 at 341efca). Round two: S1 0 wrong turns (was 5), S2 4 (was 8), S3 0 (was 7), S4 A/B/C 0/0/0 (was 11/5/0), D 13 (was 11, fixed by tick 34's typed `value` in a measured experiment: 4 calls/0 errors). Open ranked fixes moved to Backlog 00.
 - Value: ✅ yielded value: round one's fixes are measured as working, and the next eight are ranked with file:line.
 - Lesson: an evaluation round after a batch of fixes is worth its cost; it confirmed 7 of 10 fixes held fully and found the one remaining hang (attached `run` on a signal). Next: Backlog 00.2, attached `run` stops on a signal wait (cli.ts:241-251).
+
+### Tick 36 · 13:50 · Attached run returns at a signal wait
+- Action: took Backlog 00.2, the top open ranked fix: axeval2 found the guide's default shell command (`workflow run <name>`) hangs on a gate and reprints the tree every second. `poll` in `src/cli.ts` (foreground branch) now returns 0 on `waiting_signal` unless `--until done`, printing `statusText` (with its `signal:` hint) and `then: <hint> poll <id>`; `--json` emits the brief view. Progress lines on stderr print only when the tree changes apart from elapsed time (shared `unchanged` helper).
+- Outcome: `npm run check` clean; `npm test` **38/38**. `test/process.test.ts` gate test runs `run gate` attached without `--json` and asserts exit 0 and `waiting_signal … then: … poll`. Not checked against the old source (it would hang to the 60 s timeout; no time this tick).
+- Value: ✅ yielded value: a shell agent following the guide no longer hangs on a gate.
+- Lesson: one shared change key keeps `run`, `poll` and `watch` quiet the same way. Next: Backlog 00.3 (`waitingLines` helper) or 00.4 (surface-neutral `result_not_ready`).
