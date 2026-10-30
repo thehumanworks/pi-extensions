@@ -19,6 +19,7 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | `@nothumanwork/bot-ai-sdk` | [AI SDK adapter](bot/packages/ai-sdk/README.md) — independent `useChat` integration |
 | `@nothumanwork/bot-ui` | [web application](bot/apps/web/README.md) — maintained Next.js UI (private application) |
 | `@nothumanwork/pi-advisor` | [pi-advisor](pi-advisor/README.md) |
+| `@nothumanwork/pi-agent` | [pi-agent](pi-agent/README.md) — home-rooted specialists, native sessions and scheduled loops |
 | `@nothumanwork/pi-atlassian` | [pi-atlassian](pi-atlassian/README.md) |
 | `@nothumanwork/pi-background-compaction` | [pi-background-compaction](pi-background-compaction/README.md) |
 | `@nothumanwork/pi-bot` | [pi-bot](pi-bot/README.md) |
