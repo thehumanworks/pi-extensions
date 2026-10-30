@@ -113,7 +113,7 @@ agents() {  # name<TAB>worktree for every subagent worktree
 }
 
 agent_state() {  # herdr's lifecycle state for a live subagent, or "gone"
-  hd agent get "$1" 2>/dev/null | jq -r '.. | objects | (.state // .status // empty) | strings' 2>/dev/null | head -1 | grep . || echo gone
+  hd agent get "$1" 2>/dev/null | jq -er '.result.agent.agent_status' 2>/dev/null || echo gone
 }
 
 agent_table() {
