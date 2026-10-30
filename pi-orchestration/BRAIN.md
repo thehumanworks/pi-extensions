@@ -289,3 +289,9 @@ None.
 - Outcome: `test/extension.test.ts` "widget line pluralises agents and other runs" asserts `· 1 agent · $0.0000 · +1 run` and `· 0 agents · … · +2 runs`. First `npm test` run: **42 tests, 40 pass, 2 fail** (failures not captured); the second and third runs **42/42**. Commit `9ec61ad`. The 2 failures look like a flake; not investigated.
 - Value: ✅ yielded value: small; no surface prints `1 agents` now.
 - Lesson: capture failing test names on the first run (`npm test > file`), a flake cannot be named afterwards. Next: watch for the flake; axeval3's report (experiment (c), a `toolHints.signal` line telling agents to ask before approving, measured 2/3).
+
+### Tick 52 · 15:15 · Lint performance.now() and crypto random
+- Action: took axeval3's lint probe gap (ledger 17:20), concrete and one file: `performance.now()`, `crypto.randomUUID()`, bare `randomUUID()` and `crypto.getRandomValues()` in run control flow validated clean. Chosen over the stale-worker check (client.ts:56 compares only PROTOCOL_VERSION; needs more than four minutes) and `require("node:fs")` (needs require tracking). `lintDeterminism` (`src/validation.ts:89-90`) now reports them as `nondeterministic_call`, pointing to ctx.now()/ctx.random().
+- Outcome: `test/unit.test.ts` determinism test asserts the three calls are flagged and `randomUUID()` inside `ctx.step` is not; `npm test` **42/42** (no flake this run). Examples still validate. Commit `1a90795`. Old-source check not run: without the change the list is empty.
+- Value: ✅ yielded value: small; two more replay breakers are caught at validate instead of on retry.
+- Lesson: an evaluation's probe list of misses is a ready queue of four-minute fixes. Next: stale worker after upgrade (compare package version in client.ts:56, restart the worker), or axeval3's report when done.
