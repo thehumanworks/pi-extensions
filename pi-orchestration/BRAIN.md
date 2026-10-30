@@ -276,3 +276,4 @@ None.
 - Outcome: `test/extension.test.ts` "wait:true returns at a signal wait" asserts the status and note; `npm test` **41/41**. Commit `42b1362`. First draft of the test queued `running, waiting_signal, completed` and saw `completed` (the launch or poller consumes a status); a single `waiting_signal` queue fixed it. Old-source check not run: without the fix the loop waits the full 60 s and the note differs, so the regex would fail.
 - Value: ✅ yielded value: both surfaces now stop at a gate instead of blocking.
 - Lesson: the `harness()` status queue is shared by launch, poller and status; use a single-status queue when the order is not the point. Next: axeval3's report (session E will measure this) and its remaining polish (`Approval 0/0`, no-model warning on agent-less workflows).
+- Also steered axeval3 to measure session E before and after merging brain/orchestration (42b1362).
