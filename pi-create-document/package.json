@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-create-document",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Create and convert PDF, Word, PowerPoint, Excel, CSV, HTML, Markdown and PNG documents from Pi, with no system dependencies",
   "keywords": [
