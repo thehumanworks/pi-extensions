@@ -24,7 +24,8 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- None running. `runshape` merged at `237e912` and retired in tick 28.
+- `axeval2` (tick 31): second agent-experience evaluation, repeating axeval's four scenarios against 3fb3137 to measure the ten fixes and rank the next ones; report goes to `brain/axeval2.md`, no src/ changes. Worktree `.pi/worktrees/brain-axeval2`, herdr w6:p1.
+- `runshape` merged at `237e912` and retired in tick 28.
 - `axeval` merged at `050a209` and retired in tick 11; its report is `brain/axeval.md` (ranked fixes drive Backlog item 0).
 - `approval` merged at `70ae028` and retired in tick 4; branch `brain/approval` stays on origin.
 
@@ -43,6 +44,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    8. ✅ Done in tick 28 (merged `runshape`, `237e912`): model stored as `"provider/modelId"`; CLI `--json` for status/poll/run/cancel/retry/revert prints the tool's brief view, list the list view (`src/presentation.ts` `runHead`); only `status --verbose`/`watch` print the full record with `id`.
    9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Tick 24: `worker status|stop` with no worker fail `worker_unavailable` (exit 4) naming `worker start`, tested. Tick 25: process test asserts the `agents` and `worker status` text.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
+   12. In progress (tick 31): `axeval2` measures fixes 1-11 and ranks the next ones. Its report should reorder this backlog.
    11. ✅ Done in tick 30: the runTask `abort` commit and the `execute` failure commit delete `waitingFor` (engine/index.ts); test in "signals are schema-checked…". Was: clear `waitingFor` when a run reaches a terminal status; a cancelled or reverted run still prints "waiting for signal … signal: …" (runshape observation, engine record). Tick 29 reproduced it: in `test/engine.test.ts` "signals are schema-checked…", launch a second `gate`, wait for `waiting_signal`, `f.request({action:"cancel"})`, `f.wait`; `waitingFor` stays set. Clearing it in `Engine.mutate` for terminal statuses AND in the runTask `abort` commit (engine/index.ts ~548) did NOT fix it. Find what writes or serves `waitingFor` after abort (the signal loop in execution.ts:364-384, or the record view) before patching.
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
@@ -234,3 +236,9 @@ None.
 - Outcome: `delete run.waitingFor` in the runTask `abort` commit (engine/index.ts ~545) fixes it; without it the test fails (checked both ways). Also cleared it in the `execute` failure commit, so a `signal_timeout` run does not keep it. `npm run check` clean; `npm test` **38/38**. Tick 29's failure came from testing it together with the `Engine.mutate` change, not from the abort fix itself.
 - Value: ✅ yielded value: a cancelled or failed run no longer prints "waiting for signal … signal: …".
 - Lesson: retest the simplest candidate fix alone before ruling it out. Next: a second axeval round to measure the ten fixes (spawn), since Backlog 0 is now empty.
+
+### Tick 31 · 13:24 · Spawn axeval2 to measure the fixes
+- Action: spawned `axeval2`, as tick 30 planned, because every ranked axeval fix is done and the next changes should come from measured wrong turns, not guesses. The brief repeats round one's four scenarios with the same model (haiku) so counts compare, adds a parity check of `workflow guide` vs the tool's guide, and carries the D8 and tick 19 traps (`pi -e` the local index.ts, `npm run build` before using bin/workflow.mjs) and the Pi boolean-flag trap.
+- Outcome: `loop.sh spawn` took about 50 seconds; branch brain/axeval2 pushed, worktree `.pi/worktrees/brain-axeval2`, herdr w6:p1 reports `agent_status=working`. No code changed; tests not rerun (38/38 at 3fb3137).
+- Value: ✅ yielded value: the effect of ticks 9-30 will be measured against round one's 5/8/…-wrong-turn baseline.
+- Lesson: put the known environment traps in the brief; round one lost turns to them. Next tick: act on axeval2's partial findings if concrete and outside its scope, otherwise a Backlog 4 item (git-ignored workflow warning in validate/catalog).
