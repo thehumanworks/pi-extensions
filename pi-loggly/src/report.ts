@@ -1,6 +1,7 @@
 import { formatCount, formatPercent, formatRatio, sparkline } from "./analysis/format.ts";
 import type { HealthIssue, HealthSnapshot, SystemHealth } from "./analysis/health.ts";
 import type { MessagePattern } from "./analysis/patterns.ts";
+import { describeBasis, type PatternBasis } from "./analysis/window-patterns.ts";
 import { formatDuration } from "./sdk/time.ts";
 
 const iso = (ms: number) => new Date(ms).toISOString().replace(/:00\.000Z$/, "Z").replace(/\.000Z$/, "Z");
@@ -8,8 +9,8 @@ const iso = (ms: number) => new Date(ms).toISOString().replace(/:00\.000Z$/, "Z"
 export interface ReportOptions {
   /** Limit the report to one system. */
   system?: string;
-  /** Patterns sampled on demand for that system, when it has no sampled issue. */
-  systemPatterns?: { patterns: MessagePattern[]; sampled: number };
+  /** Patterns measured on demand for that system, when it has no sampled issue. */
+  systemPatterns?: { patterns: MessagePattern[]; basis: PatternBasis };
   /** Systems listed in the table. Default 15. */
   maxSystems?: number;
   /** Error from the latest refresh attempt, if it failed after an earlier success. */
@@ -37,7 +38,7 @@ export function formatHealthReport(snapshot: HealthSnapshot, options: ReportOpti
   lines.push("", issues.length ? "Issues, most pressing first:" : options.system ? "No issues for this system." : "No issues: no error spikes, silent systems or chronic error rates.");
   issues.forEach((issue, index) => lines.push(...issueLines(issue, index + 1)));
   if (options.systemPatterns && !issues.some((issue) => issue.patterns)) {
-    lines.push("", `Error patterns (sample of ${options.systemPatterns.sampled} newest errors):`);
+    lines.push("", `Error patterns (${describeBasis(options.systemPatterns.basis, "error")}):`);
     lines.push(...options.systemPatterns.patterns.map((pattern) => `  ${formatPercent(pattern.share)} “${pattern.template}”`));
   }
 
@@ -55,7 +56,7 @@ export function formatHealthReport(snapshot: HealthSnapshot, options: ReportOpti
 function issueLines(issue: HealthIssue, index: number): string[] {
   const lines = [`${index}. [${issue.severity}] ${issue.system ?? "all systems"}: ${issue.summary}`, `   query: ${issue.query}`];
   if (issue.patterns?.length) {
-    lines.push(`   error patterns (sample of ${issue.sampled}): ${issue.patterns.slice(0, 3).map((pattern) => `${formatPercent(pattern.share)} “${pattern.template}”`).join("; ")}`);
+    lines.push(`   error patterns${issue.basis ? ` (${describeBasis(issue.basis, "error")})` : ""}: ${issue.patterns.slice(0, 3).map((pattern) => `${formatPercent(pattern.share)} “${pattern.template}”`).join("; ")}`);
   }
   return lines;
 }

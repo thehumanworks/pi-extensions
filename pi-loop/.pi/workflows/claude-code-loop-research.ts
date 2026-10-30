@@ -39,7 +39,7 @@ const webSearch = defineTool({
   async execute({ query, numResults = 6, includeDomains }, _api, context) {
     try {
       return await exa("search", {
-        query, numResults, type: "auto", includeDomains, contents: { text: { maxCharacters: 1500 } },
+        query, numResults, type: "auto", includeDomains, contents: { text: { maxCharacters: 1000 } },
       }, context.abortSignal);
     } catch (error) { return failed(error); }
   },
@@ -50,10 +50,11 @@ const webFetch = defineTool({
   description: "Read the full text of up to 5 web pages by URL.",
   parameters: Type.Object({
     urls: Type.Array(Type.String(), { minItems: 1, maxItems: 5 }),
-    maxCharacters: Type.Optional(Type.Integer({ minimum: 1000, maximum: 60000, description: "Per page. Default 20000." })),
+    maxCharacters: Type.Optional(Type.Integer({ minimum: 1000, maximum: 60000, description: "Per page. Default 8000." })),
   }),
   replay: "safe",
-  async execute({ urls, maxCharacters = 20_000 }, _api, context) {
+  // Every fetched page is re-sent on each later turn, so a small default keeps research affordable.
+  async execute({ urls, maxCharacters = 8_000 }, _api, context) {
     try {
       return await exa("contents", { urls, text: { maxCharacters } }, context.abortSignal);
     } catch (error) { return failed(error); }
@@ -73,7 +74,8 @@ export default defineWorkflow({
     maxQueries: Type.Optional(Type.Integer({ minimum: 1, maximum: 15 })),
   }), // checked before the run starts
   tools: [webSearch, webFetch],
-  budget: { maxAgents: 20, maxDurationMs: 3_600_000 }, // a cap; the code below decides how many agents run
+  // A cap; the code below decides how many agents run. One 8-query run cost about $8.
+  budget: { maxAgents: 20, maxDurationMs: 3_600_000, maxCostUsd: 15 },
   async run(ctx) {
     const { prompt, localPaths = [], maxQueries = 8 } = ctx.args;
     const ours = localPaths.length
@@ -86,6 +88,8 @@ export default defineWorkflow({
       (ours ? " Read it first so the queries cover every dimension on which the two could differ.\n" : "\n") +
       `Write up to ${maxQueries} web search queries. Each targets one distinct facet, is specific enough to surface ` +
       `authoritative primary sources (official documentation, changelogs, source repositories), and does not overlap the others. ` +
+      `The search engine is neural: write each query as a natural-language description of the page wanted, without ` +
+      `operators such as site:, OR or quoted phrases. ` +
       `Do not modify files.`,
       {
         label: "orchestrator",
@@ -103,7 +107,8 @@ export default defineWorkflow({
           `You are researching one question for a larger report on: ${prompt}\n\nQuestion: ${searchQuery}\n\n` +
           `Use web_search to find sources and web_fetch to read them in full before relying on them. Prefer primary sources: ` +
           `official documentation, changelogs and release notes, source repositories and issue trackers. Use blogs, forums ` +
-          `and articles only for leads or when no primary source exists, and say so.\n\n` +
+          `and articles only for leads or when no primary source exists, and say so. Fetch only pages you expect to cite, ` +
+          `and stop searching once the question is answered; about 12 tool calls is usually enough.\n\n` +
           `Return a Markdown report that answers the question in depth:\n` +
           `- Cite the URL inline for every factual claim.\n` +
           `- Give versions and dates where sources state them, including behavior that changed between versions.\n` +

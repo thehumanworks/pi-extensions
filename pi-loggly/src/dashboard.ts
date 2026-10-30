@@ -2,7 +2,8 @@ import type { Theme } from "@earendil-works/pi-coding-agent";
 import { hyperlink, Key, matchesKey, visibleWidth, type Component, type KeybindingsManager, type TUI, type TuiMouseEvent } from "@earendil-works/pi-tui";
 import { formatAge, formatClock, formatCount, formatPercent, formatRatio, sparkline } from "./analysis/format.ts";
 import { allOf, valueMatch, type HealthIssue, type HealthRules, type HealthSnapshot, type SystemHealth, type SystemStatus, type TimeRange } from "./analysis/health.ts";
-import { clusterMessages, type MessagePattern } from "./analysis/patterns.ts";
+import type { MessagePattern } from "./analysis/patterns.ts";
+import { describeBasis, windowPatterns, type PatternBasis } from "./analysis/window-patterns.ts";
 import { describeError, type HealthMonitor } from "./monitor.ts";
 import type { LogglyClient } from "./sdk/client.ts";
 import { formatDuration } from "./sdk/time.ts";
@@ -10,7 +11,7 @@ import { fit, lpad, pad, wrap } from "./text.ts";
 import { comparableRules, systemCounts, trendRules, type TrendDay } from "./trends.ts";
 
 type DashboardTheme = Pick<Theme, "fg" | "bg" | "bold">;
-type DashboardClient = Pick<LogglyClient, "search" | "searchUrl" | "subdomain">;
+type DashboardClient = Pick<LogglyClient, "count" | "facet" | "search" | "searchUrl" | "subdomain">;
 
 export interface DashboardDeps {
   monitor: HealthMonitor;
@@ -36,7 +37,7 @@ interface DetailState {
   range: TimeRange;
   scopeLabel: string;
   patterns?: MessagePattern[];
-  sampled?: number;
+  basis?: PatternBasis;
   loading: boolean;
   error?: string;
   controller?: AbortController;
@@ -247,7 +248,7 @@ export class LogglyDashboard implements Component {
     this.#view = "overview";
   }
 
-  /** Show the issue's sampled patterns, or sample this system's recent errors. */
+  /** Show the issue's patterns, or measure this system's errors in its window. */
   #sample(system: string, force: boolean): void {
     const snapshot = this.#deps.monitor.state.snapshot;
     if (!snapshot) return;
@@ -259,7 +260,7 @@ export class LogglyDashboard implements Component {
     const range = wide ? { from: snapshot.windows[0]!.from, until: snapshot.current.until } : snapshot.current;
     const scopeLabel = `${formatClock(range.from)}–${formatClock(range.until)}`;
     if (!force && issue?.patterns) {
-      this.#detail = { system, range: { from: issue.from, until: issue.until }, scopeLabel: `${formatClock(issue.from)}–${formatClock(issue.until)}`, patterns: issue.patterns, sampled: issue.sampled, loading: false };
+      this.#detail = { system, range: { from: issue.from, until: issue.until }, scopeLabel: `${formatClock(issue.from)}–${formatClock(issue.until)}`, patterns: issue.patterns, basis: issue.basis, loading: false };
       return;
     }
     const controller = new AbortController();
@@ -275,11 +276,11 @@ export class LogglyDashboard implements Component {
       return;
     }
     const query = allOf(rules.scope, rules.errorQuery, valueMatch(rules.groupBy, system, snapshot.systems.map((s) => s.name)));
-    client.search({ query, from: new Date(range.from), until: new Date(range.until), order: "desc" }, { limit: rules.sampleSize, signal: controller.signal }).then(
-      (events) => {
+    windowPatterns(client, { query, from: range.from, until: range.until, sampleSize: rules.sampleSize, messageFields: rules.messageFields, limit: 10, signal: controller.signal }).then(
+      ({ patterns, ...basis }) => {
         if (controller.signal.aborted) return;
-        detail.sampled = events.length;
-        detail.patterns = clusterMessages(events, { messageFields: rules.messageFields, limit: 10 });
+        detail.basis = basis;
+        detail.patterns = patterns;
       },
       (error: unknown) => {
         if (!controller.signal.aborted) detail.error = describeError(error);
@@ -412,7 +413,7 @@ export class LogglyDashboard implements Component {
       const style = STATUS_STYLE[issue.severity];
       const entry = [`  ${t.fg(style.color, style.icon)} ${t.fg(style.color, issue.system ?? "all systems")}  ${issue.summary}`];
       const pattern = issue.patterns?.[0];
-      if (pattern) entry.push(t.fg("dim", `      “${pattern.template}”  ${formatPercent(pattern.share)} of ${issue.sampled} sampled`));
+      if (pattern) entry.push(t.fg("dim", `      “${pattern.template}”  ${formatPercent(pattern.share)}${issue.basis ? ` of ${formatCount(issue.basis.total)} error${issue.basis.total === 1 ? "" : "s"}${issue.basis.exact < issue.basis.total ? " (estimated)" : ""}` : ""}`));
       // Keep a line for the overflow note unless this is the last issue.
       const reserve = index < issues.length - 1 ? 1 : 0;
       if (lines.length + entry.length + reserve > budget) {
@@ -445,9 +446,9 @@ export class LogglyDashboard implements Component {
       if (daily) body.push(daily);
       body.push("");
     }
-    const sampleLabel = detail.sampled !== undefined ? `sample of ${detail.sampled} newest errors · ${detail.scopeLabel}` : detail.scopeLabel;
+    const sampleLabel = detail.basis ? `${describeBasis(detail.basis, "error")} · ${detail.scopeLabel}` : detail.scopeLabel;
     body.push(t.bold("Error patterns") + t.fg("dim", `  ${sampleLabel}`));
-    if (detail.loading) body.push(t.fg("muted", "  Sampling recent errors…"));
+    if (detail.loading) body.push(t.fg("muted", "  Counting errors…"));
     else if (detail.error) body.push(t.fg("error", `  Could not sample errors: ${detail.error}`));
     else if (!detail.patterns?.length) body.push(t.fg("muted", "  No errors in this range."));
     else {
@@ -455,7 +456,8 @@ export class LogglyDashboard implements Component {
         const share = lpad(formatPercent(pattern.share), 6);
         body.push(...wrap(`${t.fg("accent", share)}  ${pattern.template}`, width, "        "));
         if (pattern.example !== pattern.template) body.push(...wrap(t.fg("dim", `e.g. ${pattern.example}`), width, "        ", "        ").slice(0, 2));
-        body.push(t.fg("dim", `        ${pattern.count}× · ${formatClock(pattern.firstSeen)}–${formatClock(pattern.lastSeen)}`));
+        const estimated = detail.basis && detail.basis.exact < detail.basis.total ? "≈" : "";
+        body.push(t.fg("dim", `        ${estimated}${pattern.count}×${pattern.firstSeen !== undefined ? ` · ${formatClock(pattern.firstSeen)}–${formatClock(pattern.lastSeen!)}` : ""}`));
       }
     }
     const rules = snapshot.rules;

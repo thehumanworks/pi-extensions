@@ -40,16 +40,25 @@ function facet(counts: Record<string, number>): FacetResult {
 /** A fake client whose current window (the latest `from`) has `current` errors per system. */
 function fakeClient(current: Record<string, number>, options: { failFacet?: boolean } = {}) {
   let facets = 0;
+  /** Queries whose messages were counted or read. */
   const searches: string[] = [];
   return {
+    /** Facets of the health check, not of messages. */
     get facets() {
       return facets;
     },
     searches,
     subdomain: "acme",
-    async facet(_field: string, params: FacetParams) {
-      facets++;
+    async count() {
+      return { count: 1 };
+    },
+    async facet(field: string, params: FacetParams) {
       await tick();
+      if (field === "json.message") {
+        searches.push(params.query ?? "*");
+        return { ...facet({ "db timeout after 30s": 1 }), field };
+      }
+      facets++;
       if (options.failFacet) throw new Error("Loggly API request failed with HTTP 503");
       // The current window ends 2–3 minutes ago (the lag); baseline windows end earlier.
       const isCurrent = (params.until as Date).getTime() >= Date.now() - 4 * 60_000;
@@ -281,7 +290,7 @@ test("the dashboard refreshes stale health on open and renders a full-size table
   assert.ok(lines.every((line) => visibleWidth(line) === 100), "every line fills the overlay width");
   const text = screen(lines);
   assert.match(lines[0]!, /^Loggly · acme +✖ CRITICAL  1 critical · 1 warning$/);
-  assert.match(text, /Pressing issues\n  ✖ api  errors ×40: 400 in 10m, usually 10\n      “db timeout after <n>s”  100% of 1 sampled/);
+  assert.match(text, /Pressing issues\n  ✖ api  errors ×40: 400 in 10m, usually 10\n      “db timeout after <n>s”  100% of 1 error$/m);
   assert.match(text, /SYSTEM +ERRORS +USUAL +× +ERR% +EVENTS +TREND/);
   assert.match(text, /› ✖ api +400 +10 +×40 +8% +5k  ▁▁▁▁█/);
   assert.match(lines.at(-1)!, /↑\/↓ select · enter details · i investigate · m mute · s status line off · r refresh · esc close/);
@@ -311,7 +320,7 @@ test("dashboard keys select, drill in, mute, toggle the status line, investigate
   const detail = screen(d.view.render(100));
   assert.match(detail, /‹ web  ▲ warning  app/);
   assert.match(detail, /errors  ▂▂▂▂█  now 90 · usual 10 · ×9/);
-  assert.match(detail, /Error patterns  sample of 1 newest errors/);
+  assert.match(detail, /Error patterns  1 error: all counted · /);
   assert.match(detail, /100%  db timeout after <n>s/);
   assert.match(detail, /env:prod AND level:error AND app:"web"/);
   assert.match(detail, /Open in Loggly ↗/);

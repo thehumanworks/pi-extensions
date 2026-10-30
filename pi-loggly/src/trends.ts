@@ -462,6 +462,8 @@ export interface TrendReportOptions {
   /** Rows per list. */
   top: number;
   now: number;
+  /** Loggly's retention, to tell days that can still be saved from deleted ones. */
+  retentionDays?: number;
 }
 
 interface Series {
@@ -482,6 +484,13 @@ export function formatTrendReport(all: readonly TrendDay[], rules: TrendRules, o
   const days = range.map((day) => byDay.get(day)).filter((day): day is TrendDay => !!day);
   const missing = range.filter((day) => !byDay.has(day));
   const excluded = all.filter((day) => !comparableRules(day.rules, rules) && range.includes(day.day)).length;
+  // Nothing is known before the oldest saved day; days Loggly no longer fully keeps can never be saved.
+  const origin = comparable.reduce<TrendDay | undefined>((oldest, day) => (!oldest || day.day < oldest.day ? day : oldest), undefined);
+  const keptFrom = options.retentionDays ? isoDay(today - (options.retentionDays - 1) * DAY_MS) : undefined;
+  const gone = (day: string) => !!keptFrom && day < keptFrom;
+  const lost = missing.filter((day) => gone(day) && !!origin && day > origin.day);
+  const unsaved = missing.filter((day) => !gone(day));
+  const firstSaved = (day: string) => `first saved ${day}${day === origin?.day ? ", the oldest saved day, so it may be older" : ""}`;
   const lines = [`Daily Loggly trends saved on this machine: ${days.length} of ${options.days} UTC days stored${days.length ? `, ${days[0]!.day} to ${days.at(-1)!.day}` : ""}.`];
   if (!days.length) {
     lines.push("Run /loggly trends to save every day Loggly still keeps, and /loggly trends every <days> to keep saving them at Pi start.");
@@ -489,7 +498,9 @@ export function formatTrendReport(all: readonly TrendDay[], rules: TrendRules, o
     return { text: lines.join("\n"), data: { days: [], missing } };
   }
   lines.push(`Systems are ${rules.groupBy} values within ${rules.scope}; errors match ${rules.errorQuery}.`);
-  if (missing.length) lines.push(`Days not saved: ${compactDays(missing)}. /loggly trends saves any that Loggly still keeps.`);
+  if (days[0] === origin) lines.push(originNote(origin!, options.retentionDays));
+  if (lost.length) lines.push(`Days not saved before Loggly deleted them (it keeps ${plural(options.retentionDays!, "day")}), so unknown rather than zero: ${compactDays(lost)}.`);
+  if (unsaved.length) lines.push(keptFrom ? `Days not saved yet: ${compactDays(unsaved)}. /loggly trends saves them while Loggly keeps them.` : `Days not saved: ${compactDays(unsaved)}. /loggly trends saves any that Loggly still keeps.`);
   if (excluded) lines.push(`${excluded} days saved with other health rules are not compared. /loggly trends saves again those Loggly still keeps; earlier files go to replaced/.`);
   // Compare the latest week with the week before, or halves of a shorter range.
   const window = Math.min(7, Math.floor(days.length / 2));
@@ -505,7 +516,7 @@ export function formatTrendReport(all: readonly TrendDay[], rules: TrendRules, o
   const totalErrors = series("errors", days.map((day) => day.totals.errors));
   const totalEvents = series("events", days.map((day) => day.totals.events));
   lines.push(`All systems: errors ${describe(totalErrors)}; events ${describe(totalEvents)}.${compare ? ` Changes compare the ${compare}.` : ""}`);
-  const data: Record<string, unknown> = { days: days.map((day) => day.day), missing, totals: days.map((day) => ({ day: day.day, ...day.totals })) };
+  const data: Record<string, unknown> = { days: days.map((day) => day.day), oldestSaved: origin?.day, retentionDays: options.retentionDays, missing, deleted: lost, totals: days.map((day) => ({ day: day.day, ...day.totals })) };
 
   if (options.system) {
     const counts = days.map((day) => systemCounts(day, options.system!));
@@ -526,7 +537,7 @@ export function formatTrendReport(all: readonly TrendDay[], rules: TrendRules, o
     const matches = messageSeries.filter((m) => m.name.toLowerCase().includes(needle) || m.example?.toLowerCase().includes(needle)).sort((a, b) => b.recent - a.recent);
     lines.push("", matches.length ? `Error messages matching “${options.message}”:` : `No saved error message matches “${options.message}”. Only the most frequent messages of each day are saved.`);
     for (const m of matches.slice(0, options.top)) {
-      lines.push(`  “${m.name}”: ${describe(m)}, first saved ${m.firstDay}`, `    daily: ${days.map((day, i) => `${day.day.slice(5)} ${formatCount(m.values[i]!)}`).join(", ")}`);
+      lines.push(`  “${m.name}”: ${describe(m)}, ${firstSaved(m.firstDay!)}`, `    daily: ${days.map((day, i) => `${day.day.slice(5)} ${formatCount(m.values[i]!)}`).join(", ")}`);
     }
     data.messages = matches.slice(0, options.top).map(seriesData);
     const sampled = days.filter((day) => day.patterns);
@@ -548,10 +559,10 @@ export function formatTrendReport(all: readonly TrendDay[], rules: TrendRules, o
   const rising = (list: Series[]) => list.filter((s) => s.previous !== undefined && s.recent > 0 && s.recent >= s.previous * 1.25).sort((a, b) => b.recent - b.previous! - (a.recent - a.previous!)).slice(0, Math.min(5, options.top));
   lines.push("", "Systems with the most errors:", ...top(systems).map((s) => `  ${s.name}: ${describe(s)}`));
   if (window) lines.push("", "Systems whose errors grew most (up 25% or more):", ...orNone(rising(systems).map((s) => `  ${s.name}: ${describe(s)}`)));
-  lines.push("", "Most frequent error messages:", ...top(messageSeries).map((m) => `  “${m.name}”: ${describe(m)}, first saved ${m.firstDay}`));
+  lines.push("", "Most frequent error messages:", ...top(messageSeries).map((m) => `  “${m.name}”: ${describe(m)}, ${firstSaved(m.firstDay!)}`));
   if (window) {
     const fresh = messageSeries.filter((m) => m.firstDay! > days[0]!.day && m.firstDay! >= days.at(-window)!.day).sort((a, b) => b.recent - a.recent).slice(0, 5);
-    lines.push("", `Messages first saved in the last ${plural(window, "day")}:`, ...orNone(fresh.map((m) => `  “${m.name}”: ${describe(m)}, first saved ${m.firstDay}`)));
+    lines.push("", `Messages first saved in the last ${plural(window, "day")}:`, ...orNone(fresh.map((m) => `  “${m.name}”: ${describe(m)}, ${firstSaved(m.firstDay!)}`)));
     lines.push("", "Messages that grew most (up 25% or more):", ...orNone(rising(messageSeries).map((m) => `  “${m.name}”: ${describe(m)}`)));
   }
   const coverage = average(days.map((day) => (day.totals.errors ? day.messagesCovered / day.totals.errors : 0)));
@@ -563,6 +574,15 @@ export function formatTrendReport(all: readonly TrendDay[], rules: TrendRules, o
   data.systems = top(systems).map(seriesData);
   data.messages = top(messageSeries).map(seriesData);
   return { text: lines.join("\n"), data };
+}
+
+/** Why the saved series starts where it does: usually Loggly's retention when saving began, never the start of what it shows. */
+function originNote(origin: TrendDay, retentionDays: number | undefined): string {
+  const saved = Date.parse(origin.collectedAt);
+  // Saved when the day before it had already left Loggly's retention.
+  const atLimit = retentionDays !== undefined && Number.isFinite(saved) && Date.parse(origin.day) - DAY_MS < saved - retentionDays * DAY_MS;
+  const why = atLimit ? ` because that was the oldest day Loggly still kept when it was saved, on ${isoDay(saved)} (Loggly keeps ${plural(retentionDays, "day")})` : ", the oldest saved day";
+  return `The series starts on ${origin.day}${why}. Earlier days are unknown, not zero: anything already present on ${origin.day} may have begun before it.`;
 }
 
 interface PatternSeries {

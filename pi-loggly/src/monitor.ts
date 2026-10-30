@@ -23,7 +23,7 @@ export class HealthMonitor {
   readonly #listeners = new Set<(state: MonitorState) => void>();
   readonly #deps: MonitorDeps;
   /** The last fetch: counts, sampled patterns by issue id, and its warnings. */
-  #fetched?: { data: HealthData; generatedAt: number; samples: Map<string, Pick<HealthIssue, "patterns" | "sampled">>; warnings: string[] };
+  #fetched?: { data: HealthData; generatedAt: number; samples: Map<string, Pick<HealthIssue, "patterns" | "basis">>; warnings: string[] };
   #inflight?: Promise<HealthSnapshot | undefined>;
   #controller?: AbortController;
   #timer?: ReturnType<typeof setInterval>;
@@ -68,7 +68,7 @@ export class HealthMonitor {
         const snapshot = evaluateHealth(data.windows, rules, now, data.recent);
         await sampleIssues(client, snapshot, rules, controller.signal);
         if (controller.signal.aborted) return undefined;
-        const samples = new Map(snapshot.issues.filter((issue) => issue.patterns).map((issue) => [issue.id, { patterns: issue.patterns, sampled: issue.sampled }]));
+        const samples = new Map(snapshot.issues.filter((issue) => issue.patterns).map((issue) => [issue.id, { patterns: issue.patterns, basis: issue.basis }]));
         this.#fetched = { data, generatedAt: now, samples, warnings: [...snapshot.warnings] };
         this.#set({ snapshot, error: undefined, refreshing: false });
         return snapshot;

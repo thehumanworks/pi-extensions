@@ -4,12 +4,13 @@ import type { LogEvent } from "../sdk/types.ts";
 export interface MessagePattern {
   template: string;
   count: number;
-  /** Fraction of the sample, from 0 to 1. */
+  /** Fraction of the events described, from 0 to 1. */
   share: number;
   /** One original message, flattened to a single line. */
   example: string;
-  firstSeen: number;
-  lastSeen: number;
+  /** Times of the events read; absent when the pattern was only counted. */
+  firstSeen?: number;
+  lastSeen?: number;
   /** Counts per value of the group field (for example per system), when one was given. */
   groups?: Record<string, number>;
 }
@@ -107,16 +108,26 @@ export function templateOf(message: string, maxLength = 160): string {
     .replace(/\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\b/g, "<ip>")
     .replace(/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/g, "<time>")
     .replace(/\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{12,}\b/gi, "<hex>")
-    .replace(/\d+(?:[.,]\d+)*/g, "<n>")
+    .replace(/\d+(?:[.,]\d+)*/g, (digits: string, offset: number, text: string) => (startsName(text, offset, digits.length) ? digits : "<n>"))
     .replace(/\s+/g, " ")
     .trim();
   if (!text) return "(empty message)";
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
 }
 
+/** Units written straight after a number: "30secs" is a number, "7widgets" a name. (Ordinals such as "3rd" have too few letters to be names.) */
+const UNIT = /^(?:sec|secs|seconds?|min|mins|minutes?|hrs|hours?|days?|weeks?|months?|years?|[kmgt]ib|bytes?|bits?)$/i;
+
+/** Whether the digits at offset begin a name: a word of digits then three or more letters, as in "7widgets" or "404NotFound", not a unit or a short hex ID. */
+function startsName(text: string, offset: number, length: number): boolean {
+  if (/[A-Za-z0-9]/.test(text[offset - 1] ?? "")) return false;
+  const letters = /^[A-Za-z]{3,}(?![A-Za-z0-9])/.exec(text.slice(offset + length))?.[0];
+  return letters !== undefined && !UNIT.test(letters) && !/^[a-f]+$/i.test(letters);
+}
+
 /** Group events by message template, most frequent first. */
 export function clusterMessages(events: readonly LogEvent[], options: ClusterOptions = {}): MessagePattern[] {
-  const groups = new Map<string, MessagePattern>();
+  const groups = new Map<string, MessagePattern & { firstSeen: number; lastSeen: number }>();
   for (const event of events) {
     const message = extractMessage(event, options.messageFields);
     const template = templateOf(message);

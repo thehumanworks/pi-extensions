@@ -53,7 +53,7 @@ With [dotenvx](https://dotenvx.com), keep them in an encrypted `.env` and run `d
 | Key | Action |
 | --- | --- |
 | `↑`/`↓`, `PgUp`/`PgDn`, `Home`/`End` | Select a system |
-| `Enter` or `→` | Details: error and volume trends, daily errors from saved trends, error patterns from a sample of recent errors, the reproducing query, and a link to open it in Loggly |
+| `Enter` or `→` | Details: error and volume trends, daily errors from saved trends, error patterns across the window (the most common messages counted, the rest estimated from errors read across it), the reproducing query, and a link to open it in Loggly |
 | `i` | Put an investigation prompt for the selected system in the editor; send it to have the agent dig in with the tools |
 | `m` | Mute or unmute the system (saved in the configuration) |
 | `s` | Turn the status line on or off for this session |
@@ -118,11 +118,11 @@ Days are saved:
 - **on a schedule**: `/loggly trends every 7` saves at Pi start whenever 7 or more complete days are waiting, and reports what it saved. Pi start only reads the trends directory; Loggly is asked only when days are due. `/loggly trends off` stops it. Typing `/loggly trends` suggests a value: a quarter of Loggly's retention (7 for 30 days), alongside any current schedule. The setting is `trends.saveEveryDays`. Keep it well under Loggly's retention to allow for days Pi is not opened; pi-loggly warns when it is too long.
 - **while the status line is on**: at the start and then hourly, a session saves any missing complete day Loggly still keeps. Checks make no requests when nothing is missing. These saves are unannounced, so they keep to exact counts; `/loggly trends` adds pattern estimates later. Days saved earlier are left as they are; only `/loggly trends` saves days again.
 
-A day not saved before Loggly deletes it is lost, and reports list it as not saved. One process saves at a time, using a lock file next to the data.
+A day not saved before Loggly deletes it is lost, and reports list it as deleted, unknown rather than zero. Nothing exists before the oldest saved day, which is usually the oldest day Loggly still kept when saving began, so reports say so: a system or message already present that day may have begun earlier. One process saves at a time, using a lock file next to the data.
 
 Files live in `$XDG_DATA_HOME/pi-loggly/trends` (normally `~/.local/share/pi-loggly/trends`), one JSON file per day, readable only by you. Message examples are log text, so treat the directory like logs. Delete files to forget days.
 
-Each day records the `health.scope`, `health.groupBy` and `health.errorQuery` it was saved with. Reports only compare days saved with the current settings, so changing them starts a new series; `/loggly trends` then saves the days Loggly still keeps again with the new settings. The `loggly_trends` tool and the dashboard read these files without contacting Loggly.
+Each day records the `health.scope`, `health.groupBy` and `health.errorQuery` it was saved with. Reports only compare days saved with the current settings, so changing them starts a new series; `/loggly trends` then saves the days Loggly still keeps again with the new settings. The dashboard reads these files without contacting Loggly; the `loggly_trends` tool asks Loggly only for its retention, once per session.
 
 ## Reports
 
@@ -182,7 +182,7 @@ Optional. Settings live in `loggly.json` in Pi's agent directory (normally `~/.p
 | `health.spikeRatio`, `health.criticalRatio`, `health.minErrors` | `3`, `10`, `50` | Spike thresholds |
 | `health.silentMinBaseline`, `health.silentRatio` | `200`, `0.1` | Quiet-system thresholds |
 | `health.chronicErrorRate` | `0.25` | Chronic notice threshold |
-| `health.sampleSize`, `health.sampleIssues` | `200`, `3` | Errors sampled per issue, and issues sampled per check |
+| `health.sampleSize`, `health.sampleIssues` | `200`, `3` | Most errors read per issue (the most common messages are counted without reading them), and issues sampled per check |
 | `health.maxSystems` | `300` | Systems tracked per window (Loggly's facet limit) |
 | `health.muted` | `[]` | Systems shown but never raised as issues |
 | `trends.saveEveryDays` | `0` (off) | At Pi start, save daily trends when this many complete days are waiting. Set with `/loggly trends every <days>` |
@@ -202,10 +202,12 @@ All tools are read-only and share the `loggly` namespace. Its guidance tells the
 | `loggly_count` | Counts (and optionally bytes) for up to 10 queries |
 | `loggly_timeline` | Counts in equal time buckets, optionally split by a field's top values |
 | `loggly_facet` | Top values of a field with counts and shares, or the fields present |
-| `loggly_patterns` | Error messages grouped by pattern, with estimated totals and affected systems |
+| `loggly_patterns` | Error messages grouped by pattern across the range: the most common counted exactly, the rest estimated from events read across it, with affected systems |
 | `loggly_trends` | Saved daily trends: top and fastest-growing systems and messages, messages first seen recently, estimated patterns of the other errors, or one system's or message's days |
 
 Times accept Loggly's relative syntax (`-15m`, `-2h`, `-1d`, `now`) or ISO 8601. When `loggly_search` output is truncated, or `full` is set, the complete events are written to a JSON-lines file readable only by you, in a private directory under `/tmp`. These files hold log data, so they are deleted after a day.
+
+Loggly deletes logs older than the account's retention (30 days on many plans), in batches, and then answers queries for those times with zero rather than an error. Just before the limit it still holds part of a day, which looks like a rise. So the tools ask Loggly for the retention once per session, start any range that reaches past it at the limit, and say so in the result: whatever is already there at the start may have begun earlier. A range wholly past the limit is not queried, and the result points to `loggly_trends`. The guidance tells the model to treat the limit as a storage policy, not an event, and to write "at least since", never "since", for anything present at the start of the retained period or of the saved trends.
 
 ## SDK
 

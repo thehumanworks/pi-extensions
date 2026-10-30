@@ -6,7 +6,7 @@ import { after, test } from "node:test";
 import { DEFAULT_HEALTH_RULES, type HealthRules } from "../src/analysis/health.ts";
 import { pruneResults, writeResultFile } from "../src/results.ts";
 import type { CountParams, FacetParams, FacetResult, IterateParams, LogEvent } from "../src/sdk/types.ts";
-import { capturableDays, captureDay, formatTrendReport, latestCompleteDay, loadTrends, TrendRecorder, trendRules, type TrendDay } from "../src/trends.ts";
+import { capturableDays, captureDay, formatTrendReport, isoDay, latestCompleteDay, loadTrends, TrendRecorder, trendRules, type TrendDay } from "../src/trends.ts";
 
 const temps: string[] = [];
 /** A private temporary directory removed after the tests. */
@@ -323,6 +323,27 @@ test("the trend report lists estimated patterns with intervals, and growth only 
 
   const message = formatTrendReport(days, trendRules(rules), { days: 14, top: 5, now: NOW, message: "queue" }).text;
   assert.match(message, /Estimated patterns matching it, among errors outside the exact messages \(95% intervals; – means not estimated that day\):\n  “Queue full id <n>”\n    daily: 10-16 ≈1k ±196, .*10-29 ≈2k ±196/);
+});
+
+test("the trend report says its first day is where saving began, and which missing days Loggly has deleted", () => {
+  // Saved on 2026-10-30 when Loggly kept 30 days: 2026-10-01 was the oldest day it still had.
+  const saved = (date: string, collectedAt = "2026-10-30T11:58:00.000Z") => day(date, { api: [1000, 100] }, { Forbidden: 50 }, { collectedAt });
+  const days = Array.from({ length: 29 }, (_, i) => saved(isoDay(Date.UTC(2026, 9, 1 + i)))).filter((d) => !["2026-10-03", "2026-10-25"].includes(d.day));
+  // Five days later, 2026-10-03 has left Loggly too, but 2026-10-25 can still be saved.
+  const later = Date.UTC(2026, 10, 4, 10);
+  const { text, data } = formatTrendReport(days, trendRules(rules), { days: 40, top: 5, now: later, retentionDays: 30 });
+  assert.match(text, /\nThe series starts on 2026-10-01 because that was the oldest day Loggly still kept when it was saved, on 2026-10-30 \(Loggly keeps 30 days\)\. Earlier days are unknown, not zero: anything already present on 2026-10-01 may have begun before it\.\n/);
+  assert.match(text, /\nDays not saved before Loggly deleted them \(it keeps 30 days\), so unknown rather than zero: 2026-10-03\.\n/);
+  assert.match(text, /\nDays not saved yet: 2026-10-25, 2026-10-30 to 2026-11-03\. \/loggly trends saves them while Loggly keeps them\.\n/);
+  assert.match(text, /“Forbidden”: .*, first saved 2026-10-01, the oldest saved day, so it may be older/);
+  assert.deepEqual([data.oldestSaved, data.deleted], ["2026-10-01", ["2026-10-03"]]);
+
+  // Saved long after the day itself, and with retention unknown: no claim about why.
+  const unknown = formatTrendReport(days, trendRules(rules), { days: 40, top: 5, now: later }).text;
+  assert.match(unknown, /\nThe series starts on 2026-10-01, the oldest saved day\. Earlier days are unknown, not zero/);
+  assert.match(unknown, /\nDays not saved: 2026-09-25 to 2026-09-30, 2026-10-03, 2026-10-25, 2026-10-30 to 2026-11-03\. \/loggly trends saves any that Loggly still keeps\./);
+  // A shorter window that starts after the oldest saved day needs no such line.
+  assert.doesNotMatch(formatTrendReport(days, trendRules(rules), { days: 7, top: 5, now: later, retentionDays: 30 }).text, /The series starts/);
 });
 
 test("the trend report shows one system's days or matching messages", () => {

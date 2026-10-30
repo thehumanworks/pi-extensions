@@ -2,7 +2,8 @@ import type { LogglyClient } from "../sdk/client.ts";
 import { formatDuration, parseDuration } from "../sdk/time.ts";
 import type { FacetResult } from "../sdk/types.ts";
 import { formatCount, formatPercent, formatRatio } from "./format.ts";
-import { clusterMessages, type MessagePattern } from "./patterns.ts";
+import type { MessagePattern } from "./patterns.ts";
+import { windowPatterns, type PatternBasis, type PatternClient } from "./window-patterns.ts";
 
 /** How systems are identified and when they count as unhealthy. */
 export interface HealthRules {
@@ -32,7 +33,7 @@ export interface HealthRules {
   silentRatio: number;
   /** A system whose events are at least this fraction errors is a chronic notice. */
   chronicErrorRate: number;
-  /** Error events sampled per issue to name its messages. */
+  /** Most error events read per issue to name its messages; the most common messages are counted without reading them. */
   sampleSize: number;
   /** Issues sampled per refresh. */
   sampleIssues: number;
@@ -122,9 +123,9 @@ export interface HealthIssue extends TimeRange {
   ratio: number;
   errorRate: number;
   score: number;
-  /** Message patterns from a sample of the issue's newest error events. */
+  /** Message patterns across the issue's window: counted, or estimated from errors read across it. */
   patterns?: MessagePattern[];
-  sampled?: number;
+  basis?: PatternBasis;
 }
 
 export interface HealthTotals {
@@ -357,7 +358,7 @@ export function evaluateHealth(windows: readonly WindowCounts[], rules: HealthRu
   };
 }
 
-export type HealthClient = Pick<LogglyClient, "facet" | "search">;
+export type HealthClient = Pick<LogglyClient, "count" | "facet" | "search">;
 
 /**
  * Run a health check: facet errors and volume by system for each window, then
@@ -409,17 +410,16 @@ export async function fetchHealthData(
 }
 
 /** Attach message patterns to the top error issues. Failures are recorded as warnings. */
-export async function sampleIssues(client: Pick<LogglyClient, "search">, snapshot: HealthSnapshot, rules: HealthRules, signal?: AbortSignal): Promise<void> {
+export async function sampleIssues(client: PatternClient, snapshot: HealthSnapshot, rules: HealthRules, signal?: AbortSignal): Promise<void> {
   // Most pressing first: issues are sorted by severity, so notices are sampled last.
   const targets = snapshot.issues.filter((issue) => issue.kind !== "silent" && issue.kind !== "ingestion").slice(0, rules.sampleIssues);
   await Promise.all(targets.map(async (issue) => {
     try {
-      const events = await client.search(
-        { query: issue.query, from: new Date(issue.from), until: new Date(issue.until), order: "desc" },
-        { limit: rules.sampleSize, signal },
-      );
-      issue.sampled = events.length;
-      issue.patterns = clusterMessages(events, { messageFields: rules.messageFields, limit: 5 });
+      const { patterns, ...basis } = await windowPatterns(client, {
+        query: issue.query, from: issue.from, until: issue.until, sampleSize: rules.sampleSize, messageFields: rules.messageFields, limit: 5, signal,
+      });
+      issue.patterns = patterns;
+      issue.basis = basis;
     } catch (error) {
       if (signal?.aborted) throw error;
       snapshot.warnings.push(`Could not sample messages for ${issue.system ?? issue.id}: ${error instanceof Error ? error.message : String(error)}`);

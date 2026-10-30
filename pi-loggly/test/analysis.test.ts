@@ -49,6 +49,16 @@ test("templates mask variable parts so equivalent messages group", () => {
   assert.equal(templateOf("   "), "(empty message)");
 });
 
+test("digits that begin a name are kept, so different integrations do not merge; numbers, units and IDs are still masked", () => {
+  assert.equal(templateOf("/integrations/7widgets/access - Error: No details found"), "/integrations/7widgets/access - Error: No details found");
+  assert.notEqual(templateOf("/integrations/7widgets/access failed"), templateOf("/integrations/8widgets/access failed"));
+  assert.equal(templateOf("Error 404NotFound from upstream"), "Error 404NotFound from upstream");
+  assert.equal(templateOf("Timeout after 30ms"), templateOf("Timeout after 45ms"));
+  assert.equal(templateOf("Retry in 5secs, 2 minutes left, 1.5GB used"), "Retry in <n>secs, <n> minutes left, <n>GB used");
+  assert.equal(templateOf("3rd attempt for session 123abc"), "<n>rd attempt for session <n>abc", "ordinals and short hex IDs are not names");
+  assert.equal(templateOf("GET /api/v2/items for user 1234"), "GET /api/v<n>/items for user <n>");
+});
+
 test("messages come from configured fields, then JSON logmsg, then raw logmsg", () => {
   assert.equal(extractMessage(event("from json"), ["json.message"]), "from json");
   assert.equal(extractMessage({ ...event(""), logmsg: '{"msg":"parsed"}' }, ["json.message"]), "parsed");
@@ -257,7 +267,11 @@ test("collectHealth facets each window, then samples the top issues' messages", 
   let index = 0;
   const starts: number[] = [];
   const client = {
+    async count() {
+      return { count: 3 };
+    },
     async facet(field: string, params: FacetParams) {
+      if (field === "json.message") return facet({ "redis timeout after 30ms": 1, "redis timeout after 31ms": 1, other: 1 }, { field });
       calls.push({ field, params });
       const from = (params.from as Date).getTime();
       if (!starts.includes(from)) starts.push(from);
@@ -279,15 +293,20 @@ test("collectHealth facets each window, then samples the top issues' messages", 
   assert.ok(calls.some((call) => call.params.query === "env:prod AND level:error"));
   assert.ok(calls.some((call) => call.params.query === "env:prod"));
   assert.equal(snapshot.issues[0]!.id, "spike:api");
-  assert.equal(snapshot.issues[0]!.sampled, 3);
+  assert.deepEqual(snapshot.issues[0]!.basis, { total: 3, read: 0, exact: 3 }, "a facet counts every message in the window without reading events");
   assert.equal(snapshot.issues[0]!.patterns![0]!.template, "redis timeout after <n>ms");
+  assert.equal(snapshot.issues[0]!.patterns![0]!.count, 2);
 });
 
 test("collectHealth fails as a whole when a window fails; sampling failures are warnings", async () => {
-  const failing = { facet: async () => { throw new Error("HTTP 503"); }, search: async () => [] };
+  const failing = { count: async () => ({ count: 0 }), facet: async () => { throw new Error("HTTP 503"); }, search: async () => [] };
   await assert.rejects(collectHealth(failing, rules), /HTTP 503/);
   const sampleFails = {
-    facet: async (_field: string, params: FacetParams) => facet({ api: String(params.query).includes("level:error") ? ((params.from as Date).getTime() > Date.UTC(2026, 9, 30, 9, 45) ? 500 : 10) : 5000 }),
+    count: async () => ({ count: 0 }),
+    facet: async (field: string, params: FacetParams) => {
+      if (field === "json.message") throw new Error("HTTP 429");
+      return facet({ api: String(params.query).includes("level:error") ? ((params.from as Date).getTime() > Date.UTC(2026, 9, 30, 9, 45) ? 500 : 10) : 5000 });
+    },
     search: async () => { throw new Error("HTTP 429"); },
   };
   const snapshot = await collectHealth(sampleFails, rules, { now: Date.UTC(2026, 9, 30, 10) });
