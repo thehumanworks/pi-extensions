@@ -40,7 +40,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    - `status` shows what changed since the caller last looked; long runs get a compact progress view.
    - Parity: an agent outside Pi gets the same guide (`workflow guide`) and examples as one inside Pi.
    - Exit codes that scripts and agents can branch on.
-   - ✅ Reproduced: a long `--home` produces opaque `connect EINVAL …/worker.sock` (tick 2); diagnose Unix socket path limits with an actionable shorter-home hint.
+   - ✅ Done in tick 7: a long `--home` now fails with `home_too_long` naming the byte limit and the fix, before any directory is created.
    - An agent-experience evaluation: give fresh agents tasks through only the CLI or only the tool, and count wrong turns. This measures progress on the goal instead of guessing.
 
 ## Lessons
@@ -99,4 +99,10 @@ None.
 - Outcome: `npm run check` passes; `npm test` **35 tests, 34 pass, 1 fail**. The only failure is the stale `nix/package-lock.json` version (0.2.0 vs 0.2.1).
 - Value: ✅ yielded value: the suite no longer depends on the machine's home directory.
 - Lesson: in-process workers read `process.env` at call time, so fixtures must isolate every path that env resolves, not only `--home`.
+
+### Tick 7 · 11:21 · Actionable error for over-long workflow homes
+- Action: replaced the opaque `connect EINVAL …/worker.sock` (reproduced in tick 2) with a stable error, because it was the only backlog item that was concrete, small and directly about what an agent sees. The Nix lock fix needs `nix develop` and a hash prefetch, which does not fit a four-minute tick. `assertSocketPath` in `src/paths.ts` checks the socket path against sun_path (107 bytes on Linux, 103 on macOS); `rpc` (`src/client.ts`) and `startWorker` (`src/worker.ts`) call it before connecting or creating the home.
+- Outcome: `npm run check` passes; `npm test` **36 tests, 35 pass, 1 fail**, the only failure the known Nix lock. New test in `test/unit.test.ts` covers both limits and the client path. Local CLI with a 110-character home prints `Error home_too_long: … is 127 bytes, the limit is 107. Pass a shorter --home or set PI_WORKFLOW_HOME to a shorter directory.` and creates no directory.
+- Value: ✅ yielded value: an agent that picks a deep temp directory for `--home` now gets the fix in the error instead of an errno.
+- Lesson: validate inputs whose limits come from the OS before the first side effect, and name the flag or variable that fixes them.
 

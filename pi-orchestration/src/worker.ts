@@ -6,7 +6,7 @@ import type { Models } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "pi-workflow-runtime";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { errorDetails } from "./errors.ts";
-import { workflowPaths } from "./paths.ts";
+import { assertSocketPath, workflowPaths } from "./paths.ts";
 import { MAX_REQUEST_BYTES, PROTOCOL_VERSION, validateRequest, type ControlResponse } from "./protocol.ts";
 import { catalog, validateWorkflow } from "./loader.ts";
 import { openEngine, type EngineOptions } from "./engine/index.ts";
@@ -16,6 +16,7 @@ export interface WorkerOptions extends Omit<EngineOptions, "home"> { home?: stri
 /** Returns undefined when another live worker owns this data directory. */
 export async function startWorker(options: WorkerOptions = {}) {
   const paths = workflowPaths(options.home);
+  assertSocketPath(paths.socket);
   await mkdir(paths.home, { recursive: true, mode: 0o700 });
   await chmod(paths.home, 0o700);
   const owner = new DatabaseSync(paths.database + ".owner");

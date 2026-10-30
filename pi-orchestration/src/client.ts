@@ -4,7 +4,7 @@ import { createConnection } from "node:net";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { WorkflowError } from "./errors.ts";
-import { workflowPaths } from "./paths.ts";
+import { assertSocketPath, workflowPaths } from "./paths.ts";
 import { MAX_REQUEST_BYTES, MAX_RESPONSE_BYTES, PROTOCOL_VERSION, validateRequest, type ControlRequest, type ControlResponse, type WorkerStatus } from "./protocol.ts";
 
 export interface ClientOptions { home?: string; signal?: AbortSignal; timeoutMs?: number }
@@ -17,8 +17,10 @@ export async function rpc<R = unknown>(input: ControlRequest, options: ClientOpt
   const request = validateRequest(input);
   const serialized = JSON.stringify(request) + "\n";
   if (Buffer.byteLength(serialized) > MAX_REQUEST_BYTES) throw new WorkflowError("invalid_request", "Workflow request exceeds 1 MiB. Put large inputs in files and pass paths as arguments.");
+  const socketPath = workflowPaths(options.home).socket;
+  assertSocketPath(socketPath);
   return new Promise<R>((resolve, reject) => {
-    const socket = createConnection(workflowPaths(options.home).socket);
+    const socket = createConnection(socketPath);
     let response = Buffer.alloc(0);
     let finished = false;
     const finish = (error?: Error, value?: R) => {

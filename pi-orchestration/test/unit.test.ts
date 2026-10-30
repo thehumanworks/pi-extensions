@@ -8,6 +8,9 @@ import { help, intervalMs, modelOption, runCli, splitCommand, type WorkflowClien
 import { EXAMPLES_DIR, guide, README_PATH, template } from "../src/guide.ts";
 import type { RunRecord } from "../src/index.ts";
 import { linkCli, shellCommand } from "../src/link.ts";
+import { assertSocketPath } from "../src/paths.ts";
+import { rpc } from "../src/client.ts";
+import { WorkflowError } from "../src/errors.ts";
 import { lintDeterminism, validateWorkflow } from "../src/loader.ts";
 import { catalogText, modelResult, runList, runSummary, validationText } from "../src/presentation.ts";
 
@@ -176,4 +179,11 @@ test("the CLI is linked onto PATH once, never over another command", async () =>
 
     assert.equal(await linkCli({ ...options, env: { HOME: home, PATH: other } }), undefined);
   } finally { await rm(home, { recursive: true, force: true }); }
+});
+
+test("an over-long workflow home fails with an actionable error before connecting", async () => {
+  assert.doesNotThrow(() => assertSocketPath("/" + "a".repeat(106)));
+  assert.throws(() => assertSocketPath("/" + "a".repeat(107)), (error: WorkflowError) => error.code === "home_too_long" && /shorter --home/.test(error.message));
+  assert.throws(() => assertSocketPath("/" + "a".repeat(103), "darwin"), { name: "WorkflowError" });
+  await assert.rejects(rpc({ action: "ping" }, { home: join(tmpdir(), "h".repeat(120)) }), (error: WorkflowError) => error.code === "home_too_long");
 });
