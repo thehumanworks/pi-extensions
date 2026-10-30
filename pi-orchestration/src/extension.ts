@@ -9,11 +9,11 @@ import { assertRootLaunch } from "./client.ts";
 import { defaultClient, runCli, splitCommand, type WorkflowClient } from "./cli.ts";
 import { WorkflowError } from "./errors.ts";
 import { EXAMPLES_DIR, guide } from "./guide.ts";
-import type { CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
+import type { CatalogEntry, ModelName, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
 import { linkCli, shellCommand } from "./link.ts";
 import { agentDirectory, workflowPaths } from "./paths.ts";
 import type { ControlRequest } from "./protocol.ts";
-import { catalogText, modelLabel, modelResult, runBrief, runDetail, runList, runSummary, TERMINAL_STATUSES, toolHints, validationText } from "./presentation.ts";
+import { catalogText, modelLabel, modelResult, runBrief, runDetail, runList, runListView, runSummary, TERMINAL_STATUSES, toolHints, validationText } from "./presentation.ts";
 
 export const TOOL_DESCRIPTION = `Run and manage durable multi-agent workflows. A workflow is a TypeScript file whose run(ctx) calls ctx.agent(), ctx.parallel() and similar; a separate worker runs it, so it outlives this session.
 Start with catalog. Before writing a workflow, call guide: it gives a starter file, the ctx API and which model runs. Save workflows as .pi/workflows/<name>.ts and commit them: they are project source, never add them to .gitignore.
@@ -102,6 +102,11 @@ interface SessionWatch {
 function codedError(error: unknown): unknown {
   if (error instanceof WorkflowError && !error.message.startsWith(`${error.code}:`)) error.message = `${error.code}: ${error.message}`;
   return error;
+}
+
+/** The session's model in the form run records store. */
+function sessionModel(ctx: ExtensionContext): ModelName | undefined {
+  return ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
 }
 
 function nonempty(value: string | undefined, name: string): string {
@@ -298,12 +303,12 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
             action: "run", requestId: `${ctx.sessionManager.getSessionId()}:${toolCallId}`,
             workflow: "path" in args.workflow ? { path: resolve(cwd, args.workflow.path) } : args.workflow,
             args: args.args ?? {}, cwd, origin: { kind: "tool", sessionId: ctx.sessionManager.getSessionId() },
-            model: (args.model ?? (ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined)) as ModelRef | undefined,
+            model: (args.model ?? sessionModel(ctx)) as ModelRef | undefined,
             thinkingLevel: pi.getThinkingLevel() as ThinkingLevel, budget: args.budget,
           };
         } else if (args.action === "guide") {
-          const sessionModel = ctx.model ? modelLabel({ provider: ctx.model.provider, modelId: ctx.model.id }, pi.getThinkingLevel()) : undefined;
-          const text = guide({ shell: await shellCommand(env), sessionModel });
+          const model = sessionModel(ctx);
+          const text = guide({ shell: await shellCommand(env), sessionModel: model && modelLabel(model, pi.getThinkingLevel()) });
           return toolResult({ guide: text }, undefined, text);
         } else if (args.action === "catalog") request = { action: "catalog", cwd };
         else if (args.action === "validate") {
@@ -327,7 +332,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
         signal?.throwIfAborted();
         const result = await client.request(request, { signal });
         if (request.action === "run") {
-          const launched = result as { runId: string; status: RunStatus; model?: ModelRef };
+          const launched = result as { runId: string; status: RunStatus; model?: ModelName };
           const model = launched.model
             ? `Agents use ${modelLabel(launched.model, request.thinkingLevel)} unless the workflow chooses another model.`
             : "No model is set: agents fail unless the workflow chooses one. Pass model.";
@@ -374,11 +379,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
             return briefResult(result as RunRecord);
           case "list": {
             const runs = result as RunRecord[];
-            const view = runs.map(run => ({
-              runId: run.id, workflow: run.workflow.name, status: run.status, summary: runSummary(run),
-              ...(run.origin.kind === "workflow" ? { parentRunId: run.origin.parentRunId } : {}),
-            }));
-            return toolResult(view, undefined, runList(runs));
+            return toolResult(runListView(runs), undefined, runList(runs));
           }
           case "catalog": {
             const entries = result as CatalogEntry[];
@@ -412,7 +413,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
         const argv = splitCommand(args);
         const exitCode = await runCli(argv, {
           cwd: ctx.cwd, env, client, signal: session.controller.signal,
-          model: ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined,
+          model: sessionModel(ctx),
           thinkingLevel: pi.getThinkingLevel() as ThinkingLevel,
           origin: { kind: "tool", sessionId: ctx.sessionManager.getSessionId() },
           program: "/workflow",

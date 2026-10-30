@@ -13,7 +13,7 @@ import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { NodeExecutionEnv } from "@earendil-works/pi-durable/env/node";
 import { Value } from "typebox/value";
 import { Type } from "typebox";
-import type { ModelRef, RunId, RunRecord, StepRecord, WorkflowDefinition } from "../index.ts";
+import type { ModelName, ModelRef, RunId, RunRecord, StepRecord, WorkflowDefinition } from "../index.ts";
 import type { ControlRequest } from "../protocol.ts";
 import { loadWorkflow } from "../loader.ts";
 import { WorkflowError } from "../errors.ts";
@@ -284,7 +284,7 @@ export class Engine {
     }
   }
 
-  async launch(request: Launch, owner?: { taskId: TaskId; parentRunId: string; stepKey: string }): Promise<{ runId: RunId; status: RunRecord["status"]; model?: ModelRef }> {
+  async launch(request: Launch, owner?: { taskId: TaskId; parentRunId: string; stepKey: string }): Promise<{ runId: RunId; status: RunRecord["status"]; model?: ModelName }> {
     if (!owner && request.callerRunId)
       throw new WorkflowError("not_from_root", `Workflows are launched by the user or root Pi session, not from inside run ${request.callerRunId}, step ${request.callerStep ?? "unknown"}. Compose with ctx.workflow() instead.`);
     const canonicalCwd = await realpath(request.cwd);
@@ -303,9 +303,11 @@ export class Engine {
       const problems = mismatchLines(argsSchema, request.args ?? {}, "args");
       throw new WorkflowError("invalid_args", `Arguments do not match the workflow schema ${JSON.stringify(argsSchema)}:\n${problems.join("\n")}`.slice(0, 2000));
     }
-    // Definition defaults outrank the launch model for every agent, so record the model agents will actually use.
-    const model = loaded.definition.defaults?.model ?? request.model ?? this.options.defaultModel;
-    if (model) this.resolveModel(model);
+    // Definition defaults outrank the launch model for every agent, so record the model agents will actually use,
+    // always as "provider/modelId" whichever surface launched the run.
+    const chosen = loaded.definition.defaults?.model ?? request.model ?? this.options.defaultModel;
+    const resolved = chosen ? this.resolveModel(chosen) : undefined;
+    const model = resolved ? `${resolved.provider}/${resolved.modelId}` as ModelName : undefined;
     const parent = owner ? await this.get(owner.parentRunId) : undefined;
     const depth = parent ? parent.depth + 1 : 0;
     if (depth > this.settings.maxDepth)

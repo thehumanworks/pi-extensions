@@ -331,5 +331,13 @@ test("status names the model, surfaces failed branches and hides journal bookkee
     const done = await f.wait(pinned.runId);
     assert.equal(done.status, "completed", JSON.stringify(done.error));
     assert.equal(done.model, "faux/faux-1");
+
+    // Whichever surface launched it, the run stores its model as "provider/modelId".
+    const object = await f.request<{ runId: string; model?: string }>({
+      action: "run", requestId: "object", workflow: { name: "partial" }, args: {}, cwd: f.project,
+      model: { provider: "faux", modelId: "faux-1" }, origin: { kind: "tool", sessionId: "s" },
+    });
+    assert.equal(object.model, "faux/faux-1");
+    assert.equal((await f.wait(object.runId)).model, "faux/faux-1");
   } finally { await f.close(); }
 });

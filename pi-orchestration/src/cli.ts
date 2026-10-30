@@ -5,11 +5,11 @@ import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import { assertRootLaunch, ensureWorker, requestWorker, rpc } from "./client.ts";
 import { guide, template } from "./guide.ts";
-import type { BackgroundAgentRecord, CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
+import type { BackgroundAgentRecord, CatalogEntry, ModelName, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
 import { shellCommand } from "./link.ts";
 import { agentDirectory } from "./paths.ts";
 import type { ControlRequest, WorkerStatus } from "./protocol.ts";
-import { catalogText, duration, json, modelLabel, runList, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText } from "./presentation.ts";
+import { catalogText, duration, json, modelLabel, runBrief, runList, runListView, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText } from "./presentation.ts";
 
 export function help(program = "workflow"): string {
   return `${program} guide                    how to write a workflow: template, ctx API, model rules
@@ -30,7 +30,10 @@ ${program} agents [--run ID]
 ${program} steer <runId> <agent> "message"
 ${program} worker start|stop|status
 
-Every command accepts --json and --home DIR. poll/watch emit NDJSON.
+Every command accepts --json and --home DIR. JSON run views are the Pi tool's details; poll/watch emit NDJSON:
+  run, status, poll, cancel, retry, revert: {runId, workflow, status, model?, summary, error?, failedSteps?, waitingFor?, result?}
+  run --bg: {runId, status, model?}   list: [{runId, workflow, status, model?, summary, parentRunId?}]
+  status --verbose, watch: the full run record {id, workflow: {name, path, hash}, steps, ...}. model is "provider/modelId".
 run attaches by default; Ctrl-C detaches without cancelling the durable run.
 Exit codes: 0 success, 1 usage/validation, 2 failed, 3 cancelled, 4 worker unavailable.`;
 }
@@ -65,7 +68,7 @@ export interface CliContext {
   signal?: AbortSignal;
   client?: WorkflowClient;
   origin?: RunRecord["origin"];
-  model?: ModelRef;
+  model?: ModelName;
   thinkingLevel?: ThinkingLevel;
   /**
    * Called after admission. For an attached (foreground) launch, the returned
@@ -149,12 +152,12 @@ function numberOption(value: string | undefined, name: string, integer = false):
 const THINKING_LEVELS: readonly string[] = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
 
 /** `provider/model:high` selects a thinking level as `pi --model` does; other colons stay part of the model ID. */
-export function modelOption(value: string): { model: ModelRef; thinkingLevel?: ThinkingLevel } {
+export function modelOption(value: string): { model: ModelName; thinkingLevel?: ThinkingLevel } {
   const at = value.lastIndexOf(":");
   const level = at > 0 ? value.slice(at + 1) : "";
   return THINKING_LEVELS.includes(level)
-    ? { model: value.slice(0, at) as ModelRef, thinkingLevel: level as ThinkingLevel }
-    : { model: value as ModelRef };
+    ? { model: value.slice(0, at) as ModelName, thinkingLevel: level as ThinkingLevel }
+    : { model: value as ModelName };
 }
 
 export function workflowReference(value: string, cwd: string): { path: string } | { name: string } {
@@ -238,7 +241,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           if (foreground) {
             if (terminal) {
               const outcome = run.result === undefined ? "" : `\n\n${typeof run.result === "string" ? run.result : json(run.result)}`;
-              emit({ ...run, runId: run.id }, runTree(run, Date.now(), hint) + outcome);
+              emit(runBrief(run).view, runTree(run, Date.now(), hint) + outcome);
               return statusExitCode(run.status);
             }
             if (!jsonMode) warn(runTree(run, Date.now(), hint) + "\n");
@@ -246,7 +249,8 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
             const text = action === "watch" ? runTree(run, Date.now(), hint) : statusText(run, hint);
             // Elapsed time alone is not a change worth a line.
             const key = text.replace(/\b\d+(?:\.\d+)?(?:ms|s|m|h)\b/g, "");
-            if (key !== last) emit(run, text);
+            // poll prints the brief view, as status does; watch prints the full record, as status --verbose does.
+            if (key !== last) emit(action === "watch" ? run : runBrief(run).view, text);
             last = key;
             if (values.once) return 0;
             if (terminal) return statusExitCode(run.status);
@@ -286,7 +290,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           thinkingLevel: values.thinking as ThinkingLevel | undefined ?? selected?.thinkingLevel ?? context.thinkingLevel, budget,
         };
         context.signal?.throwIfAborted();
-        const result = await request<{ runId: string; status: RunStatus; model?: ModelRef }>(launch);
+        const result = await request<{ runId: string; status: RunStatus; model?: ModelName }>(launch);
         const attached = !(values.bg || values.background);
         const release = context.onLaunch?.(result.runId, home, attached);
         if (!result.model && !jsonMode) warn(`No model is set for run ${result.runId}: agents fail unless the workflow chooses one. Pass --model provider/model.\n`);
@@ -309,7 +313,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         count(1, "status <runId> [--verbose]");
         const run = await request<RunRecord>({ action, runId: args[0], verbose: values.verbose });
         if (TERMINAL_STATUSES.has(run.status)) context.onSettled?.(run.id);
-        emit(run, values.verbose ? runTree(run, Date.now(), hint) : statusText(run, hint));
+        emit(values.verbose ? run : runBrief(run).view, values.verbose ? runTree(run, Date.now(), hint) : statusText(run, hint));
         return 0;
       }
       case "list": {
@@ -318,20 +322,26 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         const valid = new Set(["queued", "running", "waiting_signal", ...TERMINAL_STATUSES]);
         if (statuses?.some(item => !valid.has(item))) throw new CliError("--status contains an unknown run status.");
         const runs = await request<RunRecord[]>({ action, filter: { status: statuses, all: values.all } });
-        emit(runs, runList(runs));
+        emit(runListView(runs), runList(runs));
         return 0;
       }
-      case "result": case "cancel": case "revert": {
+      case "result": {
+        count(1, "result <runId>");
+        const result = await request({ action, runId: args[0] });
+        context.onSettled?.(args[0]);
+        emit(result, typeof result === "string" ? result : undefined);
+        return 0;
+      }
+      case "cancel": case "revert": {
         count(1, `${action} <runId>`);
-        const result = await request(action === "revert" ? { action, runId: args[0], keepWorktrees: values["keep-worktrees"] } : { action, runId: args[0] });
-        if (action === "result") context.onSettled?.(args[0]);
-        emit(result, typeof result === "string" ? result : action === "cancel" ? statusText(result as RunRecord, hint) : undefined);
+        const run = await request<RunRecord>(action === "revert" ? { action, runId: args[0], keepWorktrees: values["keep-worktrees"] } : { action, runId: args[0] });
+        emit(runBrief(run).view, statusText(run, hint));
         return 0;
       }
       case "retry": {
         count(1, "retry <runId> [--from KEY] [--allow-changed]");
         const run = await request<RunRecord>({ action, runId: args[0], from: values.from, allowChanged: values["allow-changed"] });
-        emit(run, `${statusText(run, hint)}\npoll: ${hint} poll ${run.id}`);
+        emit(runBrief(run).view, `${statusText(run, hint)}\npoll: ${hint} poll ${run.id}`);
         return 0;
       }
       case "signal": {
