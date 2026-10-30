@@ -98,12 +98,6 @@ None.
 
 ## Log
 
-### Tick 14 · 12:00 · Unknown agent options fail instead of granting default tools
-- Action: took axeval fix 3, next in order. axeval saw `ctx.agent(…, { tool: [] })` silently ignored, so the agent got Read/Write/Edit/Bash. `resolveOptions` (`src/engine/execution.ts`) now checks the call's keys against `AGENT_OPTIONS` and throws `unknown_agent_option: Unknown agent option 'tool' (did you mean 'tools'?). Valid options: …` before journaling or spawning anything. It covers `ctx.agent` and `ctx.spawn` (background.ts passes the rest of its input through it).
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts` "agents return text…" adds a fifth parallel call with `tool` and asserts the code and the hint. The static half (lint in `validate`) is not done.
-- Value: ✅ yielded value: a misspelled option can no longer widen an agent's tools silently.
-- Lesson: check option names at the one function every agent path goes through; the run-time check is cheap, the validate-time lint is the follow-up.
-
 ### Tick 15 · 12:07 · Workflow args must be an object schema
 - Action: took axeval fix 4, next in order and one function. axeval saw `args: { topic: "string" }` pass validate (`Type.IsSchema` accepts any object) and run with `{topic:5}` unchecked, and `Type.String()` pass validate then fail every run. `src/loader.ts:72` now uses `Type.IsObject` and says `args must be Type.Object({...}) from "typebox"; got {"topic":"string"}` (value truncated to 120 chars). No workflow in the repo uses non-object args.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts` catalog test adds `plainargs` and `stringargs` fixtures and asserts both errors. Not verified live in Pi (D8).
