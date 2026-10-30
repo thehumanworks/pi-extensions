@@ -75,6 +75,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 ## Lessons
 
+- Supervisor, release check 14:30: `npm test` does not run `nix/smoke-test.mjs`, the installed-CLI acceptance test, and it broke unnoticed: after tick 16 and runshape (tick 28), `poll` prints the brief view without `steps` or `usage`, but the smoke test still read them from poll. Fixed in a2fe460 (it now reads them from `status --verbose`). Any change to CLI output shapes must also pass the smoke test. Fast way, about 30 seconds plus the test: build without checks, `nix build --impure --no-link --print-out-paths --expr "(builtins.getFlake \"git+file://$PWD?dir=pi-orchestration\").packages.x86_64-linux.workflow.overrideAttrs (_: { doCheck = false; doInstallCheck = false; })"` from the worktree root, then `node pi-orchestration/nix/smoke-test.mjs <out>/bin/workflow`. The full `nix build .#workflow` takes about 5 minutes.
 - Supervisor, after tick 1: the approval brief told the subagent to drop PI_WORKFLOW_ALLOW_UNATTENDED from brain/loop.sh. That would break headless workflow launches here, because the installed Pi runs npm 0.2.1 (D8) until the user publishes. The subagent was told to leave loop.sh alone. Check every change to the loop's own environment against D8.
 - Tick 1: `loop.sh spawn` completed in 43 seconds (30 seconds installing dependencies). Verify Herdr `agent_status=working` after submission, not merely a successful prompt write. Keep delegated scope explicit so the brain can work on adjacent priorities without overlapping files.
 
