@@ -17,3 +17,4 @@ Deliverable: pi-orchestration/brain/axeval.md committed on this branch: per scen
 ## Log
 
 - 2026-10-30 baseline: `npm test` in pi-orchestration 36/36 green. Starting scenarios with `node pi-orchestration/bin/workflow.mjs` from temp cwds under /tmp/axN.
+- Scenario 1 (CLI happy path) done in /tmp/ax1 with anthropic/claude-haiku-4-5: init→edit→validate→run --bg→poll→result works ($0.0006). Wrong turns: next-step hints drop --home (copy-paste → not_found, exit 2, no home named); guide's shell section omits --bg/poll/result; poll's terminal line has no `result` hint; `agents --run` prints raw `[]` for a 2-agent run; JSON keys differ (`runId` vs `id`, result --json is bare value, worker status prints JSON in text mode).
