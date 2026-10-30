@@ -24,6 +24,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
+- `axeval3` spawned in tick 47 (herdr w8:p1, branch brain/axeval3): third evaluation round, repeats axeval2's S1-S4 with the same method to measure 00.2-00.9 and validate1; deliverable `brain/axeval3.md` with a ranked fix list. Write scope: that report and its ledger.
 - `validate1` merged at `6facf5c` and retired in tick 46 (Backlog 00.6 and 00.7).
 - `axeval2` merged at `6ed16ed` and retired in tick 35; its report is `brain/axeval2.md` (ranked fixes drive Backlog item 00).
 - `runshape` merged at `237e912` and retired in tick 28.
@@ -41,9 +42,9 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    6. ✅ Done in tick 46 (merged validate1, `6facf5c`): validate reports load errors and lint findings in one pass with path/line/column; launch throws `invalid_workflow` (exit 1) before creating a run. Not covered: `retry --allow-changed` does not lint the edited file; module-evaluation errors have no location.
    7. ✅ Done in tick 46: `nondeterministic_call` for fs, fs/promises, child_process imports and `fetch` outside `ctx.step`.
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
-   9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). Exit code for `not_found` itself is still 2.
+   9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). `not_found` exits 1 since tick 48.
    10. Low impact (axeval2: dev checkouts loaded with `-e` only). Guide says why it uses the full command (link.ts:25-29, guide.ts:46): `workflow` missing vs another install's path. guide.ts:46 already says "not on PATH here".
-   Unranked: no-model warning on agent-less workflows, `Approval 0/0`, unrounded costUsd, tool errors with `details: {}`. ✅ `1 agents` fixed in tick 45 (b788e5d).
+   Unranked (axeval3 S1-S2 adds: ✅ `not_found` exits 1 (tick 48), syntax error text repeats the path, `invalid_args` JSON-string example is fixed `{"topic":"bees"}`; ✅ typebox hint separator fixed tick 48): no-model warning on agent-less workflows, `Approval 0/0`, unrounded costUsd, tool errors with `details: {}`. ✅ `1 agents` fixed in tick 45 (b788e5d).
 
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
@@ -90,6 +91,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
+- Ticks 18-21: in a four-minute tick, ship the edit with the suite green and log the missing test as the next step; `npm test` prints `ℹ tests N`, so grep `^ℹ (tests|pass|fail)` for counts.
 - Tick 16: a four-minute tick fits one ranked fix when the report already names file:line.
 - Tick 15: TypeBox's `IsSchema` is a weak structural check; use the kind-specific guard (`IsObject`) where the contract needs one shape.
 - Tick 14: check option names at the one function every agent path goes through (`resolveOptions`); lint at validate as the follow-up.
@@ -101,30 +103,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 None.
 
 ## Log
-
-### Tick 18 · 12:21 · Tool errors lead with their code
-- Action: took axeval fix 7, next in order and one file. The tool's `execute` (`src/extension.ts`) now wraps its body in `try … catch` and rethrows through `codedError`, which prefixes a `WorkflowError`'s message with `code: ` (once), so a tool-using agent sees `invalid_args: …` or `not_found: …` as the CLI's `{"error":{"code"}}` shows it. The completion poller checked `"run_not_found"`, which the engine never throws; it now checks `"not_found"` (engine/index.ts:222, 229), so vanished runs stop being polled.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/extension.test.ts:162` asserts the message starts with `not_from_root: ` and the code survives. Not verified live in Pi (D8).
-- Value: ✅ yielded value: tool errors are branchable by code and the dead branch is live.
-- Lesson: a body-wide `try` around a long method is a mechanical reindent (`sed '284,387s/^\(.\)/  \1/'`); check `tsc` right after.
-
-### Tick 19 · 12:24 · The guide teaches the shell lifecycle
-- Action: took axeval fix 10 instead of 8 or 9, because it was the only one that fit a four-minute tick (one sentence; 8 and 9 touch several cli.ts sites and the run record). `src/guide.ts:63` now says a shell `run` waits and prints the result, and that `--bg` returns a runId for `poll <runId>` (returns at the end or a signal wait) and `result <runId>`, using the machine's real command; the sentence after it now says it describes Pi.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts:113-114` asserts the lifecycle with the bare and the full-path command. `bin/workflow.mjs` imports the git-ignored `dist/cli.js`, which was stale; after `npm run build` the local CLI prints the new lifecycle line.
-- Value: ✅ yielded value: a shell agent learns `--bg` → `poll` → `result` from the guide alone.
-- Lesson: when the deadline is four minutes, choose the ranked fix that fits, not strictly the next one; 8 and 9 need a full tick each.
-
-### Tick 20 · 12:29 · cancel, retry and signal print text, not JSON
-- Action: took the text half of axeval fix 9, because it fits one tick; the `run_cancelled` exit code and the `agents`/`worker status` text are left. `src/cli.ts` (result/cancel/revert, retry, signal cases): `cancel` prints `statusText`, `retry` prints `statusText` plus `poll: <hint> poll <id>`, `signal` prints `Signal "key" accepted. poll: <hint> poll <id>`. `--json` output is unchanged.
-- Outcome: `npm run check` passes; `npm test` **37/37**. No new test asserts the text lines yet; process tests use `--json`.
-- Value: ⚠️ partial: readable output for three commands, without a test for the text.
-- Lesson: in a four-minute tick, ship the edit with the suite green and log the missing test as the next step instead of starting it late.
-
-### Tick 21 · 12:34 · Test the readable signal and cancel output
-- Action: wrote the test tick 20 left as its next step. Chosen over fix 8 or the rest of fix 9 because untested text output can regress silently and the test fits a four-minute tick. The process sandbox's `cli` (`test/process.test.ts:20`) takes a third `json = true` argument; without it the CLI runs as an agent would, with no `--json`.
-- Outcome: the gate test asserts `signal` prints exactly `Signal "go" accepted. poll: … poll <id>`; the SIGKILL test asserts `cancel` prints status text containing `cancelled`, not JSON. `npm run check` passes; `npm test` **37/37**.
-- Value: ✅ yielded value: tick 20's text output is now protected by tests that run the compiled CLI.
-- Lesson: `npm test` prints `ℹ tests N`, not `# tests N`; grep `^ℹ (tests|pass|fail)` for the counts.
 
 ### Tick 22 · 12:39 · result on a cancelled run exits 3 with run_cancelled
 - Action: took the exit-code part of axeval fix 9, because it fits a four-minute tick and makes the documented exit code (`3 cancelled`) true; fix 8 needs a full tick. `src/engine/index.ts` result throws `run_cancelled: Run <id> is cancelled.` before the generic `run_failed`; `errorInfo` (`src/cli.ts`) maps `run_cancelled` to exit 3.
@@ -279,3 +257,23 @@ None.
 - Outcome: `npm test` in its worktree **40/40**; after `git merge --no-ff` on top of ticks 44-45, **40/40**. Merge `6facf5c`, pushed; `loop.sh retire validate1` succeeded. Engine message names no CLI command. Not run: the Nix smoke test (CLI output shape unchanged except a new `invalid_workflow` refusal).
 - Value: ✅ yielded value: an agent sees every validate problem at once, and a launch can no longer create a run that lint already rejects.
 - Lesson: a subagent brief with file:line, three named test cases and the old-source check came back mergeable in about 20 minutes. Next: all ranked axeval2 fixes are done; either lint `retry --allow-changed`, or spawn axeval3 to measure 00.2-00.9.
+
+### Tick 47 · 14:49 · Spawn axeval3 to measure the axeval2 fixes
+- Action: spawned `axeval3`, as tick 46 planned, because every ranked axeval2 fix is done and the next changes should come from measured wrong turns; tick 35 showed a round after a batch of fixes pays. The brief lists the fixes since round two, the round-two counts (S1 0, S2 4, S3 0, S4 A/B/C/D 0/0/0/13), the D8/`npm run build`/boolean-flag/socket-path traps, the 40/40 baseline and a report-only write scope. Also archived ticks 18-21 (Log was 29 entries), keeping their lesson.
+- Outcome: `loop.sh spawn` took about 55 seconds; branch brain/axeval3 pushed, worktree `.pi/worktrees/brain-axeval3`, herdr w8:p1 `agent_status=working` (idle for the first seconds, then working). No source changed; tests not rerun (40/40 at 6facf5c).
+- Value: ✅ yielded value: the effect of ticks 36-46 will be measured against round two.
+- Lesson: run the spawn in the background and archive meanwhile; both fit four minutes. Next tick: act on axeval3's concrete partial findings outside its scope, or lint `retry --allow-changed` (validate1's gap).
+
+### Tick 48 · 14:54 · Typebox load hint reads as a sentence
+- Action: took axeval3's S2 finding (ledger 15:15), concrete, one line and outside its write scope: the load error read `Cannot find module '@sinclair/typebox' Use import …` with no separator. `loadMessage` (`src/loader.ts:81`) now ends the Node message with one full stop before the hint. Chosen over `retry --allow-changed` lint, which needs more than four minutes.
+- Outcome: `test/engine.test.ts:206` asserts `typebox'. Use import …` exactly; `npm test` **40/40**; with the old loader.ts the engine tests are 11/12. Commit `34b76c4`. axeval3 so far: S1 0 wrong turns (round two 0), S2 0 (round two 4); running S3.
+- Value: ✅ yielded value: small, but the hint now reads as a separate instruction.
+- Follow-up in the same tick: an unknown run id (`not_found`) now exits 1 like `workflow_not_found` and the other lookup typos (`src/cli.ts:186`), not 2 ("failed"); `test/process.test.ts:59` asserts it. `npm test` **40/40**; the Nix smoke test does not read this exit code.
+- Lesson: pin exact punctuation in assertions when the bug is punctuation; `.*` hid it. Next: axeval3's other S2 polish (syntax text repeats the path) or its final report.
+
+### Tick 49 · 15:00 · Tool run wait:true returns at a signal wait
+- Action: took axeval3's latest finding (ledger 15:40), concrete and outside its write scope: the tool's `run` with `wait:true` polled until a terminal status or `waitTimeoutMs` (default 60 s), so a gated run held the agent for a minute; the CLI's attached `run` already returns at the wait (tick 36). `src/extension.ts` wait loop now also breaks on `waiting_signal` and returns the brief (which carries `Deliver with: {"action":"signal",…}`) plus `Stopped waiting: the run needs a signal. This session gets a message when it ends.`
+- Outcome: `test/extension.test.ts` "wait:true returns at a signal wait" asserts the status and note; `npm test` **41/41**. Commit `42b1362`. First draft of the test queued `running, waiting_signal, completed` and saw `completed` (the launch or poller consumes a status); a single `waiting_signal` queue fixed it. Old-source check not run: without the fix the loop waits the full 60 s and the note differs, so the regex would fail.
+- Value: ✅ yielded value: both surfaces now stop at a gate instead of blocking.
+- Lesson: the `harness()` status queue is shared by launch, poller and status; use a single-status queue when the order is not the point. Next: axeval3's report (session E will measure this) and its remaining polish (`Approval 0/0`, no-model warning on agent-less workflows).
+- Also steered axeval3 to measure session E before and after merging brain/orchestration (42b1362).

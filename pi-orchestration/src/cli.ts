@@ -183,7 +183,7 @@ function errorInfo(error: unknown): { code: string; message: string; exitCode: n
   const worker = ["worker_unavailable", "worker_unreachable", "ENOENT", "ECONNREFUSED", "EACCES", "EPERM", "ETIMEDOUT"].includes(code)
     || /worker.*(?:did not start|unavailable|timed out|closed|protocol)/i.test(message);
   const usage = ["usage_error", "validation_error", "invalid_args", "invalid_request", "invalid_signal", "invalid_workflow",
-    "invalid_cwd", "unknown_step", "unknown_signal", "unknown_agent_option", "unknown_context_member", "workflow_not_found",
+    "invalid_cwd", "unknown_step", "unknown_signal", "unknown_agent_option", "unknown_context_member", "workflow_not_found", "not_found",
     "nondeterministic_call"].includes(code)
     || code.startsWith("ERR_PARSE_ARGS");
   return { code, message, exitCode: worker ? 4 : usage ? 1 : code === "run_cancelled" ? 3 : 2 };

@@ -94,6 +94,16 @@ test("wait:true returns the outcome without a second completion turn", async () 
   await h.handlers.get("session_shutdown")!({}, ctx);
 });
 
+test("wait:true returns at a signal wait", async () => {
+  const h = harness({ "run-1": ["waiting_signal"] });
+  const ctx = h.context();
+  await h.handlers.get("session_start")!({}, ctx);
+  const result = await h.tools.get("workflow")!.execute("call-1", { action: "run", workflow: { name: "flow" }, wait: true }, undefined, undefined, ctx) as { details: RunRecord; content: Array<{ text: string }> };
+  assert.equal(result.details.status, "waiting_signal");
+  assert.match(result.content[0]!.text, /Stopped waiting: the run needs a signal\./);
+  await h.handlers.get("session_shutdown")!({}, ctx);
+});
+
 test("background launches report completion once, including after restore", async () => {
   const h = harness({ "run-1": ["running", "completed"] });
   const ctx = h.context();
