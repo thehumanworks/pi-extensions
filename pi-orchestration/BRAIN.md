@@ -24,7 +24,7 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-- `validate1` (spawned tick 42, herdr w7:p1, branch brain/validate1): Backlog 00.6 and 00.7 (validate in one pass, lint at launch, lint I/O outside ctx.step). Baseline 38/38 at b63b97e.
+- `validate1` merged at `6facf5c` and retired in tick 46 (Backlog 00.6 and 00.7).
 - `axeval2` merged at `6ed16ed` and retired in tick 35; its report is `brain/axeval2.md` (ranked fixes drive Backlog item 00).
 - `runshape` merged at `237e912` and retired in tick 28.
 - `axeval` merged at `050a209` and retired in tick 11; its report is `brain/axeval.md` (ranked fixes drive Backlog item 0).
@@ -38,8 +38,8 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    2. ✅ Done in tick 36: attached `run` returns on `waiting_signal` (statusText + `then: … poll <id>`, exit 0; `--json` the brief view; `--until done` keeps waiting) and prints progress only on change.
    3. ✅ Done in tick 44 (a549d14): one `waitingLines(run, hints)` in presentation.ts used by runBrief, runTree and cli.ts statusText (`Waiting for signal "k": prompt`, `Expects:`, `Deliver with:`); the tool brief now names the `{"action":"signal",…}` call, asserted in test/extension.test.ts (tick 44).
    4. ✅ Done in ticks 37-38 (8fce02c, b47be74, 895d71b): `result_not_ready` is surface-neutral and names the awaited signal; CLI appends `poll: … poll <id>`, tool appends `{"action":"status",…}` (tested); tool `signal` replies `Signal "k" accepted. Check the run with {"action":"status",…}.` (tested).
-   6. In progress (`validate1`, tick 42). Validate in one pass (lint even when load fails; load diagnostics get path/line/column) and refuse at launch what validate rejects (loader.ts:81-86, engine/index.ts:299).
-   7. In progress (`validate1`, tick 42). Lint fs/child_process/fetch calls outside `ctx.step` (validation.ts:29-70).
+   6. ✅ Done in tick 46 (merged validate1, `6facf5c`): validate reports load errors and lint findings in one pass with path/line/column; launch throws `invalid_workflow` (exit 1) before creating a run. Not covered: `retry --allow-changed` does not lint the edited file; module-evaluation errors have no location.
+   7. ✅ Done in tick 46: `nondeterministic_call` for fs, fs/promises, child_process imports and `fetch` outside `ctx.step`.
    8. ✅ Done in tick 39 (a7efd5b): `@sinclair/typebox` load error hints `typebox`; `Require stack:` dropped (`loadMessage`, loader.ts).
    9. ✅ Done in tick 40 (8e2aaa5): exit 1 for unknown_signal/unknown_agent_option/unknown_context_member; `not_found` ends `List runs: <hint> list.` (CLI) or `List runs with {"action":"list"}.` (tool). Exit code for `not_found` itself is still 2.
    10. Low impact (axeval2: dev checkouts loaded with `-e` only). Guide says why it uses the full command (link.ts:25-29, guide.ts:46): `workflow` missing vs another install's path. guide.ts:46 already says "not on PATH here".
@@ -273,3 +273,9 @@ None.
 - Outcome: `test/unit.test.ts:92` expects `1 agent`; `npm test` **38/38**. The Nix smoke test does not read this text (checked `nix/smoke-test.mjs`). Commit `b788e5d`.
 - Value: ✅ yielded value: small, but every status line an agent reads is now grammatical.
 - Lesson: with four minutes and a subagent mid-work, a one-line fix from the unranked list beats a broad read. Next: review validate1 when its ledger says done; otherwise the no-model warning on agent-less workflows (cli.ts:300).
+
+### Tick 46 · 14:44 · Merge validate1: one-pass validate, launch lint, I/O lint
+- Action: reviewed and merged `brain/validate1`, done with a clean worktree, because a finished branch blocks nothing and closes the last two ranked axeval2 fixes (00.6, 00.7). Diff: 10 files, +162/-14 (loader.ts, validation.ts, engine/index.ts launch, presentation.ts `diagnosticText`, tests, one README line).
+- Outcome: `npm test` in its worktree **40/40**; after `git merge --no-ff` on top of ticks 44-45, **40/40**. Merge `6facf5c`, pushed; `loop.sh retire validate1` succeeded. Engine message names no CLI command. Not run: the Nix smoke test (CLI output shape unchanged except a new `invalid_workflow` refusal).
+- Value: ✅ yielded value: an agent sees every validate problem at once, and a launch can no longer create a run that lint already rejects.
+- Lesson: a subagent brief with file:line, three named test cases and the old-source check came back mergeable in about 20 minutes. Next: all ranked axeval2 fixes are done; either lint `retry --allow-changed`, or spawn axeval3 to measure 00.2-00.9.
