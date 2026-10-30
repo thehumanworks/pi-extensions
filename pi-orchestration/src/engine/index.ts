@@ -499,7 +499,9 @@ export class Engine {
     if (request.action === "result") {
       const run = await this.get(request.runId);
       if (["queued", "running", "waiting_signal"].includes(run.status))
-        throw new WorkflowError("result_not_ready", `Run ${run.id} is ${run.status}. Use poll ${run.id} --until done.`);
+        throw new WorkflowError("result_not_ready", run.status === "waiting_signal" && run.waitingFor
+          ? `Run ${run.id} is waiting for signal "${run.waitingFor.key}"; deliver it, then read the result.`
+          : `Run ${run.id} is ${run.status}; the result is not ready.`);
       if (run.status === "cancelled") throw new WorkflowError("run_cancelled", `Run ${run.id} is cancelled.${run.error?.message ? ` ${run.error.message}` : ""}`);
       if (run.status !== "completed") throw new WorkflowError(run.error?.reason ?? "run_failed", run.error?.message ?? `Run ${run.id} is ${run.status}.`);
       return this.readResult(run);

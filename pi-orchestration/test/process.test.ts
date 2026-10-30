@@ -83,6 +83,9 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     assert.equal(waiting.json.runId, runId);
     assert.equal(waiting.json.waitingFor.key, "go");
     assert.ok(!("id" in waiting.json));
+    const early = await s.cli(["result", runId], {}, false);
+    assert.equal(early.code, 2);
+    assert.match(early.stderr, new RegExp(`result_not_ready: Run ${runId} is waiting for signal "go"; deliver it, then read the result\\. poll: .*poll ${runId}`));
     assert.equal((await s.cli(["signal", runId, "go", '"yes"'])).code, 1);
     const accepted = await s.cli(["signal", runId, "go", "true"], {}, false);
     assert.equal(accepted.code, 0, accepted.stderr);

@@ -334,7 +334,10 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       }
       case "result": {
         count(1, "result <runId>");
-        const result = await request({ action, runId: args[0] });
+        const result = await request({ action, runId: args[0] }).catch((error: { code?: string; message?: string }) => {
+          if (error?.code === "result_not_ready") error.message += ` poll: ${hint} poll ${args[0]}`;
+          throw error;
+        });
         context.onSettled?.(args[0]);
         emit(result, typeof result === "string" ? result : undefined);
         return 0;

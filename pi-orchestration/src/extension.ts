@@ -396,6 +396,8 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
             return toolResult(result, args.runId);
         }
       } catch (error) {
+        if (error instanceof WorkflowError && error.code === "result_not_ready" && args.runId)
+          error.message += ` Check it with {"action":"status","runId":${JSON.stringify(args.runId)}}.`;
         throw codedError(error);
       }
     },
