@@ -325,17 +325,21 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         count(1, `${action} <runId>`);
         const result = await request(action === "revert" ? { action, runId: args[0], keepWorktrees: values["keep-worktrees"] } : { action, runId: args[0] });
         if (action === "result") context.onSettled?.(args[0]);
-        emit(result, typeof result === "string" ? result : undefined);
+        emit(result, typeof result === "string" ? result : action === "cancel" ? statusText(result as RunRecord, hint) : undefined);
         return 0;
       }
-      case "retry":
+      case "retry": {
         count(1, "retry <runId> [--from KEY] [--allow-changed]");
-        emit(await request({ action, runId: args[0], from: values.from, allowChanged: values["allow-changed"] }));
+        const run = await request<RunRecord>({ action, runId: args[0], from: values.from, allowChanged: values["allow-changed"] });
+        emit(run, `${statusText(run, hint)}\npoll: ${hint} poll ${run.id}`);
         return 0;
-      case "signal":
+      }
+      case "signal": {
         count(3, "signal <runId> <key> '<json>'");
-        emit(await request({ action, runId: args[0], key: args[1], value: parseJson(args[2], "Signal value") }));
+        const accepted = await request({ action, runId: args[0], key: args[1], value: parseJson(args[2], "Signal value") });
+        emit(accepted, `Signal ${JSON.stringify(args[1])} accepted. poll: ${hint} poll ${args[0]}`);
         return 0;
+      }
       case "steer":
         count(3, 'steer <runId> <agent> "message"');
         emit(await request({ action, runId: args[0], agent: args[1], message: args[2] }));
