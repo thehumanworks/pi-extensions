@@ -153,6 +153,6 @@ None.
 
 ### Tick 12 · 11:49 · Tool args are an object; string and schema errors explain themselves
 - Action: took axeval fix 1, the top-ranked one (two of four tool sessions never launched because `args` was `Type.Unknown` and Haiku sent JSON strings). Small enough to do directly. `src/extension.ts:58` types `args` as an open object whose description says "pass the object itself, not a JSON-encoded string". `src/engine/index.ts:299-309` rejects a string `args` with `invalid_args: args is a JSON-encoded string; pass the object itself…` and turns schema errors into lines like `args/n: must be number (got "x")` after the schema JSON, instead of a raw TypeBox error dump.
-- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts:44-51` now asserts the per-field line and the string-args message. Not verified live in Pi (installed Pi runs npm 0.3.0-or-earlier, D8).
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/engine.test.ts:44-51` now asserts the per-field line and the string-args message. Committed `82c02ea`. Not verified live in Pi, because the installed Pi still runs npm 0.2.1 (D8).
 - Value: ✅ yielded value: the most expensive observed wrong turn now either cannot happen (schema says object) or gets a one-line fix.
 - Lesson: TypeBox 1.x errors carry `instancePath`, not `path`/`value`; resolve the offending value from the pointer.
