@@ -28,7 +28,7 @@ const env = {
   GIT_COMMITTER_NAME: "Nix smoke", GIT_COMMITTER_EMAIL: "smoke@example.invalid",
 };
 // In particular, no caller PATH, NODE_PATH, NODE_OPTIONS, PI_WORKFLOW_NODE,
-// unattended opt-in, proxy variables, provider keys or Git configuration leaks in.
+// proxy variables, provider keys or Git configuration leaks in.
 const abort = new AbortController();
 const interrupted = () => abort.abort(new Error("Smoke test interrupted"));
 process.once("SIGINT", interrupted);
@@ -40,10 +40,10 @@ async function exists(path) {
   catch (error) { if (error.code === "ENOENT") return false; throw error; }
 }
 
-function invoke(args, { json = true, allow = false, cleanup = false, timeout = 45_000 } = {}) {
+function invoke(args, { json = true, cleanup = false, timeout = 45_000 } = {}) {
   return new Promise(resolve => {
     execFile(executable, [...args, "--home", home, ...(json ? ["--json"] : [])], {
-      cwd: project, env: { ...env, ...(allow ? { PI_WORKFLOW_ALLOW_UNATTENDED: "1" } : {}) },
+      cwd: project, env,
       encoding: "utf8", timeout, maxBuffer: 8 * 1024 * 1024,
       ...(cleanup ? {} : { signal: abort.signal }),
     }, (error, stdout, stderr) => {
@@ -248,9 +248,7 @@ try {
   // Never run the generated agent-based example: this test makes no model calls.
   await writeFile(join(project, ".pi", "workflows", "nix-smoke.ts"), source);
 
-  const refused = await cli(["run", "nix-smoke", "--bg", "--args", '{"n":21}'], { code: 2 });
-  assert.equal(refused.error.code, "unattended_forbidden");
-  assert.equal(await exists(socket), false, "refusal must not start a worker");
+  assert.equal(await exists(socket), false, "help, guide and init must not start a worker");
   const first = remember(await cli(["worker", "start"]));
   assert.equal(remember(await cli(["worker", "status"])).pid, first.pid);
   const validation = await cli(["validate", "nix-smoke"]);
@@ -258,7 +256,7 @@ try {
   assert.equal(validation.name, "nix-smoke");
   const catalog = await cli(["catalog"]);
   assert.ok(catalog.some(entry => entry.name === "nix-smoke" && !entry.error));
-  const launched = await cli(["run", "nix-smoke", "--bg", "--args", '{"n":21}'], { allow: true });
+  const launched = await cli(["run", "nix-smoke", "--bg", "--args", '{"n":21}']);
   const id = launched.runId;
   assert.equal(typeof id, "string");
   const waiting = await cli(["poll", id, "--until", "signal", "--interval", "50ms"]);
@@ -286,9 +284,6 @@ try {
   assert.equal(done.usage.agents, 0, "smoke must not invoke providers");
   assert.equal(await readFile(join(project, "effects"), "utf8"), "tools\nfinish\n");
   assert.deepEqual(await cli(["result", id]), done.result);
-  // The opt-in was only on the launch command; neither the wrapper nor the
-  // already-running worker may silently opt subsequent CLI invocations in.
-  assert.equal((await cli(["run", "nix-smoke", "--bg", "--args", '{"n":21}'], { code: 2 })).error.code, "unattended_forbidden");
   await stopWorker();
   remember(await cli(["worker", "start"]));
   assert.deepEqual(await cli(["result", id]), done.result, "completed result must survive restart");
