@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-orchestration",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Durable multi-agent workflows for Pi and the command line",
   "type": "module",
   "license": "MIT",
