@@ -17,8 +17,8 @@ async function sandbox() {
   await mkdir(join(project, ".pi", "workflows"), { recursive: true });
   const inherited = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PI_WORKFLOW_")));
   const env: NodeJS.ProcessEnv = { ...inherited, PI_WORKFLOW_HOME: join(root, "h"), PI_CODING_AGENT_DIR: join(root, "agent"), PI_WORKFLOW_NODE: process.execPath };
-  const cli = (args: string[], extra: NodeJS.ProcessEnv = {}) => new Promise<Result>(resolve => {
-    execFile(process.execPath, [CLI, ...args, "--json"], { cwd: project, env: { ...env, ...extra }, timeout: 30_000 }, (error, stdout, stderr) => {
+  const cli = (args: string[], extra: NodeJS.ProcessEnv = {}, json = true) => new Promise<Result>(resolve => {
+    execFile(process.execPath, [CLI, ...args, ...json ? ["--json"] : []], { cwd: project, env: { ...env, ...extra }, timeout: 30_000 }, (error, stdout, stderr) => {
       const code = error ? typeof error.code === "number" ? error.code : 1 : 0;
       const last = stdout.trim().split("\n").at(-1);
       let json: unknown;
@@ -58,7 +58,9 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     const runId = gate.json.runId as string;
     assert.equal((await s.cli(["poll", runId, "--until", "signal", "--interval", "20ms"])).code, 0);
     assert.equal((await s.cli(["signal", runId, "go", '"yes"'])).code, 1);
-    assert.equal((await s.cli(["signal", runId, "go", "true"])).code, 0);
+    const accepted = await s.cli(["signal", runId, "go", "true"], {}, false);
+    assert.equal(accepted.code, 0, accepted.stderr);
+    assert.match(accepted.stdout, new RegExp(`^Signal "go" accepted\\. poll: .*poll ${runId}\\n$`));
     const done = await s.cli(["poll", runId, "--until", "done", "--interval", "20ms"]);
     assert.equal(done.code, 0);
     assert.equal(done.json.result, true);
@@ -91,8 +93,10 @@ test("a SIGKILLed worker resumes runs without repeating committed steps", { time
     process.kill(worker.json.pid, "SIGKILL");
 
     // The next command starts a replacement worker, which replays both runs.
-    const cancelled = await s.cli(["cancel", doomed.json.runId]);
-    assert.equal(cancelled.json.status, "cancelled");
+    const cancelled = await s.cli(["cancel", doomed.json.runId], {}, false);
+    assert.equal(cancelled.code, 0, cancelled.stderr);
+    assert.match(cancelled.stdout, /cancelled/);
+    assert.doesNotMatch(cancelled.stdout, /^\{/);
     assert.equal((await s.cli(["poll", doomed.json.runId, "--interval", "20ms"])).code, 3);
     const waiting = await s.cli(["poll", runId, "--interval", "50ms"]);
     assert.equal(waiting.json.status, "waiting_signal");

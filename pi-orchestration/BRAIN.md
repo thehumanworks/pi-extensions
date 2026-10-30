@@ -41,7 +41,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
    7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
-   9. ⚠️ Half done in tick 20: cancel/retry/signal print text. Remaining: `agents` and `worker status` text, `result` on a cancelled run exits 3 with `run_cancelled`, and a unit test for the text lines.
+   9. ⚠️ Half done in tick 20: cancel/retry/signal print text. Text for signal and cancel is covered by `test/process.test.ts` (tick 21). Remaining: `agents` and `worker status` text, `result` on a cancelled run exits 3 with `run_cancelled`.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
@@ -205,3 +205,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. No new test asserts the text lines yet; process tests use `--json`.
 - Value: ⚠️ partial: readable output for three commands, without a test for the text.
 - Lesson: in a four-minute tick, ship the edit with the suite green and log the missing test as the next step instead of starting it late.
+
+### Tick 21 · 12:34 · Test the readable signal and cancel output
+- Action: wrote the test tick 20 left as its next step. Chosen over fix 8 or the rest of fix 9 because untested text output can regress silently and the test fits a four-minute tick. The process sandbox's `cli` (`test/process.test.ts:20`) takes a third `json = true` argument; without it the CLI runs as an agent would, with no `--json`.
+- Outcome: the gate test asserts `signal` prints exactly `Signal "go" accepted. poll: … poll <id>`; the SIGKILL test asserts `cancel` prints status text containing `cancelled`, not JSON. `npm run check` passes; `npm test` **37/37**.
+- Value: ✅ yielded value: tick 20's text output is now protected by tests that run the compiled CLI.
+- Lesson: `npm test` prints `ℹ tests N`, not `# tests N`; grep `^ℹ (tests|pass|fail)` for the counts.
