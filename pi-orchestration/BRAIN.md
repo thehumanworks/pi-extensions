@@ -224,7 +224,7 @@ None.
 - Value: ✅ yielded value: no CLI command dumps JSON in text mode any more.
 - Lesson: try each command once against a fresh home after changing it; the empty case showed an error the report missed.
 
-### Tick 24 · 12:52 · worker status explains a missing worker
+### Tick 24 · 12:50 · worker status explains a missing worker
 - Action: fixed tick 23's follow-up because it fits a four-minute tick; fix 8 needs a full tick. `worker status` and `worker stop` on a home with no worker printed `error ENOENT: connect ENOENT …/worker.sock` (exit 4 already). In the `worker` case of `src/cli.ts`, a `running` wrapper now turns ENOENT/ECONNREFUSED into `worker_unavailable: No workflow worker is running for this home. Start one with <hint> worker start; run, poll and the other commands start it automatically.` The hint keeps `--home`.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` asserts exit 4 and the message for `worker status` before any worker starts.
 - Value: ✅ yielded value: an agent that checks the worker first gets the fix, not a socket errno.
