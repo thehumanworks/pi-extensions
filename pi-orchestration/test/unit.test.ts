@@ -110,6 +110,8 @@ test("the starter template is a valid workflow and the guide points at shipped f
   assert.ok(text.includes(template().trimEnd()));
   assert.ok(text.includes("Shell: `workflow` is not on PATH here, so use the full command: node /x/workflow.mjs run review-file"));
   assert.ok(guide().includes("Shell: workflow run review-file"));
+  assert.ok(guide().includes("Add --bg to get a runId at once, then workflow poll <runId>"));
+  assert.ok(text.includes("node /x/workflow.mjs result <runId>"));
   assert.equal(validationText({ valid: true, name: "a", path: "/a.ts", diagnostics: [] }), "Valid: a (/a.ts).");
   assert.equal(validationText({ valid: false, diagnostics: [{ line: 3, message: "Use ctx.now()", code: "nondeterministic_call" }] }),
     "Invalid:\nline 3: Use ctx.now() (nondeterministic_call)");

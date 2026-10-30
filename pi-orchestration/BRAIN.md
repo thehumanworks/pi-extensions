@@ -42,7 +42,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
    9. No pretty JSON in text mode (cancel/retry/signal/agents/worker status); `result` on cancelled exits 3.
-   10. Guide shell lifecycle: `--bg` → `poll` → `result` (guide.ts:63-65).
+   10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
 2. Workflow files are source (D2): ✅ done. Bot workflows tracked and ignore rules removed (tick 2); guide, tool description, `init` output and README state the policy (tick 5). Possible follow-up: `validate`/`catalog` warn on git-ignored workflow files (item 4).
@@ -192,3 +192,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/extension.test.ts:162` asserts the message starts with `not_from_root: ` and the code survives. Not verified live in Pi (D8).
 - Value: ✅ yielded value: tool errors are branchable by code and the dead branch is live.
 - Lesson: a body-wide `try` around a long method is a mechanical reindent (`sed '284,387s/^\(.\)/  \1/'`); check `tsc` right after.
+
+### Tick 19 · 12:24 · The guide teaches the shell lifecycle
+- Action: took axeval fix 10 instead of 8 or 9, because it was the only one that fit a four-minute tick (one sentence; 8 and 9 touch several cli.ts sites and the run record). `src/guide.ts:63` now says a shell `run` waits and prints the result, and that `--bg` returns a runId for `poll <runId>` (returns at the end or a signal wait) and `result <runId>`, using the machine's real command; the sentence after it now says it describes Pi.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts:113-114` asserts the lifecycle with the bare and the full-path command. `node bin/workflow.mjs guide` still printed the old text, so the bin seems to load a built copy, not src; not investigated.
+- Value: ✅ yielded value: a shell agent learns `--bg` → `poll` → `result` from the guide alone.
+- Lesson: when the deadline is four minutes, choose the ranked fix that fits, not strictly the next one; 8 and 9 need a full tick each.
