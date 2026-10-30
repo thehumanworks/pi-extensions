@@ -46,6 +46,7 @@ function harness(statuses: Record<string, RunStatus[]>, env: NodeJS.ProcessEnv =
         return runRecord(request.runId, queue.length > 1 ? queue.shift()! : queue[0]);
       }
       if (request.action === "result" && request.runId === "run-gate") throw new WorkflowError("result_not_ready", 'Run run-gate is waiting for signal "go"; deliver it, then read the result.');
+      if (request.action === "signal") return { runId: request.runId, key: request.key, accepted: true };
       // The run finishes just as the agent asks for its result.
       if (request.action === "result") { statuses[request.runId] = ["completed"]; return "done"; }
       if (request.action === "catalog") return [];
@@ -221,6 +222,8 @@ test("reading a finished run's outcome replaces the completion turn, and status 
   assert.match(verbose.content[0].text, /\n\nResult:\ndone$/);
   await assert.rejects(tool.execute("call-5", { action: "result", runId: "run-gate" }, undefined, undefined, ctx),
     (error: Error) => error.message === 'result_not_ready: Run run-gate is waiting for signal "go"; deliver it, then read the result. Check it with {"action":"status","runId":"run-gate"}.');
+  const signalled = await tool.execute("call-6", { action: "signal", runId: "run-gate", key: "go", value: { ok: true } }, undefined, undefined, ctx) as ToolReply;
+  assert.equal(signalled.content[0].text, 'Signal "go" accepted. Check the run with {"action":"status","runId":"run-gate"}.');
   await h.handlers.get("session_shutdown")!({}, ctx);
 });
 

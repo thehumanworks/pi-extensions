@@ -379,6 +379,9 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
             return toolResult(result, request.runId);
           case "cancel": case "retry": case "revert":
             return briefResult(result as RunRecord);
+          case "signal":
+            return toolResult(result, request.runId, `Signal ${JSON.stringify(request.key)} accepted. ` +
+              `Check the run with {"action":"status","runId":${JSON.stringify(request.runId)}}.`);
           case "list": {
             const runs = result as RunRecord[];
             return toolResult(runListView(runs), undefined, runList(runs));
