@@ -149,6 +149,7 @@ test("signals are schema-checked and children charge their parent", async () => 
     const cancelled = await f.wait(gated);
     assert.equal(cancelled.status, "cancelled");
     assert.equal(cancelled.waitingFor, undefined, "a terminal run is not waiting for a signal");
+    assert.match(await f.request({ action: "signal", runId: gated, key: "approve", value: { ok: true } }).then(() => "", failure), /^run_finished: .*cancelled/);
   } finally { await f.close(); }
 });
 

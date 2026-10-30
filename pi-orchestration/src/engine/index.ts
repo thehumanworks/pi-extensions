@@ -414,6 +414,8 @@ export class Engine {
 
   async signal(runId: string, key: string, value: unknown): Promise<{ runId: string; key: string; accepted: true }> {
     await this.mutate(runId, run => {
+      if (["completed", "cancelled", "reverted"].includes(run.status))
+        throw new WorkflowError("run_finished", `Run ${run.id} is ${run.status} and accepts no more signals.`);
       const step = run.steps.find(item => item.kind === "signal" && item.signalKey === key);
       if (!step) throw new WorkflowError("unknown_signal", run.waitingFor
         ? `No waiting signal '${key}'. The run is waiting for '${run.waitingFor.key}'.`

@@ -234,3 +234,9 @@ None.
 - Outcome: first try flagged `deps.web` in `examples/02-dag.ts` (37/38); restricting to the outer run fixed it. `npm run check` clean; `npm test` **38/38**; `test/unit.test.ts` asserts `ctx.runAgent` yields exactly one `unknown_context_member` naming `agent`. Commit `2cb15bb`.
 - Value: ✅ yielded value: a misnamed ctx method is caught at validate with a line number.
 - Lesson: the examples are the lint's regression suite; a new lint must pass them before it ships. Next: axeval2's other scenario 2 items (b) `readFileSync` in run, (c) wrong typebox import hint, (d) load errors stop at the first; or attached `run` reprinting the full tree every second (scenario 1).
+
+### Tick 33 · 13:35 · Finished runs refuse signals
+- Action: took axeval2's scenario 3 finding (b), concrete, one function and outside its scope (it is testing the tool `value` schema, so I left extension.ts alone): `signal` to a cancelled run with the awaited key printed `Signal "approve-plan" accepted.` and exited 0. `Engine.signal` (`src/engine/index.ts`) now throws `run_finished: Run <id> is <status> and accepts no more signals.` for completed, cancelled and reverted runs. Failed runs still accept a signal, since `retry` can resume them.
+- Outcome: `npm run check` clean; `npm test` **38/38**. `test/engine.test.ts` (cancelled gate in "signals are schema-checked…") asserts `run_finished`; with the old engine/index.ts the suite is 37/38, so the test catches the bug.
+- Value: ✅ yielded value: an agent no longer gets a false "accepted" for a signal that nothing will read.
+- Lesson: check a new assertion against the old source before trusting it; swapping one file via `git show HEAD:` takes seconds. Next: axeval2's other open items: `status --verbose`/`watch` lack `expects:`, `result_not_ready` gives a CLI hint in tool results, signal exit codes (unknown_signal 2 vs invalid_signal 1), attached `run` reprints the tree each second.
