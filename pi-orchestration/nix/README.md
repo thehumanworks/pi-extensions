@@ -32,11 +32,10 @@ installs `workflow`, not Pi itself, and does not register the extension in Pi;
 see the [main README](../README.md#install-and-first-run) for Pi installation.
 
 Installation does **not** start a worker, enable a service or arrange startup
-at login/boot. Workers still start lazily when a command needs one. It does
-**not** set `PI_WORKFLOW_ALLOW_UNATTENDED`, change `workflow.approval`, or bypass
-launch approval. Headless launches remain an explicit user opt-in after
-reviewing the workflow. Workflow code and agent tools are trusted host code,
-not sandboxed by installing through Nix.
+at login/boot. Workers still start lazily when a command needs one. Launches
+start immediately, including in headless sessions. Review workflows before
+running them: workflow code and agent tools are trusted host code, not
+sandboxed by installing through Nix.
 
 ## State and credentials
 
@@ -117,7 +116,7 @@ arguments. With Home Manager's NixOS module, use
 `home-manager.extraSpecialArgs = { inherit workflow; };` instead.
 
 These examples only install the CLI. No dedicated NixOS/Home Manager module is
-needed; no daemon, startup hook, port, credential or approval policy is enabled.
+needed; no daemon, startup hook, port or credential is configured.
 
 ### Overlay
 

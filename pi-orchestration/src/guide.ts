@@ -60,7 +60,7 @@ ${template().trimEnd()}
 
 - Pi tool: {"action":"validate","workflow":{"name":"review-file"}}, then {"action":"run","workflow":{"name":"review-file"},"args":{"path":"src/a.ts"},"wait":true}
 - In Pi: /workflow run review-file --args '{"path":"src/a.ts"}'
-- ${terminal} run review-file --args '{"path":"src/a.ts"}' --model provider/model (set PI_WORKFLOW_ALLOW_UNATTENDED=1 first). \`pi workflow\` is not a command.
+- ${terminal} run review-file --args '{"path":"src/a.ts"}' --model provider/model. \`pi workflow\` is not a command.
 
 Without wait, run returns a runId at once; the launching session gets a message when the run ends. status and result show progress and the outcome.
 

@@ -105,7 +105,7 @@ test("the starter template is a valid workflow and the guide points at shipped f
   assert.ok(text.includes(README_PATH) && text.includes(EXAMPLES_DIR));
   await access(README_PATH);
   await access(EXAMPLES_DIR);
-  assert.ok(help("/workflow").split("\n").filter(line => /^\S/.test(line) && !/^(Every|run|Headless|Exit)/.test(line)).every(line => line.startsWith("/workflow ")));
+  assert.ok(help("/workflow").split("\n").filter(line => /^\S/.test(line) && !/^(Every|run|Exit)/.test(line)).every(line => line.startsWith("/workflow ")));
 });
 
 test("the CLI writes a starter workflow and explains an empty catalog", async () => {
@@ -133,7 +133,7 @@ test("--model takes a thinking suffix as pi --model does", async () => {
     request: async request => { launches.push(request); return { runId: "r", status: "queued", model: "openai/gpt" }; },
     rpc: async () => ({}), ensure: async () => ({}),
   };
-  const options = { client, env: { PI_WORKFLOW_ALLOW_UNATTENDED: "1" }, stdout: () => {}, stderr: () => {} };
+  const options = { client, env: {}, stdout: () => {}, stderr: () => {} };
   assert.equal(await runCli(["run", "demo", "--model", "openai/gpt:high", "--bg"], options), 0);
   assert.equal(await runCli(["run", "demo", "--model", "openai/gpt:high", "--thinking", "low", "--bg"], options), 0);
   assert.deepEqual(launches.map(item => [(item as { model: string }).model, (item as { thinkingLevel?: string }).thinkingLevel]),

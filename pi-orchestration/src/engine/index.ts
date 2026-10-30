@@ -547,7 +547,6 @@ export async function openEngine(storage: Storage, models: Models, options: Engi
     env: async ({ cwd, conversationId, read }, ctx) => {
       const meta = await read.snapshot(AgentMeta, conversationId, ctx);
       const shellEnv = { ...process.env };
-      delete shellEnv.PI_WORKFLOW_ALLOW_UNATTENDED;
       if (meta?.runId) { shellEnv.PI_WORKFLOW_RUN_ID = meta.runId; shellEnv.PI_WORKFLOW_STEP = meta.stepKey; }
       return new NodeExecutionEnv({ cwd: cwd ?? process.cwd(), shellEnv });
     },

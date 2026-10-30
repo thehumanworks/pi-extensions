@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
-import { assertRootLaunch, assertUnattended, ensureWorker, requestWorker, rpc } from "./client.ts";
+import { assertRootLaunch, ensureWorker, requestWorker, rpc } from "./client.ts";
 import { guide, template } from "./guide.ts";
 import type { CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
 import { shellCommand } from "./link.ts";
@@ -12,7 +12,6 @@ import type { ControlRequest } from "./protocol.ts";
 import { catalogText, json, modelLabel, runList, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText } from "./presentation.ts";
 
 export function help(program = "workflow"): string {
-  const inPi = program.startsWith("/");
   return `${program} guide                    how to write a workflow: template, ctx API, model rules
 ${program} init <name> [--cwd DIR]  write a starter .pi/workflows/<name>.ts
 ${program} catalog [--cwd DIR]
@@ -29,12 +28,10 @@ ${program} retry <runId> [--from KEY] [--allow-changed]
 ${program} signal <runId> <key> '<json>'
 ${program} agents [--run ID]
 ${program} steer <runId> <agent> "message"
-${program} worker start|stop|status${inPi ? `
-${program} approval [ask|auto|reset]  ask before launches or not, for this session; reset follows settings.json workflow.approval` : ""}
+${program} worker start|stop|status
 
 Every command accepts --json and --home DIR. poll/watch emit NDJSON.
 run attaches by default; Ctrl-C detaches without cancelling the durable run.
-Headless launches require PI_WORKFLOW_ALLOW_UNATTENDED=1${inPi ? " or approval auto" : ""}.
 Exit codes: 0 success, 1 usage/validation, 2 failed, 3 cancelled, 4 worker unavailable.`;
 }
 
@@ -70,7 +67,6 @@ export interface CliContext {
   origin?: RunRecord["origin"];
   model?: ModelRef;
   thinkingLevel?: ThinkingLevel;
-  authorizeRun?: (request: LaunchRequest) => Promise<void>;
   /**
    * Called after admission. For an attached (foreground) launch, the returned
    * callback runs when the client stops waiting, with whether it saw the end.
@@ -268,7 +264,6 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           origin: context.origin ?? { kind: "cli" }, model: selected?.model ?? context.model,
           thinkingLevel: values.thinking as ThinkingLevel | undefined ?? selected?.thinkingLevel ?? context.thinkingLevel, budget,
         };
-        if (context.authorizeRun) await context.authorizeRun(launch); else assertUnattended(context.env ?? process.env);
         context.signal?.throwIfAborted();
         const result = await request<{ runId: string; status: RunStatus; model?: ModelRef }>(launch);
         const attached = !(values.bg || values.background);

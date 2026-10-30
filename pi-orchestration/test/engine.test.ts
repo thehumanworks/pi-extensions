@@ -239,16 +239,20 @@ test("worktree isolation works under a symlinked home and revert removes it", as
   } finally { await f.close(); }
 });
 
-test("an inner agent cannot launch a workflow", async () => {
+test("worker caller markers and inner agent environments prevent nested launches", async () => {
   const f = await fixture({ workflows: {
     nested: workflow(`{
       name: "nested",
-      async run(ctx) { return ctx.agent(${JSON.stringify(`BASH PI_WORKFLOW_ALLOW_UNATTENDED=1 ${process.execPath} ${CLI} run nested --json`)}, { tools: ["bash"] }); },
+      async run(ctx) { return ctx.agent(${JSON.stringify(`BASH printf 'caller=%s step=%s\\n' "$PI_WORKFLOW_RUN_ID" "$PI_WORKFLOW_STEP"; ${process.execPath} ${CLI} run nested --json`)}, { tools: ["bash"] }); },
     }`),
   } });
   try {
+    // A direct worker request cannot sidestep the client root check with caller markers.
+    await assert.rejects(f.launch("nested", {}, { callerRunId: "parent", callerStep: "root/agent#0" }),
+      (error: { code?: string }) => error.code === "not_from_root");
     const run = await f.run("nested");
     assert.equal(run.status, "completed", JSON.stringify(run.error));
+    assert.match(String(run.result), new RegExp(`caller=${run.id} step=root/agent#0`));
     assert.match(String(run.result), /not_from_root/);
     assert.equal((await f.request<RunRecord[]>({ action: "list", filter: { all: true } })).length, 1);
   } finally { await f.close(); }

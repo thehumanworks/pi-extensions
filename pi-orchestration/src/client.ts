@@ -11,10 +11,6 @@ export interface ClientOptions { home?: string; signal?: AbortSignal; timeoutMs?
 export function assertRootLaunch(env: NodeJS.ProcessEnv = process.env): void {
   if (env.PI_WORKFLOW_RUN_ID) throw new WorkflowError("not_from_root", `Workflows are launched by the user or the root Pi session, not from inside an agent (run ${env.PI_WORKFLOW_RUN_ID}, step ${env.PI_WORKFLOW_STEP ?? "unknown"}). Compose with ctx.workflow() in the workflow file instead.`);
 }
-export function assertUnattended(env: NodeJS.ProcessEnv = process.env): void {
-  assertRootLaunch(env);
-  if (env.PI_WORKFLOW_ALLOW_UNATTENDED !== "1") throw new WorkflowError("unattended_forbidden", "Headless workflow launches require PI_WORKFLOW_ALLOW_UNATTENDED=1. Workflow files are trusted code with your filesystem and shell permissions.");
-}
 export async function rpc<R = unknown>(input: ControlRequest, options: ClientOptions = {}): Promise<R> {
   options.signal?.throwIfAborted();
   if (input.action === "run") assertRootLaunch();
