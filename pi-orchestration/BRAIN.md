@@ -41,7 +41,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
    7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
-   9. No pretty JSON in text mode (cancel/retry/signal/agents/worker status); `result` on cancelled exits 3.
+   9. ⚠️ Half done in tick 20: cancel/retry/signal print text. Remaining: `agents` and `worker status` text, `result` on a cancelled run exits 3 with `run_cancelled`, and a unit test for the text lines.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
@@ -199,3 +199,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts:113-114` asserts the lifecycle with the bare and the full-path command. `bin/workflow.mjs` imports the git-ignored `dist/cli.js`, which was stale; after `npm run build` the local CLI prints the new lifecycle line.
 - Value: ✅ yielded value: a shell agent learns `--bg` → `poll` → `result` from the guide alone.
 - Lesson: when the deadline is four minutes, choose the ranked fix that fits, not strictly the next one; 8 and 9 need a full tick each.
+
+### Tick 20 · 12:29 · cancel, retry and signal print text, not JSON
+- Action: took the text half of axeval fix 9, because it fits one tick; the `run_cancelled` exit code and the `agents`/`worker status` text are left. `src/cli.ts` (result/cancel/revert, retry, signal cases): `cancel` prints `statusText`, `retry` prints `statusText` plus `poll: <hint> poll <id>`, `signal` prints `Signal "key" accepted. poll: <hint> poll <id>`. `--json` output is unchanged.
+- Outcome: `npm run check` passes; `npm test` **37/37**. No new test asserts the text lines yet; process tests use `--json`.
+- Value: ⚠️ partial: readable output for three commands, without a test for the text.
+- Lesson: in a four-minute tick, ship the edit with the suite green and log the missing test as the next step instead of starting it late.
