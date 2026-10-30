@@ -5,11 +5,11 @@ import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import { assertRootLaunch, ensureWorker, requestWorker, rpc } from "./client.ts";
 import { guide, template } from "./guide.ts";
-import type { CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
+import type { BackgroundAgentRecord, CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, ValidationResult } from "./index.ts";
 import { shellCommand } from "./link.ts";
 import { agentDirectory } from "./paths.ts";
-import type { ControlRequest } from "./protocol.ts";
-import { catalogText, json, modelLabel, runList, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText } from "./presentation.ts";
+import type { ControlRequest, WorkerStatus } from "./protocol.ts";
+import { catalogText, duration, json, modelLabel, runList, runSummary, runTree, statusExitCode, TERMINAL_STATUSES, validationText } from "./presentation.ts";
 
 export function help(program = "workflow"): string {
   return `${program} guide                    how to write a workflow: template, ctx API, model rules
@@ -346,8 +346,13 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         return 0;
       case "agents":
         count(0, "agents [--run ID]");
-        emit(await request({ action, runId: values.run }));
+      {
+        const agents = await request<BackgroundAgentRecord[]>({ action, runId: values.run });
+        emit(agents, agents.length
+          ? agents.map(agent => `${agent.runId} ${agent.name} ${agent.status}${agent.detached ? " detached" : ""}`).join("\n")
+          : "No background agents. agents lists ctx.spawn() agents; ctx.agent() steps are in status --verbose.");
         return 0;
+      }
       case "catalog": {
         count(0, "catalog [--cwd DIR]");
         const entries = await request<CatalogEntry[]>({ action, cwd });
@@ -389,9 +394,10 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
       }
       case "worker": {
         count(1, "worker start|stop|status");
-        if (args[0] === "start") emit(await client.ensure(options));
-        else if (args[0] === "stop") emit(await client.rpc({ action: "stop" }, options));
-        else if (args[0] === "status") emit(await client.rpc({ action: "ping" }, options));
+        const workerText = (worker: WorkerStatus) => `worker pid ${worker.pid} · home ${worker.home} · up ${duration(worker.uptimeMs)}`;
+        if (args[0] === "start") { const worker = await client.ensure(options) as WorkerStatus; emit(worker, workerText(worker)); }
+        else if (args[0] === "stop") emit(await client.rpc({ action: "stop" }, options), "worker stopped");
+        else if (args[0] === "status") { const worker = await client.rpc({ action: "ping" }, options) as WorkerStatus; emit(worker, workerText(worker)); }
         else throw new CliError(`Usage: ${program} worker start|stop|status`);
         return 0;
       }
