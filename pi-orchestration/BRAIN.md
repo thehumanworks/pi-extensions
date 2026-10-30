@@ -38,7 +38,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 000. axeval3's ranked fixes (`brain/axeval3.md`, "Ranked fixes"; round three: S1-S4 all 0 wrong turns). Open, in order:
    1. Worker build check (worker.ts:58, protocol.ts:11, client.ts:54-57): worker reports a build id; client restarts an idle stale worker, else warns naming `worker stop`. Same as 00.11. Probably a subagent.
-   2. Ask before answering a gate: append to `toolHints.signal` (presentation.ts:95-96) `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` Measured unasked approvals 6/6 → 2/6, told-to-approve 4/4 still fine. Policy choice: see Questions.
+   2. ✅ Done tick 54 (58f2ec3), pending Q1. Ask before answering a gate: append to `toolHints.signal` (presentation.ts:95-96) `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` Measured unasked approvals 6/6 → 2/6, told-to-approve 4/4 still fine. Policy choice: see Questions.
    3. Lint rest: `require("fs"|…)`, `randomBytes`/`randomInt` imports, `process.hrtime` (tick 52 covered performance.now, crypto.randomUUID, getRandomValues).
    4. ✅ Widget pluralisation, done tick 51.
    5. Guide signal line (guide.ts:78): status shows key, schema and deliver call; value is JSON, not a string.
@@ -116,7 +116,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 ## Questions for the user
 
-- Q1 (tick 54): should agents answer `ctx.signal` gates on their own? axeval3 measured that agents approve a gate unasked 6/6 times; a one-line caution on the tool's deliver hint cut it to 2/6 without hurting sessions told to approve. Meanwhile the brain will ship that caution (reversible, one line) unless you say signals are meant for agents to answer freely.
+- Q1 (tick 54): should agents answer `ctx.signal` gates on their own? axeval3 measured that agents approve a gate unasked 6/6 times; a one-line caution on the tool's deliver hint cut it to 2/6 without hurting sessions told to approve. The brain shipped that caution in tick 54 (58f2ec3, reversible, one line); it will revert it if you say signals are meant for agents to answer freely.
 - Q2 (tick 54): brain/orchestration since the 0.3.0 merge (a12cb48) holds ticks 45-53 plus validate1 and axeval3 (npm test 42/42; the Nix smoke test not rerun since a12cb48). Ready for a 0.3.x release when you want one.
 
 ## Log
@@ -274,4 +274,5 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Action: reviewed and merged `brain/axeval3`, done with a clean worktree, because a finished report-only branch blocks nothing and its ranked list should drive the next ticks. Diff: `brain/axeval3.md` +216, `ledgers/axeval3.md` +37; no src or test changes.
 - Outcome: merge `2af4ece`, pushed; `loop.sh retire axeval3` succeeded. Tests not rerun: no source changed (42/42 at 5b9bc56). Round three: S1-S4 all 0 wrong turns (round two 0/4/0/0-0-0-13); tool `wait:true` on a gate 69.3 s → 6.6 s after tick 49. Open fixes moved to Backlog 000; the gate-approval policy is Q1, a release is Q2. Archived ticks 22-29 (Log was 33 entries).
 - Value: ✅ yielded value: the second batch of fixes is measured as working, and ten new fixes are ranked with file:line.
-- Lesson: an evaluation that shares findings in its ledger as it goes lets the brain fix them before the report lands (ticks 48-53 closed four of its items early). Next: Backlog 000.2 (one-line caution on `toolHints.signal`, pending Q1) or spawn a subagent for 000.1 (worker build check).
+- Follow-up in the same tick: shipped 000.2 as Q1's reversible default: `toolHints.signal` (`src/presentation.ts:96`) ends `Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.` `test/extension.test.ts:250` asserts it; `npm test` **42/42**. Commit `58f2ec3`. The CLI hint is unchanged (unmeasured). Old-source check not run: without the text the exact regex cannot match.
+- Lesson: an evaluation that shares findings in its ledger as it goes lets the brain fix them before the report lands (ticks 48-53 closed four of its items early). Next: spawn a subagent for 000.1 (worker build check), then 000.3 lint rest.
