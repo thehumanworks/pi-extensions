@@ -38,7 +38,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    3. ⚠️ Half done in tick 14: unknown `ctx.agent`/`ctx.spawn` options now fail with `unknown_agent_option` and a did-you-mean (execution.ts `AGENT_OPTIONS`, `resolveOptions`). Remaining: lint unknown `ctx.*` members and unknown options at `validate` time (src/validation.ts), so the author learns before launching.
    4. ✅ Done in tick 15: args must be `Type.Object` (loader.ts:72); plain objects and `Type.String()` fail validate/catalog with the offending value.
    5. ✅ Done in tick 16: `poll` returns on `waiting_signal` by default (`--until done` keeps waiting), prints a line only when more than elapsed time changed, help/README say `--interval 1s`. `watch` still defaults to `done`.
-   6. Tool-shaped hints in tool results, not CLI commands (extension.ts:358, presentation.ts:110-113).
+   6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
    7. Tool errors carry a code; fix dead `run_not_found` branch (extension.ts:179, 318).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
    9. No pretty JSON in text mode (cancel/retry/signal/agents/worker status); `result` on cancelled exits 3.
@@ -181,3 +181,8 @@ None.
 - Value: ✅ yielded value: `workflow poll` can no longer hang an agent on a gate.
 - Lesson: a four-minute tick fits one axeval fix when the report already names file:line; read the report section, edit, test, commit.
 
+### Tick 17 · 12:14 · Tool results give tool-shaped next steps
+- Action: took axeval fix 6, next in order and one module. In session D the model read the CLI command `workflow signal …` from a tool result and fell back to bash. `src/presentation.ts:69-79` adds a `Hints` interface with `cliHints(program)` and `toolHints`; `runTree`/`runDetail` take `string | Hints`, so the CLI keeps its `--home`-aware commands and the extension's verbose `status` (`src/extension.ts:361`) now says `deliver with: {"action":"signal","runId":…,"key":…,"value":<JSON value, not a string>}` and `Resume with: {"action":"retry","runId":…}`.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts` "summaries name the model…" asserts the tool signal and retry hints and the CLI hint with `--home`. Not verified live in Pi (D8).
+- Value: ✅ yielded value: a tool-using agent is no longer pointed at the shell to answer a gate or resume a parked run.
+- Lesson: pass a formatter, not a program string, when one view serves two surfaces; the string overload kept every CLI call site unchanged.

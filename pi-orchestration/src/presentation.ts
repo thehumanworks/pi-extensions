@@ -65,14 +65,26 @@ export function runBrief(run: RunRecord, program = "workflow"): { view: Record<s
   return { view, text: lines.join("\n") };
 }
 
+/** How a view names the next step: a CLI command, or a call of the Pi tool. */
+export interface Hints { signal(runId: string, key: string): string; retry(runId: string): string }
+
+export function cliHints(program = "workflow"): Hints {
+  return { signal: (id, key) => `${program} signal ${id} ${JSON.stringify(key)} '<json>'`, retry: id => `${program} retry ${id}` };
+}
+
+export const toolHints: Hints = {
+  signal: (id, key) => `{"action":"signal","runId":${JSON.stringify(id)},"key":${JSON.stringify(key)},"value":<JSON value, not a string>}`,
+  retry: id => `{"action":"retry","runId":${JSON.stringify(id)}}`,
+};
+
 /** The verbose view: the step tree, then each step's own result. */
-export function runDetail(run: RunRecord, program = "workflow"): string {
+export function runDetail(run: RunRecord, program: string | Hints = "workflow"): string {
   const results = run.steps.filter(step => step.result !== undefined && step.kind !== "parallel" && step.kind !== "pipeline")
     .map(step => `${step.key}: ${typeof step.result === "string" ? step.result : JSON.stringify(step.result)}`);
   const sections = [runTree(run, Date.now(), program)];
   if (results.length) sections.push(`Step results:\n${results.join("\n")}`);
   if (run.result !== undefined) sections.push(`Result:\n${typeof run.result === "string" ? run.result : json(run.result)}`);
-  return modelResult(sections.join("\n\n"), run.id, RESULT_BYTES, program).text;
+  return modelResult(sections.join("\n\n"), run.id, RESULT_BYTES, typeof program === "string" ? program : "workflow").text;
 }
 
 export function validationText(result: ValidationResult): string {
@@ -95,7 +107,8 @@ function stepLine(step: StepRecord, now: number): string {
 }
 
 /** A complete progress view derived from one status response. */
-export function runTree(run: RunRecord, now = Date.now(), program = "workflow"): string {
+export function runTree(run: RunRecord, now = Date.now(), program: string | Hints = "workflow"): string {
+  const hints = typeof program === "string" ? cliHints(program) : program;
   const lines = [runSummary(run, now)];
   let phase: string | undefined;
   for (const step of run.steps) {
@@ -107,10 +120,10 @@ export function runTree(run: RunRecord, now = Date.now(), program = "workflow"):
     if (step.worktree) lines.push(`    worktree ${step.worktree.branch} ${step.worktree.path}`);
   }
   if (run.error) lines.push(`${run.error.reason ?? "error"}: ${run.error.message}${run.error.stepKey ? ` (${run.error.stepKey})` : ""}`);
-  if (run.parked) lines.push(`Parked after repeated restarts. Resume with: ${program} retry ${run.id}`);
+  if (run.parked) lines.push(`Parked after repeated restarts. Resume with: ${hints.retry(run.id)}`);
   if (run.waitingFor) {
     if (run.waitingFor.prompt) lines.push(run.waitingFor.prompt);
-    lines.push(`Waiting for ${run.waitingFor.key}; deliver with: ${program} signal ${run.id} ${JSON.stringify(run.waitingFor.key)} '<json>'`);
+    lines.push(`Waiting for ${run.waitingFor.key}; deliver with: ${hints.signal(run.id, run.waitingFor.key)}`);
   }
   if (run.logs?.length) lines.push(`log: ${run.logs.at(-1)!.message}`);
   return lines.join("\n");

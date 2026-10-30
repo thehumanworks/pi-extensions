@@ -13,7 +13,7 @@ import type { CatalogEntry, ModelRef, RunRecord, RunStatus, ThinkingLevel, Valid
 import { linkCli, shellCommand } from "./link.ts";
 import { agentDirectory, workflowPaths } from "./paths.ts";
 import type { ControlRequest } from "./protocol.ts";
-import { catalogText, modelLabel, modelResult, runBrief, runDetail, runList, runSummary, TERMINAL_STATUSES, validationText } from "./presentation.ts";
+import { catalogText, modelLabel, modelResult, runBrief, runDetail, runList, runSummary, TERMINAL_STATUSES, toolHints, validationText } from "./presentation.ts";
 
 export const TOOL_DESCRIPTION = `Run and manage durable multi-agent workflows. A workflow is a TypeScript file whose run(ctx) calls ctx.agent(), ctx.parallel() and similar; a separate worker runs it, so it outlives this session.
 Start with catalog. Before writing a workflow, call guide: it gives a starter file, the ctx API and which model runs. Save workflows as .pi/workflows/<name>.ts and commit them: they are project source, never add them to .gitignore.
@@ -358,7 +358,7 @@ export function registerOrchestration(pi: ExtensionAPI, options: ExtensionOption
         case "status": {
           const run = result as RunRecord;
           if (TERMINAL_STATUSES.has(run.status)) settle(ctx, run.id);
-          return args.verbose ? toolResult(run, run.id, runDetail(run)) : briefResult(run);
+          return args.verbose ? toolResult(run, run.id, runDetail(run, toolHints)) : briefResult(run);
         }
         case "result":
           settle(ctx, request.runId);

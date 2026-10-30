@@ -12,7 +12,7 @@ import { assertSocketPath } from "../src/paths.ts";
 import { rpc } from "../src/client.ts";
 import { WorkflowError } from "../src/errors.ts";
 import { lintDeterminism, validateWorkflow } from "../src/loader.ts";
-import { catalogText, modelResult, runList, runSummary, validationText } from "../src/presentation.ts";
+import { catalogText, modelResult, runList, runSummary, runTree, toolHints, validationText } from "../src/presentation.ts";
 
 test("determinism lint reports real control-flow calls only", () => {
   const diagnostics = lintDeterminism(`
@@ -87,6 +87,10 @@ test("summaries name the model and catalogs read as text", () => {
   assert.match(statusText(run, "workflow --home /h"), /\nresult: workflow --home \/h result r$/);
   const waiting = statusText({ ...run, status: "waiting_signal", waitingFor: { key: "ok", prompt: "Approve?" } });
   assert.match(waiting, /\nwaiting for signal "ok": Approve\?\nsignal: workflow signal r "ok" '<json>'$/);
+  const gate = { ...run, status: "waiting_signal", waitingFor: { key: "ok" }, parked: true } as RunRecord;
+  assert.match(runTree(gate, 0, toolHints), /deliver with: \{"action":"signal","runId":"r","key":"ok","value":<JSON value, not a string>\}/);
+  assert.match(runTree(gate, 0, toolHints), /Resume with: \{"action":"retry","runId":"r"\}/);
+  assert.match(runTree(gate, 0, "workflow --home /h"), /deliver with: workflow --home \/h signal r "ok" '<json>'/);
   assert.match(statusText({ ...run, status: "failed", error: { reason: "budget", message: "over" } } as RunRecord), /\nbudget: over$/);
   assert.equal(catalogText([
     { name: "ok", description: "Does it.", path: "/a", args: { type: "object" } as never, source: "project" },
