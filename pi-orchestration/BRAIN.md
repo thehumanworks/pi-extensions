@@ -41,7 +41,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
    7. ✅ Done in tick 18: tool errors lead with their code (`codedError`, extension.ts); the completion poller drops runs on `not_found` instead of the dead `run_not_found`. Not done: structured `details.error` (Pi shows only thrown messages).
    8. One run shape across surfaces (`model` form, `id` vs `runId`).
-   9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Tick 24: `worker status|stop` with no worker fail `worker_unavailable` (exit 4) naming `worker start`, tested. No test covers the `agents`/`worker start` text yet.
+   9. ✅ Done: cancel/retry/signal print text (tick 20, tested tick 21); `result` on a cancelled run fails `run_cancelled` with exit 3 (tick 22); `agents` and `worker start|status|stop` print text (tick 23). Tick 24: `worker status|stop` with no worker fail `worker_unavailable` (exit 4) naming `worker start`, tested. Tick 25: process test asserts the `agents` and `worker status` text.
    10. ✅ Done in tick 19: guide shell lifecycle `--bg` → `poll` → `result` (guide.ts:63-65).
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
@@ -66,6 +66,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Tick 2: test copied workflows via local CLI `validate`, not a live launch: historical prompts target the main checkout. A short isolated `--home` works; a socket path beyond Unix limits returns an opaque `EINVAL` before creating the home.
 - Supervisor, after tick 3: in Pi 1.4.0, boolean extension flags such as `--no-memory` and `--recap-disable` swallow the next positional argument, so `pi -p --no-memory "message"` runs with no message and prints nothing. Put the message after a non-boolean flag or `--`. From tick 4 on, ticks stream Pi JSON events to brain/logs/tick-<N>.jsonl with a readable tick-<N>.log; the user asked for live awareness of each tick, and this keeps fresh-context ticks instead of an interactive pane.
 - Tick 19: `bin/workflow.mjs` runs the git-ignored `dist/`, not `src/`. Run `npm run build` before checking a change with the local CLI, or the check exercises stale code.
+- Tick 4: when the brain has fixed the baseline on its own branch, compare a subagent's test result after the merge, not before.
 - Tick 3: a package-local node_modules can exist but contain only overrides (jiti here). Copied-package fixtures must verify the required dependency set before selecting a directory, not stop at its existence.
 
 ## Questions for the user
@@ -73,36 +74,6 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 None.
 
 ## Log
-
-### Tick 0 · 10:50 · Setup (interactive session with the user)
-- Action: created this worktree and branch, brain/loop.sh and this ledger; installed dependencies; ran the baseline tests.
-- Outcome: baseline recorded above (35/38 pass). Loop started in the herdr session pi-brain.
-- Value: ✅
-- Lesson: `npm test` takes about 15 seconds after `npm ci` (about 35 seconds) in a fresh worktree.
-
-### Tick 1 · 10:52 · Delegate approval-gate removal
-- Action: spawned `approval` for D1, the highest-priority user decision and too broad for a four-minute tick. The brief covers CLI and extension launches, obsolete loop environment/rules, documentation, and regression tests; it excludes D2 and unrelated baseline fixes.
-- Outcome: task committed and pushed as `efdc0f5` on `brain/approval`; Herdr workspace `w3`, pane `w3:p1`, confirmed `agent_status=working` at 10:52. Acceptance requires root interactive/headless launches without approval, nested launches still returning `not_from_root`, `npm run check`, `npm test` compared with 35/38 baseline, and `bash -n` for loop changes. No code changed in the brain worktree this tick, so no test rerun yet.
-- Value: ✅ yielded value — the largest explicit request now has an independently running implementer and verifiable acceptance criteria.
-- Lesson: delegate multi-surface removal as one coherent task; retain the recursion guard explicitly and avoid deleting unrelated signal-based approvals.
-
-### Tick 2 · 10:55 · Track bot workflow source
-- Action: completed the source-control part of D2 without overlapping `approval`'s active CLI/extension edits. Copied the two existing workflows from the main checkout, removed their individual ignore rules and documented the source policy in `bot/.gitignore`; did not modify the main checkout or run either workflow.
-- Outcome: committed and pushed `42887ba`. `native-web.ts` and `bot-workspace.ts` are byte-identical to the originals (`cmp`); neither is git-ignored. Local CLI `validate --json` reports both valid with zero diagnostics. `npm test`: 38 tests, 35 pass, the same 3 baseline failures. Long isolated `--home` first reproduced `connect EINVAL`; a shorter home validated both and its worker stopped successfully. Remaining D2 authoring guidance stays in Backlog. Cleanup of untracked `.b2/` (only `runs.sqlite`, `runs.sqlite.owner`, `worker.log`) was refused by the harness's agent-definition deletion guard even with exact filenames; no agents or definitions were involved. Leave it alone unless a safe cleanup path is available.
-- Value: ✅ yielded value — real workflow definitions will now travel with project source instead of silently disappearing from Git.
-- Lesson: split adjacent work by conflict boundaries; validate historical source without executing its old implementation prompts. Capture incidental CLI failures as reproducible backlog items.
-
-### Tick 3 · 11:03 · Repair source-only package verification
-- Action: fixed dependency selection in `test/package.test.ts` while `approval` finished adjacent launch-policy work. The fixture now checks every declared dependency before selecting local or hoisted node_modules; regression assertions cover a dangling local link, a partial local install, a complete local install and no complete install. Existing scratch `.b2/` was not modified by this tick.
-- Outcome: `npm run check` and `git diff --check` passed. `npm test`: **38 tests, 36 pass, 2 fail**, improving the original 35/38 baseline. The source-only copied package now passes its real typecheck, prepack, compiled CLI/guide and loader validation checks. Remaining failures are the original global-catalog leak and stale Nix lock version. `approval` became done at `53b421f` during verification; review/merge is deliberately deferred to the next tick rather than rushed into this action.
-- Value: ✅ yielded value — packaging regressions are now detectable instead of hidden behind a broken workspace fixture.
-- Lesson: dependency directories are not necessarily complete installs; exercise the hoisted-plus-local-override layout explicitly.
-
-### Tick 4 · 11:05 · Review and merge D1 approval-gate removal
-- Action: reviewed `brain/approval` (13 files, +114/−237): `assertUnattended`, the confirm dialog, `/workflow approval`, `workflow.approval`, footer status and session restoration are gone; `assertRootLaunch` stays on the CLI, client and extension tool paths and run/step markers are still set for inner agents. Merged with `--no-ff` because the review and test run fit in one tick and unblock D2's guidance edits.
-- Outcome: merge `70ae028`, pushed. `npm test` on the merged branch: **35 tests, 33 pass, 2 fail**. The 2 are the known catalog leak from the home directory and the stale Nix lock, so it is no worse than the baseline: the merge brought the subagent's 32/35 together with tick 3's package fixture fix. `grep` for `UNATTENDED|workflow.approval|assertUnattended` in src, test and README finds nothing. `loop.sh retire approval` succeeded.
-- Value: ✅ yielded value: user decision D1 is implemented on brain/orchestration with regression coverage for the root guard in all four Pi modes.
-- Lesson: when the brain has fixed the baseline on its own branch, compare the subagent's result after the merge, not before.
 
 ### Tick 5 · 11:10 · State the workflow-source policy where agents look (D2)
 - Action: finished D2 myself instead of spawning: four one-sentence edits fit a four-minute tick and no subagent was running. Added "workflow files are project source: commit them, never add them to .gitignore" to `src/guide.ts:53`, the tool description `src/extension.ts:19`, `workflow init` output `src/cli.ts` (init case) and README.md (resolution paragraph, line 113).
@@ -229,3 +200,9 @@ None.
 - Outcome: `npm run check` passes; `npm test` **37/37**. `test/process.test.ts` asserts exit 4 and the message for `worker status` before any worker starts.
 - Value: ✅ yielded value: an agent that checks the worker first gets the fix, not a socket errno.
 - Lesson: wrap errno handling at the command that knows the context (here: only `start` spawns), not in the shared rpc client.
+
+### Tick 25 · 12:56 · Archive the oldest log entries; test agents and worker text
+- Action: the Log had 26 entries, past the 25 limit, so ticks 0-4 moved to `brain/archive/2026-10-30.md` (tick 4's lesson kept under Lessons). With the remaining time, closed the gap tick 23 left: no test asserted the `agents` and `worker status` text. Fix 8 needs a full tick, so it waits.
+- Outcome: `test/process.test.ts` (after the quick run) asserts `agents` prints `No background agents. …` and `worker status` prints `worker pid N · home …`, both without `--json`. `npm test` **37/37**.
+- Value: ✅ yielded value: every text-mode command changed in ticks 20-24 is now under test, and the ledger is back within its limits.
+- Lesson: pair mandatory housekeeping with a test-sized change; both fit one four-minute tick.

@@ -56,6 +56,8 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     assert.equal(quick.code, 0, quick.stderr);
     assert.equal(quick.json.status, "completed");
     assert.equal((await s.cli(["result", quick.json.id])).json, 42);
+    assert.match((await s.cli(["agents"], {}, false)).stdout, /^No background agents\. /);
+    assert.match((await s.cli(["worker", "status"], {}, false)).stdout, /^worker pid \d+ · home /);
 
     const gate = await s.cli(["run", "gate", "--bg"]);
     assert.equal(gate.code, 0);
