@@ -24,13 +24,13 @@ Goal: optimise what an agent sees and experiences when it uses pi-orchestration 
 
 ## Agents
 
-None running.
+- `approval`: working (spawned tick 1), branch `brain/approval`, worktree `/home/nixos/pi-extensions/.pi/worktrees/brain-approval`, ledger `pi-orchestration/ledgers/approval.md`. Owns D1 gate removal across CLI/extension/docs/tests and obsolete loop environment/rules. Verified Herdr `agent_status=working` at 10:52. Review and test before merging.
 
 ## Backlog
 
 Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
-1. Remove the approval gate (D1). Too big for one tick: spawn a subagent. Where it lives: `src/extension.ts:89-99` (type and session field), `:261-276` (restore), `:281-324` (approval, showApproval, approvalCommand, authorize), `:460` (`/workflow approval`); `src/client.ts:14` (`assertUnattended`) and its caller `src/cli.ts:271`; help text `src/cli.ts:33,37`; `src/guide.ts:63`; `src/engine/index.ts:550` (strips the variable from inner shells, so check what it protects once the variable is gone); README sections Launch approval, the environment table and Troubleshooting; tests.
+1. D1 approval-gate removal: delegated to `approval` in tick 1. Await implementation, then review diff, run `npm test` in its worktree and merge only if no worse than baseline. Retain `not_from_root` on all launch paths; do not confuse business `ctx.signal()` approval examples with the removed launch policy.
 2. Workflow files are source (D2): guide, tool description, `init` output, README, `bot/.gitignore`.
 3. Fix the 3 baseline failures so a red test means a regression.
 4. Unexplored directions for the goal:
@@ -44,7 +44,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 ## Lessons
 
-None yet.
+- Tick 1: `loop.sh spawn` completed in 43 seconds (30 seconds installing dependencies). Verify Herdr `agent_status=working` after submission, not merely a successful prompt write. Keep delegated scope explicit so the brain can work on adjacent priorities without overlapping files.
 
 ## Questions for the user
 
@@ -57,3 +57,9 @@ None.
 - Outcome: baseline recorded above (35/38 pass). Loop started in the herdr session pi-brain.
 - Value: ✅
 - Lesson: `npm test` takes about 15 seconds after `npm ci` (about 35 seconds) in a fresh worktree.
+
+### Tick 1 · 10:52 · Delegate approval-gate removal
+- Action: spawned `approval` for D1, the highest-priority user decision and too broad for a four-minute tick. The brief covers CLI and extension launches, obsolete loop environment/rules, documentation, and regression tests; it excludes D2 and unrelated baseline fixes.
+- Outcome: task committed and pushed as `efdc0f5` on `brain/approval`; Herdr workspace `w3`, pane `w3:p1`, confirmed `agent_status=working` at 10:52. Acceptance requires root interactive/headless launches without approval, nested launches still returning `not_from_root`, `npm run check`, `npm test` compared with 35/38 baseline, and `bash -n` for loop changes. No code changed in the brain worktree this tick, so no test rerun yet.
+- Value: ✅ yielded value — the largest explicit request now has an independently running implementer and verifiable acceptance criteria.
+- Lesson: delegate multi-surface removal as one coherent task; retain the recursion guard explicitly and avoid deleting unrelated signal-based approvals.
