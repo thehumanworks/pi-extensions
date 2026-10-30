@@ -58,6 +58,9 @@ test("the compiled CLI launches root workflows without opt-in, rejects inner lau
     assert.match(missing.stderr, /^error not_found: Unknown workflow run nope\. List runs: \S*workflow\b.* list\.$/m);
     assert.equal((await s.cli(["nope"])).code, 1);
     assert.equal((await s.cli(["validate", "clock"])).code, 1);
+    const clock = await s.cli(["run", "clock", "--model", "local/m1"], {}, false);
+    assert.equal(clock.code, 1);
+    assert.match(clock.stderr, /^error invalid_workflow: \S+clock\.ts is not a valid workflow; no run was created:\nline 4: Date\.now\(\)/);
 
     // Every --json run view is the Pi tool's brief view: runId, the workflow's name and the model as one string.
     const quick = await s.cli(["run", "quick", "--args", '{"n":21}', "--model", "local/m1"]);
