@@ -134,6 +134,7 @@ export function runTree(run: RunRecord, now = Date.now(), program: string | Hint
   if (run.waitingFor) {
     if (run.waitingFor.prompt) lines.push(run.waitingFor.prompt);
     lines.push(`Waiting for ${run.waitingFor.key}; deliver with: ${hints.signal(run.id, run.waitingFor.key)}`);
+    if (run.waitingFor.schema) lines.push(`Expects: ${JSON.stringify(run.waitingFor.schema)}`);
   }
   if (run.logs?.length) lines.push(`log: ${run.logs.at(-1)!.message}`);
   return lines.join("\n");
