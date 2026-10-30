@@ -261,7 +261,9 @@ try {
   assert.equal(typeof id, "string");
   const waiting = await cli(["poll", id, "--until", "signal", "--interval", "50ms"]);
   assert.equal(waiting.status, "waiting_signal");
-  assert.ok(waiting.steps.some(step => step.key === "root/tools" && step.status === "completed"), JSON.stringify(waiting));
+  // poll prints the brief view; steps and usage are in the full record from status --verbose.
+  const waitingRecord = await cli(["status", id, "--verbose"]);
+  assert.ok(waitingRecord.steps.some(step => step.key === "root/tools" && step.status === "completed"), JSON.stringify(waitingRecord));
   assert.equal(await readFile(join(project, "effects"), "utf8"), "tools\n");
   assert.equal((await readFile(join(home, "runs.sqlite"))).subarray(0, 16).toString(), "SQLite format 3\0");
 
@@ -270,7 +272,7 @@ try {
   assert.notEqual(second.pid, first.pid, "restart must use a new detached worker");
   const recovered = await cli(["poll", id, "--until", "signal", "--interval", "50ms"]);
   assert.equal(recovered.status, "waiting_signal");
-  assert.equal(recovered.steps.find(step => step.key === "root/tools")?.attempts, 1);
+  assert.equal((await cli(["status", id, "--verbose"])).steps.find(step => step.key === "root/tools")?.attempts, 1);
   assert.equal(await readFile(join(project, "effects"), "utf8"), "tools\n", "committed effects must not replay");
   assert.equal((await cli(["signal", id, "continue", '"wrong-type"'], { code: 1 })).error.code, "invalid_signal");
   await cli(["signal", id, "continue", "2"]);
@@ -281,7 +283,7 @@ try {
   assert.equal(done.result.pid, second.pid);
   assert.equal(done.result.tools.bashTool, "durable-bash-ok");
   assert.equal(done.result.tools.gitWorktree, true);
-  assert.equal(done.usage.agents, 0, "smoke must not invoke providers");
+  assert.equal((await cli(["status", id, "--verbose"])).usage.agents, 0, "smoke must not invoke providers");
   assert.equal(await readFile(join(project, "effects"), "utf8"), "tools\nfinish\n");
   assert.deepEqual(await cli(["result", id]), done.result);
   await stopWorker();
