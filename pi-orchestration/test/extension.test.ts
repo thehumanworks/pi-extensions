@@ -247,6 +247,7 @@ test("reading a finished run's outcome replaces the completion turn, and status 
   assert.equal(signalled.content[0].text, 'Signal "go" accepted. Check the run with {"action":"status","runId":"run-gate"}.');
   const gate = await tool.execute("call-7", { action: "status", runId: "run-gate" }, undefined, undefined, ctx) as ToolReply;
   assert.match(gate.content[0].text, /Deliver with: \{"action":"signal","runId":"run-gate","key":"go"/);
+  assert.match(gate.content[0].text, /not a string>\}\. Send it only if the user told you what to answer; otherwise report what the run waits for and ask them\./);
   await assert.rejects(tool.execute("call-7", { action: "status", runId: "nope" }, undefined, undefined, ctx),
     (error: Error) => error.message === 'not_found: Unknown workflow run nope. List runs with {"action":"list"}.');
   await h.handlers.get("session_shutdown")!({}, ctx);

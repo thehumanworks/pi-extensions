@@ -93,7 +93,7 @@ export function cliHints(program = "workflow"): Hints {
 }
 
 export const toolHints: Hints = {
-  signal: (id, key) => `{"action":"signal","runId":${JSON.stringify(id)},"key":${JSON.stringify(key)},"value":<JSON value, not a string>}`,
+  signal: (id, key) => `{"action":"signal","runId":${JSON.stringify(id)},"key":${JSON.stringify(key)},"value":<JSON value, not a string>}. Send it only if the user told you what to answer; otherwise report what the run waits for and ask them.`,
   retry: id => `{"action":"retry","runId":${JSON.stringify(id)}}`,
 };
 
