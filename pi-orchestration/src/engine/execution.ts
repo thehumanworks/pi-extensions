@@ -7,6 +7,7 @@ import type { TSchema } from "typebox";
 import { Value } from "typebox/value";
 import type { AgentOptions, PipelineStage, Settled, StepContext, StepRecord, WorkflowContext, WorkflowDefinition } from "../index.ts";
 import { WorkflowError } from "../errors.ts";
+import { AGENT_OPTIONS } from "../validation.ts";
 import type { Engine, RunRuntime } from "./index.ts";
 import { AgentMeta, copy, json, RunStore, storedRun, StructuredResult, type JournalEntry, type RunData } from "./store.ts";
 import { outsideScript, randomValue, scopedSignal, scriptScope, structuralKey } from "./scopes.ts";
@@ -18,7 +19,6 @@ import { BackgroundRuntime } from "./background.ts";
 import { runSwarm } from "./swarm.ts";
 
 // Options ctx.agent and ctx.spawn accept; a misspelled one must not silently fall back to defaults.
-const AGENT_OPTIONS = ["model", "thinkingLevel", "instructions", "tools", "cwd", "isolation", "budget", "timeoutMs", "retries", "label", "phase", "agentType", "key", "schema"];
 
 function fingerprint(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");

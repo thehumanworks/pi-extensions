@@ -1,6 +1,9 @@
 import { parse } from "@babel/parser";
 import type { ValidationResult } from "./index.ts";
 
+/** Option names ctx.agent() and ctx.spawn() accept; checked at validate time and again at run time. */
+export const AGENT_OPTIONS = ["model", "thinkingLevel", "instructions", "tools", "cwd", "isolation", "budget", "timeoutMs", "retries", "label", "phase", "agentType", "key", "schema"];
+
 type Node = { type: string; [key: string]: unknown };
 function node(value: unknown): value is Node { return value !== null && typeof value === "object" && "type" in value && typeof value.type === "string"; }
 function name(value: unknown): string | undefined {
@@ -49,6 +52,16 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
     if (effectOptions && (value.type === "ObjectMethod" || value.type === "ObjectProperty") && key === "compensate") return;
     if (active && (value.type === "CallExpression" || value.type === "OptionalCallExpression")) {
       const callee = value.callee;
+      const options = node(callee) && name(callee.property) === "agent" ? (value.arguments as unknown[])[1] : undefined;
+      if (node(options) && options.type === "ObjectExpression") {
+        for (const property of options.properties as Node[]) {
+          const option = property.type === "ObjectProperty" && !property.computed ? name(property.key) : undefined;
+          if (option === undefined || AGENT_OPTIONS.includes(option)) continue;
+          const near = AGENT_OPTIONS.find(known => known.startsWith(option) || option.startsWith(known));
+          const loc = property.loc as { start?: { line?: number } } | undefined;
+          diagnostics.push({ code: "unknown_agent_option", line: loc?.start?.line, message: `Unknown agent option '${option}'${near ? ` (did you mean '${near}'?)` : ""}. Valid options: ${AGENT_OPTIONS.join(", ")}.` });
+        }
+      }
       const callName = name(callee);
       if (member(callee, "Date", "now") || callName === "Date") report(value, "Date.now()/Date()");
       if (member(callee, "Math", "random")) report(value, "Math.random()");

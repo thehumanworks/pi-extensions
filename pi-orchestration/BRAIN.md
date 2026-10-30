@@ -35,7 +35,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 0. ✅ axeval's ranked fixes (`brain/axeval.md`, evidence from 4 scenarios). Work them in order; each names file:line and the expected effect:
    1. ✅ Done in tick 12: tool `args` typed as object; string args and schema mismatches explained (extension.ts:58, engine/index.ts:299).
    2. ✅ Done in tick 13: expose the signal schema in `waitingFor`; explain mismatches; name the waiting key in `unknown_signal`; `value` description says not a string (execution.ts:361, engine/index.ts:410-411, extension.ts:76).
-   3. ⚠️ Half done in tick 14: unknown `ctx.agent`/`ctx.spawn` options now fail with `unknown_agent_option` and a did-you-mean (execution.ts `AGENT_OPTIONS`, `resolveOptions`). Remaining: lint unknown `ctx.*` members and unknown options at `validate` time (src/validation.ts), so the author learns before launching.
+   3. ✅ Done in ticks 14 and 27: unknown `ctx.agent`/`ctx.spawn` options fail at run time (`resolveOptions`), and `validate` reports literal `ctx.agent(p, {…})` options as `unknown_agent_option` (`src/validation.ts`, `AGENT_OPTIONS` now lives there). Not linted: `ctx.spawn` options, unknown `ctx.*` members.
    4. ✅ Done in tick 15: args must be `Type.Object` (loader.ts:72); plain objects and `Type.String()` fail validate/catalog with the offending value.
    5. ✅ Done in tick 16: `poll` returns on `waiting_signal` by default (`--until done` keeps waiting), prints a line only when more than elapsed time changed, help/README say `--interval 1s`. `watch` still defaults to `done`.
    6. ✅ Done in tick 17: verbose tool `status` prints signal/retry hints as tool calls (`toolHints`, presentation.ts:69-79; extension.ts:361). The non-verbose tool brief has no command hints to convert.
@@ -212,3 +212,9 @@ None.
 - Outcome: `loop.sh spawn` finished in about 50 seconds; branch brain/runshape pushed, worktree `.pi/worktrees/brain-runshape`, herdr w5:p1 reports `agent_status=working`. No code changed this tick; tests not rerun (37/37 at 1a5871e).
 - Value: ✅ yielded value: the largest open fix is being worked without blocking the small ones.
 - Lesson: when the same item is deferred three times as too big for a tick, delegate it instead of deferring again. Next tick: fix 3's validate-time lint (src/validation.ts), which does not overlap runshape's files.
+
+### Tick 27 · 13:08 · validate reports unknown ctx.agent options
+- Action: took the static half of axeval fix 3, as tick 26 planned, because it does not overlap runshape's files and fits four minutes. `lintDeterminism` (`src/validation.ts`) checks the object-literal second argument of every `ctx.agent` call in run control flow and reports `unknown_agent_option` with line, did-you-mean and the valid list; `validateWorkflow` already marks any diagnostic as invalid. `AGENT_OPTIONS` moved from engine/execution.ts into validation.ts so both checks share one list.
+- Outcome: `npm run check` passes; `npm test` **37/37**. `test/unit.test.ts` determinism test asserts `{ tool: [], label }` yields exactly one `unknown_agent_option` naming `tools`.
+- Value: ✅ yielded value: a misspelled agent option is caught at validate, before launch.
+- Lesson: one shared constant between the lint and the run-time check keeps them from drifting. Next: lint `ctx.spawn` options too, or review runshape when done.

@@ -30,6 +30,9 @@ test("determinism lint reports real control-flow calls only", () => {
   `);
   assert.deepEqual(diagnostics.map(item => item.line), [9, 10, 10]);
   assert.equal(lintDeterminism("export default {")[0].code, "syntax_error");
+  const options = lintDeterminism(`export default { async run(ctx) { await ctx.agent("p", { tool: [], label: "x" }); } };`);
+  assert.deepEqual(options.map(item => item.code), ["unknown_agent_option"]);
+  assert.match(options[0].message, /'tool' \(did you mean 'tools'\?\)/);
 });
 
 test("command parsing and intervals", () => {
