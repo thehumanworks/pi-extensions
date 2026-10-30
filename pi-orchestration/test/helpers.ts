@@ -102,6 +102,8 @@ export async function fixture(options: { workflows?: Record<string, string>; sym
     await symlink(home, join(root, "l"));
     home = join(root, "l");
   }
+  // The in-process worker resolves user workflows from here; keep ~/.pi/agent/workflows out of fixtures.
+  process.env.PI_CODING_AGENT_DIR = join(root, "a");
   const { models, calls } = scriptedModels();
   const worker = await startWorker({ home, models, retryBackoffMs: 0, maxConcurrentAgents: 4, ...options.worker });
   if (!worker) throw new Error("Fixture worker did not start.");

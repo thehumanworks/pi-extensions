@@ -32,7 +32,7 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 
 1. D1 approval-gate removal: ✅ merged in tick 4 (`70ae028`). Only follow-up: after the user publishes, drop `PI_WORKFLOW_ALLOW_UNATTENDED` and stale launch-approval guidance from `brain/loop.sh` (D8). The Nix installed-wrapper smoke was not run by `approval`.
 2. Workflow files are source (D2): ✅ done. Bot workflows tracked and ignore rules removed (tick 2); guide, tool description, `init` output and README state the policy (tick 5). Possible follow-up: `validate`/`catalog` warn on git-ignored workflow files (item 4).
-3. Fix baseline failures so a red test means a regression. ✅ Package source-only fixture fixed in tick 3: after the D1 merge the brain result is 33/35 passing (D1 replaced five gate tests with two matrices). Remaining: isolate catalog from the user's home; refresh standalone Nix lock metadata and its dependency hash without bumping package versions.
+3. Fix baseline failures so a red test means a regression. ✅ Package source-only fixture fixed in tick 3: after the D1 merge the brain result is 33/35 passing (D1 replaced five gate tests with two matrices). Catalog isolated from the user's home in tick 6 (34/35). Remaining: refresh standalone Nix lock metadata and its dependency hash without bumping package versions.
 4. Unexplored directions for the goal:
    - One output contract: the tool and the CLI return the same JSON shapes, and every CLI command supports `--json`.
    - Errors name the next command to run; error codes are stable and documented.
@@ -93,3 +93,10 @@ None.
 - Outcome: `npm run check` passes; `npm test` **35 tests, 33 pass, 2 fail**, the same two baseline failures (catalog home leak, Nix lock). Local CLI verified: `init demo --cwd /tmp/brain-t5` prints the new `Commit it:` line after `Next:`, and `guide` prints the policy in section 1. Existing `test/unit.test.ts:120` regex still matches the init output.
 - Value: ✅ yielded value: user decision D2 is fully implemented on brain/orchestration.
 - Lesson: small text-only guidance changes are faster done directly than delegated; spawning costs a minute plus a review tick.
+
+### Tick 6 · 11:16 · Isolate fixture catalogs from the user's home
+- Action: fixed baseline failure 1 instead of spawning, because a one-line fix leaves exactly one known red test, so any future red is a regression signal. The in-process worker resolves user workflows through `agentDirectory()` (`src/paths.ts:5`), so the user's `~/.pi/agent/workflows/resolve-bot-main.ts` leaked into catalog fixtures. `fixture()` in `test/helpers.ts` now points `PI_CODING_AGENT_DIR` at its own temp root.
+- Outcome: `npm run check` passes; `npm test` **35 tests, 34 pass, 1 fail**. The only failure is the stale `nix/package-lock.json` version (0.2.0 vs 0.2.1).
+- Value: ✅ yielded value: the suite no longer depends on the machine's home directory.
+- Lesson: in-process workers read `process.env` at call time, so fixtures must isolate every path that env resolves, not only `--home`.
+
