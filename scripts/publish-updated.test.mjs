@@ -87,23 +87,21 @@ test('stops on first publish failure', t => {
   assert.throws(() => publishUpdated([], f), /publish failed/);
   assert.deepEqual(f.published, ['pi-test-0']);
 });
-test('allows the standalone bot SDK in the release roster', t => {
+test('rejects public packages outside the pi-* roster', t => {
   const f = fixture(t, []);
   mkdirSync(join(f.cwd, 'bot'));
   writeFileSync(join(f.cwd, 'package.json'), JSON.stringify({ workspaces: ['bot'] }));
   writeFileSync(join(f.cwd, 'bot/package.json'), JSON.stringify({ name: '@nothumanwork/bot', version: '0.1.0', publishConfig: { access: 'public' } }));
-  f.run = () => ({ status: 1, stderr: JSON.stringify({ error: { code: 'E404' } }) });
-  const candidates = publishUpdated(['--dry-run'], f);
-  assert.deepEqual(candidates.map(item => item.name), ['@nothumanwork/bot']);
+  assert.throws(() => publishUpdated(['--dry-run'], f), /Invalid publishable workspace manifest: bot/);
 });
-test('nested bot packages are selected while private roots and applications are never queried', t => {
+test('nested packages are selected while private roots and applications are never queried', t => {
   const f = fixture(t, []);
-  const paths = ['bot', 'bot/packages/runtime', 'bot/packages/ai-sdk', 'bot/apps/web'];
+  const paths = ['group', 'group/packages/pi-one', 'group/packages/pi-two', 'group/apps/web'];
   const packages = [
-    { name: '@nothumanwork/bot-workspace', private: true },
-    { name: '@nothumanwork/bot', version: '0.1.0', publishConfig: { access: 'public' } },
-    { name: '@nothumanwork/bot-ai-sdk', version: '0.1.0', publishConfig: { access: 'public' } },
-    { name: '@nothumanwork/bot-ui', private: true },
+    { name: '@nothumanwork/group', private: true },
+    { name: '@nothumanwork/pi-one', version: '0.1.0', publishConfig: { access: 'public' } },
+    { name: '@nothumanwork/pi-two', version: '0.1.0', publishConfig: { access: 'public' } },
+    { name: '@nothumanwork/pi-web', private: true },
   ];
   writeFileSync(join(f.cwd, 'package.json'), JSON.stringify({ workspaces: paths }));
   paths.forEach((path, index) => {
@@ -114,8 +112,8 @@ test('nested bot packages are selected while private roots and applications are 
   f.run = (_command, args) => { queried.push(args[1]); return { status: 1, stderr: JSON.stringify({ error: { code: 'E404' } }) }; };
   f.publishPackage = args => published.push(args[0]);
   publishUpdated([], f);
-  assert.deepEqual(queried, ['@nothumanwork/bot', '@nothumanwork/bot-ai-sdk']);
-  assert.deepEqual(published, ['bot', 'bot-ai-sdk']);
+  assert.deepEqual(queried, ['@nothumanwork/pi-one', '@nothumanwork/pi-two']);
+  assert.deepEqual(published, ['pi-one', 'pi-two']);
 });
 
 test('no updates means no publisher or login check', t => {

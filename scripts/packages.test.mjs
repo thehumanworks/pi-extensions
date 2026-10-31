@@ -22,12 +22,10 @@ for (const { directory: dir } of workspaces) {
     const pkg = JSON.parse(readFileSync(new URL(`${dir}/package.json`, root)));
     const pack = packs.find(p => p.name === pkg.name);
     assert.ok(pack);
-    const standalone = pkg.name === '@nothumanwork/bot' || pkg.name === '@nothumanwork/bot-ai-sdk';
-    if (!standalone) assert.equal(pkg.name, `@nothumanwork/${dir}`);
+    assert.equal(pkg.name, `@nothumanwork/${dir}`);
     assert.notEqual(pkg.private, true);
     assert.equal(pkg.publishConfig.access, 'public');
-    if (!standalone) assert.ok(pkg.keywords.includes('pi-package'));
-    else assert.equal(pkg.pi, undefined, 'the standalone SDK is not a Pi extension');
+    assert.ok(pkg.keywords.includes('pi-package'));
     assert.equal(pkg.repository.directory, dir);
     assert.ok(!existsSync(new URL(`${dir}/.git`, root)));
     const files = new Set(pack.files.map(f => f.path));
@@ -42,23 +40,8 @@ for (const { directory: dir } of workspaces) {
     for (const name of Object.keys(pkg.dependencies ?? {})) {
       if (pkg.pi) assert.ok(!['@earendil-works/pi-ai', '@earendil-works/pi-coding-agent', '@earendil-works/pi-tui', 'typebox'].includes(name), `host dependency bundled: ${name}`);
     }
-    if (pkg.name === '@nothumanwork/bot') {
-      for (const entry of ['index', 'project', 'runtime', 'server', 'client', 'cli', 'pi', 'pi-internals', 'native-session', 'events', 'worker-client', 'worker', 'worker-protocol', 'worker-tree', 'catalog']) {
-        assert.ok(files.has(`dist/${entry}.js`), `missing SDK module ${entry}`);
-        assert.ok(files.has(`dist/${entry}.d.ts`), `missing SDK declarations ${entry}`);
-      }
-      assert.ok(files.has('bin/bot.mjs'));
-      assert.equal(pkg.exports['.'], './dist/index.js', 'the default entry remains the standalone SDK');
-      for (const entry of ['pi-internals', 'native-session', 'events']) {
-        assert.equal(pkg.exports[`./${entry}`], undefined, `${entry} remains an internal SDK module`);
-      }
-      assert.ok(![...files].some(f => f.includes('legacy')), 'no backwards-compatibility layer');
-      assert.equal(pkg.dependencies['@earendil-works/pi-durable'], '1.4.0');
-      assert.equal(pkg.dependencies['@earendil-works/pi-coding-agent'], '1.4.0');
-    }
     if (dir === 'pi-agent') {
       for (const file of ['src/definitions.ts', 'src/store.ts', 'src/storage.ts', 'src/runtime.ts', 'src/tools.ts', 'src/loops.ts', 'src/output.ts', 'src/drafts.ts', 'src/draft-tools.ts', 'src/draft-commands.ts']) assert.ok(files.has(file), `missing ${file}`);
-      assert.equal(pkg.dependencies['@nothumanwork/bot'], undefined, 'agents use the host SDK, not a second bot runtime');
       assert.ok(!files.has('PLAN.md'));
     }
     if (dir === 'pi-atlassian') {
@@ -67,10 +50,10 @@ for (const { directory: dir } of workspaces) {
       assert.ok([...files].some(f => f.startsWith('docs/catalog/confluence/operations/')));
     }
     if (dir === 'pi-bot') {
-      assert.equal(pkg.bin, undefined, 'the SDK, not the extension, provides the bot executable');
-      assert.ok(pkg.dependencies['@nothumanwork/bot']);
+      assert.equal(pkg.bin, undefined);
+      assert.equal(pkg.dependencies, undefined, 'bots run on the host Pi alone');
       assert.ok(files.has('index.ts'));
-      assert.ok(![...files].some(f => f.startsWith('src/')), 'the extension must not carry a second bot implementation');
+      assert.ok(![...files].some(f => f.startsWith('src/')), 'the HTTP server is not part of the extension package');
       assert.ok(![...files].some(f => f.includes('fixtures')));
     }
     if (dir === 'pi-loop') assert.ok(files.has('dist/worker.js'));

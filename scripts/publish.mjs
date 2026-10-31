@@ -15,7 +15,7 @@ export function publish(args, { cwd = root, run = spawnSync, log = console.log }
     return;
   }
   const [shortName, ...options] = args;
-  if (!/^(?:bot(?:-ai-sdk)?|pi-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(shortName ?? '') ||
+  if (!/^pi-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(shortName ?? '') ||
       options.length > 1 || options.some(option => option !== '--dry-run')) {
     throw new Error(usage);
   }

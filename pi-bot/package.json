@@ -1,8 +1,8 @@
 {
   "name": "@nothumanwork/pi-bot",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
-  "description": "Pi commands, tools and conversation UI for the @nothumanwork/bot SDK",
+  "description": "Bots for Pi: named agents that run as native Pi sessions in their own home directory",
   "keywords": [
     "pi-package"
   ],
@@ -27,15 +27,14 @@
     ]
   },
   "scripts": {
-    "check": "npm run build --workspace @nothumanwork/bot && tsc --noEmit",
-    "test": "npm run build --workspace @nothumanwork/bot && tsx --test test/*.test.ts"
-  },
-  "dependencies": {
-    "@nothumanwork/bot": "^0.3.0"
+    "check": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
   },
   "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "^1.4.0",
-    "@earendil-works/pi-tui": "^1.4.0"
+    "@earendil-works/pi-tui": "^1.4.0",
+    "typebox": "*"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "1.4.0",
@@ -43,6 +42,7 @@
     "@earendil-works/pi-tui": "1.4.0",
     "@types/node": "^22.19.0",
     "tsx": "^4.20.0",
+    "typebox": "^1.0.62",
     "typescript": "^5.9.3"
   }
 }
