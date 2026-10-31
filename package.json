@@ -19,6 +19,7 @@
     "pi-tps",
     "pi-usage",
     "pi-voice",
+    "pi-worktree",
     "pi-xai"
   ],
   "engines": {

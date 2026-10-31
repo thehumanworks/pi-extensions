@@ -346,6 +346,19 @@
         "@earendil-works/pi-tui": "*",
       },
     },
+    "pi-worktree": {
+      "name": "@nothumanwork/pi-worktree",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@earendil-works/pi-coding-agent": "1.4.0",
+        "@types/node": "^22.19.0",
+        "tsx": "^4.20.0",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@earendil-works/pi-coding-agent": "*",
+      },
+    },
     "pi-xai": {
       "name": "@nothumanwork/pi-xai",
       "version": "0.1.0",
@@ -593,6 +606,8 @@
     "@nothumanwork/pi-usage": ["@nothumanwork/pi-usage@workspace:pi-usage"],
 
     "@nothumanwork/pi-voice": ["@nothumanwork/pi-voice@workspace:pi-voice"],
+
+    "@nothumanwork/pi-worktree": ["@nothumanwork/pi-worktree@workspace:pi-worktree"],
 
     "@nothumanwork/pi-xai": ["@nothumanwork/pi-xai@workspace:pi-xai"],
 
