@@ -1,81 +1,110 @@
-import { Type } from "typebox";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { join } from "node:path";
-import { newDefinition } from "./definitions.ts";
-import type { AgentStore } from "./store.ts";
-import type { AgentRuntime } from "./runtime.ts";
-import type { LoopStore, Schedule } from "./loops.ts";
-import type { DraftWorkflow } from "./drafts.ts";
+import type { AgentDefinition } from "./agent.ts";
 
-export interface Services { store: AgentStore; runtime: AgentRuntime; loops: LoopStore; drafts?: DraftWorkflow }
-const result = (data: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }], details: data });
-const actions = <T extends string[]>(...values: T) => Type.Union(values.map(v => Type.Literal(v)));
-const required = (value: string | undefined, field: string) => { if (!value) throw new Error(`${field} is required.`); return value; };
+// An agent's `tools` field is an allowlist and `disallowedTools` a denylist, as in Claude Code:
+// an allowlist grants only what it names, MCP tools included, and the denylist removes tools
+// from whatever remains. Entries are tool names or Pi's `*` patterns. Claude Code's tool names
+// are translated to Pi's, so definitions written for Claude Code grant the equivalent Pi tools.
 
-export function registerAgentTools(pi: ExtensionAPI, services: Services, self?: string, chain: string[] = []): void {
-  const { store, runtime, loops } = services;
-  pi.registerTool({
-    name: "agent_manage", label: "Agents",
-    description: "List, show, create or propose edits to specialized agents. Definitions are Markdown with YAML frontmatter and a system-prompt body. Existing-definition edits ALWAYS await human /agent approve; there is no model approval or agent deletion action. Omitted tools/skills allow all; [] means none. Agents keep one home and persistent conversation.",
-    parameters: Type.Object({
-      action: actions("list", "show", "create", "edit"), name: Type.Optional(Type.String()),
-      definition: Type.Optional(Type.String({ description: "Complete Markdown definition, preserving foreign frontmatter." })),
-      description: Type.Optional(Type.String()), prompt: Type.Optional(Type.String()), home: Type.Optional(Type.String()),
-    }),
-    async execute(_id, args, _signal, _update, ctx) {
-      const cwd = ctx.isProjectTrusted() ? ctx.cwd : undefined;
-      if (args.action === "list") return result(await store.list(cwd));
-      const name = required(args.name ?? self, "name");
-      if ((args.action === "create" || args.action === "edit") && await services.drafts?.current()) {
-        throw new Error("A creation review is open. Use agent_draft propose to iterate; only the human's /agent accept can create it.");
-      }
-      if (args.action === "create") {
-        const source = args.definition ?? newDefinition(name, required(args.description, "description"), args.prompt ?? args.description!, args.home ?? join(store.homes, name));
-        return result(await store.create(name, source));
-      }
-      await store.ensure(name, cwd);
-      if (args.action === "show") return result({ definition: await store.source(name), pending: await store.candidate(name) });
-      const candidate = await store.propose(name, required(args.definition, "definition"));
-      return result({ status: "awaiting-human-approval", name, revision: candidate.revision, command: `/agent approve ${name}` });
-    },
+const CLAUDE_TOOL_NAMES: Record<string, string> = {
+  Read: "read",
+  Write: "write",
+  Edit: "edit",
+  MultiEdit: "edit",
+  Bash: "bash",
+  PowerShell: "powershell",
+  Grep: "grep",
+  Glob: "find",
+  LS: "ls",
+};
+
+// Claude Code tools this package cannot provide yet. Agent and Task spawn subagents.
+const UNAVAILABLE_TOOLS = new Set(["Agent", "Task"]);
+
+export type ToolPolicy = {
+  /** Whether the agent may call the tool, directly or from another tool such as codemode. */
+  allows: (name: string) => boolean;
+  /** Whether the policy restricts anything; false when the agent sets neither field. */
+  restricted: boolean;
+  warnings: string[];
+};
+
+export function toolPolicy(definition: AgentDefinition): ToolPolicy {
+  const warnings: string[] = [];
+  const { tools, disallowedTools } = definition;
+  const granted = tools === undefined ? undefined : createToolNameMatcher(translateEntries(tools, "tools", warnings));
+  const denied =
+    disallowedTools === undefined ? undefined : createToolNameMatcher(translateEntries(disallowedTools, "disallowedTools", warnings));
+  return {
+    allows: (name) => (granted?.(name) ?? true) && !denied?.(name),
+    restricted: tools !== undefined || disallowedTools !== undefined,
+    warnings,
+  };
+}
+
+type RegisteredTool = { name: string; exposure?: string };
+
+/**
+ * The tools to declare to the model. An allowlist declares every registered tool it grants; an
+ * agent with only a denylist keeps Pi's selection minus the denied tools.
+ */
+export function activeTools(
+  definition: AgentDefinition,
+  policy: ToolPolicy,
+  registered: readonly RegisteredTool[],
+  active: readonly string[],
+): string[] {
+  if (definition.tools === undefined) return active.filter(policy.allows);
+  return registered.filter((tool) => tool.exposure !== "hidden" && policy.allows(tool.name)).map((tool) => tool.name);
+}
+
+/** Allowlist entries that match no registered tool, worth a warning when the session starts. */
+export function unmatchedTools(definition: AgentDefinition, registered: readonly RegisteredTool[]): string[] {
+  const entries = translateEntries(definition.tools ?? [], "tools", []);
+  return entries.filter((entry) => {
+    const matches = createToolNameMatcher([entry]);
+    return !registered.some((tool) => matches(tool.name));
   });
-  pi.registerTool({
-    name: "agent_run", label: "Run agent",
-    description: "Send a self-contained task to another agent through Pi's SDK. Runs in its permanent home and resumes its own native conversation, not this conversation. Include absolute paths for work elsewhere. Concurrent runs of the same agent fail busy; cycles are rejected. Cancellation cannot undo tool effects.",
-    parameters: Type.Object({ name: Type.String(), task: Type.String({ minLength: 1 }) }),
-    async execute(_id, args, signal, onUpdate, ctx) {
-      const run = await runtime.run(args.name, args.task, {
-        cwd: ctx.isProjectTrusted() ? ctx.cwd : undefined, signal, chain,
-        onEvent: event => {
-          if (event.type === "tool_execution_start") onUpdate?.(result({ agent: args.name, tool: event.toolName }));
-        },
-      });
-      const output = run.output.length > 24_000 ? run.output.slice(0, 24_000) + `\n[Truncated; full native transcript: ${run.sessionFile}]` : run.output;
-      return { ...result({ ...run, output }), usage: run.usage };
-    },
-  });
-  pi.registerTool({
-    name: "agent_loop", label: "Agent loops",
-    description: "List, schedule, pause, resume or remove recurring agent tasks. Runs autonomously in the agent's home while a Pi process with pi-agent is running. Uses native history. Missed ticks coalesce; interrupted work is not replayed. Removing a loop does NOT delete an agent.",
-    parameters: Type.Object({
-      action: actions("list", "put", "pause", "resume", "remove"), agent: Type.Optional(Type.String()), name: Type.Optional(Type.String()),
-      task: Type.Optional(Type.String()), everyMs: Type.Optional(Type.Integer({ minimum: 1000 })),
-      cron: Type.Optional(Type.String()), timezone: Type.Optional(Type.String()),
-    }),
-    async execute(_id, args, _signal, _update, ctx) {
-      if (args.action === "list") return result((await loops.list()).filter(l => !args.agent || l.agent === args.agent));
-      const agent = required(args.agent ?? self, "agent");
-      const name = required(args.name, "name");
-      await store.ensure(agent, ctx.isProjectTrusted() ? ctx.cwd : undefined);
-      if (args.action === "put") {
-        if ((args.everyMs === undefined) === (args.cron === undefined)) throw new Error("Specify exactly one of everyMs or cron.");
-        if (args.everyMs !== undefined && args.timezone !== undefined) throw new Error("timezone applies only to cron schedules.");
-        const schedule: Schedule = args.everyMs !== undefined ? { everyMs: args.everyMs } : { cron: args.cron!, timezone: args.timezone };
-        return result(await loops.put(agent, name, required(args.task, "task"), schedule));
-      }
-      if (args.action === "remove") await loops.remove(agent, name);
-      else await loops.setEnabled(agent, name, args.action === "resume");
-      return result({ agent, name, action: args.action });
-    },
-  });
+}
+
+function translateEntries(entries: readonly string[], field: string, warnings: string[]): string[] {
+  const translated: string[] = [];
+  for (const entry of entries) {
+    const open = entry.indexOf("(");
+    const base = open === -1 ? entry : entry.slice(0, open).trim();
+    if (UNAVAILABLE_TOOLS.has(base)) {
+      if (field === "tools") warnings.push(`${field}: "${entry}" is not available in Pi yet`);
+      continue;
+    }
+    if (open !== -1) {
+      // A denylist rule such as Bash(rm:*) denies part of a tool; denying the whole tool is the
+      // closest safe reading. An allowlist rule grants part of one; granting nothing is.
+      warnings.push(
+        field === "disallowedTools"
+          ? `${field}: permission rule "${entry}" is not supported, so all of ${base} is denied`
+          : `${field}: permission rule "${entry}" is not supported and grants nothing`,
+      );
+      if (field === "disallowedTools") translated.push(CLAUDE_TOOL_NAMES[base] ?? base);
+      continue;
+    }
+    // Claude Code names all of an MCP server's tools as mcp__<server>.
+    if (entry.startsWith("mcp__") && !entry.includes("*") && !entry.slice(5).includes("__")) {
+      translated.push(`${entry}__*`);
+      continue;
+    }
+    translated.push(CLAUDE_TOOL_NAMES[entry] ?? entry);
+  }
+  return [...new Set(translated)];
+}
+
+/** Mirrors Pi's matcher for `--tools`: exact names, or patterns where `*` matches any characters. */
+export function createToolNameMatcher(entries: readonly string[]): (name: string) => boolean {
+  const names = new Set(entries.filter((entry) => !entry.includes("*")));
+  const patterns = entries
+    .filter((entry) => entry.includes("*"))
+    .map((entry) => new RegExp(`^${entry.split("*").map(escapeRegExp).join(".*")}$`));
+  return (name) => names.has(name) || patterns.some((pattern) => pattern.test(name));
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
 }

@@ -10,7 +10,7 @@ import { fixtures,common,model as fixtureModel } from './fixtures.mjs';
 const here=dirname(fileURLToPath(import.meta.url)),extension=resolve(here,'../../index.ts');
 const option=(name,fallback)=>process.argv.find(arg=>arg.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 if(process.argv.includes('--help')){console.log('Usage: node --import tsx eval/long/run.mjs --mode=init|history|run --state=DIR [--out=DIR] [--arms=off,short,empty,long,dream] [--repeats=2] [--project=ingestion|migration] [--wall-seconds=600] [--requests=16] [--concurrency=2] [--model=provider/id] [--memory-env=KEY=VALUE;KEY2=VALUE2]. Requests are capped per stage; stage2 shares a cap across temporary and revoke turns. --model applies to action sessions only; captured history keeps its own model. --memory-env passes PI_MEMORY_* overrides to memory arms so candidates can be compared under one source snapshot.');process.exit(0);}
-const allowedOptions=new Set(['mode','state','out','arms','repeats','project','wall-seconds','requests','concurrency','exclude-ids','empty-repeats','repair-only-from','model','memory-env']);const seenOptions=new Set();
+const allowedOptions=new Set(['mode','state','out','arms','repeats','project','wall-seconds','requests','concurrency','exclude-ids','empty-repeats','repair-only-from','model','memory-env','capture-model']);const seenOptions=new Set();
 for(const arg of process.argv.slice(2)){const match=/^--([^=]+)=(.+)$/.exec(arg);if(!match||!allowedOptions.has(match[1])||seenOptions.has(match[1]))throw new Error(`Unknown, empty or duplicate option: ${arg}`);seenOptions.add(match[1]);}
 const mode=option('mode','run'),state=resolve(option('state',join(here,'state'))),out=resolve(option('out',join(here,'results',new Date().toISOString().replace(/[:.]/g,'-'))));
 const arms=option('arms','off,short,empty,long,dream').split(','),repeats=Number(option('repeats','2')),wallSeconds=Number(option('wall-seconds','600')),requestLimit=Number(option('requests','16')),concurrency=Number(option('concurrency','2'));
@@ -57,7 +57,7 @@ async function piCall({name,cwd,memoryDir,sessionId,sessions,prompt,recentContex
   if(tools)args.push('--tools','read,write,edit,bash,find,grep,ls');else args.push('--no-tools');
   if(memory)args.push('-e',extension,'--memory-dir',memoryDir,'--memory-mode','inject');
   args.push('-p',prompt);
-  const execution=await invoke(args,{cwd,timeoutMs,env:{...process.env,PI_MEMORY_DISABLED:memory?'0':'1',PI_MEMORY_DIR:memoryDir,PI_MEMORY_CAPTURE:capture?'1':'0',PI_MEMORY_MODEL:model,PI_MEMORY_RETRIEVAL_MODEL:'off',PI_MEMORY_STRATEGY:'improved',PI_MEMORY_TOKEN_BUDGET:'1200',PI_MEMORY_DIGEST_BUDGET:'0',PI_MEMORY_DREAM:'0',...(capture?{}:memoryEnv),PI_MEMORY_TRACE:trace,PI_LONG_NODE:process.execPath,PI_LONG_CALL_NAME:name,PI_LONG_BUDGET:budget,PI_LONG_MAX_REQUESTS:String(requestLimit),PI_LONG_ACTION_TRACE:actionTrace}});
+  const execution=await invoke(args,{cwd,timeoutMs,env:{...process.env,PI_MEMORY_DISABLED:memory?'0':'1',PI_MEMORY_DIR:memoryDir,PI_MEMORY_CAPTURE:capture?'1':'0',PI_MEMORY_MODEL:option('capture-model',model),PI_MEMORY_RETRIEVAL_MODEL:'off',PI_MEMORY_STRATEGY:'improved',PI_MEMORY_TOKEN_BUDGET:'1200',PI_MEMORY_DIGEST_BUDGET:'0',PI_MEMORY_DREAM:'0',...(capture?{}:memoryEnv),PI_MEMORY_TRACE:trace,PI_LONG_NODE:process.execPath,PI_LONG_CALL_NAME:name,PI_LONG_BUDGET:budget,PI_LONG_MAX_REQUESTS:String(requestLimit),PI_LONG_ACTION_TRACE:actionTrace}});
   await writeFile(join(artifactDir,`${name}.events.jsonl`),execution.stdout);await writeFile(join(artifactDir,`${name}.stderr.txt`),execution.stderr);
   const events=parseEvents(execution.stdout),messages=events.filter(event=>event.type==='message_end'&&event.message?.role==='assistant').map(event=>event.message);
   const usage=messages.reduce((sum,message)=>{for(const key of['input','output','cacheRead','cacheWrite','reasoning','totalTokens'])sum[key]=(sum[key]??0)+(message.usage?.[key]??0);sum.cost=(sum.cost??0)+(message.usage?.cost?.total??0);return sum;},{});
@@ -136,7 +136,7 @@ async function job(fixture,arm,repeat){
   const context=recent?`Recent historical context (the current task overrides temporary settings):\n${recent}\n\n`:'';
   let dream;
   const beforeDreamMemory=await memorySize(memoryDir);
-  if(arm==='dream')dream=await piCall({name:'dream',cwd,memoryDir,sessionId:randomUUID(),sessions,prompt:'/memory dream --force',memory:true,tools:false,budget:join(root,'dream-budget.json'),actionTrace:join(artifactDir,'dream-actions.jsonl'),artifactDir,timeoutMs:120000});
+  if(arm==='dream')dream=await piCall({name:'dream',cwd,memoryDir,sessionId:randomUUID(),sessions,prompt:'/memory dream --force',memory:true,tools:false,budget:join(root,'dream-budget.json'),actionTrace:join(artifactDir,'dream-actions.jsonl'),artifactDir,timeoutMs:660000});
   const beforeMemory=await memorySize(memoryDir),started=Date.now(),deadline=started+wallSeconds*1000,sessionId=randomUUID(),calls=[],scores=[];
   const stageDeadlines=new Map();
   const call=async(name,prompt,id=sessionId)=>{

@@ -13,7 +13,8 @@ export interface MemoryConfig {
   digest: { budgetTokens: number; scope: "rules" | "decisions" };
   scope: { projectLocation: "home" | "repo" };
   consolidation: { everyCaptures: number };
-  dream: { enabled: boolean; model?: string; maxSourceItems: number; softActiveBytes: number; timeoutMs: number; idleDelayMs: number; backoffMs: number };
+  /** rawEntries: waiting raw entries that make a sleep pass due. sleepTimeoutMs bounds that pass; nobody waits on it, and a pass cut short settles nothing. */
+  dream: { enabled: boolean; model?: string; maxSourceItems: number; softActiveBytes: number; timeoutMs: number; idleDelayMs: number; backoffMs: number; rawEntries: number; sleepTimeoutMs: number };
 }
 
 type ObjectValue = Record<string, unknown>;
@@ -56,7 +57,7 @@ export function readConfig(settings: unknown, agentDir: string, flags: Record<st
   // Capture and dreaming make separate model calls. Neither runs unless its model is explicitly configured;
   // the session model is never used implicitly, so an expensive foreground model cannot leak into background work.
   const captureModel = model(flags["memory-model"] ?? env.PI_MEMORY_MODEL ?? capture.model);
-  const dreamModel = model(dream.model ?? consolidation.model);
+  const dreamModel = model(env.PI_MEMORY_DREAM_MODEL ?? dream.model ?? consolidation.model);
   return {
     enabled: flags["no-memory"] !== true && !/^(1|true|yes)$/i.test(env.PI_MEMORY_DISABLED ?? "") && bool(m.enabled, true),
     mode, dir: resolve(dir.replace(/^~(?=\/|$)/, homedir())),
@@ -65,6 +66,6 @@ export function readConfig(settings: unknown, agentDir: string, flags: Record<st
     digest: { budgetTokens: number(env.PI_MEMORY_DIGEST_BUDGET === undefined ? digest.budgetTokens : Number(env.PI_MEMORY_DIGEST_BUDGET), 1200, 0, 8000), scope: digestScope },
     scope: { projectLocation: location },
     consolidation: { everyCaptures: number(consolidation.everyCaptures, 20, 1, 10000) },
-    dream: { enabled: env.PI_MEMORY_DREAM !== "0" && dreamModel !== undefined && bool(dream.enabled, true), model: dreamModel, maxSourceItems: number(dream.maxSourceItems, 12, 2, 24), softActiveBytes: number(dream.softActiveBytes, 1000000, 10000, 100000000), timeoutMs: number(dream.timeoutMs, 60000, 1000, 120000), idleDelayMs: number(dream.idleDelayMs, 30000, 1000, 3600000), backoffMs: number(dream.backoffMs, 300000, 1000, 86400000) },
+    dream: { enabled: env.PI_MEMORY_DREAM !== "0" && dreamModel !== undefined && bool(dream.enabled, true), model: dreamModel, maxSourceItems: number(dream.maxSourceItems, 12, 2, 24), softActiveBytes: number(dream.softActiveBytes, 1000000, 10000, 100000000), timeoutMs: number(dream.timeoutMs, 60000, 1000, 120000), idleDelayMs: number(dream.idleDelayMs, 30000, 1000, 3600000), backoffMs: number(dream.backoffMs, 300000, 1000, 86400000), rawEntries: number(dream.rawEntries, 16, 1, 1000), sleepTimeoutMs: number(dream.sleepTimeoutMs, 600000, 1000, 3600000) },
   };
 }

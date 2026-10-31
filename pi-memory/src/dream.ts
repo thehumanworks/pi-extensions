@@ -71,6 +71,11 @@ async function acquireDreamLock(path: string): Promise<(() => Promise<void>) | u
   }
   return undefined;
 }
+/** Serializes sleep work per project, across processes. Undefined while another pass holds it. */
+export async function dreamLock(root: string, projectKey: string): Promise<(() => Promise<void>) | undefined> {
+  await mkdir(join(root, 'dream'), { recursive: true, mode: 0o700 });
+  return acquireDreamLock(join(root, 'dream', `.lock-${hash(projectKey).slice(0, 24)}`));
+}
 function normalize(text: string): string { return text.replace(/\s+/g, ' ').trim(); }
 /** Keep multiline content and dependent sentences intact; split only plain standalone prose. */
 export function memoryStatements(body: string): string[] {
@@ -176,11 +181,11 @@ export class DreamPipeline {
     try {
       const selected = request.sourceIds ? this.store.get(request.sourceIds) : all;
       if (request.sourceIds && (new Set(request.sourceIds).size !== request.sourceIds.length || selected.length !== request.sourceIds.length)) throw new Error('Dream sources must be unique accessible memory IDs');
-      const eligible = selected.filter((item: TemporalItem) => item.status === 'active' && item.scope === this.store.projectScope && item.source.origin !== 'consolidation' && (item.retention !== 'short' || (typeof item.expiresAt === 'string' && Date.parse(item.expiresAt) > Date.now())) && !isSuspiciousMemory(`${item.title}\n${item.body}`));
+      const eligible = selected.filter((item: TemporalItem) => item.status === 'active' && !item.raw && item.scope === this.store.projectScope && item.source.origin !== 'consolidation' && (item.retention !== 'short' || (typeof item.expiresAt === 'string' && Date.parse(item.expiresAt) > Date.now())) && !isSuspiciousMemory(`${item.title}\n${item.body}`));
       const directory = join(this.options.root, 'dream');
       await mkdir(join(directory, 'runs'), { recursive: true, mode: 0o700 });
       await mkdir(join(directory, 'hypotheses'), { recursive: true, mode: 0o700 });
-      releaseLock = await acquireDreamLock(join(directory, `.lock-${hash(this.store.projectKey).slice(0, 24)}`));
+      releaseLock = await dreamLock(this.options.root, this.store.projectKey);
       if (!releaseLock) return { ...result, reason: 'Another process holds this project dream lock' };
       const checkpointPath = join(directory, `processed-${hash(this.store.projectKey).slice(0, 24)}.json`);
       const processed: Record<string, Array<{ id: string; hash: string }>> = {};

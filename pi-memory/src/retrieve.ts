@@ -45,7 +45,9 @@ const escape = (text: string) => redactSecrets(text).replace(/&/g, '&amp;').repl
 function renderItem(item: MemoryItem): string {
   const scope = item.scope === 'global' ? 'global' : 'project';
   const lifetime = item.retention === 'short' ? `; active at retrieval ${new Date().toISOString()}; temporary until ${escape(item.expiresAt!)}` : '';
-  return `[${item.id}] ${escape(item.title)} (${scope}; ${item.source.origin}; confidence ${item.confidence.toFixed(2)}; ${escape(item.updated.slice(0, 10))}${lifetime})\n${escape(item.body)}`;
+  const raw = item.raw ? '; raw note, not yet consolidated' : '';
+  const before = item.raw?.before ? `In reply to: ${escape(item.raw.before)}\n` : '';
+  return `[${item.id}] ${escape(item.title)} (${scope}; ${item.source.origin}; confidence ${item.confidence.toFixed(2)}; ${escape(item.updated.slice(0, 10))}${lifetime}${raw})\n${before}${escape(item.body)}`;
 }
 /** UTF-8 byte count is a conservative upper bound for byte-backed tokenizers. */
 export const estimateTokens = (text: string): number => Buffer.byteLength(text, 'utf8');

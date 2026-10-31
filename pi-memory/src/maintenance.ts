@@ -66,7 +66,7 @@ export class ProposalManager {
     if (!memoryIds.length || memoryIds.length > 20 || new Set(memoryIds).size !== memoryIds.length) throw new Error('Supply 1 to 20 unique source memories');
     const items = this.store.get(memoryIds);
     if (items.length !== memoryIds.length || items.some(item => !['active', 'codified'].includes(item.status))) throw new Error('Proposal sources must be active memories in current scopes');
-    if (items.some(item => item.retention === 'short' || (item.expiresAt && Date.parse(item.expiresAt) <= Date.now()))) throw new Error('Temporary memories cannot be codified; supply separate durable evidence');
+    if (items.some(item => item.retention === 'short' || item.raw || (item.expiresAt && Date.parse(item.expiresAt) <= Date.now()))) throw new Error('Temporary memories cannot be codified; supply separate durable evidence');
     if (items.some(item => isSuspiciousMemory(item.body))) throw new Error('Suspicious instructions cannot be codified');
     const proposal: Proposal = {
       id: `p_${randomUUID()}`, kind, name, memoryIds, scope: items.every(item => item.scope === 'global') ? 'global' : `project:${this.options.projectKey}`,

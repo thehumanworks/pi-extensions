@@ -9,6 +9,25 @@ The pass produces two different representations:
 
 Original memories remain active and editable. The model receives neither tools nor permission to choose output paths. Groups stay within their original project scope, require topical overlap, and do not combine disjoint path scopes. Singletons do not consume the model batch budget. A source-hash checkpoint lets later passes move on to previously unprocessed groups instead of repeatedly summarizing the first group.
 
+## Wake and sleep
+
+With a classifier as `capture.model`, memory follows a wake and sleep cycle modelled loosely on Google's [SLEEP framework](https://research.google/blog/the-sleep-framework-a-new-way-for-llms-to-retain-knowledge-in-continual-learning/), which separates a fast, temporary learning phase from a later phase that consolidates it into stable knowledge.
+
+| SLEEP | Here | Where |
+| --- | --- | --- |
+| Active phase with fast, temporary memory | A classifier scores each turn's arrivals, and what clears the bar is stored verbatim and recalled at once | `src/triage.ts`, `storeRaw` in `src/capture.ts` |
+| Consolidation into stable knowledge | Reflection and curation distil raw entries and reconcile them with long-term memory | `assimilate` in `src/capture.ts` |
+| Synaptic pruning | Every raw entry settles: it is archived, linked to what now holds it, or pruned when nothing cited it | `settleRaw` in `src/store.ts` |
+| Dreaming | Compression and hypotheses over long-term memory, as described above | `src/dream.ts` |
+
+Two things differ. SLEEP trains weights, and its dreaming generates practice data to reinforce them. Nothing here generates practice. Pruning is also reversible, since the archive and session files keep the evidence, which is what [the storage evaluation](STORAGE-EVALUATION.md) asks for.
+
+The bar is deliberately low. A needless entry costs one line in a sleep pass, while a dropped one is gone. For the same reason the classifier sees only the entry and the codebase, not the system prompt: telling a new fact from a documented one is left to reflection, which needs the text in front of it anyway. An exact copy of the system prompt is still filtered without a model call.
+
+A classifier cannot write text, so "raw" means code chose the pieces and the classifier only judged them. That also means a raw entry can hold more than one fact, or part of a task request. The sleep pass separates them.
+
+Before an entry reaches reflection, nothing has checked it against existing memory. Raw entries are therefore never curation neighbors, because settling one against another could drop the fact from both, and a long-term memory is never merged into a raw copy of itself.
+
 ## Provenance and corrections
 
 Each automatic parent records `derivedFrom: [{id, hash}]` and links to its sources. The hash includes the evidence text, scope, lifetime, confidence, and primary provenance. A parent becomes ineligible for recall immediately if a source is changed, superseded, archived, expired, or otherwise invalid. This prevents an old compressed parent from bringing back a corrected fact. Explicit inspection still exposes historical evidence; maintenance can archive stale parents.
@@ -50,6 +69,29 @@ The benchmark invokes the installed Pi CLI and `openai/gpt-6.1-sol`. It first ge
 Held-out downstream tasks test exact commands, numeric limits, preconditions, staging/production/local boundaries, an invoice-only temporary restriction, and behavior after expiry. An explicit mock executor accepts only the complete context-correct operation plan. This is stronger than asking a model to rate its own summaries, but it is not evidence of deployed infrastructure execution or broad real-world efficacy.
 
 Artifacts preserve the generated prose, canonical store snapshots, selected memory IDs, raw Pi events, byte counts, provider input/output/cache usage, and exact per-field/action failures. Provider token measurements are kept separate from conservative text-size estimates. One synthetic corpus and the small number of samples per task/arm do not justify a universal claim about generalization quality. The separate longitudinal evaluator uses actual captured conversation history and coding tasks to examine behavior over time.
+
+### Wake and sleep results
+
+`eval/triage-live.mjs` runs 65 hand-labelled turn-end arrivals through the real gate. 24 of them should be stored. These are two runs on `vercel-ai-gateway/openai/gpt-6-luna-decisions`:
+
+| Threshold | Precision | Recall | Stored of 65 |
+| --- | --- | --- | --- |
+| 1 (shipped) | 0.96, 1.00 | 0.96, 0.92 | 24, 22 |
+| 1.5 | 1.00, 1.00 | 0.71, 0.67 | 17, 16 |
+| 2 | 1.00, 1.00 | 0.25, 0.29 | 6, 7 |
+
+A run cost $0.0019 to $0.0031. Of 33 real arrivals from Pi sessions in this repository, 7 cleared the bar. The threshold was chosen on these same cases, so these figures are optimistic. Every run missed one wanted arrival, the recovery command `bun run deploy --audience pi-deploy`, which scored 0.68 to 0.81.
+
+`eval/long/run.mjs` ran the ingestion and migration projects twice each, with `openai/gpt-6.1-sol` as the agent and the gateway classifier for recall. Figures are means per run.
+
+| Arm | Runs | Memory score | Requests | Uncached input | Cached input | Output | Recalled tokens |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Raw entries only | 4 | 1.0 | 29.75 | 23,040 | 119,168 | 4,287 | 1,729 |
+| After a sleep pass | 4 | 1.0 | 29.25 | 26,935 | 112,032 | 4,057 | 1,318 |
+
+Each sleep pass turned 3 raw entries into 4 long-term candidates in 36 to 54 seconds on `openai/gpt-6.1-sol`. One run in the second arm is marked incomplete because the agent spent its 16 requests on stage 1, before any sleep pass; it still scored 1.0 at every stage. The arms cannot be told apart on memory score, since both reached the ceiling, and neither was compared with the older capture path.
+
+The first attempt at the second arm found two faults. `xai/grok-4.7` took 230 to 366 seconds for the same pass, past the eval's 120-second limit, which is why a sleep pass has its own `dream.sleepTimeoutMs` and `dream.model` should be a fast chat model. The run that did finish lost a region name: one rejected fact archived its whole raw entry. An entry with a rejected fact now stays raw and is retried for up to seven days, and a correction quotes one entry.
 
 ### Historical representation experiments
 

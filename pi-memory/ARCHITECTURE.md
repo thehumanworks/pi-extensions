@@ -190,6 +190,8 @@ index keys (LongMemEval's key expansion), and the fast-LLM selector can rerank.
 
 ## 5. Capture pipeline (background learning)
 
+The shipped package also has a classifier path, where turn-end capture stores raw entries and reflection moves to the sleep pass. See [wake and sleep](docs/DREAMING.md#wake-and-sleep).
+
 ### 5.1 Triggers
 
 | Event | Why | Work |

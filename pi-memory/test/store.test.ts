@@ -334,3 +334,53 @@ test('sibling git worktrees share identity without a remote', async t => {
   execFileSync('git', ['-C', main, 'worktree', 'add', '-b', 'other', worktree], { stdio: 'ignore' });
   assert.equal(resolveProjectKey(main), resolveProjectKey(worktree));
 });
+
+const raw = (body = 'Run bun test with the native SQLite library path configured.'): MemoryInput => ({ ...input(body), raw: { role: 'user', at: '2026-10-31T10:00:00.000Z' } });
+
+test('a raw entry roundtrips, and may reinforce a memory but never absorb one', async t => {
+  const { store } = await fixture(t);
+  const note = await store.save(raw());
+  assert.deepEqual(parseMemory(serializeMemory(note)).raw, note.raw);
+  const memory = await store.save(input());
+  assert.notEqual(memory.id, note.id, 'the distilled memory stays its own record');
+  assert.equal(memory.raw, undefined);
+  assert.equal((await store.save(raw())).id, note.id);
+  assert.deepEqual(store.rawEntries().map(item => item.id), [note.id]);
+});
+
+test('raw entries come oldest first and settle into archive with their outcome', async t => {
+  const { store } = await fixture(t);
+  const late = await store.save({ ...raw('The later note about deploys.'), raw: { role: 'user', at: '2026-10-31T11:00:00.000Z' } });
+  const early = await store.save(raw('The earlier note about deploys.'));
+  assert.deepEqual(store.rawEntries().map(item => item.id), [early.id, late.id]);
+  await store.settleRaw(new Map([[early.id, ['m_1', 'm_1']], [late.id, []]]));
+  assert.deepEqual(store.rawEntries(), []);
+  const [first] = store.get([early.id]), [second] = store.get([late.id]);
+  assert.deepEqual([first!.status, first!.raw!.settledInto, first!.archive_reason], ['archived', ['m_1'], 'Assimilated into m_1']);
+  assert.deepEqual([second!.status, second!.raw!.settledInto, second!.archive_reason], ['archived', [], 'Pruned by the sleep pass']);
+  await store.settleRaw(new Map([[early.id, ['m_2']]]));
+  assert.deepEqual(store.get([early.id])[0]!.raw!.settledInto, ['m_1'], 'a settled entry stays settled');
+});
+
+test('settleRaw leaves long-term memories alone', async t => {
+  const { store } = await fixture(t);
+  const memory = await store.save(input());
+  await store.settleRaw(new Map([[memory.id, []]]));
+  assert.equal(store.get([memory.id])[0]!.status, 'active');
+});
+
+test('consolidation leaves raw entries to the sleep pass', async t => {
+  const { store } = await fixture(t);
+  const first = await store.save(raw('Shared words about the native SQLite setup.'));
+  const memory = await store.save({ ...input('Shared words about the native SQLite setup.'), title: 'Other title' });
+  await store.consolidate();
+  assert.deepEqual(store.get([first.id, memory.id]).map(item => item.status), ['active', 'active']);
+});
+
+test('recall labels a raw note and shows what it answered', async t => {
+  const { store } = await fixture(t);
+  const note = await store.save({ ...raw('Yes, always.'), summary: 'Should staging use Postgres 17?', raw: { role: 'user', at: '2026-10-31T10:00:00.000Z', before: 'Should staging use Postgres 17?' } });
+  const rendered = renderMemories([note], 400);
+  assert.match(rendered, /raw note, not yet consolidated/);
+  assert.match(rendered, /In reply to: Should staging use Postgres 17\?\nYes, always\./);
+});
