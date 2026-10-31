@@ -32,7 +32,7 @@ export function publishUpdated(args, { cwd = root, run = spawnSync, log = consol
 
   // Finish all lookups before publishing, so a lookup error cannot cause a partial release.
   for (const { directory: dir, pkg } of workspaces) {
-    if (!/^@nothumanwork\/(?:bot(?:-ai-sdk)?|pi-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(pkg.name) || pkg.publishConfig?.access !== 'public') {
+    if (!/^@nothumanwork\/pi-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(pkg.name) || pkg.publishConfig?.access !== 'public') {
       throw new Error(`Invalid publishable workspace manifest: ${dir}`);
     }
     if (pkg.publishConfig?.registry && pkg.publishConfig.registry.replace(/\/$/, '') !== registry.replace(/\/$/, '')) {

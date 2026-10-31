@@ -1,90 +1,100 @@
 # @nothumanwork/pi-bot
 
-A thin Pi UI for [`@nothumanwork/bot`](../bot/packages/runtime/README.md): named specialists, direct conversations, delegation, progress and durable resume references.
+Named bots for Pi. A bot is a directory, and Pi runs in it: the body of its `BOT.md` is the system prompt, and everything else is ordinary Pi project behaviour for that directory, including settings, extensions, skills, context files and sessions. A bot session is a normal Pi session (same TUI, `/model`, `/tree`, `/resume`, `/compact`, tool rendering), whose working directory is always the bot's home.
 
-All bot definition, tool loading, memory, execution and storage policy belongs to the SDK. The extension contains only adapter registration and rendering. A bot conversation is **not** a native Pi session: Pi displays inputs/replies and stores a reference; the SDK's `pi-durable` database owns its history.
+Tested with Pi **1.4.0** and Node **22.19+**.
 
 ## Install
 
 ```sh
-pi install npm:@nothumanwork/pi-bot
+pi install npm:@nothumanwork/pi-bot   # after publication
+pi install ./pi-bot                   # from this checkout
 ```
 
-Tested with Pi **1.4.0**, Node **22.19+**, and Linux with **`flock(1)`**. The SDK is an npm dependency and supplies its own pinned Pi runtime libraries. Neither standalone execution nor bot delegation starts a `pi` subprocess.
+## Quick start
 
-For shell/headless use, install the SDK executable separately:
-
-```sh
-npm install -g @nothumanwork/bot
-bot init ./reviewer
-bot run ./reviewer --cwd ../app --message "Review the staged diff"
+```text
+/bot new reviewer        name, one-line description, system prompt; then start talking to it
+pi --bot reviewer        start Pi as reviewer from any directory, continuing its latest conversation
+/new                     inside the bot: a fresh conversation, still in reviewer's home
+/bot reviewer            switch a running Pi to reviewer's latest conversation
+/bot exit                back to a new session where Pi started
 ```
+
+Or ask an agent: *"Create a bot called reviewer that reviews diffs for security issues."* It uses `bot_manage`.
+
+## A bot's home
+
+```text
+~/.pi/agent/bots/reviewer/       ($PI_BOT_HOME/reviewer when set)
+  BOT.md                         description + system prompt
+  AGENTS.md                      optional standing context (a Pi context file)
+  .pi/settings.json              model, thinking, tools… (Pi project settings)
+  .pi/extensions/  .pi/skills/  .pi/prompts/  .pi/mcp.json
+```
+
+```markdown
+---
+description: Reviews diffs for security and correctness
+---
+
+You are a meticulous security reviewer. …
+```
+
+The body replaces Pi's default preamble, as `--system-prompt` would. Pi still adds context files, skills and the working directory, and pi-bot adds a short `<bot>` section that tells the bot where its home, definition and environment are, and how to reach other bots. Only the `description` frontmatter key is read. Configure everything else the Pi way, for example:
+
+```json
+{ "defaultProvider": "openai", "defaultModel": "gpt-6.1-sol", "defaultThinkingLevel": "high", "defaultTools": ["read", "grep", "find", "ls"] }
+```
+
+in `.pi/settings.json`. Sessions live where Pi keeps them for that directory (`~/.pi/agent/sessions/--<home>--/` by default), so `/resume` inside a bot lists the bot's conversations. The `<bot>` section names that directory, so the bot can search earlier conversations when asked about them.
+
+## Working directory
+
+The home is the working directory of every bot session. Work on other directories through absolute paths; when you start Pi elsewhere, the bot is told where.
+
+Pi fixes its working directory before extensions load, so `pi --bot <name>` starts in the current directory and, once startup has finished, switches to the bot's latest session (or its first), the same replacement `/resume` performs. Anything you submit meanwhile, including a prompt on the command line, is held and sent to the bot's session. The starting directory's own project resources load briefly first.
+
+- Each launch continues the same conversation; `/new` starts another in the bot's home, and `/resume` picks an older one.
+- `-r`/`--resume` and `--session` resolve against the starting directory before pi-bot runs; use `/resume` inside the bot instead. Started inside the home, they choose the session as usual.
+- Print and JSON modes cannot switch sessions before they run their prompt. Run them from the home (`cd ~/.pi/agent/bots/reviewer && pi -c -p "…"`) or use `bot_run`. RPC mode switches like the TUI.
+- Two Pi processes on the same bot append to the same session file, as two `pi -c` would.
+- An unknown bot fails without running the prompt in an ordinary session.
+
+## A bot changes itself
+
+- **Instructions:** it edits `BOT.md`; the new text applies from its next turn.
+- **Environment:** it edits `.pi/`, `AGENTS.md`, its skills or extensions, then calls `bot_reload`. Pi reloads when the turn ends, and the changes apply from your next message. `/reload` does the same.
+- **Other bots:** `bot_manage create`, then it edits their files.
+
+pi-bot answers Pi's project-trust check for bot homes with *yes*, so a bot's own `.pi` resources load without a prompt, including in headless `bot_run` children. Bots are trusted agents, **not sandboxes**: their tools and extensions run with your permissions.
 
 ## Commands
 
 | Command | Action |
 | --- | --- |
-| `/bot` | Pick a named bot |
-| `/bot <name\|directory\|URL>` | Route subsequent text to a new SDK conversation |
-| `/bot new <name>` | Create a bot using a short description/persona editor |
-| `/bot list` | List definitions without executing their modules |
-| `/bot resume [ref]` | Select a durable conversation and its original workspace |
-| `/bot info [ref]` | Show source, state, model, capabilities and revision |
-| `/bot edit [ref]` | Edit a local `BOT.md` |
-| `/bot stop` | Cancel this selected bot's pending chat requests |
-| `/bot exit` | Return to ordinary Pi input; already accepted work continues |
-| `/bot delete <ref>` | Confirm archiving an idle local source and colocated state |
-| `/bot help` | Show usage and ownership boundaries |
+| `/bot` | Pick a bot and continue its latest session |
+| `/bot <name>` | Continue the bot's latest session (or start its first) |
+| `/bot list` | Names, descriptions and homes |
+| `/bot new [name]` | Create a bot interactively |
+| `/bot edit [name]` | Edit `BOT.md` (the current bot by default) |
+| `/bot exit` | Leave the bot: a new session where Pi started |
+| `/bot reload` | Reload once Pi is idle (what `bot_reload` queues) |
+| `/bot help` | Usage |
 
-`pi --bot reviewer` selects a bot at interactive startup using the same SDK-backed interface. Headless `pi --bot` is explicitly unsupported; use `bot run`, `bot chat`, or the `bot_run` tool. A failed startup selection does not silently route the request to Pi's ordinary model.
+There is no delete command; to retire a bot, move or remove its directory.
 
-Names live under `$PI_BOT_HOME` or `<Pi user directory>/bots`. Paths containing `/`, `.` or `~` can select a source outside the roster. `/bot ./reviewer` and `/bot http://localhost:3000` both work. Tokens for protected daemons can be supplied through the `bot_run` tool or SDK CLI; the slash-command URL interface is tokenless.
+## Tools
 
-The status indicator shows the selected bot and durable session. Text deltas appear in a progress widget; finished replies contain run/session IDs. Rapid follow-ups queue against the same conversation. `/reload`/Pi session resume restores the saved reference, not a copied transcript. Queued work survives reopening. An interrupted in-flight native Pi request fails closed rather than replaying possibly completed external effects; inspect before retrying. Workers close at Pi session shutdown; an idle selected worker also closes on `/bot exit`.
+**`bot_manage`** — `list` bots, or `create` one from a name, description and system prompt. Existing bots are changed by editing their files.
 
-Pi `/model`, `/thinking`, `/tree`, `/fork` and native history editing **do not control** SDK conversations. Set the bot model/thinking in `BOT.md`; resume with `/bot resume`. Workspace changes require a new bot conversation, not a silent fork. Direct chat currently accepts text only and requires interactive Pi UI.
+**`bot_run`** — delegate a self-contained task: `bot_run({ bot: "reviewer", task: "Review /srv/app for authorization bugs." })`. It runs `pi --mode json` in the bot's home with the same Pi installation, so the child is the bot as you would talk to it, with its own prompt, settings, extensions and history. Each call starts a new session unless you pass `session: "<id>"` from an earlier result, or `"last"` for the bot's latest session. The result is the bot's final reply plus its session id. Delegation nests at most three levels. Cancelling the tool call stops the child; it cannot undo effects already made. Continuing a session that is also open elsewhere appends to the same session file.
 
-## Tools exposed to Pi
+**`bot_reload`** — only in bot sessions; see above.
 
-### `bot_manage`
+## Migrating from 0.3
 
-Actions: `list`, `show`, `create`, `edit`. Create reusable specialists whenever useful. Definitions may be changed by complete `definition`, full persona `prompt`, or unique non-overlapping persona `edits`, with separate model/thinking/inheritance/tool/skill settings.
-
-```text
-bot_manage({ action: "create", name: "reviewer", description: "Reviews code",
-             prompt: "Cite files, verify claims, and improve your own review procedures." })
-bot_manage({ action: "edit", name: "reviewer", tools: [] })  // literally no tools
-bot_manage({ action: "edit", name: "reviewer", tools: null }) // automatic discovery again
-```
-
-`null` clears optional model/thinking/selection settings; it is not the same as an empty array. The tool cannot delete bots. Human-confirmed archiving is a Pi administrative affordance, **not an approval requirement for a bot's own improvements**. Archiving does not relocate an independently configured external state directory; durable state remains bound to the original source path.
-
-### `bot_run`
-
-```text
-bot_run({ bot: "reviewer", task: "Review the staged diff in this project." })
-bot_run({ bot: "reviewer", task: "Explain finding two.", session: "dconv:1" })
-bot_run({ bot: "http://localhost:3000", task: "Review the server workspace",
-          authTokenEnv: "BOT_SERVER_TOKEN" }) // token optional
-```
-
-Tasks must be self-contained: the bot does not receive the surrounding Pi conversation. Results include output, usage, tool calls, terminal status and durable run/session IDs. Local runs use their requested cwd; a resumed conversation retains its original cwd. `session: "last"` selects the latest for the current/requested workspace. Remote cwd overrides are rejected because the server owns execution paths.
-
-Pi tool cancellation flows to the SDK. Cancelling cannot undo external side effects. Local handles are reused within one Pi session, but the source has one runtime owner: if another process already serves it, use that daemon's URL rather than opening a second writer.
-
-## Bot-owned capabilities and memory
-
-`BOT.md` uses YAML frontmatter and a persona body, with no format/version discriminator.
-
-The scaffold uses global Pi defaults and `maintenance: true`, but omits a restrictive tool allowlist. Bots can autonomously author or improve `BOT.md`, `tools/`, `extensions/`, `skills/`, `scripts/`, and memory under `.bot/`. Authored tool/persona generations can activate after a tool batch, including within the same run; native extension, MCP and selection changes wait for an idle request boundary. Invalid drafts stay on disk with repair diagnostics and the previous valid generation still active. No approval, promotion, PR or redeployment is required.
-
-Global Pi extensions, MCP servers, skills, instructions and tool defaults are inherited **by default**, never workspace `.pi` resources or the parent conversation. An optional `skills` list in `BOT.md` names skills, never paths. Each name resolves from the bot's own `skills/`, then the workspace's `.pi/skills` or `.agents/skills`, then `~/.pi/agent/skills` or `~/.agents/skills`. A name that isn't installed is skipped with a diagnostic. Each worker owns its connections using the same user configuration; it does not borrow the parent's live session. Native Pi lifecycle/tool hooks, codemode and MCP run in Pi's real headless `AgentSession`.
-
-Use `excludeTools`, `excludeExtensions`, and `excludeMcpServers` (exact names or `*` patterns) to remove defaults. Add bot-specific capabilities under `tools/` and `extensions/`. `inherit: none` explicitly opts out; provider auth remains independent. An explicit `tools` list remains restrictive, so omit it for additive discovery. Exclusions are also editable through `bot_manage`.
-
-Native execution persists conversations but does not provide durable tool replay. Existing durable-executor conversations need a new conversation when enabling native execution. UI/session-replacement commands are not a full Pi CLI embedding; see the SDK's operational limits.
-
-These are trusted executable bots, **not sandboxes**. Shell and authored tools use host permissions. A remote bot uses the server user's files and provider credentials; a daemon can deliberately run unauthenticated even on `0.0.0.0`. See the [SDK documentation](../bot/packages/runtime/README.md) for optional tokens, checkpoint limits, durability/replay semantics and process lifecycle guarantees.
+0.3 ran bots through the `@nothumanwork/bot` SDK. That SDK, its `bot` CLI, daemons, durable queue and `.bot/` memory and history are gone. Existing bot directories keep working: their `BOT.md` body becomes the system prompt. Their `.bot/` and `.sdk-*.lock` files are no longer used and are left in place. SDK conversations are not imported into Pi sessions. Move a bot's `model`, `thinking` and `tools` frontmatter into `.pi/settings.json` (`defaultProvider`/`defaultModel`, `defaultThinkingLevel`, `defaultTools`); in `BOT.md` they have no effect.
 
 ## Development
 
@@ -92,7 +102,9 @@ From the repository root:
 
 ```sh
 npm run check --workspace @nothumanwork/pi-bot
-npm run test --workspace @nothumanwork/pi-bot
+npm test --workspace @nothumanwork/pi-bot
 ```
 
-Both commands build the sibling SDK first. Integration tests use temporary bot directories and scripted Pi models—no live provider calls.
+Tests run the real Pi CLI (print, JSON and RPC modes) in temporary directories with a scripted faux model; no provider credentials are passed to them.
+
+The HTTP server (`src/server/`, `bin/`) and desktop app (`desktop/`) in this directory are not part of the npm package. They still import bot modules removed before 0.3, so they and `test/server.test.ts` do not currently build.

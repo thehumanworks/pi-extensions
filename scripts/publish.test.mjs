@@ -58,34 +58,31 @@ test('propagates publish errors', t => {
   f.run = () => ({ error: new Error('npm unavailable') });
   assert.throws(() => publish(['pi-example', '--dry-run'], f), /npm unavailable/);
 });
-test('publishes the standalone SDK only when explicitly registered and scoped', t => {
+test('publishes only pi-* packages', t => {
   const f = fixture(t);
   mkdirSync(join(f.cwd, 'bot'));
   writeFileSync(join(f.cwd, 'package.json'), JSON.stringify({ workspaces: ['bot', 'pi-example'] }));
   writeFileSync(join(f.cwd, 'bot/package.json'), JSON.stringify({ name: '@nothumanwork/bot', version: '0.1.0', publishConfig: { access: 'public' } }));
-  publish(['bot', '--dry-run'], f);
-  assert.ok(f.calls[0][1].includes('--workspace=@nothumanwork/bot'));
-  assert.throws(() => publish(['bot-missing'], f));
+  assert.throws(() => publish(['bot', '--dry-run'], f), /Usage/);
+  assert.equal(f.calls.length, 0);
 });
-test('resolves nested bot packages by public name without publishing private applications', t => {
+test('resolves nested workspaces by public name without publishing private ones', t => {
   const f = fixture(t);
-  const paths = ['bot', 'bot/packages/runtime', 'bot/packages/ai-sdk', 'bot/apps/web'];
+  const paths = ['group', 'group/packages/pi-nested', 'group/apps/web'];
   const packages = [
-    { name: '@nothumanwork/bot-workspace', private: true },
-    { name: '@nothumanwork/bot', version: '0.1.0', publishConfig: { access: 'public' } },
-    { name: '@nothumanwork/bot-ai-sdk', version: '0.1.0', publishConfig: { access: 'public' } },
-    { name: '@nothumanwork/bot-ui', private: true },
+    { name: '@nothumanwork/group', private: true },
+    { name: '@nothumanwork/pi-nested', version: '0.1.0', publishConfig: { access: 'public' } },
+    { name: '@nothumanwork/pi-web', private: true },
   ];
   writeFileSync(join(f.cwd, 'package.json'), JSON.stringify({ workspaces: paths }));
   paths.forEach((path, index) => {
     mkdirSync(join(f.cwd, path), { recursive: true });
     writeFileSync(join(f.cwd, path, 'package.json'), JSON.stringify(packages[index]));
   });
-  publish(['bot', '--dry-run'], f);
-  publish(['bot-ai-sdk', '--dry-run'], f);
-  assert.deepEqual(f.calls.map(call => call[1].find(arg => arg.startsWith('--workspace='))), ['--workspace=@nothumanwork/bot', '--workspace=@nothumanwork/bot-ai-sdk']);
-  assert.throws(() => publish(['bot-ui', '--dry-run'], f));
-  assert.throws(() => publish(['bot/packages/runtime'], f));
+  publish(['pi-nested', '--dry-run'], f);
+  assert.deepEqual(f.calls.map(call => call[1].find(arg => arg.startsWith('--workspace='))), ['--workspace=@nothumanwork/pi-nested']);
+  assert.throws(() => publish(['pi-web', '--dry-run'], f), /must be a public/);
+  assert.throws(() => publish(['group/packages/pi-nested'], f));
 });
 
 test('help does not call npm', t => {
