@@ -20,7 +20,7 @@ import { getAgentDir } from "@earendil-works/pi-coding-agent";
 // is removed afterwards. A `claude-bridge/` model loads pi-claude-bridge from Pi's npm packages.
 
 const MODELS = (process.env.PI_AGENT_E2E_MODELS ?? "").split(",").map((model) => model.trim()).filter(Boolean);
-const PI = fileURLToPath(new URL("../node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js", import.meta.url));
+const PI = fileURLToPath(new URL("./bundle/cli.js", import.meta.resolve("@earendil-works/pi-coding-agent")));
 const EXTENSION = fileURLToPath(new URL("../index.ts", import.meta.url));
 const BRIDGE = join(homedir(), ".pi", "agent", "npm", "node_modules", "pi-claude-bridge");
 const TIMEOUT = 180_000;

@@ -22,21 +22,21 @@
     },
     "pi-agent": {
       "name": "@nothumanwork/pi-agent",
-      "version": "0.2.0",
+      "version": "0.3.1",
       "dependencies": {
-        "@earendil-works/pi-ai": "^1.4.0",
-        "@earendil-works/pi-coding-agent": "^1.4.0",
         "croner": "^9.1.0",
         "ignore": "^7.0.14",
         "proper-lockfile": "^4.1.2",
-        "typebox": "^1.4.3",
         "yaml": "^2.9.0",
       },
       "devDependencies": {
+        "@earendil-works/pi-ai": "1.4.0",
+        "@earendil-works/pi-coding-agent": "1.4.0",
         "@types/bun": "latest",
         "@types/node": "^22.19.0",
         "@types/proper-lockfile": "^4.1.4",
         "tsx": "^4.20.0",
+        "typebox": "1.4.3",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {

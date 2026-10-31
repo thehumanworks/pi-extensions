@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 // session's faux model, because the provider an extension registers may not yet be in its
 // credential snapshot, so every run passes --model.
 
-const PI = fileURLToPath(new URL("../../node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js", import.meta.url));
+const PI = fileURLToPath(new URL("./bundle/cli.js", import.meta.resolve("@earendil-works/pi-coding-agent")));
 const EXTENSION = fileURLToPath(new URL("../../index.ts", import.meta.url));
 const FAUX = fileURLToPath(new URL("./faux-model.ts", import.meta.url));
 const BASE_ARGS = ["-e", EXTENSION, "-e", FAUX, "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-mcp", "--model", "faux/faux-1"];

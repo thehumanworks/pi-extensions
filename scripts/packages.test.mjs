@@ -41,7 +41,11 @@ for (const { directory: dir } of workspaces) {
       if (pkg.pi) assert.ok(!['@earendil-works/pi-ai', '@earendil-works/pi-coding-agent', '@earendil-works/pi-tui', 'typebox'].includes(name), `host dependency bundled: ${name}`);
     }
     if (dir === 'pi-agent') {
-      for (const file of ['src/definitions.ts', 'src/store.ts', 'src/storage.ts', 'src/runtime.ts', 'src/tools.ts', 'src/loops.ts', 'src/output.ts', 'src/drafts.ts', 'src/draft-tools.ts', 'src/draft-commands.ts']) assert.ok(files.has(file), `missing ${file}`);
+      for (const name of ['@earendil-works/pi-ai', '@earendil-works/pi-coding-agent', 'typebox']) {
+        assert.equal(pkg.peerDependencies?.[name], '*', `host dependency must be a wildcard peer: ${name}`);
+        assert.ok(pkg.devDependencies?.[name], `missing host dependency for development: ${name}`);
+      }
+      for (const file of ['src/agent.ts', 'src/discovery.ts', 'src/extension.ts', 'src/homes.ts', 'src/model.ts', 'src/session.ts', 'src/tools.ts', 'src/trust.ts']) assert.ok(files.has(file), `missing ${file}`);
       assert.ok(!files.has('PLAN.md'));
     }
     if (dir === 'pi-atlassian') {
