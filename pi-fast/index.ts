@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 
 type Tier = "default" | "fast" | "ultrafast";
 
-const DEFAULT_ULTRAFAST_MODELS = ["gpt-6-astra"];
+const DEFAULT_ULTRAFAST_MODELS = ["gpt-6-astra", "gpt-6.1-sol"];
 const OPENAI_PROVIDERS = new Set(["openai", "openai-codex"]);
 const MAX_TRACKED_TIERS = 64;
 

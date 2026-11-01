@@ -175,9 +175,22 @@ describe("OpenAI service tiers", () => {
         expect((await h.request()).service_tier).toBe("default");
     });
 
+    test.each(["openai", "openai-codex"])("both ultrafast models are enabled by default on %s", async (provider) => {
+        for (const settings of [{}, { fast: {} }]) {
+            const h = await harness({ ultrafast: true }, settings);
+            for (const model of ["gpt-6-astra", "gpt-6.1-sol"]) {
+                await h.model(provider, model);
+                expect((await h.request()).service_tier).toBe("ultrafast");
+                expect(h.statuses.at(-1)).toBe("ultrafast");
+                await h.command("ultrafast", "on");
+                expect((await h.request()).service_tier).toBe("ultrafast");
+            }
+        }
+    });
+
     test("unsupported ultrafast is rejected; model changes suspend it", async () => {
         const h = await harness({ ultrafast: true });
-        await h.model("openai", "gpt-6.1-sol");
+        await h.model("openai", "gpt-5.6");
         expect((await h.request()).service_tier).toBe("default");
         await h.command("ultrafast", "on");
         expect(h.notices.at(-1)).toContain("not enabled");
@@ -193,6 +206,8 @@ describe("OpenAI service tiers", () => {
         expect((await h.request()).service_tier).toBe("default");
         h.settings({ fast: { ultrafastModels: ["gpt-6.1-sol"] } });
         expect((await h.request()).service_tier).toBe("ultrafast");
+        h.settings({ fast: { ultrafastModels: ["gpt-6-astra"] } });
+        expect((await h.request()).service_tier).toBe("default");
         h.settings({ fast: { ultrafastModels: [] } });
         expect((await h.request()).service_tier).toBe("default");
     });

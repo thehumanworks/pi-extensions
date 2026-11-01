@@ -81,21 +81,24 @@ References:
 
 ## Configure ultrafast models
 
-Add this custom extension setting to Pi's settings.json:
+Both `gpt-6-astra` and `gpt-6.1-sol` are enabled for Ultrafast by default on
+`openai` and `openai-codex`. To override the allowlist, add this custom extension
+setting to Pi's settings.json:
 
 ```json
 {
   "fast": {
     "ultrafastModels": [
-      "gpt-6-astra"
+      "gpt-6-astra",
+      "gpt-6.1-sol"
     ]
   }
 }
 ```
 
-To also use `gpt-6.1-sol`, add it to that array; no code change is required.
-The default, when the setting is absent, is `["gpt-6-astra"]`. An empty array
-disables ultrafast for all models.
+The default, when the setting is absent, is `["gpt-6-astra", "gpt-6.1-sol"]`.
+An explicit array replaces the defaults; an empty array disables ultrafast for
+all models.
 
 Entries are exact, case-sensitive model IDs (covering both supported providers)
 or provider-qualified IDs such as `openai-codex/gpt-6-astra`. No wildcards or
