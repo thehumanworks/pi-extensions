@@ -1,0 +1,79 @@
+{
+  "name": "@nothumanwork/asx",
+  "version": "1.0.0",
+  "description": "asx: run pi agents from presets, one-line workflow expressions or TypeScript workflows, durably, from Pi or the shell",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "asx",
+    "agents",
+    "workflow",
+    "orchestration"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "asx"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "dist",
+    "bin",
+    "examples/workflows",
+    "examples/presets",
+    "README.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "bin": {
+    "asx": "bin/asx.mjs"
+  },
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./recipes": "./dist/recipes.js"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "test": "npm run build && node --experimental-strip-types --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@babel/parser": "8.0.8",
+    "@earendil-works/chord": "1.4.0",
+    "@earendil-works/pi-durable": "1.4.0",
+    "jiti": "2.6.1",
+    "liquidjs": "^10.30.1",
+    "pi-workflow-runtime": "npm:@earendil-works/pi-coding-agent@1.4.0",
+    "smol-toml": "^1.9.1"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-agent-core": "1.4.0",
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-tui": "1.4.0",
+    "@types/node": "^22.19.0",
+    "typebox": "1.3.27",
+    "typescript": "^5.9.3"
+  }
+}

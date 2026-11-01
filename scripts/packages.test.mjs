@@ -57,7 +57,7 @@ for (const { directory: dir } of workspaces) {
       assert.ok(![...files].some(f => f.includes('fixtures')));
     }
     if (dir === 'pi-loop') assert.ok(files.has('dist/worker.js'));
-    if (dir === 'pi-orchestration') {
+    if (dir === 'asx') {
       for (const file of ['dist/index.js', 'dist/index.d.ts', 'dist/recipes.js', 'dist/recipes.d.ts', 'dist/cli.js', 'dist/worker.js', 'dist/engine/index.js']) assert.ok(files.has(file), `missing ${file}`);
       assert.ok(files.has(pkg.types.replace(/^\.\//, '')));
       assert.equal([...files].filter(f => f.startsWith('examples/workflows/')).length, 9);

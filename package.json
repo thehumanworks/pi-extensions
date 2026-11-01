@@ -14,7 +14,7 @@
     "pi-loggly",
     "pi-loop",
     "pi-memory",
-    "pi-orchestration",
+    "asx",
     "pi-remote",
     "pi-tps",
     "pi-usage",

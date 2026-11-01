@@ -1,0 +1,195 @@
+import { Type, type Static, type TSchema, type TObject } from "typebox";
+import type { ToolRegistration } from "@earendil-works/pi-durable";
+
+export type RunId = string;
+export type StepKey = string;
+/** A model as `provider/modelId`, the form run records store. */
+export type ModelName = `${string}/${string}`;
+export type ModelRef = { provider: string; modelId: string } | ModelName;
+export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+export interface RunBudget { maxAgents?: number; maxCostUsd?: number; maxTokens?: number; maxDurationMs?: number }
+export interface AgentSpec {
+  model?: ModelRef;
+  thinkingLevel?: ThinkingLevel;
+  instructions?: string;
+  /**
+   * Durable runtime: explicit tool-name allowlist or `{ remove }` against read/write/edit/bash.
+   * pi runtime: pi's --tools allowlist (names, `*` patterns, `+name`/`-name`); `{ remove }` becomes excludeTools.
+   */
+  tools?: string[] | { remove: string[] };
+  /** pi runtime only: pi's --exclude-tools denylist. */
+  excludeTools?: string[];
+  /**
+   * `pi`: a full pi coding-agent session with pi's tools, the user's extensions, MCP servers, skills and
+   * context files, journaled as one durable step. `durable` (default for ctx.agent): a pi-durable conversation
+   * with read/write/edit/bash and per-tool-call durability. Presets always use `pi`.
+   */
+  runtime?: "durable" | "pi";
+  cwd?: string;
+  isolation?: "none" | "worktree";
+  budget?: { maxCostUsd?: number; maxTurns?: number };
+  timeoutMs?: number;
+  retries?: number;
+}
+export interface AgentOptions extends AgentSpec { label?: string; phase?: string; agentType?: string; key?: string }
+/** Options for ctx.preset(); the template sees them as `args`, `inputs`, `copy`, `iteration` and `feedback`. */
+export interface PresetOptions {
+  args?: Record<string, unknown>;
+  /** Upstream outputs; `{{ input }}` joins them, `{{ inputs }}` lists them. */
+  inputs?: string[];
+  copy?: { index: number; count: number; variant?: string };
+  iteration?: number;
+  feedback?: string;
+  /** Extra environment for `{% sh %}`, over the worker's own. */
+  env?: Record<string, string>;
+  /** Preset directories in lookup order. Default: <cwd>/.pi/presets, $ASX_PRESET_DIR, ~/.pi/agent/presets. */
+  presetDirs?: string[];
+  label?: string;
+  phase?: string;
+  key?: string;
+}
+export type Settled<T> = { status: "fulfilled"; value: T } | { status: "rejected"; reason: { message: string; code?: string } };
+export type PipelineStage<In, Out, Item> = (prev: In, item: Item, index: number) => Promise<Out> | Out;
+/** Passed to ctx.step callbacks. They run in the shared worker process, whose working directory is not the run's. */
+export interface StepContext {
+  signal: AbortSignal;
+  /** The run's absolute working directory. Resolve relative paths against it. */
+  cwd: string;
+  log(message: string): void;
+}
+export interface BackgroundAgent {
+  readonly name: string;
+  readonly conversationId: string;
+  send(message: string, options?: { whenBusy?: "steer" | "followUp" }): Promise<void>;
+  wait(options?: { timeoutMs?: number }): Promise<string>;
+  status(): Promise<"idle" | "busy" | "stopped">;
+  stop(): Promise<void>;
+}
+export interface SwarmOptions<Item, Out> {
+  workers: number;
+  queue: readonly Item[] | { initial: readonly Item[]; allowPush?: boolean };
+  worker: AgentSpec & { prompt: (item: Item, blackboard: string) => string; schema?: TSchema };
+  until?: (state: { processed: number; remaining: number; results: Out[]; blackboard: string }) => boolean;
+  label?: string;
+  phase?: string;
+}
+export interface WorkflowContext<Args = unknown> {
+  readonly runId: RunId;
+  readonly args: Args;
+  readonly cwd: string;
+  readonly depth: number;
+  readonly budget: { costUsd: number | null; agents: number | null };
+  agent<S extends TSchema>(prompt: string, options: AgentOptions & { schema: S }): Promise<Static<S>>;
+  agent(prompt: string, options?: AgentOptions): Promise<string>;
+  /** Render a preset's task template (journaled) and run it as a pi session; returns the agent's final text. */
+  preset(name: string, options?: PresetOptions): Promise<string>;
+  parallel<T>(thunks: ReadonlyArray<() => Promise<T>>, options: { concurrency?: number; failure: "allSettled" }): Promise<Settled<T>[]>;
+  parallel<T>(thunks: ReadonlyArray<() => Promise<T>>, options?: { concurrency?: number; failure?: "null" | "failFast" }): Promise<Array<T | null>>;
+  pipeline<T, A>(items: readonly T[], s1: PipelineStage<T, A, T>): Promise<Array<A | null>>;
+  pipeline<T, A, B>(items: readonly T[], s1: PipelineStage<T, A, T>, s2: PipelineStage<A, B, T>): Promise<Array<B | null>>;
+  pipeline<T, A, B, C>(items: readonly T[], s1: PipelineStage<T, A, T>, s2: PipelineStage<A, B, T>, s3: PipelineStage<B, C, T>): Promise<Array<C | null>>;
+  pipeline<T, A, B, C, D>(items: readonly T[], s1: PipelineStage<T, A, T>, s2: PipelineStage<A, B, T>, s3: PipelineStage<B, C, T>, s4: PipelineStage<C, D, T>): Promise<Array<D | null>>;
+  step<T>(key: string, fn: (step: StepContext) => Promise<T>, options?: { retries?: number; compensate?: (result: T) => Promise<void> }): Promise<T>;
+  workflow<R = unknown>(nameOrRef: string | { path: string }, args?: unknown): Promise<R>;
+  signal<S extends TSchema = TSchema>(key: string, options?: { schema?: S; timeoutMs?: number; prompt?: string }): Promise<Static<S>>;
+  sleep(ms: number): Promise<void>;
+  spawn(options: AgentOptions & { name: string; initialPrompt?: string; detach?: boolean }): Promise<BackgroundAgent>;
+  swarm<Item, Out>(options: SwarmOptions<Item, Out>): Promise<{ results: Out[]; blackboard: string; processed: number }>;
+  phase(title: string): void;
+  log(message: string, data?: unknown): void;
+  now(): number;
+  random(): number;
+}
+export interface WorkflowDefinition<A extends TSchema = TSchema, R = unknown> {
+  name: string;
+  description?: string;
+  args?: A;
+  agents?: Record<string, AgentSpec>;
+  defaults?: AgentSpec;
+  budget?: RunBudget;
+  /** Extra durable tools; explicitly add their names to an agent's tool allowlist. */
+  tools?: readonly ToolRegistration[];
+  run: (ctx: WorkflowContext<Static<A>>) => Promise<R>;
+}
+/** Define a typed workflow. Loading and launch perform runtime schema and option validation. */
+export function defineWorkflow<A extends TSchema = TObject<{}>, R = unknown>(definition: WorkflowDefinition<A, R>): WorkflowDefinition<A, R> {
+  if (!definition || typeof definition.name !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(definition.name)) {
+    throw new Error("Workflow name must be kebab-case, for example 'review-changes'.");
+  }
+  if (typeof definition.run !== "function") throw new Error("Workflow must define an async run(ctx) function.");
+  return { ...definition, args: definition.args ?? Type.Object({}, { additionalProperties: false }) as unknown as A };
+}
+
+export type RunStatus = "queued" | "running" | "waiting_signal" | "completed" | "failed" | "cancelled" | "reverted" | "outdated";
+export interface Usage { inputTokens: number; outputTokens: number; costUsd?: number }
+export interface StepRecord {
+  key: StepKey;
+  kind: "agent" | "step" | "signal" | "sleep" | "workflow" | "spawn" | "swarm" | "parallel" | "pipeline" | "phase" | "log" | "now" | "random";
+  label?: string;
+  phase?: string;
+  status: "pending" | "running" | "completed" | "failed" | "cancelled" | "skipped" | "compensated";
+  attempts: number;
+  startedAt?: number;
+  endedAt?: number;
+  conversationId?: string;
+  usage?: Usage;
+  error?: { message: string; reason?: string; code?: string };
+  result?: unknown;
+  resultRef?: string;
+  worktree?: { path: string; branch: string };
+  /** For ctx.workflow() steps: the child run. */
+  childRunId?: RunId;
+  /** For pi-runtime agents: the pi session transcript, for `pi --session <file>`. */
+  sessionFile?: string;
+}
+export interface RunRecord {
+  id: RunId;
+  workflow: { name: string; path: string; hash: string };
+  args: unknown;
+  cwd: string;
+  /** The model agents use unless their options, agentType or the definition's defaults choose one. */
+  model?: ModelName;
+  thinkingLevel?: ThinkingLevel;
+  budget?: RunBudget;
+  status: RunStatus;
+  createdAt: number;
+  startedAt?: number;
+  endedAt?: number;
+  attempt: number;
+  phases: Array<{ title: string; agents: number; done: number; tokens: number; elapsedMs: number }>;
+  steps: StepRecord[];
+  usage: Usage & { agents: number };
+  result?: unknown;
+  resultRef?: string;
+  error?: { message: string; reason?: string; code?: string; stepKey?: StepKey };
+  origin: { kind: "tool"; sessionId: string } | { kind: "cli" } | { kind: "workflow"; parentRunId: RunId; stepKey: StepKey };
+  depth: number;
+  children: RunId[];
+  logs?: Array<{ time: number; message: string; data?: unknown }>;
+  parked?: boolean;
+  waitingFor?: { key: string; prompt?: string; schema?: unknown; deadline?: number };
+  worktrees?: Array<{ path: string; branch: string }>;
+}
+export interface BackgroundAgentRecord {
+  runId: RunId;
+  name: string;
+  conversationId: string;
+  status: "idle" | "busy" | "stopped";
+  /** True only while the conversation has admitted work; queued messages may be busy but inactive. */
+  active?: boolean;
+  detached: boolean;
+}
+export interface CatalogEntry {
+  name: string;
+  description?: string;
+  path: string;
+  args: TSchema;
+  source: "project" | "user";
+  /** Present when the file could not be loaded; name is then the file's base name. */
+  error?: string;
+}
+export interface ValidationResult {
+  valid: boolean; path?: string; name?: string; hash?: string; args?: TSchema;
+  /** Lint findings carry the workflow line. A load failure located in a file (the workflow or a module it imports) carries its path, line and 1-based column. */
+  diagnostics: Array<{ message: string; code?: string; path?: string; line?: number; column?: number }>;
+}

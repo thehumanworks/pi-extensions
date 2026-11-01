@@ -1,6 +1,6 @@
 import { Type } from "typebox";
 import { defineTool } from "@earendil-works/pi-durable";
-import { defineWorkflow } from "@nothumanwork/pi-orchestration";
+import { defineWorkflow } from "@nothumanwork/asx";
 
 // Workflow agents get no MCP tools, so web access comes from these Exa-backed tools.
 // The worker reads EXA_API_KEY from its environment; the key never enters a transcript.
