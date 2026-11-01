@@ -1,0 +1,367 @@
+{
+ "note": "Hand-labelled turn-end arrivals: should a later session in this project have this? `eval/triage-live.mjs` adds the long-eval fixtures.",
+ "cases": [
+  {
+   "id": "keep-0",
+   "kind": "preference",
+   "keep": true,
+   "text": "Never mock the database in integration tests. We got burned last quarter when a mocked migration passed and prod failed."
+  },
+  {
+   "id": "keep-1",
+   "kind": "preference",
+   "keep": true,
+   "text": "I prefer small commits with one logical change each, please keep doing that in this repo."
+  },
+  {
+   "id": "keep-2",
+   "kind": "correction",
+   "keep": true,
+   "text": "No, don't use npm here. This workspace is bun-only, npm breaks the lockfile."
+  },
+  {
+   "id": "keep-3",
+   "kind": "correction",
+   "keep": true,
+   "text": "Stop adding comments that restate the code. I've told you this before."
+  },
+  {
+   "id": "keep-4",
+   "kind": "decision",
+   "keep": true,
+   "text": "We decided to keep the session store in SQLite and not move it to Postgres, because the extension must work offline."
+  },
+  {
+   "id": "keep-5",
+   "kind": "decision",
+   "keep": true,
+   "text": "The public API stays on v2 until the mobile app ships its next release in March 2027."
+  },
+  {
+   "id": "keep-6",
+   "kind": "constraint",
+   "keep": true,
+   "text": "CI only runs on Node 22, and the Bedrock provider tests need AWS_PROFILE=eval or they hang forever."
+  },
+  {
+   "id": "keep-7",
+   "kind": "constraint",
+   "keep": true,
+   "text": "Our staging database is a shared instance, so never run destructive migrations against it without asking in #infra first."
+  },
+  {
+   "id": "keep-8",
+   "kind": "fact",
+   "keep": true,
+   "text": "The billing webhook retries for 72 hours, so handlers have to be idempotent."
+  },
+  {
+   "id": "keep-9",
+   "kind": "fact",
+   "keep": true,
+   "text": "The deploy pipeline reads version from packages/core/package.json, not the root one."
+  },
+  {
+   "id": "keep-10",
+   "kind": "fact",
+   "keep": true,
+   "text": "Grafana for this service is at https://grafana.internal/d/ingest, the latency board is the one on-call uses."
+  },
+  {
+   "id": "keep-11",
+   "kind": "temporary",
+   "keep": true,
+   "text": "Merge freeze starts on 2026-11-14 and lasts until 2026-11-21 for the release cut."
+  },
+  {
+   "id": "keep-12",
+   "kind": "temporary",
+   "keep": true,
+   "text": "Until Friday 2026-11-06 all deploys need sign-off from the release manager."
+  },
+  {
+   "id": "keep-13",
+   "kind": "identity",
+   "keep": true,
+   "text": "I'm the only maintainer here and I review on my phone, so keep PR descriptions short."
+  },
+  {
+   "id": "reply-14",
+   "kind": "confirmation",
+   "keep": true,
+   "text": "Yes, always do it that way from now on.",
+   "before": "Should integration tests in this repo always use the real SQLite database rather than a fake?"
+  },
+  {
+   "id": "reply-15",
+   "kind": "confirmation",
+   "keep": true,
+   "text": "Yes, that's the policy going forward.",
+   "before": "Do you want every new package to be published under the @nothumanwork scope?"
+  },
+  {
+   "id": "reply-16",
+   "kind": "confirmation",
+   "keep": true,
+   "text": "right, keep that",
+   "before": "So the rule is that background jobs must never use the session model, only an explicitly configured one?"
+  },
+  {
+   "id": "reply-17",
+   "kind": "confirmation",
+   "keep": false,
+   "text": "Yes please.",
+   "before": "Should I run the tests now?"
+  },
+  {
+   "id": "reply-18",
+   "kind": "confirmation",
+   "keep": false,
+   "text": "ok go ahead",
+   "before": "I'll rename the variable to retryCount and update the two call sites. Sound good?"
+  },
+  {
+   "id": "reply-19",
+   "kind": "confirmation",
+   "keep": false,
+   "text": "Looks good.",
+   "before": "Here is the diff for the change to src/retrieve.ts."
+  },
+  {
+   "id": "reply-20",
+   "kind": "confirmation",
+   "keep": false,
+   "text": "no, the other one",
+   "before": "Do you mean the function in src/store.ts or the one in src/capture.ts?"
+  },
+  {
+   "id": "drop-21",
+   "kind": "request",
+   "keep": false,
+   "text": "Implement a retry helper in src/retry.ts with exponential backoff."
+  },
+  {
+   "id": "drop-22",
+   "kind": "request",
+   "keep": false,
+   "text": "Fix the failing test in test/store.test.ts."
+  },
+  {
+   "id": "drop-23",
+   "kind": "request",
+   "keep": false,
+   "text": "Add a --verbose flag to the CLI."
+  },
+  {
+   "id": "drop-24",
+   "kind": "request",
+   "keep": false,
+   "text": "Refactor capture.ts so the validation logic is in its own function."
+  },
+  {
+   "id": "drop-25",
+   "kind": "request",
+   "keep": false,
+   "text": "Write a README section on configuration."
+  },
+  {
+   "id": "drop-26",
+   "kind": "request",
+   "keep": false,
+   "text": "Can you look at why the build is slow?"
+  },
+  {
+   "id": "drop-27",
+   "kind": "question",
+   "keep": false,
+   "text": "Why does this test fail only on the second run?"
+  },
+  {
+   "id": "drop-28",
+   "kind": "question",
+   "keep": false,
+   "text": "What does the reconcile function do?"
+  },
+  {
+   "id": "drop-29",
+   "kind": "question",
+   "keep": false,
+   "text": "How many tokens does a recall use on average?"
+  },
+  {
+   "id": "drop-30",
+   "kind": "smalltalk",
+   "keep": false,
+   "text": "thanks!"
+  },
+  {
+   "id": "drop-31",
+   "kind": "smalltalk",
+   "keep": false,
+   "text": "continue"
+  },
+  {
+   "id": "drop-32",
+   "kind": "smalltalk",
+   "keep": false,
+   "text": "great, that worked"
+  },
+  {
+   "id": "drop-33",
+   "kind": "smalltalk",
+   "keep": false,
+   "text": "hmm let me think about it"
+  },
+  {
+   "id": "drop-34",
+   "kind": "progress",
+   "keep": false,
+   "text": "I'm going to lunch, back in an hour."
+  },
+  {
+   "id": "drop-35",
+   "kind": "progress",
+   "keep": false,
+   "text": "I just pushed the branch, CI is running."
+  },
+  {
+   "id": "drop-36",
+   "kind": "progress",
+   "keep": false,
+   "text": "The test passes now on my machine."
+  },
+  {
+   "id": "drop-37",
+   "kind": "oneoff",
+   "keep": false,
+   "text": "For this run only, use batch size 1 so we can see each record."
+  },
+  {
+   "id": "drop-38",
+   "kind": "oneoff",
+   "keep": false,
+   "text": "Just for now, skip the lint step, I want to see the test output."
+  },
+  {
+   "id": "drop-39",
+   "kind": "oneoff",
+   "keep": false,
+   "text": "Use port 4000 for this debugging session."
+  },
+  {
+   "id": "drop-40",
+   "kind": "paste",
+   "keep": false,
+   "text": "TypeError: Cannot read properties of undefined (reading 'id')\n    at MemoryStore.save (src/store.ts:330:15)\n    at async run (src/capture.ts:291:7)"
+  },
+  {
+   "id": "drop-41",
+   "kind": "paste",
+   "keep": false,
+   "text": "diff --git a/src/a.ts b/src/a.ts\n@@ -1,2 +1,2 @@\n-const a = 1;\n+const a = 2;"
+  },
+  {
+   "id": "drop-42",
+   "kind": "derivable",
+   "keep": false,
+   "text": "The save function is in src/store.ts."
+  },
+  {
+   "id": "drop-43",
+   "kind": "derivable",
+   "keep": false,
+   "text": "This repo uses TypeScript."
+  },
+  {
+   "id": "tool-44",
+   "kind": "recovery",
+   "keep": true,
+   "failure": {
+    "call": "bash {\"command\":\"npm test\"}",
+    "text": "Error: libsqlite3.dylib not found\n"
+   },
+   "success": {
+    "call": "bash {\"command\":\"DYLD_LIBRARY_PATH=/opt/homebrew/lib npm test\"}",
+    "text": "141 tests passed"
+   }
+  },
+  {
+   "id": "tool-45",
+   "kind": "recovery",
+   "keep": true,
+   "failure": {
+    "call": "bash {\"command\":\"node tools/probe.mjs\"}",
+    "text": "E_ORDER: readiness probe requires INGEST_ORDER=tenant-first"
+   },
+   "success": {
+    "call": "bash {\"command\":\"INGEST_ORDER=tenant-first node tools/probe.mjs\"}",
+    "text": "Verified by filesystem assertions: corrupt checkpoint moved to recovery/"
+   }
+  },
+  {
+   "id": "tool-46",
+   "kind": "recovery",
+   "keep": true,
+   "failure": {
+    "call": "bash {\"command\":\"bun run deploy\"}",
+    "text": "Error: gateway rejected token: audience must be pi-deploy"
+   },
+   "success": {
+    "call": "bash {\"command\":\"bun run deploy --audience pi-deploy\"}",
+    "text": "deployed v0.4.1 to staging"
+   }
+  },
+  {
+   "id": "tool-47",
+   "kind": "routine",
+   "keep": false,
+   "failure": {
+    "call": "read {\"path\":\"src/stor.ts\"}",
+    "text": "ENOENT: no such file or directory, open 'src/stor.ts'"
+   },
+   "success": {
+    "call": "read {\"path\":\"src/store.ts\"}",
+    "text": "import { randomUUID } from 'node:crypto';"
+   }
+  },
+  {
+   "id": "tool-48",
+   "kind": "routine",
+   "keep": false,
+   "failure": {
+    "call": "edit {\"path\":\"a.ts\",\"oldText\":\"const x\"}",
+    "text": "Could not find the exact text in a.ts"
+   },
+   "success": {
+    "call": "edit {\"path\":\"a.ts\",\"oldText\":\"let x\"}",
+    "text": "Applied edit to a.ts"
+   }
+  },
+  {
+   "id": "tool-49",
+   "kind": "routine",
+   "keep": false,
+   "failure": {
+    "call": "bash {\"command\":\"npm test\"}",
+    "text": "1 failing: expected 3, received 4"
+   },
+   "success": {
+    "call": "bash {\"command\":\"npm test\"}",
+    "text": "12 tests passed"
+   }
+  },
+  {
+   "id": "tool-50",
+   "kind": "routine",
+   "keep": false,
+   "failure": {
+    "call": "bash {\"command\":\"grep -r foo srcc\"}",
+    "text": "grep: srcc: No such file or directory"
+   },
+   "success": {
+    "call": "bash {\"command\":\"grep -r foo src\"}",
+    "text": "src/a.ts:3: foo()"
+   }
+  }
+ ]
+}

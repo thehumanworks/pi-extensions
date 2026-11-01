@@ -39,6 +39,7 @@ export function parseMemory(text: string): MemoryItem {
   for (const field of ['created', 'updated', 'last_used'] as const) if (!Number.isFinite(Date.parse(item[field]))) throw new Error(`Invalid ${field}`);
   normalizeLifetime(item);
   delete item.validity;
+  if (item.raw !== undefined && (!['user', 'toolResult'].includes(item.raw.role) || !Number.isFinite(Date.parse(item.raw.at)))) throw new Error('Invalid raw entry');
   if (item.derivedFrom !== undefined && (!Array.isArray(item.derivedFrom) || !item.derivedFrom.length || item.derivedFrom.length > 100 || item.derivedFrom.some(source => !source || !ID.test(source.id) || !/^[a-f0-9]{64}$/.test(source.hash)) || item.source.origin !== 'consolidation')) throw new Error('Derived memories require consolidation provenance and valid source hashes');
   return redactObject(item);
 }
@@ -338,7 +339,8 @@ export class MemoryStore {
         const expiries = sources.filter(source => source.retention === 'short').map(source => Date.parse(source.expiresAt!));
         if (expiries.length && (clean.retention !== 'short' || Date.parse(clean.expiresAt!) > Math.min(...expiries))) throw new Error('Derived memory must inherit the earliest short-term source expiry');
       }
-      const existing = this.list({ scope, includeArchived: true }).filter(item => item.status === 'active' || (clean.retention === 'short' && isExpired(item)));
+      // A raw entry may reinforce anything, but a raw entry must never absorb the long-term memory distilled from it.
+      const existing = this.list({ scope, includeArchived: true }).filter(item => (item.status === 'active' || (clean.retention === 'short' && isExpired(item))) && (clean.raw || !item.raw));
       const duplicate = existing.find(item => normalize(item.body) === normalize(clean.body) && (item.retention ?? 'long') === (clean.retention ?? 'long') && item.expiresAt === clean.expiresAt);
       const supersedes = [...new Set(clean.supersedes ?? [])];
       if (supersedes.length > 100) throw new Error('Too many supersession targets');
@@ -366,6 +368,7 @@ export class MemoryStore {
         stats: { injected: 0, used: 0, helpful: 0, harmful: 0 },
         retention: clean.retention ?? 'long', ...(clean.expiresAt ? { expiresAt: clean.expiresAt } : {}),
         ...(clean.derivedFrom ? { derivedFrom: clean.derivedFrom } : {}),
+        ...(clean.raw ? { raw: clean.raw } : {}),
       };
       item = parseMemory(serializeMemory(item));
       for (const target of targets) { target.status = 'superseded'; target.updated = timestamp; target.links.push(item.id); }
@@ -389,6 +392,24 @@ export class MemoryStore {
       this.rebuild(); const item = this.get([id])[0]; if (!item) throw new Error('Memory not found in current scopes');
       item.status = 'archived'; item.updated = now(); item.archive_reason = redactSecrets(reason);
       this.persist(item); this.journal('archive', [id], reason); this.rebuild(); return item;
+    });
+  }
+  /** This project's wake layer, oldest first. */
+  rawEntries(): MemoryItem[] {
+    return this.list({ scope: 'project' }).filter(item => item.raw).sort((a, b) => a.raw!.at.localeCompare(b.raw!.at) || a.id.localeCompare(b.id));
+  }
+  /** Retires raw entries the sleep pass has handled; each stays archived with the memories that now hold it. */
+  async settleRaw(outcomes: Map<string, string[]>): Promise<void> {
+    await this.locked(() => {
+      this.rebuild();
+      for (const item of this.get([...outcomes.keys()])) {
+        if (!item.raw || item.status !== 'active') continue;
+        const into = [...new Set(outcomes.get(item.id)!)];
+        item.status = 'archived'; item.updated = now(); item.raw.settledInto = into;
+        item.archive_reason = into.length ? `Assimilated into ${into.join(', ')}` : 'Pruned by the sleep pass';
+        this.persist(item, false);
+      }
+      this.journal('settle', [...outcomes.keys()]); this.rebuild();
     });
   }
   async markInjected(ids: string[], session?: string): Promise<void> {
@@ -425,6 +446,7 @@ export class MemoryStore {
       this.rebuild(); const seen = new Map<string, string>(); let archived = 0, duplicates = 0;
       const candidates = this.database().prepare("SELECT payload FROM items WHERE status='active' AND scope IN (?,?)").all('global', this.projectScope).map(row => JSON.parse(row.payload as string) as MemoryItem);
       for (const item of candidates) {
+        if (item.raw) continue;
         const key = `${item.scope}\0${item.retention ?? 'long'}\0${item.expiresAt ?? ''}\0${normalize(item.body)}`;
         const prior = seen.get(key);
         if (!this.validDerivation(item, new Map())) { item.status = 'archived'; item.archive_reason = 'Derived source changed or retired'; archived++; }
@@ -449,7 +471,7 @@ export class MemoryStore {
   }
   private isStandingRule(item: MemoryItem, digestScope: 'rules' | 'decisions' = 'rules'): boolean {
     const standingType = item.type === 'feedback' || item.type === 'preference' || (digestScope === 'decisions' && item.type === 'project' && item.retention !== 'short');
-    return item.status === 'active' && !isExpired(item) && standingType && item.importance >= 8 && item.confidence >= 0.9 &&
+    return item.status === 'active' && !item.raw && !isExpired(item) && standingType && item.importance >= 8 && item.confidence >= 0.9 &&
       (item.source.origin === 'user_statement' || item.source.origin === 'user_confirmation');
   }
   /** A compiled digest selects IDs; all prose is rebuilt from current sources.

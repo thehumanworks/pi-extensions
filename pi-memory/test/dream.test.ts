@@ -159,3 +159,13 @@ test('processed group ledger advances later passes to new groups without copying
   assert.ok(!report.includes(items[0]!.body));
   assert.ok(!report.includes(output(items).groups[0]!.generalization));
 });
+
+test('a dream never treats a raw entry as a source', async t => {
+  const { root, store, items } = await fixture(t);
+  const note = await store.save({ title: 'Beacon staging note', body: `${shared} A raw note.`, keywords: ['beacon', 'staging', 'verification'], source: { session: 'raw', entries: ['r1'], origin: 'user_statement' }, raw: { role: 'user', at: new Date().toISOString() } });
+  const { ctx, requests } = context(output(items));
+  const pipeline = new DreamPipeline(store, { root });
+  await pipeline.run(ctx, new AbortController().signal, { force: true });
+  assert.ok(requests.length);
+  assert.ok(!JSON.stringify(requests).includes(note.id));
+});

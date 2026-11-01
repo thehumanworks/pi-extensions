@@ -15,7 +15,7 @@ import { autocomplete } from "../src/ui.ts";
 import { ProposalManager } from "../src/maintenance.ts";
 import { CapturePipeline } from "../src/capture.ts";
 
-interface HarnessOptions { capture?: Record<string, unknown>; cwd?: string; context?: Record<string, unknown>; sessionManager?: unknown }
+interface HarnessOptions { capture?: Record<string, unknown>; memory?: Record<string, unknown>; cwd?: string; context?: Record<string, unknown>; sessionManager?: unknown }
 
 /** The extension with a fake Pi. `cwd` reuses another harness's directory, as a restarted process would. */
 async function harness(t: TestContext, mode = "inject", enabled = true, captureEnabled = false, options: HarnessOptions = {}) {
@@ -28,7 +28,7 @@ async function harness(t: TestContext, mode = "inject", enabled = true, captureE
     registerFlag: () => {}, getFlag: () => undefined,
     appendEntry: (customType: string, data: unknown) => entries.push({ type: "custom", customType, data }),
     // Capture jobs retry after 10 ms here rather than 30 s.
-    getSettings: () => ({ memory: { enabled, dir: root, mode, capture: { enabled: captureEnabled, ...(captureEnabled ? { model: "test/test", retryDelayMs: 10 } : {}), ...options.capture } } }),
+    getSettings: () => ({ memory: { enabled, dir: root, mode, capture: { enabled: captureEnabled, ...(captureEnabled ? { model: "test/test", retryDelayMs: 10 } : {}), ...options.capture }, ...options.memory } }),
     registerTool: (tool: any) => tools.set(tool.name, tool),
     registerCommand: (name: string, command: any) => commands.set(name, command), registerMessageRenderer: () => {},
   } as unknown as ExtensionAPI;
@@ -88,7 +88,7 @@ test("/memory model validates, checks the registry, and persists a nested patch 
   await writeFile(join(agentDir, "settings.json"), JSON.stringify({ theme: "dark", memory: { capture: { enabled: true, onCompact: false } } }));
   const h = await harness(t);
   const handler = h.commands.get("memory").handler, known = { id: "m", provider: "p" };
-  Object.assign(h.ctx, { modelRegistry: { find: (provider: string, id: string) => provider === "p" && id === "m" ? known : undefined, hasConfiguredAuth: (m: unknown) => m === known } });
+  Object.assign(h.ctx, { modelRegistry: { getModelOfType: () => undefined, find: (provider: string, id: string) => provider === "p" && id === "m" ? known : undefined, hasConfiguredAuth: (m: unknown) => m === known } });
   const settings = async () => JSON.parse(await readFile(join(agentDir, "settings.json"), "utf8"));
   await handler("model", h.ctx);
   assert.match(h.notifications.at(-1)!, /^capture off; dream off; retrieval off\./);
@@ -99,6 +99,48 @@ test("/memory model validates, checks the registry, and persists a nested patch 
   await handler("model dream off", h.ctx);
   assert.deepEqual(await settings(), { theme: "dark", memory: { capture: { enabled: true, onCompact: false, model: "p/m" }, dream: { model: "off" } } });
   assert.equal(readConfig(await settings(), agentDir, {}, {}).capture.enabled, true);
+});
+
+test("/memory model reports whether a retrieval selector runs as a classifier", async t => {
+  const agentDir = await mkdtemp(join(tmpdir(), "pi-memory-agent-")), previous = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = agentDir;
+  t.after(async () => { if (previous === undefined) delete process.env.PI_CODING_AGENT_DIR; else process.env.PI_CODING_AGENT_DIR = previous; await rm(agentDir, { recursive: true, force: true }); });
+  const h = await harness(t);
+  const handler = h.commands.get("memory").handler, classifier = { id: "c", provider: "p" }, chat = { id: "c", provider: "p" };
+  let available = [classifier];
+  Object.assign(h.ctx, { modelRegistry: { getAvailableOfType: async () => available, getModelOfType: () => classifier, find: () => chat, hasConfiguredAuth: () => true } });
+  await handler("model retrieval p/c", h.ctx);
+  assert.match(h.notifications.at(-1)!, /^Saved memory\.retrieval\.model = p\/c as a classifier\./);
+  available = [];
+  await handler("model retrieval p/c", h.ctx);
+  assert.match(h.notifications.at(-1)!, /as a chat model, because its classifier is unavailable with the current credentials\./);
+  await handler("model capture p/c", h.ctx);
+  assert.match(h.notifications.at(-1)!, /^Saved memory\.capture\.model = p\/c as a chat model/);
+  available = [classifier];
+  await handler("model capture p/c", h.ctx);
+  assert.match(h.notifications.at(-1)!, /^Saved memory\.capture\.model = p\/c as a classifier; raw entries wait until memory\.dream\.model is set\./);
+});
+
+test("a retrieval classifier decides recall from the prompt and the project's context files", async t => {
+  const previous = process.env.PI_MEMORY_RETRIEVAL_MODEL;
+  process.env.PI_MEMORY_RETRIEVAL_MODEL = "p/c";
+  t.after(() => { if (previous === undefined) delete process.env.PI_MEMORY_RETRIEVAL_MODEL; else process.env.PI_MEMORY_RETRIEVAL_MODEL = previous; });
+  const h = await harness(t);
+  const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize();
+  t.after(() => store.close());
+  const source = { session: "prior", entries: ["u1"], origin: "user_statement" as const };
+  const relevant = await store.save({ title: "Aurora staging tests", body: "Run aurora verify for staging tests.", source });
+  const noise = await store.save({ title: "Aurora staging lunch", body: "The Aurora staging team has lunch at noon.", source });
+  let state: any;
+  Object.assign(h.ctx, { modelRegistry: { getAvailableOfType: async () => [{ id: "c", provider: "p" }], classify: async (_model: unknown, input: any) => {
+    state = input.state;
+    return { stopReason: "stop", answers: { [relevant.id]: { type: "score", score: 2.6, confidence: 1 }, [noise.id]: { type: "score", score: 0.2, confidence: 1 } } };
+  } } });
+  const contextFiles = [{ path: join(h.cwd, "AGENTS.md"), content: "Aurora staging service." }];
+  const result = await h.events.get("before_agent_start")!({ messageType: "user", prompt: "Aurora staging tests", systemPromptOptions: { sections: {}, contextFiles } }, h.ctx);
+  assert.deepEqual(result.message.details.ids, [relevant.id]);
+  assert.equal(state.request, "Aurora staging tests");
+  assert.equal(state.codebase.instructions[0].excerpt, "Aurora staging service.");
 });
 
 test("disabled memory performs no filesystem initialization or tool registration", async t => {
@@ -520,4 +562,38 @@ test("a compaction capture interrupted by exit resumes in the next process and s
   // The finished job leaves nothing stored once the session closes.
   await h2.events.get("session_shutdown")!({}, h2.ctx);
   assert.deepEqual((await readdir(join(cwd, "memory", "capture"))).filter(name => name.includes(".jobs.db")), []);
+});
+
+test("a settled raw entry raises no retraction, and a new user note in the live transcript is not recalled back", async t => {
+  const h = await harness(t, "both");
+  const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize(); t.after(() => store.close());
+  const raw = (body: string, entries: string[]) => store.save({ title: body, body, source: { session: "prior", entries, origin: "user_statement" }, raw: { role: "user", at: new Date().toISOString() } });
+  const past = await raw("Cobalt rehearsal routes to zone-b.", ["old"]), live = await raw("Cobalt rehearsal uses the amber key.", ["u1"]);
+  h.branch([{ type: "message", id: "u1", message: { role: "user", content: "Cobalt rehearsal uses the amber key." } }]);
+  const request = () => ({ messageType: "user", prompt: "Cobalt rehearsal", systemPromptOptions: { sections: {} } });
+  const first = await h.events.get("before_agent_start")!(request(), h.ctx);
+  assert.deepEqual(first.message.details.ids, [past.id], "the entry still in the transcript is not recalled");
+  assert.match(first.message.content, /raw note, not yet consolidated/);
+  await store.settleRaw(new Map([[past.id, []]]));
+  const next = await h.events.get("before_agent_start")!(request(), h.ctx);
+  assert.ok(!next?.message?.details?.retiredIds?.length);
+  assert.ok(store.get([live.id])[0]!.status === "active");
+});
+
+test("/memory dream runs the sleep pass over raw entries, and status counts them", async t => {
+  const previous = process.env.PI_MEMORY_DREAM;
+  delete process.env.PI_MEMORY_DREAM;
+  t.after(() => { if (previous !== undefined) process.env.PI_MEMORY_DREAM = previous; });
+  const h = await harness(t, "both", true, false, { memory: { dream: { model: "test/test" } } });
+  const store = new MemoryStore(h.root, resolveProjectKey(h.cwd)); await store.initialize(); t.after(() => store.close());
+  await store.save({ title: "Deploy note", body: "Deploys use the blue pool.", source: { session: "prior", entries: ["old"], origin: "user_statement" }, raw: { role: "user", at: new Date().toISOString() } });
+  const handler = h.commands.get("memory").handler;
+  await handler("status", h.ctx);
+  assert.match(h.notifications.at(-1)!, /^1 memories, 1 raw;/);
+  const chat = { id: "test", maxTokens: 6000 };
+  Object.assign(h.ctx, { modelRegistry: { find: () => chat, hasConfiguredAuth: () => true, streamSimple: () => ({ result: async () => ({ stopReason: "stop", content: [{ type: "text", text: JSON.stringify({ candidates: [], verdicts: [] }) }] }) }) } });
+  await handler("dream", h.ctx);
+  const result = JSON.parse(h.notifications.at(-1)!);
+  assert.deepEqual([result.assimilation.pruned, result.assimilation.saved], [1, 0]);
+  assert.deepEqual(store.rawEntries(), []);
 });

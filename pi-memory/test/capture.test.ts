@@ -470,3 +470,171 @@ test('multiple edit-shape failures share one repair call for the entire pass', a
   assert.equal((await pipeline.capture(run.ctx, new AbortController().signal)).skipped, true); assert.equal(run.count(), 3);
   assert.equal(store.list().length, 2);
 });
+
+const WAKE = { root: '', projectKey: 'project', model: 'p/c' };
+function wake(entries: unknown[], scores: Array<number | undefined>, options: { stopReason?: string } = {}) {
+  const base = context(entries, []);
+  const registry = base.ctx.modelRegistry as any;
+  const classified: any[] = [];
+  Object.assign(base.ctx, { cwd: '/nonexistent', getSystemPrompt: () => 'Project rule: documented already.' });
+  Object.assign(registry, {
+    getAvailableOfType: async () => [{ id: 'c', provider: 'p' }],
+    classify: async (_model: unknown, request: any) => {
+      classified.push(request);
+      const answers = Object.fromEntries(Object.keys(request.questions).flatMap((key, index) => scores[index] === undefined ? [] : [[key, { type: 'score', score: scores[index], confidence: 1 }]]));
+      return { answers, stopReason: options.stopReason ?? 'stop', errorMessage: 'unavailable' };
+    },
+  });
+  return { ...base, classified };
+}
+const seed = (store: MemoryStore, body: string, id: string, created?: string) => {
+  return store.save({ title: body.slice(0, 80), body, importance: 6, source: { session: `session-${id}`, entries: [id], origin: 'user_statement' }, raw: { role: 'user', at: created ?? new Date().toISOString() } });
+};
+const sleeper = (outputs: unknown[]) => context([], outputs);
+
+test('a classifier stores kept entries verbatim at turn end, with no chat model and no salience gate', async t => {
+  const { root, store } = await fixture(t);
+  const pipeline = new CapturePipeline(store, { ...WAKE, root });
+  const entries = [user('u1', 'Staging deploys need the VPN.'), user('u2', 'Please rename this variable.')];
+  const turn = wake(entries, [2.4, 0.3]);
+  assert.deepEqual(await pipeline.capture(turn.ctx, new AbortController().signal), { saved: 1, skipped: false });
+  assert.equal(turn.count(), 0);
+  const [item] = store.rawEntries();
+  assert.equal(item!.body, 'Staging deploys need the VPN.');
+  assert.equal(item!.raw!.role, 'user');
+  assert.equal(item!.importance, 8);
+  assert.deepEqual(item!.source.entries, ['u1']);
+  assert.equal(item!.source.origin, 'user_statement');
+  assert.equal(item!.source.session, 'session-1');
+  assert.deepEqual(await pipeline.capture(turn.ctx, new AbortController().signal), { saved: 0, skipped: true });
+  assert.equal(turn.classified.length, 1);
+});
+
+test('entries the context already documents are not sent to the classifier', async t => {
+  const { root, store } = await fixture(t);
+  const pipeline = new CapturePipeline(store, { ...WAKE, root });
+  const turn = wake([user('u1', 'project  rule: Documented already.')], [3]);
+  assert.deepEqual(await pipeline.capture(turn.ctx, new AbortController().signal), { saved: 0, skipped: false });
+  assert.equal(turn.classified.length, 0);
+});
+
+test('a failed triage keeps the delta pending, and the retry stores each entry once', async t => {
+  const { root, store } = await fixture(t);
+  const pipeline = new CapturePipeline(store, { ...WAKE, root });
+  const entries = [user('u1', 'Staging deploys need the VPN.')];
+  await assert.rejects(pipeline.capture(wake(entries, [], { stopReason: 'error' }).ctx, new AbortController().signal), /Memory triage failed/);
+  assert.equal(store.rawEntries().length, 0);
+  assert.deepEqual(await pipeline.capture(wake(entries, [3]).ctx, new AbortController().signal), { saved: 1, skipped: false });
+  assert.deepEqual(await pipeline.capture(wake(entries, [3]).ctx, new AbortController().signal), { saved: 0, skipped: true });
+  assert.equal(store.rawEntries().length, 1);
+});
+
+test('a chat capture model keeps distilling at turn end', async t => {
+  const { root, store } = await fixture(t);
+  const pipeline = new CapturePipeline(store, { ...WAKE, root });
+  const chat = context([user('u1')], [reflection(), curate()]);
+  (chat.ctx.modelRegistry as any).getAvailableOfType = async () => [];
+  assert.deepEqual(await pipeline.capture(chat.ctx, new AbortController().signal, [], true), { saved: 1, skipped: false });
+  assert.equal(store.rawEntries().length, 0);
+  assert.equal(store.list().length, 1);
+});
+
+test('sleep distils raw entries, and each one records the memory that now holds it', async t => {
+  const { root, store, pipeline } = await fixture(t);
+  const first = await seed(store, 'Staging deploys need the VPN.', 'u1'), second = await seed(store, 'Reminder: staging needs the VPN up first.', 'u2');
+  const noise = await seed(store, 'Renamed the variable.', 'u3');
+  const distilled = { ...candidate(first.id, 'Staging deploys need the VPN.'), source: { entries: [first.id, second.id], origin: 'user_statement', excerpt: 'Staging deploys need the VPN.' } };
+  const pass = sleeper([reflection([distilled]), curate()]);
+  const result = await pipeline.assimilate(pass.ctx, new AbortController().signal, 'p/m');
+  assert.deepEqual(result, { saved: 1, assimilated: 2, pruned: 1, retained: 0, skipped: false });
+  assert.deepEqual(store.rawEntries(), []);
+  const [memory] = store.list();
+  assert.equal(memory!.raw, undefined);
+  assert.equal(memory!.source.session, first.source.session);
+  assert.deepEqual(memory!.source.entries, ['u1', 'u2']);
+  const settled = (id: string) => store.get([id])[0]!;
+  assert.ok([first, second, noise].every(item => settled(item.id).status === 'archived'));
+  assert.deepEqual(settled(first.id).raw!.settledInto, [memory!.id]);
+  assert.deepEqual(settled(second.id).raw!.settledInto, [memory!.id]);
+  assert.deepEqual(settled(noise.id).raw!.settledInto, []);
+  assert.match(settled(first.id).archive_reason!, /^Assimilated into /);
+  assert.equal(settled(noise.id).archive_reason, 'Pruned by the sleep pass');
+  const { transcript } = JSON.parse(pass.requests[0].messages[0].content);
+  assert.deepEqual(transcript.map((entry: any) => entry.id), [first.id, second.id, noise.id]);
+});
+
+test('a reply reaches sleep with the message it answered, and citing either settles it', async t => {
+  const { root, store, pipeline } = await fixture(t);
+  const reply = await store.save({ title: 'Yes, always.', body: 'Yes, always.', summary: 'Should staging use Postgres 17?', source: { session: 's', entries: ['u9'], origin: 'user_statement' }, raw: { role: 'user', at: new Date().toISOString(), before: 'Should staging use Postgres 17?' } });
+  const distilled = { ...candidate(reply.id, 'Staging uses Postgres 17.'), source: { entries: [`${reply.id}:before`, reply.id], origin: 'user_confirmation', excerpt: 'Yes, always.' } };
+  const pass = sleeper([reflection([distilled]), curate()]);
+  assert.equal((await pipeline.assimilate(pass.ctx, new AbortController().signal, 'p/m')).assimilated, 1);
+  const { transcript } = JSON.parse(pass.requests[0].messages[0].content);
+  assert.deepEqual(transcript.map((entry: any) => [entry.id, entry.role]), [[`${reply.id}:before`, 'assistant'], [reply.id, 'user']]);
+  assert.deepEqual(store.list()[0]!.source.entries, ['u9']);
+});
+
+test('a raw entry long-term memory already covers settles into that memory, never into another raw entry', async t => {
+  const { root, store, pipeline } = await fixture(t);
+  const existing = await store.save({ title: 'Staging VPN', body: 'Staging deploys need the VPN.', source: { session: 's', entries: ['old'], origin: 'user_statement' } });
+  const twin = await seed(store, 'Staging deploys need a VPN connection.', 'u2'), raw = await seed(store, 'Staging needs the VPN on deploy.', 'u3');
+  const pass = sleeper([reflection([candidate(raw.id, 'Staging deploys need the VPN connection.')]), { operations: [{ candidate: 0, action: 'NOOP', id: existing.id }] }]);
+  const result = await pipeline.assimilate(pass.ctx, new AbortController().signal, 'p/m');
+  assert.equal(result.saved, 0);
+  assert.deepEqual(store.get([raw.id])[0]!.raw!.settledInto, [existing.id]);
+  const { neighbors } = JSON.parse(pass.requests[1].messages[0].content);
+  assert.ok(neighbors[0].some((item: any) => item.id === existing.id));
+  assert.ok(!neighbors[0].some((item: any) => item.id === twin.id || item.id === raw.id));
+});
+
+test('sleep keeps an entry whose candidate failed validation, until the retry window ends', async t => {
+  const { root, store, pipeline } = await fixture(t);
+  const fresh = await seed(store, 'Deploys use the blue pool.', 'u1');
+  const invented = { ...candidate(fresh.id), source: { entries: [fresh.id, 'invented'], origin: 'user_statement' } };
+  const result = await pipeline.assimilate(sleeper([reflection([invented])]).ctx, new AbortController().signal, 'p/m');
+  assert.deepEqual([result.saved, result.pruned, result.retained, result.rejected?.length], [0, 0, 1, 1]);
+  assert.equal(store.rawEntries().length, 1);
+  const late = Date.now;
+  Date.now = () => late() + 8 * 86400000;
+  t.after(() => { Date.now = late; });
+  const expired = await pipeline.assimilate(sleeper([reflection([invented])]).ctx, new AbortController().signal, 'p/m');
+  assert.deepEqual([expired.pruned, expired.retained], [1, 0]);
+  assert.equal(store.rawEntries().length, 0);
+});
+
+test('sleep keeps an entry when only some of its facts pass validation', async t => {
+  const { root, store, pipeline } = await fixture(t);
+  const raw = await seed(store, 'Deploys use the blue pool. The default region is eu-north-7.', 'u1');
+  const saved = { ...candidate(raw.id, 'Deploys use the blue pool.'), source: { entries: [raw.id], origin: 'user_statement', excerpt: 'Deploys use the blue pool.' } };
+  const misquoted = { ...candidate(raw.id, 'The default region is eu-north-7.'), source: { entries: [raw.id], origin: 'user_statement', excerpt: 'region: eu-north-7' } };
+  const first = await pipeline.assimilate(sleeper([reflection([saved, misquoted]), curate()]).ctx, new AbortController().signal, 'p/m');
+  assert.deepEqual([first.saved, first.assimilated, first.retained, first.rejected?.length], [1, 0, 1, 1]);
+  assert.deepEqual(store.rawEntries().map(item => item.id), [raw.id]);
+  const repaired = { ...misquoted, source: { ...misquoted.source, excerpt: 'The default region is eu-north-7.' } };
+  const [memory] = store.list().filter(item => !item.raw);
+  const second = await pipeline.assimilate(sleeper([reflection([saved, repaired]), { operations: [{ candidate: 0, action: 'NOOP', id: memory!.id }, { candidate: 1, action: 'ADD' }] }]).ctx, new AbortController().signal, 'p/m');
+  assert.deepEqual([second.saved, second.assimilated, second.retained], [1, 1, 0]);
+  assert.deepEqual(store.rawEntries(), []);
+  assert.ok(store.list().some(item => item.body.includes('eu-north-7')));
+});
+
+test('a failed sleep leaves every entry raw and recallable', async t => {
+  const { root, store, pipeline } = await fixture(t);
+  await seed(store, 'Deploys use the blue pool.', 'u1');
+  const result = await pipeline.assimilate(sleeper(['not json']).ctx, new AbortController().signal, 'p/m');
+  assert.deepEqual([result.saved, result.retained, result.skipped, result.rejected?.length], [0, 1, false, 1]);
+  const offline = sleeper([reflection()]);
+  (offline.ctx.modelRegistry as any).streamSimple = () => ({ result: async () => { throw new Error('offline'); } });
+  await assert.rejects(pipeline.assimilate(offline.ctx, new AbortController().signal, 'p/m'), /offline/);
+  assert.equal(store.search('blue pool')[0]!.raw!.role, 'user');
+  const distilled = { ...candidate(store.rawEntries()[0]!.id, 'Deploys use the blue pool.') };
+  assert.equal((await pipeline.assimilate(sleeper([reflection([distilled]), curate()]).ctx, new AbortController().signal, 'p/m')).assimilated, 1);
+});
+
+test('sleep has nothing to do without raw entries', async t => {
+  const { store, pipeline } = await fixture(t);
+  const pass = sleeper([]);
+  assert.equal((await pipeline.assimilate(pass.ctx, new AbortController().signal, 'p/m')).skipped, true);
+  assert.equal(pass.count(), 0);
+  assert.equal(store.list().length, 0);
+});

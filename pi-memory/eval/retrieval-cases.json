@@ -1,0 +1,926 @@
+{
+ "note": "One project's memories and labelled task prompts. Class multihop needs a memory the prompt cannot reach without the first. natural and disjoint were written by a second model that saw each note alone (openai/gpt-6.1-sol); the rest were authored with the memories, so those are a guide rather than a benchmark.",
+ "memories": [
+  {
+   "key": "staging",
+   "body": "Never run destructive migrations against the shared staging database without asking in #infra first."
+  },
+  {
+   "key": "money",
+   "body": "Invoice amounts are integer cents, never floats, because a rounding bug double-charged customers."
+  },
+  {
+   "key": "webhook",
+   "body": "The billing webhook retries for 72 hours, so handlers must be idempotent."
+  },
+  {
+   "key": "version",
+   "body": "The deploy pipeline reads the version from packages/core/package.json, not the root package.json."
+  },
+  {
+   "key": "bun",
+   "body": "This workspace is bun-only; npm rewrites the lockfile."
+  },
+  {
+   "key": "mocks",
+   "body": "Integration tests must hit a real SQLite database. A mocked migration once passed while production failed."
+  },
+  {
+   "key": "commits",
+   "body": "Keep commits small with one logical change each."
+  },
+  {
+   "key": "prdesc",
+   "body": "The maintainer reviews on a phone, so keep pull request descriptions under ten lines."
+  },
+  {
+   "key": "node22",
+   "body": "CI runs only on Node 22."
+  },
+  {
+   "key": "aws",
+   "body": "Bedrock provider tests need AWS_PROFILE=eval or they hang indefinitely."
+  },
+  {
+   "key": "grafana",
+   "body": "The on-call latency board is https://grafana.internal/d/ingest."
+  },
+  {
+   "key": "sqlite",
+   "body": "The session store stays in SQLite rather than Postgres because the extension must work offline."
+  },
+  {
+   "key": "apiv2",
+   "body": "The public API stays on v2 until the mobile app ships its next release."
+  },
+  {
+   "key": "comments",
+   "body": "Do not add comments that restate the code."
+  },
+  {
+   "key": "background",
+   "body": "Background jobs must never use the session model, only an explicitly configured model."
+  },
+  {
+   "key": "tz",
+   "body": "All timestamps in the ledger are stored in UTC; conversions happen only in the web client."
+  },
+  {
+   "key": "flaky",
+   "body": "test/sync.test.ts is flaky on macOS because of fsevents latency; rerun it before debugging."
+  },
+  {
+   "key": "logs",
+   "body": "Never log customer email addresses; the compliance audit failed on this in 2025."
+  },
+  {
+   "key": "retries",
+   "body": "HTTP clients use exponential backoff with full jitter, capped at 30 seconds."
+  },
+  {
+   "key": "flags",
+   "body": "Feature flags live in config/flags.yaml and must have an owner and a removal date."
+  },
+  {
+   "key": "i18n",
+   "body": "User-facing strings go through t() from packages/i18n; hard-coded English fails review."
+  },
+  {
+   "key": "cdn",
+   "body": "Static assets are served from Cloudflare R2; the purge script is tools/purge.mjs."
+  },
+  {
+   "key": "secrets",
+   "body": "Secrets come from 1Password via op run; .env files are forbidden in the repo."
+  },
+  {
+   "key": "rate",
+   "body": "The Stripe sandbox allows 25 requests per second; load tests must stay under that."
+  },
+  {
+   "key": "pagination",
+   "body": "List endpoints use cursor pagination; offset pagination broke on large tenants."
+  },
+  {
+   "key": "errors",
+   "body": "API errors use {error:{code,message}}; never return a bare string."
+  },
+  {
+   "key": "contracts",
+   "body": "Shared types live in packages/contracts; services must not import each other directly."
+  },
+  {
+   "key": "cron",
+   "body": "Scheduled jobs run through Temporal, not cron, so that retries are visible."
+  },
+  {
+   "key": "email",
+   "body": "Transactional email goes through Postmark; marketing email must never use that account."
+  },
+  {
+   "key": "locks",
+   "body": "Long-running migrations take an advisory lock; check pg_locks before assuming a hang."
+  },
+  {
+   "key": "tern-a",
+   "body": "The notifier service deploys through the Tern pipeline."
+  },
+  {
+   "key": "tern-b",
+   "body": "Tern needs its VPN token rotated before any production run; tokens last 12 hours."
+  },
+  {
+   "key": "harbor-a",
+   "body": "The reconciliation job is owned by the Harbor team."
+  },
+  {
+   "key": "harbor-b",
+   "body": "Harbor only accepts change requests through the CAB form on Thursdays."
+  },
+  {
+   "key": "ledger-a",
+   "body": "Refunds call the ledger-core service synchronously."
+  },
+  {
+   "key": "ledger-b",
+   "body": "ledger-core has a 500 ms budget; anything slower trips its circuit breaker."
+  },
+  {
+   "key": "osprey-a",
+   "body": "The export feature stores files in the Osprey bucket."
+  },
+  {
+   "key": "osprey-b",
+   "body": "Osprey objects expire after 7 days under the retention policy."
+  },
+  {
+   "key": "quill-a",
+   "body": "Invoice PDFs are rendered by the Quill worker."
+  },
+  {
+   "key": "quill-b",
+   "body": "Quill crashes on fonts above 24 MB and has to be restarted by hand with tools/quill-reset.mjs."
+  },
+  {
+   "key": "beryl-a",
+   "body": "Customer search is backed by the Beryl index."
+  },
+  {
+   "key": "beryl-b",
+   "body": "Beryl reindexing needs a maintenance window announced 48 hours ahead."
+  },
+  {
+   "key": "kestrel-a",
+   "body": "Mobile push notifications go through the Kestrel gateway."
+  },
+  {
+   "key": "kestrel-b",
+   "body": "Kestrel silently drops payloads above 3 KB."
+  },
+  {
+   "key": "sable-a",
+   "body": "Tax calculation uses the Sable library."
+  },
+  {
+   "key": "sable-b",
+   "body": "Sable is pinned at 4.2 because 4.3 changed rounding for Swiss VAT."
+  },
+  {
+   "key": "juniper-a",
+   "body": "Single sign-on is handled by the Juniper proxy."
+  },
+  {
+   "key": "juniper-b",
+   "body": "Juniper sessions are sticky, so blue-green cutovers log users out unless drained first."
+  },
+  {
+   "key": "wren-a",
+   "body": "The fraud score comes from the Wren model endpoint."
+  },
+  {
+   "key": "wren-b",
+   "body": "Wren costs 4 cents a call, so never call it in a loop."
+  }
+ ],
+ "queries": [
+  {
+   "class": "overlap",
+   "prompt": "Write a migration that drops the old column on the staging database.",
+   "relevant": [
+    "staging"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Add a float total to the invoice amounts calculation.",
+   "relevant": [
+    "money"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Bump the version for the deploy pipeline.",
+   "relevant": [
+    "version"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Add a retry for the flaky test in test/sync.test.ts.",
+   "relevant": [
+    "flaky"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Add a feature flag for the new checkout.",
+   "relevant": [
+    "flags"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Run the Bedrock provider tests.",
+   "relevant": [
+    "aws"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Add an npm dependency to the workspace.",
+   "relevant": [
+    "bun"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Implement cursor pagination on the list endpoints.",
+   "relevant": [
+    "pagination"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Send a transactional email on signup.",
+   "relevant": [
+    "email"
+   ]
+  },
+  {
+   "class": "overlap",
+   "prompt": "Add a scheduled job for nightly cleanup.",
+   "relevant": [
+    "cron"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Remove the legacy_users table on pre-prod.",
+   "relevant": [
+    "staging"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "The subtotal field: should I use a double or a decimal?",
+   "relevant": [
+    "money"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Payment notifications sometimes arrive several times. Make the receiver safe.",
+   "relevant": [
+    "webhook"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Stub out the data layer so that the suite runs faster.",
+   "relevant": [
+    "mocks"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Install left-pad.",
+   "relevant": [
+    "bun"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Print the user's contact details when signup fails so we can debug it.",
+   "relevant": [
+    "logs"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Which release of the JS runtime should the GitHub Action matrix cover?",
+   "relevant": [
+    "node22"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Our API client hammers the server after a 503. Make it wait between attempts.",
+   "relevant": [
+    "retries"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Where should I put the database password for local dev?",
+   "relevant": [
+    "secrets"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "The button label says Save. Is it fine to type it directly in the component?",
+   "relevant": [
+    "i18n"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Make the date show in Lisbon local time on the balance sheet row.",
+   "relevant": [
+    "tz"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Results get slow past page 5000 for big customers.",
+   "relevant": [
+    "pagination"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Let the worker pull helper code straight out of the gateway app.",
+   "relevant": [
+    "contracts"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Is the ALTER stuck? It has been going for twenty minutes.",
+   "relevant": [
+    "locks"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Stress-test checkout against the payments vendor's test environment.",
+   "relevant": [
+    "rate"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Clear the cached images after the logo change.",
+   "relevant": [
+    "cdn"
+   ]
+  },
+  {
+   "class": "paraphrase",
+   "prompt": "Let the nightly summariser fall back on whatever LLM the person is chatting with.",
+   "relevant": [
+    "background"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Ship the notifier fix to production tonight.",
+   "relevant": [
+    "tern-a",
+    "tern-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Change the schedule of the reconciliation job.",
+   "relevant": [
+    "harbor-a",
+    "harbor-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Refunds should also update the analytics warehouse inline before returning.",
+   "relevant": [
+    "ledger-a",
+    "ledger-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Let users re-download their exports from last month.",
+   "relevant": [
+    "osprey-a",
+    "osprey-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Let customers upload custom brand fonts for invoice PDFs.",
+   "relevant": [
+    "quill-a",
+    "quill-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Rebuild customer search with the new tokenizer.",
+   "relevant": [
+    "beryl-a",
+    "beryl-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Add a long receipt summary to the mobile push notifications.",
+   "relevant": [
+    "kestrel-a",
+    "kestrel-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Upgrade the tax calculation dependency to latest.",
+   "relevant": [
+    "sable-a",
+    "sable-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Plan the cutover of single sign-on to the new cluster.",
+   "relevant": [
+    "juniper-a",
+    "juniper-b"
+   ]
+  },
+  {
+   "class": "multihop",
+   "prompt": "Score every line item for fraud during the batch import.",
+   "relevant": [
+    "wren-a",
+    "wren-b"
+   ]
+  },
+  {
+   "class": "negative",
+   "prompt": "Rename this variable to attemptCount in src/util.ts.",
+   "relevant": []
+  },
+  {
+   "class": "negative",
+   "prompt": "Write a haiku about autumn.",
+   "relevant": []
+  },
+  {
+   "class": "negative",
+   "prompt": "Add a dark mode toggle to the settings page.",
+   "relevant": []
+  },
+  {
+   "class": "negative",
+   "prompt": "Explain what a monad is.",
+   "relevant": []
+  },
+  {
+   "class": "negative",
+   "prompt": "Convert this loop to a map call.",
+   "relevant": []
+  },
+  {
+   "class": "negative",
+   "prompt": "What is the difference between TCP and UDP?",
+   "relevant": []
+  },
+  {
+   "class": "natural",
+   "prompt": "Run the migration that drops the old audit tables on staging.",
+   "relevant": [
+    "staging"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Apply the schema cleanup to our team's QA instance, including removal of obsolete columns.",
+   "relevant": [
+    "staging"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add an invoice total field and calculate it from the line items.",
+   "relevant": [
+    "money"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Implement checkout arithmetic for a $19.99 subscription with a $5 discount.",
+   "relevant": [
+    "money"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Implement the billing webhook handler that credits an account after payment.",
+   "relevant": [
+    "webhook"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Make sure receiving the same charge notification twice doesn't increase a user's balance again.",
+   "relevant": [
+    "webhook"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Bump the version so the next deploy goes out as 3.4.0.",
+   "relevant": [
+    "version"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Prepare release 5.2.1 and update whichever manifest controls the published artifact's identifier.",
+   "relevant": [
+    "version"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Install the workspace dependencies and run the tests.",
+   "relevant": [
+    "bun"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Add zod to the parser module and refresh its dependency resolution snapshot.",
+   "relevant": [
+    "bun"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Write an integration test for the new migration.",
+   "relevant": [
+    "mocks"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Verify that upgrading an existing on-disk schema preserves saved records; build whatever harness is needed.",
+   "relevant": [
+    "mocks"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Commit the authentication fix and the unrelated CSS cleanup.",
+   "relevant": [
+    "commits"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Package today's pagination work, typo corrections, and dependency upgrade into git history.",
+   "relevant": [
+    "commits"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Write a pull request description for this refactor.",
+   "relevant": [
+    "prdesc"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Draft the summary reviewers will see when I submit this branch for merging.",
+   "relevant": [
+    "prdesc"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Which Node version should I use to reproduce the CI failure locally?",
+   "relevant": [
+    "node22"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Create a Dockerfile for executing our automated checks with the same JavaScript runtime as the build server.",
+   "relevant": [
+    "node22"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Run the Bedrock provider tests and investigate any failures.",
+   "relevant": [
+    "aws"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Execute the Amazon inference adapter's verification suite with the appropriate local credentials.",
+   "relevant": [
+    "aws"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Where's the latency dashboard for on-call?",
+   "relevant": [
+    "grafana"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Ingestion has slowed down; give me the monitoring URL I should open.",
+   "relevant": [
+    "grafana"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Should I move the session store to Postgres while I'm cleaning up persistence?",
+   "relevant": [
+    "sqlite"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Redesign how the browser add-on saves conversation state, including the choice of storage engine.",
+   "relevant": [
+    "sqlite"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Can I switch the public API routes to v3 now?",
+   "relevant": [
+    "apiv2"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Update our externally exposed endpoint generation to the newest major revision as part of this cleanup.",
+   "relevant": [
+    "apiv2"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add comments to make this function easier to follow.",
+   "relevant": [
+    "comments"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Annotate the retry loop for a junior developer reading it for the first time.",
+   "relevant": [
+    "comments"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add a background summarization job using the current session's model.",
+   "relevant": [
+    "background"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Implement an unattended nightly digest generator and wire up its LLM selection.",
+   "relevant": [
+    "background"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Store ledger timestamps in the user's timezone so they display correctly.",
+   "relevant": [
+    "tz"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Implement date handling for accounting entries created by customers in Tokyo and New York.",
+   "relevant": [
+    "tz"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "test/sync.test.ts failed on my Mac; can you investigate?",
+   "relevant": [
+    "flaky"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "The file-watcher synchronization check went red once on my Apple laptop. Fix whatever caused it.",
+   "relevant": [
+    "flaky"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add debug logs with the customer's email so we can trace failed sign-ins.",
+   "relevant": [
+    "logs"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Instrument password recovery with enough diagnostic output to identify the recipient of each attempted delivery.",
+   "relevant": [
+    "logs"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add retries to the HTTP client when the upstream returns 503.",
+   "relevant": [
+    "retries"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Implement recovery for failed outbound fetches, including how long to wait between attempts.",
+   "relevant": [
+    "retries"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add a feature flag for the new search UI.",
+   "relevant": [
+    "flags"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Put the redesigned checkout behind a rollout toggle and include the metadata needed to manage its lifecycle.",
+   "relevant": [
+    "flags"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add user-facing strings for the new settings page.",
+   "relevant": [
+    "i18n"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Build a confirmation dialog that says 'Delete this project?' with Cancel and Delete buttons.",
+   "relevant": [
+    "i18n"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "The CDN is still serving the old static assets; can you purge them?",
+   "relevant": [
+    "cdn"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Our updated logo isn't appearing in browsers. Find its hosting backend and invalidate the cached copy.",
+   "relevant": [
+    "cdn"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Set up the secrets I need to run the app locally.",
+   "relevant": [
+    "secrets"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Configure development credentials for launching the service, and show me the invocation.",
+   "relevant": [
+    "secrets"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Write a load test against the Stripe sandbox.",
+   "relevant": [
+    "rate"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Benchmark the payment integration's nonproduction checkout throughput without getting throttled.",
+   "relevant": [
+    "rate"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add pagination to the list endpoint for customers.",
+   "relevant": [
+    "pagination"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Implement browsing millions of tenant records a page at a time, including the continuation mechanism.",
+   "relevant": [
+    "pagination"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Return an API error when the project ID is invalid.",
+   "relevant": [
+    "errors"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Implement the JSON response body for a rejected create-user request.",
+   "relevant": [
+    "errors"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Where should I put the shared types used by these services?",
+   "relevant": [
+    "contracts"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "The worker needs the gateway's request interfaces. Wire up that dependency without duplicating declarations.",
+   "relevant": [
+    "contracts"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Add a scheduled job to clean up expired uploads every night.",
+   "relevant": [
+    "cron"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Set up recurring execution of the invoice reconciliation workflow at midnight.",
+   "relevant": [
+    "cron"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "Send password reset email through our mail provider.",
+   "relevant": [
+    "email"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "Implement delivery for purchase receipts and a promotional newsletter, including transport configuration for each.",
+   "relevant": [
+    "email"
+   ]
+  },
+  {
+   "class": "natural",
+   "prompt": "This long-running migration looks hung; can you check what's happening?",
+   "relevant": [
+    "locks"
+   ]
+  },
+  {
+   "class": "disjoint",
+   "prompt": "The schema upgrade process has stopped making progress. Diagnose the wait before terminating anything.",
+   "relevant": [
+    "locks"
+   ]
+  }
+ ]
+}

@@ -4,6 +4,8 @@ export type MemoryScope = 'global' | `project:${string}`;
 export type ScopeSelector = MemoryScope | 'project';
 export type MemoryOrigin = 'user_statement' | 'user_confirmation' | 'tool_output' | 'consolidation';
 export type MemoryRetention = 'long' | 'short';
+/** A transcript entry kept verbatim at turn end. The sleep pass sets `settledInto`: the memories that now hold it, none when it was pruned. */
+export interface RawEntry { role: 'user' | 'toolResult'; at: string; before?: string; settledInto?: string[] }
 export interface MemorySource { session: string; entries: string[]; origin: MemoryOrigin }
 export interface MemoryInput {
   title: string; body: string; type?: MemoryType; scope?: ScopeSelector; summary?: string;
@@ -11,6 +13,7 @@ export interface MemoryInput {
   confidence?: number; source: MemorySource; supersedes?: string[]; links?: string[];
   retention?: MemoryRetention; expiresAt?: string;
   derivedFrom?: Array<{ id: string; hash: string }>;
+  raw?: RawEntry;
 }
 export interface MemoryItem {
   id: string; type: MemoryType; scope: MemoryScope; title: string; body: string; summary: string;
@@ -24,6 +27,7 @@ export interface MemoryItem {
   retention?: MemoryRetention;
   expiresAt?: string;
   derivedFrom?: Array<{ id: string; hash: string }>;
+  raw?: RawEntry;
   /** Computed at read time; never trusted from canonical metadata. */
   validity?: 'expired' | 'stale-derived';
 }
