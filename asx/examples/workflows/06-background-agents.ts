@@ -26,10 +26,10 @@ export default defineWorkflow({
     });
 
     // A failed part becomes null and shows in status; the watcher's test run below catches what it left broken.
-    await ctx.parallel(parts.parts.map((p, i) => () => ctx.agent(p, { label: `part:${i}`, phase: "Implement" })), { failure: "null" });
+    await ctx.parallel(parts.parts.map((p, i) => () => ctx.agent(p, { label: `part:${i}` })));
 
     // Ask the watcher for a delta now that all parts have landed.
-    await watcher.send("Re-run the suite and report new failures.", { whenBusy: "followUp" });
+    await watcher.send("Re-run the suite and report new failures.");
     const regressions = await watcher.wait();
 
     if (!/no new failures/i.test(regressions)) {
@@ -37,7 +37,7 @@ export default defineWorkflow({
       await ctx.agent(`Fix these regressions:\n${regressions}`, { label: "fix" });
     }
 
-    // Optional: keep the watcher alive after the run for interactive use (`workflow steer <run> watcher "…"`).
+    // Optional: keep the watcher alive after the run for interactive use (`asx steer <run> watcher "…"`).
     // const scribe = await ctx.spawn({ name: "scribe", detach: true, ... });
 
     return { regressions };

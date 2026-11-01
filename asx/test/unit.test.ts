@@ -10,6 +10,7 @@ import type { RunRecord } from "../src/index.ts";
 import { linkCli, shellCommand } from "../src/link.ts";
 import { assertSocketPath } from "../src/paths.ts";
 import { rpc } from "../src/client.ts";
+import { validateRequest } from "../src/protocol.ts";
 import { WorkflowError } from "../src/errors.ts";
 import { lintDeterminism, validateWorkflow } from "../src/loader.ts";
 import { catalogText, modelResult, runBrief, runList, runListView, runSummary, runTree, toolHints, validationText } from "../src/presentation.ts";
@@ -39,6 +40,10 @@ test("determinism lint reports real control-flow calls only", () => {
   assert.deepEqual(options.map(item => item.code), ["unknown_agent_option", "unknown_agent_option"]);
   assert.match(options[1].message, /'modle'/);
   assert.match(options[0].message, /'tool' \(did you mean 'tools'\?\)/);
+  const retired = lintDeterminism(`export default { async run(ctx) { const other = state.budget.agents; const agents = "costUsd"; const dynamic = ctx.budget[agents]; await ctx.agent("p", { agentType: "reviewer" }); return ctx.budget.agents; } };`);
+  assert.deepEqual(retired.map(item => item.code), ["unknown_agent_option", "unknown_context_member"]);
+  assert.match(retired[0].message, /spread a shared AgentSpec/);
+  assert.match(retired[1].message, /ctx\.budget\.agents was removed/);
 });
 
 test("determinism lint reports I/O in control flow but not inside ctx.step", () => {
@@ -68,7 +73,7 @@ test("validate reports a load error and the lint findings in one pass, with loca
     assert.equal(nondet.valid, false);
     assert.equal(nondet.path, join(directory, "nondet.ts"));
     assert.deepEqual(nondet.diagnostics.map(item => [item.code, item.line]), [["invalid_workflow", undefined], ["nondeterministic_call", 3]]);
-    assert.match(nondet.diagnostics[0].message, /must export default defineWorkflow/);
+    assert.match(nondet.diagnostics[0].message, /workflow name must be kebab-case/);
 
     await writeFile(join(directory, "helper.ts"), "export const helper = (x: number) => x + ;\n");
     await writeFile(join(directory, "uses.ts"), `import { helper } from "./helper.ts";\nexport default { name: "uses", async run() { return helper(1); } };\n`);
@@ -159,7 +164,7 @@ test("summaries name the model and catalogs read as text", () => {
 test("the starter template is a valid workflow and the guide points at shipped files", async () => {
   const directory = await mkdtemp(join(tmpdir(), "po-"));
   try {
-    await writeFile(join(directory, "starter.ts"), template("starter"));
+    await writeFile(join(directory, "starter.ts"), template());
     const result = await validateWorkflow({ path: join(directory, "starter.ts") }, directory);
     assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
     assert.equal(result.name, "starter");
@@ -189,7 +194,7 @@ test("the CLI writes a starter workflow and explains an empty catalog", async ()
     assert.match(out.pop()!, /^No workflows in .*\nStart one with: asx init <name>/);
     assert.equal(await cli("init", "demo"), 0);
     assert.match(out.pop()!, /Next: asx validate demo\n.*--model provider\/model/);
-    assert.equal(await readFile(join(cwd, ".pi", "workflows", "demo.ts"), "utf8"), template("demo"));
+    assert.equal(await readFile(join(cwd, ".pi", "workflows", "demo.ts"), "utf8"), template());
     assert.equal(await cli("init", "demo"), 1);
     assert.match(err.pop()!, /already exists/);
     assert.equal(await cli("init", "Not_Kebab"), 1);
@@ -210,6 +215,22 @@ test("--model takes a thinking suffix as pi --model does", async () => {
   assert.deepEqual(launches.map(item => [(item as { model: string }).model, (item as { thinkingLevel?: string }).thinkingLevel]),
     [["openai/gpt", "high"], ["openai/gpt", "low"]]);
   assert.equal(await runCli(["run", "demo", "--thinking", "huge", "--bg"], options), 1);
+});
+
+test("removed agent-count configuration fails before a launch", async () => {
+  const request = { action: "run", requestId: "budget", workflow: { name: "review" }, cwd: "/tmp", origin: { kind: "cli" } };
+  assert.throws(() => validateRequest({ ...request, budget: { maxAgents: 3 } }), /Invalid run request/);
+  assert.deepEqual(validateRequest({ ...request, budget: { maxCostUsd: 2, maxTokens: 100, maxDurationMs: 1000 } }).action, "run");
+  const errors: string[] = [];
+  const client: WorkflowClient = {
+    request: async () => { assert.fail("a removed option must not launch a run"); },
+    rpc: async () => ({}), ensure: async () => ({}),
+  };
+  assert.equal(await runCli(["run", "review", "--max-agents", "3", "--bg"], {
+    client, env: {}, stdout: () => {}, stderr: text => { errors.push(text); },
+  }), 1);
+  assert.match(errors.join(""), /max-agents/);
+  assert.doesNotMatch(help(), /--max-agents/);
 });
 
 test("next-step hints keep --home so copied commands reach the same worker", async () => {

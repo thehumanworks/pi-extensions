@@ -14,14 +14,14 @@ export default defineWorkflow({
   name: "migration-swarm",
   description: "Migrate modules from library A to B with a swarm of workers that share conventions on a blackboard",
   args: Type.Object({ seedModules: Type.Array(Type.String()), workers: Type.Optional(Type.Integer({ minimum: 1, maximum: 32, default: 4 })) }),
-  budget: { maxAgents: 50, maxCostUsd: 20 },
+  budget: { maxCostUsd: 20 },
 
   run: async (ctx) => {
     const { results, blackboard, processed } = await ctx.swarm<string, { module: string; migrated: boolean }>({
       workers: ctx.args.workers ?? 4,
       queue: { initial: ctx.args.seedModules, allowPush: true },
       worker: {
-        isolation: "none", // workers share the repo; each item touches one module
+        // Workers share the repo by default; each item touches one module.
         retries: 1,
         schema: MODULE_RESULT,
         instructions: "Use the blackboard tool to read shared conventions and append new ones. Use queue_push for newly discovered modules, or return them in newDependents. Finish each module with submit_result.",

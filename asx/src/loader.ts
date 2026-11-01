@@ -1,17 +1,18 @@
 import { createHash } from "node:crypto";
 import { access, readFile, readdir, realpath } from "node:fs/promises";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createJiti } from "jiti";
 import { Type } from "typebox";
+import { Value } from "typebox/value";
 import type { CatalogEntry, ValidationResult, WorkflowDefinition } from "./index.ts";
-import type { WorkflowRef } from "./protocol.ts";
+import { RUN_BUDGET_SCHEMA, type WorkflowRef } from "./protocol.ts";
 import { agentDirectory } from "./paths.ts";
 import { WorkflowError } from "./errors.ts";
 import { lintDeterminism } from "./validation.ts";
 export { lintDeterminism } from "./validation.ts";
 
-export interface LoadedWorkflow { definition: WorkflowDefinition; path: string; hash: string; source: string }
+export interface LoadedWorkflow { definition: WorkflowDefinition & { name: string }; path: string; hash: string; source: string }
 const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 let installedAliases: Promise<Record<string, string>> | undefined;
 function dependencyAliases(): Promise<Record<string, string>> {
@@ -39,7 +40,7 @@ export async function resolveWorkflow(ref: WorkflowRef | string, cwd: string): P
     ? [isAbsolute(reference.path) ? reference.path : resolve(cwd, reference.path)]
     : [join(cwd, ".pi", "workflows", reference.name + ".ts"), join(agentDirectory(), "workflows", reference.name + ".ts")];
   for (const candidate of candidates) {
-    try { await access(candidate); return await realpath(candidate); } catch (error) {
+    try { await access(candidate); return resolve(candidate); } catch (error) {
       if (!["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
     }
   }
@@ -51,7 +52,10 @@ export async function resolveWorkflow(ref: WorkflowRef | string, cwd: string): P
 }
 export async function loadWorkflow(ref: WorkflowRef | string, cwd: string): Promise<LoadedWorkflow> {
   const path = await resolveWorkflow(ref, cwd);
-  const source = await readFile(path, "utf8");
+  // Keep the discovered filename for naming and replay (e.g. Home Manager symlinks),
+  // but resolve imports relative to the source file as before.
+  const sourcePath = await realpath(path);
+  const source = await readFile(sourcePath, "utf8");
   const hash = createHash("sha256").update(source).digest("hex");
   // Aliases let project workflows import the installed extension even when Pi's
   // package installation is outside that project's node_modules directory.
@@ -64,16 +68,30 @@ export async function loadWorkflow(ref: WorkflowRef | string, cwd: string): Prom
     },
   });
   let definition: WorkflowDefinition;
-  try { definition = await loader.import<WorkflowDefinition>(path, { default: true }); }
+  try { definition = await loader.import<WorkflowDefinition>(sourcePath, { default: true }); }
   catch (error) { throw new WorkflowError("invalid_workflow", `Cannot load ${path}: ${loadMessage(error)}`); }
-  if (!definition || typeof definition !== "object" || typeof definition.run !== "function" || typeof definition.name !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(definition.name)) {
-    throw new WorkflowError("invalid_workflow", `${path} must export default defineWorkflow({ name: 'kebab-case', async run(ctx) { ... } }).`);
+  if (!definition || typeof definition !== "object" || typeof definition.run !== "function") {
+    throw new WorkflowError("invalid_workflow", `${path} must export default defineWorkflow({ async run(ctx) { ... } }).`);
+  }
+  const name = definition.name === undefined ? basename(path, extname(path)) : definition.name;
+  if (typeof name !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) {
+    throw new WorkflowError("invalid_workflow", `${path}: workflow name must be kebab-case. Rename the file to review-changes.ts or set name: 'review-changes'.`);
+  }
+  const unknown = Object.keys(definition).filter(key => !["name", "description", "args", "defaults", "budget", "tools", "run"].includes(key));
+  if (unknown.length) {
+    const hint = unknown.includes("agents") ? " Remove agents; pass options to ctx.agent() directly, or share an AgentSpec object with ...spread." : "";
+    throw new WorkflowError("invalid_workflow", `${path}: unknown workflow option ${unknown.map(key => `'${key}'`).join(", ")}.${hint}`);
+  }
+  if (definition.budget !== undefined && !Value.Check(RUN_BUDGET_SCHEMA, definition.budget)) {
+    const hint = definition.budget && typeof definition.budget === "object" && "maxAgents" in definition.budget
+      ? " Remove maxAgents; agent calls and loop bounds define how many agents run." : "";
+    throw new WorkflowError("invalid_workflow", `${path}: budget accepts maxCostUsd >= 0, integer maxTokens >= 0 and maxDurationMs > 0.${hint} Got ${describeArgs(definition.budget)}.`);
   }
   // Args always arrive as a JSON object (tool `args`, CLI --args), so only an object schema can check them.
   if (definition.args !== undefined && !Type.IsObject(definition.args)) {
     throw new WorkflowError("invalid_workflow", `${path}: args must be Type.Object({...}) from "typebox"; got ${describeArgs(definition.args)}.`);
   }
-  return { definition, path, hash, source };
+  return { definition: { ...definition, name }, path, hash, source };
 }
 // Node's "Require stack:" lists loader internals, not the workflow's mistake.
 function loadMessage(error: unknown): string {
@@ -102,7 +120,8 @@ export async function validateWorkflow(ref: WorkflowRef | string, cwd: string): 
   } catch (error) {
     const failure = loadDiagnostic(error);
     // The loader and the lint both see a syntax error in the workflow file; keep the loader's, which has the column.
-    return { valid: false, path, diagnostics: [failure, ...lint.filter(item => item.code !== "syntax_error" || failure.path !== path)] };
+    const sameFile = failure.path === path || failure.path === await realpath(path).catch(() => undefined);
+    return { valid: false, path, diagnostics: [failure, ...lint.filter(item => item.code !== "syntax_error" || !sameFile)] };
   }
 }
 export async function catalog(cwd: string): Promise<CatalogEntry[]> {

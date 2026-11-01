@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/asx",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "asx: run pi agents from presets, one-line workflow expressions or TypeScript workflows, durably, from Pi or the shell",
   "type": "module",
   "license": "MIT",

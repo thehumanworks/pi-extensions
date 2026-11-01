@@ -1,6 +1,6 @@
 // Human-in-the-loop gate: the run waits durably until a signal arrives, then continues (a restart replays up to the wait).
-// Deliver the signal with:  workflow signal <runId> approve-release '{"approved":true,"note":"ship it"}'
-// or from inside Pi:        workflow { action: "signal", runId, key: "approve-release", value: {...} }
+// Deliver the signal with:  asx signal <runId> approve-release '{"approved":true,"note":"ship it"}'
+// or from inside Pi:        asx { action: "signal", runId, key: "approve-release", value: {...} }
 import { Type } from "typebox";
 import { defineWorkflow } from "@nothumanwork/asx";
 
@@ -13,7 +13,7 @@ export default defineWorkflow({
     ctx.phase("Prepare");
     const notes = await ctx.agent(`Draft release notes for ${ctx.args.version} from the git log since the last tag.`, { label: "notes", tools: ["read", "bash"] });
 
-    // Journaled side effect with a compensation: `workflow revert <runId>` deletes the tag again.
+    // Journaled side effect with a compensation: `asx revert <runId>` deletes the tag again.
     await ctx.step("tag", async () => {
       const { execFileSync } = await import("node:child_process");
       execFileSync("git", ["tag", "-a", `v${ctx.args.version}`, "-m", notes], { cwd: ctx.cwd });

@@ -9,7 +9,7 @@ export default defineWorkflow({
   args: Type.Object({ goal: Type.String(), version: Type.String() }),
   // ctx.workflow() is the only way to open another workflow; agents inside a run cannot launch one.
   // Recursion is capped by the worker setting maxDepth (default 1), so this root may call children but they may not.
-  budget: { maxAgents: 80, maxCostUsd: 25 },
+  budget: { maxCostUsd: 25 },
 
   run: async (ctx) => {
     ctx.phase("Implement");

@@ -23,7 +23,7 @@ Requires Node 22.19 or newer, Git for worktree isolation, Linux or macOS, and a 
 pi install npm:@nothumanwork/asx
 ```
 
-Pi installs packages without linking their binaries. When a Pi session starts and nothing named `asx` is on your PATH, the extension links the command into `~/.local/bin`, `~/bin` or `~/.pi/agent/bin` (the first that exists and is on PATH) and tells you where. Deleting the link opts out for good. Otherwise `/asx guide` prints the `node …/bin/asx.mjs` command to use. `npm install -g @nothumanwork/asx` also installs `asx`. For Nix, see [nix/README.md](nix/README.md).
+Pi installs packages without linking their binaries. When a Pi session starts and nothing named `asx` is on your PATH, the extension links the command into `~/.local/bin`, `~/bin` or `~/.pi/agent/bin` (the first that exists and is on PATH) and tells you where. Deleting the link opts out for good. Otherwise `/asx guide` prints the `node …/bin/asx.mjs` command to use. `npm install -g @nothumanwork/asx` also installs `asx`. For Nix and optional Home Manager Neovim completion and diagnostics, see [nix/README.md](nix/README.md).
 
 From this repository:
 
@@ -112,14 +112,14 @@ The tool's launch request for an expression is `{"action":"run","expression":"@c
 For control flow that depends on results, human signals, worktrees, compensation or swarms, write a TypeScript workflow in `.pi/workflows/<name>.ts` (`asx init <name>` writes a starter; `asx guide` explains the API). Workflow files are project source: commit them, never add them to `.gitignore`.
 
 ```ts
+// .pi/workflows/review.ts
 import { Type } from "typebox";
 import { defineWorkflow } from "@nothumanwork/asx";
 
 export default defineWorkflow({
-  name: "review",
   description: "Review a directory from two perspectives, then judge; agents are full pi sessions.",
   args: Type.Object({ path: Type.String() }),
-  budget: { maxAgents: 3, maxCostUsd: 1, maxDurationMs: 120_000 },
+  budget: { maxCostUsd: 1, maxDurationMs: 120_000 },
   async run(ctx) {
     ctx.phase("Review");
     const notes = await ctx.parallel(
@@ -132,6 +132,10 @@ export default defineWorkflow({
   },
 });
 ```
+
+Only `run` is required. The filename supplies the workflow name (`review.ts` → `review`); set `name` only when the catalog name should differ, such as the numbered files in `examples/workflows/`. Symlinked workflows use the visible filename, including Home Manager links to Nix store files. Inferred and explicit names must be kebab-case. Omit `args` when the workflow takes no arguments, and omit `budget` when no run limits are needed.
+
+Agent calls and normal TypeScript control flow define how many agents run. There is no separate agent registry or agent-count budget to keep in sync. Use bounded loops or collection sizes to control fan-out, `ctx.parallel(..., { concurrency })` to limit a group, and the worker concurrency setting to limit simultaneous agents across runs. Optional cost, token and duration budgets remain useful limits on work whose resource use cannot be known in advance.
 
 Two kinds of agent are available from a workflow:
 
@@ -150,7 +154,7 @@ Two kinds of agent are available from a workflow:
 |---|---|---|
 | `args` | `ctx.args.path` | Typed launch arguments. |
 | `runId`, `cwd`, `depth` | `ctx.log(ctx.runId)` | Run identity, working directory and composition depth. |
-| `budget` | `ctx.budget.agents` | Journaled remaining agent and dollar allowance, or `null` when uncapped. |
+| `budget` | `ctx.budget.costUsd` | Journaled remaining dollar allowance, or `null` when uncapped. |
 | `agent` | `await ctx.agent("Inspect src", { tools: ["read"] })` | A fresh agent; text, or schema-validated data (durable runtime). |
 | `preset` | `await ctx.preset("review", { inputs })` | A preset's templated task as a pi session; text. |
 | `parallel` | `await ctx.parallel([() => ctx.agent("A"), () => ctx.agent("B")])` | Barrier; output positions match input positions. Default failures become `null`. |
@@ -163,9 +167,37 @@ Two kinds of agent are available from a workflow:
 | `swarm` | `await ctx.swarm({ workers: 4, queue: files, worker: { prompt: file => "Review " + file } })` | Durable queue processed by reusable worker conversations. |
 | `phase`, `log`, `now`, `random` | `ctx.phase("Verify")` | Progress group, journaled message, journaled time and random value. |
 
-Agent options: `model`, `thinkingLevel`, `runtime`, `instructions`, `tools`, `excludeTools`, `cwd`, `isolation`, `budget`, `timeoutMs`, `retries`, `label`, `phase`, `agentType` (a key in the definition's `agents` map), `key`, `schema`. Options merge in this order: worker defaults, definition `defaults`, `agents[agentType]`, call options. An agent without a model uses the run's model: the definition's `defaults.model`, else the launch model (Pi launches use the session's model; shell launches of workflows need `--model`, or `provider/model:high` to set the thinking level too). Presets carry their own model.
+Agent options: `model`, `thinkingLevel`, `runtime`, `instructions`, `tools`, `excludeTools`, `cwd`, `isolation`, `budget`, `timeoutMs`, `retries`, `label`, `phase`, `key`, `schema`. Options merge in this order: worker defaults, definition `defaults`, call options. An agent without a model uses the run's model: the definition's `defaults.model`, else the launch model (Pi launches use the session's model; shell launches of workflows need `--model`, or `provider/model:high` to set the thinking level too). Presets carry their own model.
+
+For shared options, use `defaults` across the workflow or an ordinary typed value for selected calls:
+
+```ts
+import { defineWorkflow, type AgentSpec } from "@nothumanwork/asx";
+
+const reviewer = { tools: ["read", "bash"], thinkingLevel: "high" } satisfies AgentSpec;
+
+export default defineWorkflow({
+  async run(ctx) {
+    const review = await ctx.agent("Review the staged changes", reviewer);
+    return ctx.agent(`Verify this review against the code:\n${review}`, reviewer);
+  },
+});
+```
+
+`ctx.phase("Review")` supplies the phase for subsequent calls, so repeating `phase: "Review"` on each agent is unnecessary. Explicit `phase` remains useful for concurrent pipeline stages. Similarly, specify `failure` on `ctx.parallel` only when changing the default (`"null"`).
 
 Durable agents must finish structured work with a valid `submit_result` call; prose triggers one repair turn. Recipes `dag`, `bestOf` and `untilDry` are exported from `@nothumanwork/asx/recipes`. Effects go in `ctx.step` with a stable key and, when undoable, a `compensate` callback; `revert <runId>` compensates completed steps in reverse. `isolation: "worktree"` gives an agent its own Git worktree and branch `asx/<runId>/<label>`. Signals are delivered with `asx signal <runId> <key> '<json>'`. Workflows can declare extra durable tools with `defineTool` from `@earendil-works/pi-durable`. The nine files in `examples/workflows/` show each pattern; the tests load every one.
+
+### Migrating to 2.0
+
+| Previous configuration | Current form |
+|---|---|
+| `budget.maxAgents`, launch `maxAgents`, or `--max-agents` | Remove the count limit; agent calls determine the work. Keep cost, token or duration limits when needed. |
+| `ctx.budget.agents` | Bound the loop or collection explicitly. Actual agent usage remains visible in run status. |
+| `agents: { reviewer: spec }` and `{ agentType: "reviewer" }` | Pass `spec` directly to `ctx.agent`, or spread it with per-call options. |
+| `name: "review"` in `review.ts` | Optional; the filename already supplies the name. |
+
+Removed configuration is rejected with a validation error rather than silently ignored. Editing a workflow changes its journal hash: existing runs still require the normal `retry --allow-changed` review when their source changes.
 
 ## Determinism and durability
 
@@ -189,7 +221,7 @@ asx plan '<expression>'  ·  asx presets [--cwd DIR]  ·  asx guide
 asx init <name> [--cwd DIR]  ·  asx catalog [--cwd DIR]  ·  asx validate <name-or-path>
 asx run <preset|'<expression>'|path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR]
   [--model PROVIDER/MODEL[:THINKING]] [--thinking LEVEL] [--bg] [--request-id ID]
-  [--max-agents N] [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
+  [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
 asx status <runId> [--verbose]  ·  asx poll <runId> [--interval 1s] [--until signal|done] [--once]  ·  asx watch <runId>
 asx list [--status running,failed] [--all]  ·  asx result|cancel <runId>  ·  asx revert <runId> [--keep-worktrees]
 asx retry <runId> [--from KEY] [--allow-changed]  ·  asx signal <runId> <key> '<json>'

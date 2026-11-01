@@ -19,15 +19,13 @@ repeat (@a -> @b) until @judge max 3   loop until the judge preset (output = "ve
 A bare name is a preset when such a preset exists; @name always is. Quote expressions in the shell.`;
 
 /** A complete starter workflow; `init` writes it and the guide shows it. */
-export function template(name = "review-file"): string {
+export function template(): string {
   return `import { Type } from "typebox";
 import { defineWorkflow } from "@nothumanwork/asx";
 
 export default defineWorkflow({
-  name: "${name}", // kebab-case; run it by this name
   description: "Two reviewers check a file, then a judge keeps the real bugs. Use for a quick second opinion.",
   args: Type.Object({ path: Type.String() }), // checked before the run starts
-  budget: { maxAgents: 3 }, // a cap; the code below decides how many agents run
   async run(ctx) {
     ctx.phase("Review");
     const reviews = await ctx.parallel(
@@ -98,7 +96,7 @@ A workflow is a TypeScript file whose run(ctx) decides what happens. Each ctx.ag
 
 ## 1. Write one
 
-Save it as <project>/.pi/workflows/<name>.ts, or ~/.pi/agent/workflows/<name>.ts for every project. Workflow files are project source: commit them and never add them to .gitignore.
+Save it as <project>/.pi/workflows/<name>.ts, or ~/.pi/agent/workflows/<name>.ts for every project. The filename supplies the workflow's name; set name only when you want a different kebab-case alias. Workflow files are project source: commit them and never add them to .gitignore.
 
 \`\`\`ts
 ${template().trimEnd()}
@@ -114,11 +112,11 @@ In Pi, run without wait returns a runId at once and the launching session gets a
 
 ## Which model runs
 
-Each agent uses its own model option, else its agentType's, else the definition's defaults.model, else the launch model. The tool and /asx launch with the session's model and thinking level. A shell launch needs --model unless the definition sets defaults.model. Every status line names the model.${options.sessionModel ? ` This session's model is ${options.sessionModel}.` : ""}
+Each agent uses its own model option, else the definition's defaults.model, else the launch model. Pass an agent's options at its call site; share ordinary AgentSpec objects with ...spread when several agents need the same settings. The tool and /asx launch with the session's model and thinking level. A shell launch needs --model unless the definition sets defaults.model. Every status line names the model.${options.sessionModel ? ` This session's model is ${options.sessionModel}.` : ""}
 
 ## ctx
 
-- agent(prompt, options?): the agent's final text, or a typed value when options.schema is set. Options: model, thinkingLevel, runtime ("durable", the default: read/write/edit/bash with per-tool-call durability; "pi": a full pi session with the user's tools, journaled as one step, no schema), tools (durable: default read/write/edit/bash, [] for none; pi: pi's --tools allowlist), excludeTools (pi), instructions, schema, label, phase, isolation ("worktree" gives the agent its own Git worktree and branch), retries, timeoutMs, cwd, agentType.
+- agent(prompt, options?): the agent's final text, or a typed value when options.schema is set. Options: model, thinkingLevel, runtime ("durable", the default: read/write/edit/bash with per-tool-call durability; "pi": a full pi session with the user's tools, journaled as one step, no schema), tools (durable: default read/write/edit/bash, [] for none; pi: pi's --tools allowlist), excludeTools (pi), instructions, schema, label, phase, isolation ("worktree" gives the agent its own Git worktree and branch), retries, timeoutMs, cwd.
 - preset(name, { args?, inputs?, copy?, iteration?, feedback?, env?, presetDirs?, label?, phase?, key? }): render the preset's task (journaled) and run it as a pi session; returns the text.
 - parallel(thunks, { failure?, concurrency? }): results in input order. failure "null" (default) puts null in failed slots and continues; "failFast" stops the others and throws; "allSettled" returns { status, value | reason } per slot. Failed branches always appear in status.
 - pipeline(items, stage1, stage2, ...): each item moves through the stages independently; a failed item becomes null.
@@ -132,7 +130,7 @@ Each agent uses its own model option, else its agentType's, else the definition'
 ## Rules
 
 - run() is replayed after a restart, so keep it deterministic: ctx.now() and ctx.random() instead of Date.now() and Math.random(), and I/O only inside ctx.step. validate flags the common mistakes.
-- budget ({ maxAgents, maxCostUsd, maxTokens, maxDurationMs }) only sets limits. The code decides how many agents run.
+- budget ({ maxCostUsd, maxTokens, maxDurationMs }) is optional. Agent calls, arrays and loop bounds define how many agents run; no separate count or registry is needed. Use defaults only for settings every agent shares.
 - Durable agents get read/write/edit/bash in the run's cwd and nothing from the Pi session. Presets and runtime "pi" agents get pi's full toolset, the user's extensions, MCP servers and skills. No agent may start asx runs; compose with ctx.workflow() or ctx.preset().
 
 This guide covers ordinary workflows. The README adds step effects and compensation, signals, worktrees, swarms, durability and troubleshooting: ${README_PATH}

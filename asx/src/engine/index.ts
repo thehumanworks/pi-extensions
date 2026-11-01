@@ -104,8 +104,6 @@ export class Engine {
     let run: RunData | undefined = storedRun(store.runs[runId]);
     const lineage: RunData[] = [];
     while (run) {
-      if (run.limits.maxAgents !== undefined && run.usage.agents >= run.limits.maxAgents)
-        throw new WorkflowError("budget_exceeded", `Run ${run.id} reached maxAgents=${run.limits.maxAgents}.`);
       if (run.limits.maxCostUsd !== undefined && (run.usage.costUsd ?? 0) > run.limits.maxCostUsd)
         throw new WorkflowError("budget_exceeded", `Run ${run.id} exceeded maxCostUsd=${run.limits.maxCostUsd}.`);
       if (run.limits.maxTokens !== undefined && run.usage.inputTokens + run.usage.outputTokens > run.limits.maxTokens)

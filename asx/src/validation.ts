@@ -4,7 +4,7 @@ import type { ValidationResult } from "./index.ts";
 /** Option names ctx.agent() and ctx.spawn() accept; checked at validate time and again at run time. */
 /** Members of the run context; validate reports any other `ctx.<name>` the run reads. */
 export const CONTEXT_MEMBERS = ["runId", "args", "cwd", "depth", "budget", "agent", "preset", "parallel", "pipeline", "step", "workflow", "signal", "sleep", "spawn", "swarm", "phase", "log", "now", "random"];
-export const AGENT_OPTIONS = ["model", "thinkingLevel", "instructions", "tools", "excludeTools", "runtime", "cwd", "isolation", "budget", "timeoutMs", "retries", "label", "phase", "agentType", "key", "schema"];
+export const AGENT_OPTIONS = ["model", "thinkingLevel", "instructions", "tools", "excludeTools", "runtime", "cwd", "isolation", "budget", "timeoutMs", "retries", "label", "phase", "key", "schema"];
 
 type Node = { type: string; [key: string]: unknown };
 function node(value: unknown): value is Node { return value !== null && typeof value === "object" && "type" in value && typeof value.type === "string"; }
@@ -80,7 +80,8 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
           if (option === undefined || known.includes(option)) continue;
           const near = known.find(valid => valid.startsWith(option) || option.startsWith(valid));
           const loc = property.loc as { start?: { line?: number } } | undefined;
-          diagnostics.push({ code: "unknown_agent_option", line: loc?.start?.line, message: `Unknown agent option '${option}'${near ? ` (did you mean '${near}'?)` : ""}. Valid options: ${known.join(", ")}.` });
+          const migration = option === "agentType" ? " Replace agentType with the agent options directly, or ...spread a shared AgentSpec object." : "";
+          diagnostics.push({ code: "unknown_agent_option", line: loc?.start?.line, message: `Unknown agent option '${option}'${near ? ` (did you mean '${near}'?)` : ""}. Valid options: ${known.join(", ")}.${migration}` });
         }
       }
       const callName = name(callee);
@@ -104,6 +105,10 @@ export function lintDeterminism(source: string): ValidationResult["diagnostics"]
         });
         return;
       }
+    }
+    if (active && ctxName && dotted(value) === `${ctxName}.budget.agents`) {
+      const loc = value.loc as { start?: { line?: number } } | undefined;
+      diagnostics.push({ code: "unknown_context_member", line: loc?.start?.line, message: `${ctxName}.budget.agents was removed. Agent calls and loop bounds define how many agents run; ctx.budget.costUsd reports the remaining dollar allowance.` });
     }
     if (active && ctxName && ["MemberExpression", "OptionalMemberExpression"].includes(value.type) && !value.computed && name(value.object) === ctxName) {
       const member = name(value.property);
