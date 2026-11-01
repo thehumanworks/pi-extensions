@@ -5,7 +5,7 @@ import { realpath, stat } from "node:fs/promises";
 import { BACKGROUND_CONTEXT, type Context } from "@earendil-works/chord/context";
 import type { Models } from "@earendil-works/pi-ai";
 import {
-  configure, createRegistry, defineExtension, defineTask, Harness, UsageDoc,
+  createRegistry, defineExtension, defineTask, Harness, UsageDoc,
   type Conversation, type HarnessOptions, type Registry, type Storage, type Task,
   type TaskRuntime, type TaskId, type Tx, type EntryId, type ConversationId,
 } from "@earendil-works/pi-durable";
@@ -13,7 +13,7 @@ import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { NodeExecutionEnv } from "@earendil-works/pi-durable/env/node";
 import { Value } from "typebox/value";
 import { Type } from "typebox";
-import type { ModelName, ModelRef, RunId, RunRecord, StepRecord, WorkflowDefinition } from "../index.ts";
+import type { ModelName, ModelRef, RunId, RunRecord } from "../index.ts";
 import type { ControlRequest } from "../protocol.ts";
 import { loadWorkflow } from "../loader.ts";
 import { lintDeterminism } from "../validation.ts";

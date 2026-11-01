@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { configure, defineExtension, UsageDoc, type ConversationId, type EntryRecord, type ToolRegistration, type TaskId } from "@earendil-works/pi-durable";
+import { configure, defineExtension, type ConversationId, type EntryRecord, type ToolRegistration } from "@earendil-works/pi-durable";
 import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { withAbortSignal, type Context } from "@earendil-works/chord/context";
 import type { TSchema } from "typebox";

@@ -14,7 +14,7 @@ The `s4/exp-*.diff` files are the measured experiments, all reverted afterwards.
 The scripts hard-code the paths of the run they came from: `/tmp/axcN` for the scenario directories and the removed `brain-axeval3` worktree for the CLI and extension. Before reusing them:
 
 1. Copy a scenario to a short directory under `/tmp`, because the worker socket path is limited.
-2. Point the scripts at the checkout under test.
+2. Point the scripts at the checkout under test. They predate the rename to asx: `pi-orchestration/bin/workflow.mjs` is now `asx/bin/asx.mjs`, the `workflow` tool is `asx`, and `PI_WORKFLOW_HOME` is `ASX_HOME`.
 3. Run `npm run build` there.
 4. Stop every worker the run starts.
 

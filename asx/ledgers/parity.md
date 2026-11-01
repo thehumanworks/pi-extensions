@@ -2,6 +2,8 @@ Status: open — 10 tasks, none started (baseline `npm test` 44/44 at 43756f5)
 
 # Task ledger: parity
 
+Written before pi-orchestration became asx (`BRAIN.md` D10): read `workflow` as `asx`, `/workflow` as `/asx` and `pi-orchestration/` as `asx/`. T1 step 1 (drop `PI_WORKFLOW_ALLOW_UNATTENDED` from `brain/loop.sh`) was done in the rename.
+
 Created 2026-10-30. Two sources: a review of pi-orchestration against Claude Code Dynamic Workflows, and two user requests about launch approval and headless runs. Each task is written so a fresh session can start it without that conversation.
 
 Line numbers are for commit 43756f5. If they have drifted, search for the quoted symbol.
