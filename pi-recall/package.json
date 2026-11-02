@@ -1,14 +1,41 @@
 {
-  "name": "pi-recall",
+  "name": "@nothumanwork/pi-recall",
   "version": "0.3.0",
   "type": "module",
-  "engines": {
-    "node": ">=22.13.0"
+  "description": "Recall conversation history, label and assign priority categories to messages",
+  "publishConfig": {
+    "access": "public"
   },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "keywords": [
+    "pi-package",
+    "recall",
+    "memory"
+  ],
   "pi": {
     "extensions": [
       "./index.ts"
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-recall"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    ".pi": "./index.ts"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "1.4.0",
