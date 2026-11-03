@@ -82,8 +82,8 @@ function harness(settings: Record<string, unknown> = {}, shared: { manager?: Ses
 		command: (args: string) => command.handler(args, context),
 		complete: (prefix: string) => command.getArgumentCompletions!(prefix),
 		finish: async (index: number, text = "summary") => { calls[index]!.result.resolve(assistant(text)); await settle(); },
-		compact: (reason = "threshold", customInstructions?: string) => emit("session_before_compact", {
-			preparation: { settings: SETTINGS, tokensBefore: 33_000 }, reason, customInstructions, signal: new AbortController().signal,
+		compact: (reason = "threshold", customInstructions?: string, signal = new AbortController().signal) => emit("session_before_compact", {
+			preparation: { settings: SETTINGS, tokensBefore: 33_000 }, reason, customInstructions, signal,
 		}),
 	};
 }
@@ -247,21 +247,37 @@ test("a transient failure is retried and the retried summary is used", async () 
 	await h.command("off");
 });
 
-test("a deferred /compact runs once its summary is ready and the agent is idle", async () => {
+test("/compact without a ready summary cancels background work and leaves it to Pi's built-in compaction", async () => {
 	const h = harness({ enabled: true, model: "test/cheap" });
 	await h.emit("session_start");
-	assert.deepEqual(await h.compact("manual", "keep the test names"), { cancel: true });
-	assert.match(h.notices.at(-1)!.text, /compacts when it is ready/);
-	await until(() => h.calls.length === 1, "the summary request");
-	h.setIdle(false);
-	await h.finish(0, "focused");
-	await settle();
-	assert.equal(h.compacts.length, 0, "not while the agent is running");
-	h.setIdle(true);
-	await h.emit("agent_settled");
-	assert.deepEqual(h.compacts, [{ customInstructions: "keep the test names", onError: h.compacts[0]?.onError }]);
-	const result = (await h.compact("manual", "keep the test names")) as { compaction: { summary: string } };
-	assert.match(result.compaction.summary, /focused/);
+	assert.equal(await h.compact("manual"), undefined, "nothing ready: Pi compacts itself");
+	await h.command("start");
+	await until(() => h.calls.length === 1, "the background request");
+	assert.equal(await h.compact("manual"), undefined);
+	await until(() => h.calls[0]!.signal?.aborted === true, "the background request to abort");
+	await h.command("start");
+	await until(() => h.calls.length === 2, "the second request");
+	await h.finish(1, "unfocused");
+	await until(() => /ready/.test(h.statuses.at(-1) ?? ""), "the ready status");
+	assert.equal(await h.compact("manual", "keep the test names"), undefined, "other instructions: Pi writes the summary");
+	assert.match(h.statuses.at(-1)!, /idle/, "the unfocused summary is dropped");
+	h.authenticated.delete("cheap");
+	assert.equal(await h.compact("manual"), undefined, "an unusable model never blocks /compact");
+	assert.equal(h.compacts.length, 0, "no later compaction is scheduled");
+	await h.command("off");
+});
+
+test("/compact swaps a held summary early, even one that leaves much verbatim", async () => {
+	const h = harness({ enabled: true, model: "test/cheap", maxSwapRatio: 0.05 });
+	await h.emit("session_start");
+	await h.command("start");
+	await until(() => h.calls.length === 1, "the background request");
+	await h.finish(0, "held");
+	await until(() => /ready/.test(h.statuses.at(-1) ?? ""), "the ready status");
+	const result = (await h.compact("manual")) as { compaction: { summary: string; details: { backgroundCompaction: { stale: boolean } } } };
+	assert.match(result.compaction.summary, /held/);
+	assert.equal(result.compaction.details.backgroundCompaction.stale, true);
+	assert.equal(h.calls.length, 1, "no new request");
 	await h.command("off");
 });
 

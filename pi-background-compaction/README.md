@@ -1,6 +1,6 @@
 # pi-background-compaction
 
-Background compaction for [Pi](https://github.com/earendil-works/pi). Pi normally pauses a session while it writes the compaction summary, about 30 seconds per compaction on `openai/gpt-6.1-sol` in the evaluation below. This extension writes the summary in the background as the context approaches Pi's compaction threshold, while the session keeps working on its full history. When Pi compacts, the ready summary is swapped in without another model call, and everything that happened since stays verbatim after it. Compaction never waits for a summary: if none is ready, the session keeps going and compacts at a later check, once it is.
+Background compaction for [Pi](https://github.com/earendil-works/pi). Pi normally pauses a session while it writes the compaction summary, about 30 seconds per compaction on `openai/gpt-6.1-sol` in the evaluation below. This extension writes the summary in the background as the context approaches Pi's compaction threshold, while the session keeps working on its full history. When Pi compacts, the ready summary is swapped in without another model call, and everything that happened since stays verbatim after it. Automatic compaction never waits for a summary: if none is ready, the session keeps going and compacts at a later check, once it is. A `/compact` always compacts right away.
 
 ```text
 70% of the threshold   a summary of the conversation so far starts in the background
@@ -9,9 +9,11 @@ Pi's threshold         Pi compacts: the held summary replaces the history it cov
                        and every message since it is kept as is
 not ready yet          compaction is deferred and the session keeps going; Pi checks
                        again after the next response and compacts once it is ready
+/compact               compacts now: swaps the held summary early, or cancels the one
+                       being written and leaves compaction to Pi's built-in summarizer
 ```
 
-The design follows Claude's [background compaction](https://platform.claude.com/docs/en/build-with-claude/compaction-background) loop (replace exactly the history the request held, keep later turns after the summary) and OpenCode's [background compaction](https://opencode.ai/v2/docs/compaction/) (start early, hold the summary until compaction is due, fall back when it fell too far behind). Unlike OpenCode, compaction never waits for a summary still being written.
+The design follows Claude's [background compaction](https://platform.claude.com/docs/en/build-with-claude/compaction-background) loop (replace exactly the history the request held, keep later turns after the summary) and OpenCode's [background compaction](https://opencode.ai/v2/docs/compaction/) (start early, hold the summary until compaction is due, fall back when it fell too far behind). Unlike OpenCode, automatic compaction never waits for a summary still being written.
 
 ## Install
 
@@ -36,9 +38,10 @@ When enabled, it works with Pi's automatic compaction (`compaction.enabled`, on 
 
 1. **Start.** After each model response (`turn_end`) and when the session goes idle, the extension compares the context to Pi's threshold (`contextWindow - reserveTokens`). Past `trigger` of it, it plans the summary exactly as Pi would cut it (the same cut point, verified against Pi's `prepareCompaction`) and sends the request without waiting for it. Only one summary is written at a time. If the newest tool result is too large for the cut to leave it out, the request waits for the next boundary rather than hold a summary that keeps that output verbatim.
 2. **Hold.** The finished summary is kept in memory and not applied, so the prompt cache stays valid until compaction is due. If the conversation grows past the staleness bound (OpenCode's `max(2 × keepRecentTokens, 30k)`, at most a quarter of the threshold), the held summary is extended in the background with only the messages since.
-3. **Swap.** When Pi compacts (`session_before_compact`, for the threshold, context overflow, or `/compact` without instructions), the extension returns the held summary with the first kept entry it was planned for. Pi appends it like its own compaction. If the summary is still being written, compaction is deferred: the extension cancels Pi's compaction, the session continues on its full history, and Pi checks again after the next response. Pi shows each deferred check as a cancelled compaction. A refresh in flight never delays a held summary that already fits, and no refresh starts at the boundary where Pi is about to compact.
+3. **Swap.** When Pi compacts automatically (`session_before_compact`, for the threshold or context overflow), the extension returns the held summary with the first kept entry it was planned for. Pi appends it like its own compaction. If the summary is still being written, compaction is deferred: the extension cancels Pi's compaction, the session continues on its full history, and Pi checks again after the next response. Pi shows each deferred check as a cancelled compaction. A refresh in flight never delays a held summary that already fits, and no refresh starts at the boundary where Pi is about to compact.
 4. **Validate.** A held summary is used only if the session still contains the history it covers: the same latest compaction, its first kept entry on the current branch (not lost to `/tree` or a fork), and no context edits to a summarized message. If swapping it in would leave more than `maxSwapRatio` of the threshold in context, a short catch-up extends it in the background first, and compaction is deferred until it is ready. Once the catch-up has had its chance, or when the context overflows, the held summary is swapped in if it frees room. This prevents a compaction that frees almost nothing ([anthropics/claude-code#70459](https://github.com/anthropics/claude-code/issues/70459)).
-5. **Use only the selected model.** Without a usable summary, compaction starts one in the background with the explicitly configured model and prompt, as a transcript request where it can (overflow recovery always uses a serialized one, since the overflowing context cannot be resent), and is deferred until it is ready. A `/compact` with nothing ready says so, then compacts once the summary is ready and the agent is idle. The extension never falls back to the session model or Pi's built-in summarizer: if the selected model is unusable, compaction is cancelled with a warning. Fix the model, or explicitly run `/bg-compact off` to allow Pi's built-in compaction.
+6. **`/compact` compacts now.** A forced compaction is never deferred. A held summary is swapped in early, even one that would leave more than `maxSwapRatio` in context (marked `stale` in the entry's details); `/compact <instructions>` uses it only if it was written with the same instructions. Otherwise, or when the selected model is unusable, a summary still being written is cancelled and Pi's built-in compaction runs as it would without this extension, with Pi's own model.
+5. **Use only the selected model.** Without a usable summary, automatic compaction starts one in the background with the explicitly configured model and prompt, as a transcript request where it can (overflow recovery always uses a serialized one, since the overflowing context cannot be resent), and is deferred until it is ready. Automatic compaction never falls back to the session model or Pi's built-in summarizer (only `/compact` does, see below): if the selected model is unusable, compaction is cancelled with a warning. Fix the model, or explicitly run `/bg-compact off` to allow Pi's built-in compaction.
 
 ### Retries and restarts
 
@@ -74,7 +77,7 @@ Command choices override environment and file settings **for the current session
 | `enabled` | `false` | Explicit opt-in; requires a configured compaction model. Environment: `PI_BACKGROUND_COMPACTION=1` or `0`. |
 | `trigger` | `0.7` | Fraction of Pi's compaction threshold at which the background summary starts. Lower gives a slow summary more time to finish before compaction is due, at the cost of an older summary and occasional refreshes. |
 | `minTokens` | `16000` | Smaller contexts are not summarized in the background. |
-| `model` | none | Required concrete summarizer as `provider/modelId`. Environment: `PI_BACKGROUND_COMPACTION_MODEL`. No implicit session model or fallback; unavailable, unauthenticated, and virtual models cannot be enabled. |
+| `model` | none | Required concrete summarizer as `provider/modelId`. Environment: `PI_BACKGROUND_COMPACTION_MODEL`. No implicit session model or fallback for automatic compaction (`/compact` without a ready summary uses Pi's built-in compaction); unavailable, unauthenticated, and virtual models cannot be enabled. |
 | `thinking` | `session` | Summarizer thinking level: `session`, `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. Transcript requests keep the session's level so cached prefixes stay valid. |
 | `request` | `auto` | `transcript`, `serialized`, or `auto`. |
 | `prompt` | `coding` | Prompt preset: `coding` (structured checkpoint for coding agents) or `pi` (Pi's built-in prompts). |
@@ -89,7 +92,7 @@ Command choices override environment and file settings **for the current session
 | `retries` | `2` | Retries after a failed attempt, 0 to 10. |
 | `retryDelayMs` | `10000` | Delay before the first retry; later retries double it, up to 8 times. |
 
-`PI_BACKGROUND_COMPACTION_TRACE=/path/file.jsonl` appends one JSON line per event, with timings and token counts: `start` (its `reason` tells a refresh, catch-up or compaction-time summary from a trigger), `ready`, `deferred`, `swap`, `retry`, `failed`, `cancelled`, `discarded`, `postponed`, `restored` and `resumed` after a restart, and `jobs` for storage errors.
+`PI_BACKGROUND_COMPACTION_TRACE=/path/file.jsonl` appends one JSON line per event, with timings and token counts: `start` (its `reason` tells a refresh, catch-up or compaction-time summary from a trigger), `ready`, `deferred`, `swap`, `retry`, `failed`, `cancelled`, `discarded`, `postponed`, `builtin` (a `/compact` left to Pi's summarizer), `restored` and `resumed` after a restart, and `jobs` for storage errors.
 
 ## Commands and status
 

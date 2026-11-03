@@ -340,6 +340,30 @@ export class BackgroundCompactor {
 		return this.defer(options.reason, "writing");
 	}
 
+	/**
+	 * The user asked to compact now (`/compact`), so this never defers. A held summary is swapped early,
+	 * even one that leaves more than `maxSwapRatio` verbatim. Without one, background work is dropped and
+	 * `undefined` leaves the compaction to Pi's built-in summarizer.
+	 */
+	force(snapshot: Snapshot, options: { tokensBefore: number; reason: string; customInstructions?: string }): Decision | undefined {
+		const config = this.deps.config();
+		if (!config.enabled) return undefined;
+		const focus = options.customInstructions?.trim() || undefined;
+		if (this.held) {
+			const why = misfit(snapshot.branch, this.held.plan);
+			if (why) this.discard(why);
+		}
+		if (this.held && (focus === undefined || this.held.focus === focus)) {
+			const kept = keptTokens(snapshot.branch, this.held.plan.firstKeptEntryId) ?? Number.POSITIVE_INFINITY;
+			return this.swap(this.held, snapshot, options, estimate(this.held.summary) + kept > limits(config, snapshot).maxAfter);
+		}
+		this.cancelRunning("compacting now");
+		// Written for other instructions than this compaction; Pi's summary replaces it.
+		this.discard("compaction has other instructions");
+		this.trace("builtin", { reason: options.reason });
+		return undefined;
+	}
+
 	private defer(reason: string, why: string): Decision {
 		this.deferrals++;
 		this.stats.deferred++;

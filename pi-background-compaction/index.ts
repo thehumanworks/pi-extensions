@@ -52,8 +52,6 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 	let control: CompactionControl = {};
 	let configError: string | undefined;
 	let jobs: Jobs | undefined;
-	/** A `/compact` deferred until its summary is ready. */
-	let manual: { focus?: string } | undefined;
 	const warned = new Set<string>();
 
 	const warn = (message: string) => {
@@ -266,30 +264,10 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 		ctx.ui.setStatus(STATUS, current().enabled ? `compact: ${state} ${current().model}` : "compact: off");
 	};
 
-	/** Run a deferred `/compact` once its summary is ready and the agent is idle. */
-	const applyManual = () => {
-		const context = ctx;
-		if (!manual || !context || compactor.state === "writing") return;
-		if (compactor.state === "idle" || !current().enabled) {
-			manual = undefined;
-			return;
-		}
-		if (!context.isIdle()) return;
-		const { focus } = manual;
-		manual = undefined;
-		context.compact({ customInstructions: focus, onError: (error) => warn(`compaction failed: ${error.message}`) });
-	};
-
-	const changed = () => {
-		updateStatus();
-		if (manual) queueMicrotask(applyManual);
-	};
-
-	const compactor = new BackgroundCompactor({ config: current, summarize, trace, changed });
+	const compactor = new BackgroundCompactor({ config: current, summarize, trace, changed: updateStatus });
 
 	const resetWork = (reason: string) => {
 		compactor.reset(reason);
-		manual = undefined;
 		rotate();
 		updateStatus();
 	};
@@ -322,7 +300,6 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 		config = undefined;
 		load(context);
 		compactor.reset("session start");
-		manual = undefined;
 		updateStatus();
 		if (!current().enabled) return;
 		const notice = `Background compaction on: ${current().model} (no session-model fallback)`;
@@ -343,12 +320,10 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 		observe(context, "turn");
 	});
 
-	pi.on("agent_settled", (_event, context) => {
-		observe(context, "idle");
-		applyManual();
-	});
+	pi.on("agent_settled", (_event, context) => observe(context, "idle"));
 
-	// Never waits: the summary is used if ready, otherwise compaction is deferred while it is written.
+	// Never waits. Automatic compaction uses the summary if ready, otherwise it is deferred while it is
+	// written. `/compact` is the user's call: without a ready summary, Pi's built-in compaction runs now.
 	pi.on("session_before_compact", (event, context) => {
 		ctx = context;
 		if (!current().enabled) return undefined;
@@ -359,25 +334,19 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 			if (!snap) throw new Error("context limits are unavailable");
 			// Pi passes the settings it resolved for this compaction; prefer them.
 			snap.settings = event.preparation.settings;
-			const decision = compactor.take(snap, {
+			const options = {
 				tokensBefore: event.preparation.tokensBefore,
 				reason: event.reason,
 				customInstructions: event.customInstructions,
 				firstKeptEntryId: event.preparation.firstKeptEntryId,
-			});
+			};
+			const decision = event.reason === "manual" ? compactor.force(snap, options) : compactor.take(snap, options);
 			if (!decision) return undefined;
 			if ("compaction" in decision) return { compaction: decision.compaction };
-			if (event.reason === "manual") {
-				const writing = compactor.state === "writing";
-				manual = writing ? { focus: event.customInstructions } : undefined;
-				const notice = writing
-					? `Background compaction: writing the summary with ${model}; the session compacts when it is ready.`
-					: `Background compaction: not compacted (${decision.deferred}).`;
-				if (context.hasUI) context.ui.notify(notice, "info");
-				else process.stderr.write(`${notice}\n`);
-			}
 			return { cancel: true };
 		} catch (error) {
+			// `/compact` still compacts, with Pi's built-in summarizer.
+			if (event.reason === "manual") return undefined;
 			warn(`compaction with ${model} cancelled: ${message(error)}. Use /bg-compact off to allow Pi's built-in compaction with the session model.`);
 			return { cancel: true };
 		}
@@ -397,7 +366,6 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 		jobs = undefined;
 		if (slot) slot.detached = true;
 		compactor.reset("shutdown");
-		manual = undefined;
 		if (ctx?.hasUI) ctx.ui.setStatus(STATUS, undefined);
 		// Results are committed as they happen, so a slow close must not hold up Pi; the next open waits for it.
 		const closed = slot?.queue.then((queue) => queue.close({ discard: !keep })).catch(() => undefined);
@@ -487,7 +455,7 @@ export default function backgroundCompaction(pi: ExtensionAPI): void {
 				configError ? `Configuration error: ${configError}` : `prompt ${settings.promptName}, ${settings.request === "auto" ? `auto (${snap?.transcript ? "transcript" : "serialized"})` : settings.request} requests, swap at ${settings.swap}`,
 				`Usage: ${HELP}`,
 				"Command changes are saved for this session (including reload/resume), not to global or project settings.",
-				settings.enabled ? "Compaction never waits for a summary: until one is ready it is deferred, and a failed summary is retried rather than written by another model." : BUILTIN,
+				settings.enabled ? "Automatic compaction never waits for a summary: until one is ready it is deferred, and a failed summary is retried rather than written by another model. /compact compacts now: with the held summary, or else with Pi's built-in compaction." : BUILTIN,
 				held ? `held summary by ${held.model} from ${new Date(held.readyAt).toLocaleTimeString()}, ${held.requests} request(s), keeps from ${held.plan.firstKeptEntryId}` : "",
 				`started ${stats.started}, ready ${stats.ready}, failed ${stats.failed}, swapped ${stats.swapped}, deferred ${stats.deferred}, discarded ${stats.discarded}`,
 			].filter(Boolean);
