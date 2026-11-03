@@ -45,11 +45,12 @@ export async function workspace(options: { shared?: boolean } = {}) {
   };
 }
 
-export function context(sm: SessionManager): ExtensionToolContext {
-  return { sessionManager: sm } as unknown as ExtensionToolContext;
+/** A tool context for the session, in a project pi trusts unless trusted is false. */
+export function context(sm: SessionManager, trusted = true): ExtensionToolContext {
+  return { sessionManager: sm, isProjectTrusted: () => trusted } as unknown as ExtensionToolContext;
 }
 
-/** The sessions the recall tools read by default: this project's and those its .recallrc lists. */
+/** The sessions the recall tools read by default: this project's and those its recallConfig setting lists. */
 export async function listProjectSessions(sm: SessionManager) {
-  return listSessions(sm, (await resolveScope(sm)).projects);
+  return listSessions(sm, (await resolveScope(context(sm))).projects);
 }

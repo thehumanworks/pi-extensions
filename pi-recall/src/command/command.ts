@@ -5,7 +5,7 @@ import type { AutocompleteItem } from "@earendil-works/pi-tui";
 import { sessionView } from "../entries.ts";
 import { clip } from "../format.ts";
 import { readHistory } from "../recall.ts";
-import { ALL_PROJECTS, type Project, type ProjectIndex, projectIndex, projectName, RECALLRC, resolveScope, type Scope } from "../projects.ts";
+import { ALL_PROJECTS, type Project, type ProjectIndex, projectIndex, projectName, resolveScope, type Scope, type ScopeContext, SETTINGS_KEY } from "../projects.ts";
 import { listSessions, type ReadonlySession, type SessionSource } from "../sessions.ts";
 import type { TreeLabels } from "../marks/labels.ts";
 import { refreshStatus } from "../marks/tool.ts";
@@ -78,7 +78,7 @@ export function sessionLabel(source: SessionSource): string {
   return source.summary.name ?? source.summary.firstMessage;
 }
 
-export async function completions(sm: ReadonlySession | undefined, prefix: string): Promise<AutocompleteItem[] | null> {
+export async function completions(ctx: ScopeContext | undefined, prefix: string): Promise<AutocompleteItem[] | null> {
   if (prefix.includes(" ")) return null;
   const items: AutocompleteItem[] = [
     { value: "marks", label: "marks", description: "Review messages marked critical" },
@@ -86,8 +86,8 @@ export async function completions(sm: ReadonlySession | undefined, prefix: strin
     { value: ALL_PROJECTS, label: ALL_PROJECTS, description: "Browse every project's history" },
     { value: "show ", label: "show", description: "Show one entry in full" },
   ];
-  if (sm) {
-    for (const { summary } of await listSessions(sm, (await resolveScope(sm)).projects)) {
+  if (ctx) {
+    for (const { summary } of await listSessions(ctx.sessionManager, (await resolveScope(ctx)).projects)) {
       items.push({
         value: summary.sessionId,
         label: summary.sessionId,
@@ -124,7 +124,7 @@ const date = (time: number) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-/** Asks which project to browse, most recently active first, noting this one, those in .recallrc and moved ones. */
+/** Asks which project to browse, most recently active first, noting this one, those recallConfig lists and moved ones. */
 async function pickProject(ctx: ExtensionCommandContext, scope: Scope): Promise<Project | undefined> {
   const { index } = scope;
   const linked = new Set(scope.projects);
@@ -132,7 +132,7 @@ async function pickProject(ctx: ExtensionCommandContext, scope: Scope): Promise<
     const files = [...index.sessions].filter(([, p]) => p === project).flatMap(([id]) => index.files.get(id) ?? []);
     const times = await Promise.all(files.map((file) => stat(file).then((s) => s.mtimeMs, () => 0)));
     const notes = [
-      project === index.current ? "this project" : linked.has(project) ? `in ${RECALLRC}` : "",
+      project === index.current ? "this project" : linked.has(project) ? `in ${SETTINGS_KEY}` : "",
       existsSync(project.path) ? "" : "folder gone",
     ].filter(Boolean);
     const label = `${projectName(project, index.projects)} · ${files.length} session${files.length === 1 ? "" : "s"}` +
@@ -146,37 +146,37 @@ async function pickProject(ctx: ExtensionCommandContext, scope: Scope): Promise<
 
 export function registerRecallCommand(pi: ExtensionAPI, labels?: TreeLabels) {
   const attachments = new Attachments();
-  // Argument completion has no context, so keep the session from the latest event.
-  let sessionManager: ReadonlySession | undefined;
+  // Argument completion has no context, so keep the one from the latest event.
+  let latest: ScopeContext | undefined;
 
   pi.on("session_start", async (_event, ctx) => {
-    sessionManager = ctx.sessionManager;
+    latest = ctx;
     await refreshStatus(ctx).catch(() => undefined);
   });
   pi.on("session_shutdown", (_event, ctx) => {
     attachments.clear(ctx.ui);
-    sessionManager = undefined;
+    latest = undefined;
   });
   pi.on("input", (event, ctx) => attachments.handleInput(event, ctx));
 
   pi.registerCommand("recall", {
     description: "Browse earlier messages in this project or others, mark them critical, and attach them to your next message",
-    getArgumentCompletions: (prefix) => completions(sessionManager, prefix),
+    getArgumentCompletions: (prefix) => completions(latest, prefix),
     handler: async (args, ctx) => {
       if (ctx.mode !== "tui") {
         ctx.ui.notify("/recall needs the interactive terminal UI", "warning");
         return;
       }
-      sessionManager = ctx.sessionManager;
+      latest = ctx;
       try {
         const parsed = parseArgs(args);
         const sm = ctx.sessionManager;
         const index = await projectIndex(sm);
-        const linked = await resolveScope(sm, undefined, index);
+        const linked = await resolveScope(ctx, undefined, index);
         let scope = linked;
         let where = linked.projects.length > 1 ? ` · ${linked.projects.length} projects` : "";
         if (parsed.kind === "all") {
-          scope = await resolveScope(sm, ALL_PROJECTS, index);
+          scope = await resolveScope(ctx, ALL_PROJECTS, index);
           where = ` · all ${scope.projects.length} projects`;
         } else if (parsed.kind === "projects") {
           const project = await pickProject(ctx, linked);

@@ -19,7 +19,7 @@ export interface MarkControls {
 
 /** Marks on the messages of these sessions, kept with the project each belongs to. */
 export async function markControls(
-  ctx: Pick<ExtensionContext, "ui" | "sessionManager" | "isIdle">,
+  ctx: Pick<ExtensionContext, "ui" | "sessionManager" | "isIdle" | "isProjectTrusted">,
   index: ProjectIndex,
   sources: SessionSource[],
   labels?: TreeLabels,

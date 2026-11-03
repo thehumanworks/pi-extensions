@@ -3,7 +3,7 @@ import { excerpt } from "../clip.ts";
 import { inContextIds, MARKS_MESSAGE_TYPE, type RecalledEntry, sessionView } from "../entries.ts";
 import { contentText } from "../format.ts";
 import { entryText } from "../command/attach.ts";
-import { resolveScope } from "../projects.ts";
+import { resolveScope, type ScopeContext } from "../projects.ts";
 import { listSessions, type ReadonlySession } from "../sessions.ts";
 import { loadMarks } from "./store.ts";
 
@@ -23,12 +23,13 @@ function messageText(entry: RecalledEntry): string {
 }
 
 /**
- * The newest critical marks in this project and the projects its .recallrc lists, as a block for the model,
+ * The newest critical marks in this project and the projects its recallConfig setting lists, as a block for the model,
  * or undefined if there are none. Messages still in the current context are left out, including copies of
  * them in a session forked from where they were marked.
  */
-export async function marksSection(sm: ReadonlySession, limit = READ_LIMIT): Promise<string | undefined> {
-  const scope = await resolveScope(sm);
+export async function marksSection(ctx: ScopeContext, limit = READ_LIMIT): Promise<string | undefined> {
+  const sm = ctx.sessionManager;
+  const scope = await resolveScope(ctx);
   const marked = [...(await loadMarks(scope.index, scope.projects)).values()]
     .filter((state) => state.marked)
     .sort((a, b) => b.at.localeCompare(a.at));
@@ -93,7 +94,7 @@ export function registerMarksReader(pi: ExtensionAPI) {
     if (!pending) return;
     pending = false;
     try {
-      const text = await marksSection(ctx.sessionManager);
+      const text = await marksSection(ctx);
       if (!text || alreadyInContext(ctx.sessionManager, text)) return;
       return { message: { customType: MARKS_MESSAGE_TYPE, content: text, display: true } };
     } catch (error) {

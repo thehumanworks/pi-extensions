@@ -6,7 +6,7 @@ import { Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { clip, entryClip } from "../format.ts";
 import { jsonResult } from "../result.ts";
-import { projectIndex, resolveScope } from "../projects.ts";
+import { projectIndex, resolveScope, type ScopeContext } from "../projects.ts";
 import type { TreeLabels } from "./labels.ts";
 import { loadMarks, markLookup, MarkStore, unreviewed } from "./store.ts";
 import { RELATIVE_TARGETS, resolveTarget } from "./target.ts";
@@ -15,10 +15,10 @@ const STATUS_KEY = "pi-recall-marks";
 
 /**
  * Shows how many of the agent's marks and unmarks the user has not reviewed, in pi's footer: those in this
- * project and the projects its .recallrc lists. Returns the count.
+ * project and the projects its recallConfig setting lists. Returns the count.
  */
-export async function refreshStatus(ctx: Pick<ExtensionContext, "ui" | "sessionManager">): Promise<number> {
-  const scope = await resolveScope(ctx.sessionManager);
+export async function refreshStatus(ctx: ScopeContext & Pick<ExtensionContext, "ui">): Promise<number> {
+  const scope = await resolveScope(ctx);
   const n = unreviewed(await loadMarks(scope.index, scope.projects)).length;
   ctx.ui.setStatus(STATUS_KEY, n === 0 ? undefined : ctx.ui.theme.fg("warning", `◆ ${n} unreviewed mark${n === 1 ? "" : "s"} · /recall marks`));
   return n;

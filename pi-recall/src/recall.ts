@@ -1,10 +1,10 @@
-import { type ExtensionContext, defineTool } from "@earendil-works/pi-coding-agent";
+import { defineTool } from "@earendil-works/pi-coding-agent";
 import { type JsonObject, StringEnum } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { type EntryNotes, type RecalledEntry, type SessionView, sessionView } from "./entries.ts";
 import { formatEntry, OUTPUT_MODES, type OutputMode } from "./format.ts";
 import { jsonResult, TRUNCATION_NOTE } from "./result.ts";
-import { ALL_PROJECTS, resolveScope } from "./projects.ts";
+import { ALL_PROJECTS, resolveScope, type ScopeContext } from "./projects.ts";
 import { listSessions, type SessionSource, sourcesWith } from "./sessions.ts";
 import { loadMarks, markLookup } from "./marks/store.ts";
 import { isMessage, traceOf } from "./trace.ts";
@@ -14,7 +14,7 @@ export const MAX_LIMIT = 20;
 /** The project parameter, as the recall tools describe it. */
 export const PROJECT_DESCRIPTION =
   `Another project to read: its path, or the last folders of its path such as "pi-memory"; "${ALL_PROJECTS}" for every project. ` +
-  "Omit for this project and the projects its .recallrc lists";
+  "Omit for this project and the projects its recallConfig setting lists";
 
 export interface HistoryOptions {
   /** Read only this session instead of the whole project. */
@@ -26,7 +26,7 @@ export interface HistoryOptions {
   limit?: number;
   /** Also return current-session entries that are still in the model's context. */
   includeContext?: boolean;
-  /** The sessions to read, newest first; by default this project's and those its .recallrc names. */
+  /** The sessions to read, newest first; by default this project's and those its recallConfig setting names. */
   sources?: SessionSource[];
   /**
    * Entries to leave out of this read. Each belongs to the shown entry before it: a from cursor at one starts
@@ -61,14 +61,14 @@ interface Position {
  * Entries from the project's sessions, read as one history: sessions ordered by last activity, entries in
  * branch order within each, never interleaved. Without a cursor, returns the newest entries.
  */
-export async function readHistory(ctx: Pick<ExtensionContext, "sessionManager">, options: HistoryOptions = {}) {
+export async function readHistory(ctx: ScopeContext, options: HistoryOptions = {}) {
   const { sessionId, before, from, limit = MAX_LIMIT, includeContext = false, signal } = options;
   if (!Number.isInteger(limit) || limit < 1) throw new Error("limit must be a positive integer");
   if (before !== undefined && from !== undefined) {
     throw new Error("Pass either before or from, not both");
   }
 
-  let sources = options.sources ?? (await listSessions(ctx.sessionManager, (await resolveScope(ctx.sessionManager)).projects, signal));
+  let sources = options.sources ?? (await listSessions(ctx.sessionManager, (await resolveScope(ctx)).projects, signal));
   if (sessionId !== undefined) {
     sources = sources.filter((source) => source.summary.sessionId === sessionId);
     if (sources.length === 0) throw new Error(`Session ${sessionId} not found`);
@@ -187,14 +187,14 @@ export const PAGE_MAX_CHARS = 16000;
  * readHistory formatted for the model, at most MAX_LIMIT entries per page. The messages view shows messages
  * with the tool calls after each as its trace, and limit counts messages; full shows every entry.
  */
-export async function recall(ctx: Pick<ExtensionContext, "sessionManager">, options: RecallOptions = {}) {
+export async function recall(ctx: ScopeContext, options: RecallOptions = {}) {
   const { limit = MAX_LIMIT, outputMode = "messages" } = options;
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
     throw new Error(`limit must be an integer between 1 and ${MAX_LIMIT}`);
   }
   if (!OUTPUT_MODES.includes(outputMode)) throw new Error(`outputMode must be one of ${OUTPUT_MODES.join(", ")}`);
   const sm = ctx.sessionManager;
-  const scope = await resolveScope(sm, options.project);
+  const scope = await resolveScope(ctx, options.project);
   let sources = await listSessions(sm, scope.projects, options.signal);
   // A session or cursor from another project reads that project.
   const cursor = options.from ?? options.before;

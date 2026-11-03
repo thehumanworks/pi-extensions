@@ -1,8 +1,8 @@
-import { type ExtensionContext, defineTool } from "@earendil-works/pi-coding-agent";
+import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { clip } from "./format.ts";
 import { jsonResult, TRUNCATION_NOTE } from "./result.ts";
-import { resolveScope } from "./projects.ts";
+import { resolveScope, type ScopeContext } from "./projects.ts";
 import { PROJECT_DESCRIPTION } from "./recall.ts";
 import { listSessions } from "./sessions.ts";
 
@@ -11,7 +11,7 @@ const DEFAULT_SESSIONS = 20;
 
 /** The project's sessions, most recently active first, the current one first of all. */
 export async function recallSessions(
-  ctx: Pick<ExtensionContext, "sessionManager">,
+  ctx: ScopeContext,
   options: { limit?: number; cursor?: string; project?: string; signal?: AbortSignal } = {},
 ) {
   const { limit = DEFAULT_SESSIONS, cursor, project, signal } = options;
@@ -22,7 +22,7 @@ export async function recallSessions(
   const start = cursor === undefined ? 0 : Number(cursor);
   if (!Number.isInteger(start) || start < 0) throw new Error(`Invalid cursor ${cursor}`);
 
-  const scope = await resolveScope(ctx.sessionManager, project);
+  const scope = await resolveScope(ctx, project);
   const sources = await listSessions(ctx.sessionManager, scope.projects, signal);
   const end = start + limit;
   return {
