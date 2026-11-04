@@ -32,6 +32,7 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | `@nothumanwork/pi-tps` | [pi-tps](pi-tps/README.md) |
 | `@nothumanwork/pi-usage` | [pi-usage](pi-usage/README.md) — account usage limits and reset times |
 | `@nothumanwork/pi-voice` | [pi-voice](pi-voice/README.md) |
+| `@nothumanwork/pi-workspace` | [pi-workspace](pi-workspace/README.md) — Confluence folders/pages as local knowledge workspaces, with reviewed skill snapshots; no FUSE |
 | `@nothumanwork/pi-worktree` | [pi-worktree](pi-worktree/README.md) — run Pi in a git worktree |
 | `@nothumanwork/pi-xai` | [pi-xai](pi-xai/README.md) |
 

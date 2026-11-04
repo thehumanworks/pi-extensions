@@ -12,12 +12,15 @@ import { refreshStatus } from "../marks/tool.ts";
 import { Attachments, type RecallItem } from "./attach.ts";
 import { markControls, markItems } from "./marks.ts";
 import { type RecallPage, RecallScreen } from "./ui.ts";
+import { handleSummaryCommand, summaryCompletions } from "../summaries/command.ts";
+import { SummaryService } from "../summaries/service.ts";
 
 /** Entries loaded per page as the list scrolls. */
 const PAGE = 50;
 
 export type RecallArgs =
   | { kind: "list" }
+  | { kind: "summary"; args: string }
   | { kind: "marks" }
   | { kind: "projects" }
   | { kind: "all" }
@@ -27,6 +30,7 @@ export type RecallArgs =
 export function parseArgs(args: string): RecallArgs {
   const words = args.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return { kind: "list" };
+  if (words[0] === "summary") return { kind: "summary", args: args.trim().slice("summary".length).trim() };
   if (words.length === 1 && (words[0] === "marks" || words[0] === "projects" || words[0] === ALL_PROJECTS)) {
     return { kind: words[0] === ALL_PROJECTS ? "all" : (words[0] as "marks" | "projects") };
   }
@@ -79,12 +83,14 @@ export function sessionLabel(source: SessionSource): string {
 }
 
 export async function completions(ctx: ScopeContext | undefined, prefix: string): Promise<AutocompleteItem[] | null> {
+  if (prefix.startsWith("summary ")) return summaryCompletions(prefix);
   if (prefix.includes(" ")) return null;
   const items: AutocompleteItem[] = [
     { value: "marks", label: "marks", description: "Review messages marked critical" },
     { value: "projects", label: "projects", description: "Browse another project's history" },
     { value: ALL_PROJECTS, label: ALL_PROJECTS, description: "Browse every project's history" },
     { value: "show ", label: "show", description: "Show one entry in full" },
+    { value: "summary", label: "summary", description: "Create, list or read saved conversation summaries" },
   ];
   if (ctx) {
     for (const { summary } of await listSessions(ctx.sessionManager, (await resolveScope(ctx)).projects)) {
@@ -144,7 +150,7 @@ async function pickProject(ctx: ExtensionCommandContext, scope: Scope): Promise<
   return rows.find((row) => row.label === choice)?.project;
 }
 
-export function registerRecallCommand(pi: ExtensionAPI, labels?: TreeLabels) {
+export function registerRecallCommand(pi: ExtensionAPI, labels?: TreeLabels, summaries = new SummaryService()) {
   const attachments = new Attachments();
   // Argument completion has no context, so keep the one from the latest event.
   let latest: ScopeContext | undefined;
@@ -160,7 +166,7 @@ export function registerRecallCommand(pi: ExtensionAPI, labels?: TreeLabels) {
   pi.on("input", (event, ctx) => attachments.handleInput(event, ctx));
 
   pi.registerCommand("recall", {
-    description: "Browse earlier messages in this project or others, mark them critical, and attach them to your next message",
+    description: "Browse, mark and attach earlier messages; summary creates, lists or reads saved summaries",
     getArgumentCompletions: (prefix) => completions(latest, prefix),
     handler: async (args, ctx) => {
       if (ctx.mode !== "tui") {
@@ -170,6 +176,10 @@ export function registerRecallCommand(pi: ExtensionAPI, labels?: TreeLabels) {
       latest = ctx;
       try {
         const parsed = parseArgs(args);
+        if (parsed.kind === "summary") {
+          await handleSummaryCommand(parsed.args, ctx, summaries);
+          return;
+        }
         const sm = ctx.sessionManager;
         const index = await projectIndex(sm);
         const linked = await resolveScope(ctx, undefined, index);

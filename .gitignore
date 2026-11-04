@@ -7,7 +7,7 @@ dist
 *.tgz
 coverage/
 mise.local.toml
-
+pi-workspace
 # Eval harness git-inits these scratch projects
 pi-memory/eval/long/state-*/history/*/project/
 

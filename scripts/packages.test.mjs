@@ -69,6 +69,11 @@ for (const { directory: dir } of workspaces) {
       assert.ok(files.has('LICENSE'));
     }
     if (dir === 'pi-xai') assert.ok(files.has('dist/src/index.js'));
+    if (dir === 'pi-workspace') {
+      for (const file of ['src/extension.ts', 'src/confluence.ts', 'src/workspace.ts', 'src/model.ts', 'src/store.ts', 'src/operations.ts', 'src/migration.ts']) assert.ok(files.has(file), `missing ${file}`);
+      assert.equal(pkg.dependencies['@nothumanwork/pi-atlassian'], '1.0.0', 'the source service boundary must remain exact-pinned');
+      assert.ok(!files.has('PLAN.md'));
+    }
     if (dir === 'pi-remote') {
       for (const file of ['hosts.ts', 'operations.ts', 'session.ts', 'README.md']) assert.ok(files.has(file), `missing ${file}`);
     }

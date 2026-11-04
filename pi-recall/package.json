@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-recall",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "Recall conversation history, label and assign priority categories to messages",
   "publishConfig": {
@@ -37,7 +37,11 @@
     },
     ".pi": "./index.ts"
   },
+  "dependencies": {
+    "proper-lockfile": "4.1.2"
+  },
   "devDependencies": {
+    "@types/proper-lockfile": "4.1.4",
     "@earendil-works/pi-ai": "1.4.0",
     "@earendil-works/pi-coding-agent": "1.4.0",
     "@earendil-works/pi-tui": "1.4.0",
