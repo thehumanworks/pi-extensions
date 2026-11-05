@@ -13,7 +13,7 @@ export default defineWorkflow({
   name: "bug-hunt",
   description: "Find bugs in a directory until finders run dry; adversarially verify each finding",
   args: Type.Object({ dir: Type.String() }),
-  agents: { finder: { tools: ["read", "bash"] }, skeptic: { tools: ["read", "bash"], thinkingLevel: "medium" } },
+  defaults: { tools: ["read", "bash"] },
 
   run: async (ctx) => {
     const lenses = ["concurrency", "error handling", "input validation", "resource leaks"];
@@ -25,14 +25,12 @@ export default defineWorkflow({
         const rounds = await ctx.parallel(
           lenses.map((lens) => () =>
             ctx.agent(`Round ${round}. Find bugs in ${ctx.args.dir} through the ${lens} lens. Already known (skip): ${[...seen].join("; ")}`, {
-              agentType: "finder",
               label: `find:${lens}:${round}`,
-              phase: "Find",
               schema: BUGS,
             }),
           ),
-          { failure: "null" }, // a failed lens yields null; filter(Boolean) drops it
         );
+        // A failed lens yields null by default; filter(Boolean) drops it.
         return rounds.filter(Boolean).flatMap((r) => r!.bugs);
       },
       { keyOf: (b) => `${b.file}:${b.line}`, consecutiveEmpty: 2, maxRounds: 6 },
@@ -44,17 +42,15 @@ export default defineWorkflow({
         const votes = await ctx.parallel(
           ["correctness", "security", "reproduce it"].map((lens) => () =>
             ctx.agent(`Is this a real bug? Judge via the "${lens}" lens and try to refute it.\n${JSON.stringify(bug)}`, {
-              agentType: "skeptic",
+              thinkingLevel: "medium",
               label: `verify:${bug.file}:${bug.line}:${lens}`,
-              phase: "Verify",
               schema: VERDICT,
             }),
           ),
-          { failure: "null" }, // a failed vote counts as "not real"
         );
+        // A failed vote is null and counts as "not real".
         return { bug, real: votes.filter(Boolean).filter((v) => v!.real).length >= 2 };
       }),
-      { failure: "null" },
     );
 
     const confirmed = verdicts.filter(Boolean).filter((v) => v!.real).map((v) => v!.bug);

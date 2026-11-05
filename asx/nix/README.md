@@ -95,39 +95,79 @@ Add this module to your existing `nixosSystem.modules` list:
 ```
 
 The example captures the flake input from the enclosing scope. For a separate
-module file, pass `specialArgs = { inherit workflow; };` to `nixosSystem` and
-accept `workflow` in the module's arguments.
+module file, pass `specialArgs = { inherit asx; };` to `nixosSystem` and
+accept `asx` in the module's arguments.
 
 ### Home Manager
 
-The same input can be installed in a Home Manager configuration:
+Import the module to install the CLI and optionally set up Neovim:
 
 ```nix
-({ pkgs, ... }: {
-  home.packages = [
-    asx.packages.${pkgs.stdenv.hostPlatform.system}.default
-  ];
+({ ... }: {
+  imports = [ asx.homeManagerModules.default ];
+  programs.asx = {
+    enable = true;
+    neovim.enable = true;
+  };
 })
 ```
 
 For a separate Home Manager module, pass
-`extraSpecialArgs = { inherit workflow; };` and accept `workflow` in its
+`extraSpecialArgs = { inherit asx; };` and accept `asx` in its
 arguments. With Home Manager's NixOS module, use
-`home-manager.extraSpecialArgs = { inherit workflow; };` instead.
+`home-manager.extraSpecialArgs = { inherit asx; };` instead.
 
-These examples only install the CLI. No dedicated NixOS/Home Manager module is
-needed; no daemon, startup hook, port or credential is configured.
+The module builds against Home Manager's `pkgs`. To use the flake's package
+instead, set
+`programs.asx.package = asx.packages.${pkgs.stdenv.hostPlatform.system}.default;`.
+Omit `neovim.enable` for the CLI alone. Installing the package directly in
+`home.packages` also still works; editor configuration is opt-in.
+
+#### Neovim workflow editing
+
+The integration requires Neovim **0.11 or newer** and uses its native LSP client
+with the standard TypeScript language server. It supplies the server, compiler
+and types from Nix; no Mason installation, project `npm install` or generated
+`tsconfig.json` is needed.
+
+After `home-manager switch`, open a workflow in `.pi/workflows/` or the user's
+`~/.pi/agent/workflows/` (`PI_CODING_AGENT_DIR` is respected). `ctx.` completion,
+hover, go-to-definition and TypeScript diagnostics work immediately, including
+types inferred from `Type.Object` argument and output schemas. Use Neovim's
+normal completion UI or `<C-x><C-o>` and `K` for hover. `:checkhealth vim.lsp`
+shows the attached server.
+
+The runtime deliberately resolves `@nothumanwork/asx`, its recipes, `typebox`,
+`@earendil-works/pi-durable` and `@earendil-works/pi-ai` from its own installation.
+A small TypeScript language-service plugin gives the editor the same aliases
+inside workflow files, even when a project has an older local dependency.
+Other imports and project compiler settings remain intact. Standalone workflows
+also receive Node types; a project's explicit `types` settings are respected.
+Files are never written into the project or the Nix store during editing.
+
+If native `ts_ls` is already enabled in `init.lua`, the integration adds the
+plugin to that configuration, preserving its callbacks, roots and capabilities.
+If native `vtsls` is enabled instead, it adds the plugin there and does not enable
+`ts_ls`. Otherwise, it enables `ts_ls` only for workflow directories, leaving
+ordinary TypeScript files alone. Configure existing servers through
+`vim.lsp.config()` / `vim.lsp.enable()` before plugins load; legacy
+`require("lspconfig").setup()` and servers started later by a lazy loader are not
+auto-detected. Restart Neovim after updating the Home Manager generation.
+
+The editor checks TypeScript, including incorrect `ctx` calls and schema-derived
+argument types. Continue using `asx validate` for asx's determinism and workflow
+validation rules before running a workflow.
 
 ### Overlay
 
-To use `pkgs.workflow`, apply `workflow.overlays.default` to your package set:
+To use `pkgs.asx`, apply `asx.overlays.default` to your package set:
 
 ```nix
-nixpkgs.overlays = [ workflow.overlays.default ];
+nixpkgs.overlays = [ asx.overlays.default ];
 # NixOS:
-environment.systemPackages = [ pkgs.workflow ];
+environment.systemPackages = [ pkgs.asx ];
 # Home Manager, with the overlay applied to its pkgs:
-# home.packages = [ pkgs.workflow ];
+# home.packages = [ pkgs.asx ];
 ```
 
 The overlay builds against the receiving package set rather than the flake's
@@ -153,9 +193,9 @@ to use the root workspace lockfile.
 From **`asx/`**:
 
 ```sh
-nix flake check                         # build, type check, offline tests, installed smoke test
+nix flake check                         # build, type check, tests, installed CLI and Neovim smoke tests
 nix flake check --all-systems --no-build # evaluate both supported systems
-nix fmt -- flake.nix nix/package.nix
+nix fmt -- flake.nix nix/*.nix
 ```
 
 The build runs `npm run check` and
@@ -165,6 +205,13 @@ The installed-CLI smoke test invokes `nix/smoke-test.mjs` against
 `$out/bin/asx`, not the build tree, using isolated state and no host PATH.
 No check needs a real model request. Dependency downloads happen separately
 through the fixed-output npm cache fetcher.
+
+The Neovim check opens fresh project and global workflow files with no local
+dependencies, asks the real language server for completions and diagnostics,
+and verifies Node types, schema inference and ordinary missing-import errors.
+It also checks an existing `ts_ls` configuration with custom paths and strict
+compiler settings, including a stale local asx mapping, and verifies ordinary
+TypeScript files do not receive workflow aliases.
 
 Nix's Git flake source only includes tracked files. For newly added, untracked
 flake files, use `nix build path:.`, `nix develop path:.`, or

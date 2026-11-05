@@ -66,7 +66,6 @@ export class Execution {
       runId: this.runId, args: copy(this.state.args), cwd: this.state.cwd, depth: this.state.depth,
       get budget() { return outsideScript(() => execution.helper("budget", () => ({
         costUsd: execution.state.limits.maxCostUsd === undefined ? null : Math.max(0, execution.state.limits.maxCostUsd - (execution.state.usage.costUsd ?? 0)),
-        agents: execution.state.limits.maxAgents === undefined ? null : Math.max(0, execution.state.limits.maxAgents - execution.state.usage.agents),
       })) as WorkflowContext["budget"]); },
       agent: ((prompt: string, options?: AgentOptions & { schema?: TSchema }) => {
         const key = structuralKey("agent", options?.key);
@@ -423,12 +422,11 @@ export class Execution {
     if (unknown.length) {
       const near = (name: string) => AGENT_OPTIONS.find(known => known.startsWith(name) || name.startsWith(known));
       const hints = unknown.map(name => near(name) ? `'${name}' (did you mean '${near(name)}'?)` : `'${name}'`);
-      throw new WorkflowError("unknown_agent_option", `Unknown agent option ${hints.join(", ")}. Valid options: ${AGENT_OPTIONS.join(", ")}.`);
+      const migration = unknown.includes("agentType") ? " Replace agentType with the agent options directly, or ...spread a shared AgentSpec object." : "";
+      throw new WorkflowError("unknown_agent_option", `Unknown agent option ${hints.join(", ")}. Valid options: ${AGENT_OPTIONS.join(", ")}.${migration}`);
     }
-    const spec = call.agentType ? this.definition.agents?.[call.agentType] : undefined;
-    if (call.agentType && !spec) throw new WorkflowError("unknown_agent_type", `Unknown agentType '${call.agentType}'. Define it in workflow.agents.`);
     return { retries: this.engine.options.defaultRetries ?? 0, timeoutMs: this.engine.options.defaultTimeoutMs ?? 600_000,
-      ...this.definition.defaults, ...spec, ...call };
+      ...this.definition.defaults, ...call };
   }
 
   tools(options: AgentOptions): ToolRegistration[] {
@@ -447,8 +445,7 @@ export class Execution {
   async checkBudget(key: string): Promise<void> {
     const run = await this.engine.get(this.runId);
     const limits = run.limits;
-    const exceeded = limits.maxAgents !== undefined && run.usage.agents >= limits.maxAgents ||
-      limits.maxCostUsd !== undefined && (run.usage.costUsd ?? 0) > limits.maxCostUsd ||
+    const exceeded = limits.maxCostUsd !== undefined && (run.usage.costUsd ?? 0) > limits.maxCostUsd ||
       limits.maxTokens !== undefined && run.usage.inputTokens + run.usage.outputTokens > limits.maxTokens ||
       limits.maxDurationMs !== undefined && this.runtime.now() - (run.startedAt ?? run.createdAt) >= limits.maxDurationMs;
     if (exceeded) throw new WorkflowError("budget_exceeded", `Run budget exceeded before ${key}. Inspect status --verbose for usage.`, key);

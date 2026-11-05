@@ -44,7 +44,7 @@ const text = Type.String({ minLength: 1, maxLength: MAX_REQUEST_BYTES });
 const object = <P extends TProperties>(properties: P) => Type.Object(properties, { additionalProperties: false });
 const reference = Type.Union([object({ path: text }), object({ name: text })]);
 const model = Type.Union([Type.String({ pattern: "^[^/]+/.+$" }), object({ provider: text, modelId: text })]);
-const budget = object({ maxAgents: Type.Optional(Type.Integer({ minimum: 0 })), maxCostUsd: Type.Optional(Type.Number({ minimum: 0 })), maxTokens: Type.Optional(Type.Integer({ minimum: 0 })), maxDurationMs: Type.Optional(Type.Number({ exclusiveMinimum: 0 })) });
+export const RUN_BUDGET_SCHEMA = object({ maxCostUsd: Type.Optional(Type.Number({ minimum: 0 })), maxTokens: Type.Optional(Type.Integer({ minimum: 0 })), maxDurationMs: Type.Optional(Type.Number({ exclusiveMinimum: 0 })) });
 const statuses = ["queued", "running", "waiting_signal", "completed", "failed", "cancelled", "reverted", "outdated"] as const;
 const origin = Type.Union([
   object({ kind: Type.Literal("cli") }),
@@ -54,7 +54,7 @@ const origin = Type.Union([
 const schemas = {
   ping: object({ action: Type.Literal("ping") }),
   stop: object({ action: Type.Literal("stop") }),
-  run: object({ action: Type.Literal("run"), requestId: text, workflow: reference, args: Type.Optional(Type.Unknown()), cwd: text, model: Type.Optional(model), thinkingLevel: Type.Optional(Type.Union(["off", "minimal", "low", "medium", "high", "xhigh", "max"].map(x => Type.Literal(x)))), origin, budget: Type.Optional(budget), callerRunId: Type.Optional(text), callerStep: Type.Optional(text) }),
+  run: object({ action: Type.Literal("run"), requestId: text, workflow: reference, args: Type.Optional(Type.Unknown()), cwd: text, model: Type.Optional(model), thinkingLevel: Type.Optional(Type.Union(["off", "minimal", "low", "medium", "high", "xhigh", "max"].map(x => Type.Literal(x)))), origin, budget: Type.Optional(RUN_BUDGET_SCHEMA), callerRunId: Type.Optional(text), callerStep: Type.Optional(text) }),
   status: object({ action: Type.Literal("status"), runId: text, verbose: Type.Optional(Type.Boolean()) }),
   list: object({ action: Type.Literal("list"), filter: Type.Optional(object({ status: Type.Optional(Type.Array(Type.Union(statuses.map(x => Type.Literal(x))))), workflow: Type.Optional(text), all: Type.Optional(Type.Boolean()), limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 10000 })) })) }),
   result: object({ action: Type.Literal("result"), runId: text }),

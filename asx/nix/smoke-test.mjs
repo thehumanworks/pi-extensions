@@ -143,7 +143,6 @@ assert.equal(typeof defineTool, "function");
 assert.equal(Value.Check(Type.Number(), 42), true);
 
 export default defineWorkflow({
-  name: "nix-smoke",
   args: Type.Object({ n: Type.Number() }),
   async run(ctx) {
     const tools = await ctx.step("tools", async ({ cwd, signal }) => {

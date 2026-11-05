@@ -286,3 +286,8 @@ Ordered by priority. Mark directions ✅ or ❌ as evidence comes in.
 - Outcome: `npm test` 44/44 after the merge. Added `AGENTS.md` with the development lessons. Merged into main as 0.4.0 (npm had 0.3.2): Nix lock, `npmDepsHash` and the root lock entry refreshed; `npm test` 44/44, `nix build .#workflow` 44/44 plus the installed smoke, pack 95 files without brain, ledger, test or Nix files. brain/orchestration fast-forwarded to the same commit.
 - Value: ✅
 - Lesson: a stopped loop still needs a reviewer for its last subagent; check for running subagents before stopping.
+
+### 2026-11-01 · Workflow definitions and Home Manager editing
+- Change: remove the separate agent-count budget and string agent registry; infer workflow names from visible filenames, retaining explicit aliases. Examples use direct options and meaningful bounds. Prepare 2.0.0 with synchronized locks under the repository's package-maintenance skill.
+- Editor: export an opt-in Home Manager module using Neovim's native TypeScript LSP and a small plugin that mirrors the runtime's installed import aliases. Existing native ts_ls/vtsls configuration is reused; project files are not generated.
+- Evidence: type check and 56/56 tests; full x86_64-linux Nix build, installed CLI smoke and real Neovim/LSP smoke; both Linux flake outputs evaluate; real Home Manager disabled/CLI/editor configurations evaluate. New workflow cases fail on the old source, and disabling the editor alias plugin reproduces unresolved imports. Symlink naming/retry and physical relative imports now have a regression test. Live ts_ls and vtsls checks passed; no live model requests were needed.
