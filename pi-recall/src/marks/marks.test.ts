@@ -43,7 +43,7 @@ function toolContext(sm: SessionManager, idle = false) {
     setStatus: (_key: string, text: string | undefined) => { calls.status = text; },
     notify: (message: string) => { calls.notices.push(message); },
   };
-  return { ctx: { sessionManager: sm, ui, isIdle: () => idle } as unknown as ExtensionToolContext, calls };
+  return { ctx: { sessionManager: sm, ui, isIdle: () => idle, isProjectTrusted: () => true } as unknown as ExtensionToolContext, calls };
 }
 
 const event = (op: MarkEvent["op"], ref: string, by: MarkEvent["by"], at: string, reason?: string): MarkEvent =>
@@ -209,7 +209,7 @@ describe("bringing marks back", () => {
     await store.append({ op: "mark", ref: `${prev.getSessionId()}/gone`, by: "user", session: "s", at: "2026-11-05T05:00:00Z" });
     await store.append({ op: "mark", ref: `${current.getSessionId()}/${current.getLeafId()}`, by: "user", session: "s", at: "2026-11-05T06:00:00Z" });
 
-    const text = (await marksSection(current))!;
+    const text = (await marksSection(context(current)))!;
     expect(text.startsWith("<critical_marks>\n")).toBe(true);
     expect(text.indexOf("second decision")).toBeLessThan(text.indexOf("first decision"));
     expect(text).toContain(`<mark ref="${ref(second!)}" role="user" timestamp=`);
@@ -217,12 +217,12 @@ describe("bringing marks back", () => {
     expect(text).toContain('marked_by="user" reviewed="true">\nfirst decision\n</mark>');
     expect(text).not.toContain("unmarked later");
     expect(text).not.toContain("in context now");
-    expect((await marksSection(current, 1))!).not.toContain("first decision");
+    expect((await marksSection(context(current), 1))!).not.toContain("first decision");
   });
 
   test("returns nothing when no messages are marked", async () => {
     const p = await project();
-    expect(await marksSection(p.session(["hi"]))).toBeUndefined();
+    expect(await marksSection(context(p.session(["hi"])))).toBeUndefined();
   });
 
   test("injects before the first prompt after session start and after compaction, unless the same block is in context", async () => {
@@ -273,7 +273,7 @@ describe("marking in /recall", () => {
     const item = (entry: typeof decision) => ({ sessionId: prev.getSessionId(), entry: entry as never, notes: {} });
     await MarkStore.forSession(current).append({ op: "mark", ref: `${prev.getSessionId()}/${other!.id}`, by: "agent", reason: "r", session: "s" });
 
-    const scope = await resolveScope(current);
+    const scope = await resolveScope(context(current));
     const marks = await markControls(ctx, scope.index, sources);
     expect(marks.get(item(other))).toMatchObject({ marked: true, by: "agent", reviewed: false });
     await marks.review(item(other));
@@ -309,7 +309,7 @@ describe("labels in /tree", () => {
     current.appendLabelChange(c, "mine");
     const { labels, settle } = treeLabels(current);
     let idle = false;
-    const ctx = { sessionManager: current, isIdle: () => idle };
+    const ctx = { sessionManager: current, isIdle: () => idle, isProjectTrusted: () => true };
 
     labels.request(ctx, sid, a, true);
     labels.request(ctx, sid, c, true);

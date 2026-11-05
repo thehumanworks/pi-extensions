@@ -1,9 +1,12 @@
-import { mkdir, mkdtemp } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type ExtensionToolContext, SessionManager } from "@earendil-works/pi-coding-agent";
-import { resolveScope, sessionFolderName } from "./projects.ts";
+import { resolveScope, type ScopeContext, sessionFolderName, SETTINGS_KEY } from "./projects.ts";
 import { listSessions } from "./sessions.ts";
+
+// pi's agent folder, with its global settings, is a temporary one, so tests never read ~/.pi.
+process.env.PI_CODING_AGENT_DIR = await mkdtemp(join(tmpdir(), "pi-recall-agent-"));
 
 /** Saved sessions in one project; each message is later than every message before it from the same clock. */
 function sessions(cwd: string, sessionDir: string, clock: { now: number }) {
@@ -45,11 +48,18 @@ export async function workspace(options: { shared?: boolean } = {}) {
   };
 }
 
-export function context(sm: SessionManager): ExtensionToolContext {
-  return { sessionManager: sm } as unknown as ExtensionToolContext;
+/** A tool context for the session, in a trusted project unless trusted is false. */
+export function context(sm: SessionManager, trusted = true): ExtensionToolContext & ScopeContext {
+  return { sessionManager: sm, isProjectTrusted: () => trusted } as unknown as ExtensionToolContext;
 }
 
-/** The sessions the recall tools read by default: this project's and those its .recallrc lists. */
+/** Writes recallConfig to the project's own pi settings. */
+export async function recallConfig(cwd: string, value: unknown) {
+  await mkdir(join(cwd, ".pi"), { recursive: true });
+  await writeFile(join(cwd, ".pi", "settings.json"), JSON.stringify({ [SETTINGS_KEY]: value }));
+}
+
+/** The sessions the recall tools read by default: this project's and those recallConfig names for it. */
 export async function listProjectSessions(sm: SessionManager) {
-  return listSessions(sm, (await resolveScope(sm)).projects);
+  return listSessions(sm, (await resolveScope(context(sm))).projects);
 }

@@ -3,7 +3,7 @@ import type { ExtensionContext, InputEvent, KeybindingsManager, Theme } from "@e
 import { KeybindingsManager as TuiKeybindings, type MarkdownTheme, TUI_KEYBINDINGS } from "@earendil-works/pi-tui";
 import type { RecalledEntry } from "../entries.ts";
 import type { MarkState } from "../marks/store.ts";
-import { listProjectSessions, project } from "../testing.ts";
+import { context, listProjectSessions, project } from "../testing.ts";
 import { Attachments, itemKey, MAX_ATTACHED_CHARS, type RecallItem, recalledSection } from "./attach.ts";
 import { completions, findEntries, parseArgs, resolveSession } from "./command.ts";
 import type { MarkControls } from "./marks.ts";
@@ -73,10 +73,10 @@ describe("finding sessions and entries", () => {
     const p = await project();
     const prev = p.session(["first question"]);
     const current = p.session();
-    const items = (await completions(current, ""))!;
+    const items = (await completions(context(current), ""))!;
     expect(items.slice(0, 4).map((i) => i.label)).toEqual(["marks", "projects", "all", "show"]);
     expect(items.find((i) => i.value === prev.getSessionId())!.description).toBe("first question");
-    expect(await completions(current, "show x")).toBeNull();
+    expect(await completions(context(current), "show x")).toBeNull();
   });
 });
 

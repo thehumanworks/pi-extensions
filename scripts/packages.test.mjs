@@ -76,16 +76,5 @@ for (const { directory: dir } of workspaces) {
       for (const file of ['src/config.ts', 'src/controller.ts', 'src/plan.ts', 'src/prompts.ts', 'src/summarize.ts']) assert.ok(files.has(file), `missing ${file}`);
       assert.ok(![...files].some(f => f.startsWith('eval/')));
     }
-    if (dir === 'pi-memory') {
-      assert.ok(files.has('prompts/memory-agent.preset.md'));
-      assert.ok(files.has('src/capture.ts'));
-      assert.ok(files.has('src/store.ts'));
-      assert.ok(![...files].some(f => f.startsWith('eval/')));
-    }
   });
 }
-
-test('the vendored pi-durable job queue is identical in every package', () => {
-  const [compaction, memory] = ['pi-background-compaction', 'pi-memory'].map(dir => readFileSync(new URL(`${dir}/src/jobs.ts`, root), 'utf8'));
-  assert.equal(memory, compaction, 'copy pi-background-compaction/src/jobs.ts to pi-memory/src/jobs.ts');
-});

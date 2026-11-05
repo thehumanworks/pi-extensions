@@ -1,10 +1,10 @@
-import { type ExtensionContext, defineTool } from "@earendil-works/pi-coding-agent";
+import { defineTool } from "@earendil-works/pi-coding-agent";
 import { StringEnum } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { type RecalledEntry, type SessionView, sessionView } from "./entries.ts";
 import { createMatcher, MATCH_MODES, type Matcher, type MatchMode, QUERY_MAX, snippets } from "./match.ts";
 import { jsonResult, TRUNCATION_NOTE } from "./result.ts";
-import { resolveScope } from "./projects.ts";
+import { resolveScope, type ScopeContext } from "./projects.ts";
 import { PROJECT_DESCRIPTION } from "./recall.ts";
 import { listSessions, type SessionSource, sourcesWith } from "./sessions.ts";
 
@@ -147,7 +147,7 @@ function hitFor(entry: RecalledEntry, parts: Field[], matcher: Matcher, source: 
  * Entries in the project's history that match the query, newest first: sessions by last activity, then
  * entries from the end of each branch.
  */
-export async function search(ctx: Pick<ExtensionContext, "sessionManager">, options: SearchOptions) {
+export async function search(ctx: ScopeContext, options: SearchOptions) {
   const { query, match = "literal", sessionId, includeContext = false, limit = DEFAULT_LIMIT, cursor, signal } = options;
   const scopes = new Set(options.in ?? DEFAULT_SCOPES);
   if (scopes.size === 0 || [...scopes].some((scope) => !SCOPES.includes(scope))) {
@@ -158,7 +158,7 @@ export async function search(ctx: Pick<ExtensionContext, "sessionManager">, opti
   }
   const matcher = createMatcher(query, match);
 
-  const scope = await resolveScope(ctx.sessionManager, options.project);
+  const scope = await resolveScope(ctx, options.project);
   let sources = await listSessions(ctx.sessionManager, scope.projects, signal);
   if (sessionId !== undefined) {
     sources = (await sourcesWith(ctx.sessionManager, scope, sources, sessionId, signal))

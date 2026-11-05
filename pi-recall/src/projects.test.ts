@@ -1,16 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { ExtensionToolContext, Theme } from "@earendil-works/pi-coding-agent";
 import { marksSection } from "./marks/reader.ts";
 import { MarkStore } from "./marks/store.ts";
 import { createMarkTool } from "./marks/tool.ts";
-import { matchProjects, type Project, projectIndex, projectName, readRecallrc, RECALLRC, resolveScope } from "./projects.ts";
+import { matchProjects, type Project, projectIndex, projectName, readRecallConfig, resolveScope, SETTINGS_KEY } from "./projects.ts";
 import { recall } from "./recall.ts";
 import { search } from "./search.ts";
 import { recallSessions } from "./sessions-tool.ts";
-import { context, workspace } from "./testing.ts";
+import { context, recallConfig, workspace } from "./testing.ts";
 
 const at = (...paths: string[]): Project[] => paths.map((path) => ({ path, sessionDir: "" }));
 
@@ -37,12 +37,19 @@ describe("naming projects", () => {
     expect(projects.map((p) => projectName(p, projects))).toEqual(["pi-memory", "pi-memory-old", "b/nixos", "c/nixos", "notes"]);
   });
 
-  test(".recallrc lists one project per line, with # comments", async () => {
+  test("recallConfig names projects as a list, or by project in a map", async () => {
     const ws = await workspace();
     const p = await ws.project("app");
-    expect(await readRecallrc(p.cwd)).toEqual([]);
-    await writeFile(join(p.cwd, RECALLRC), "# old names\npi-memory  # before the rename\n\n  ~/notes\n");
-    expect(await readRecallrc(p.cwd)).toEqual(["pi-memory", "~/notes"]);
+    const current: Project = { path: p.cwd, sessionDir: "" };
+    const agentDir = join(ws.root, "agent");
+    await mkdir(agentDir);
+    expect(await readRecallConfig(current, true, agentDir)).toEqual([]);
+    await writeFile(join(agentDir, "settings.json"), JSON.stringify({ [SETTINGS_KEY]: { app: ["app-old"], "other/app": ["nope"], "~/elsewhere": ["nope"] } }));
+    await recallConfig(p.cwd, ["pi-memory", "~/notes"]);
+    expect(await readRecallConfig(current, true, agentDir)).toEqual(["app-old", "pi-memory", "~/notes"]);
+    expect(await readRecallConfig(current, false, agentDir)).toEqual(["app-old"]);
+    await recallConfig(p.cwd, "pi-memory");
+    await expect(readRecallConfig(current, true, agentDir)).rejects.toThrow(`${SETTINGS_KEY} in ${join(p.cwd, ".pi", "settings.json")} must map projects`);
   });
 });
 
@@ -71,12 +78,12 @@ for (const shared of [false, true]) {
       expect(index.sessions.get(current.getSessionId())).toBe(index.current);
     });
 
-    test("reads this project by default, and the projects .recallrc lists with it", async () => {
+    test("reads this project by default, and the projects recallConfig names with it", async () => {
       const { old, now, current, ctx } = await setup();
-      expect((await resolveScope(current)).projects.map((p) => p.path)).toEqual([now.cwd]);
+      expect((await resolveScope(context(current))).projects.map((p) => p.path)).toEqual([now.cwd]);
       expect(projectsOf((await recallSessions(ctx)).sessions)).toEqual(["here", "here"]);
 
-      await writeFile(join(now.cwd, RECALLRC), "pi-memory\n");
+      await recallConfig(now.cwd, ["pi-memory"]);
       const sessions = (await recallSessions(ctx)).sessions;
       expect(projectsOf(sessions)).toEqual(["here", "here", old.cwd]);
       const read = await recall(ctx);
@@ -114,16 +121,16 @@ for (const shared of [false, true]) {
       const { old, now, oldSession, current } = await setup();
       const ref = `${oldSession.getSessionId()}/${oldSession.getLeafId()}`;
       const theme = { fg: (_: string, text: string) => text } as unknown as Theme;
-      const ctx = { sessionManager: current, ui: { theme, setStatus() {}, notify() {} }, isIdle: () => false } as unknown as ExtensionToolContext;
+      const ctx = { sessionManager: current, ui: { theme, setStatus() {}, notify() {} }, isIdle: () => false, isProjectTrusted: () => true } as unknown as ExtensionToolContext;
       await createMarkTool().execute("t", { target: ref, reason: "Chose the store" }, undefined, undefined, ctx);
 
       const store = MarkStore.forDir(old.sessionDir);
       expect((await store.events()).map((e) => e.ref)).toEqual([ref]);
       if (!shared) expect(await MarkStore.forSession(current).events()).toEqual([]);
 
-      expect(await marksSection(current)).toBeUndefined();
-      await writeFile(join(now.cwd, RECALLRC), "pi-memory\n");
-      expect(await marksSection(current)).toContain(`project="${old.cwd}"`);
+      expect(await marksSection(context(current))).toBeUndefined();
+      await recallConfig(now.cwd, ["pi-memory"]);
+      expect(await marksSection(context(current))).toContain(`project="${old.cwd}"`);
       expect((await recall(ctx)).sessions[0]!.entries[0]).toMatchObject({ mark: { by: "agent", reason: "Chose the store" } });
     });
   });

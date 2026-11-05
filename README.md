@@ -26,7 +26,6 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | `@nothumanwork/pi-idle-compaction` | [pi-idle-compaction](pi-idle-compaction/README.md) — compact a large conversation once it has sat idle past the prompt cache lifetime |
 | `@nothumanwork/pi-loggly` | [pi-loggly](pi-loggly/README.md) — Loggly log tools, health dashboard and status line |
 | `@nothumanwork/pi-loop` | [pi-loop](pi-loop/README.md) |
-| `@nothumanwork/pi-memory` | [pi-memory](pi-memory/README.md) |
 | `@nothumanwork/asx` | [asx](asx/README.md) — presets, workflow expressions and durable TypeScript workflows whose agents are full pi sessions |
 | `@nothumanwork/pi-remote` | [pi-remote](pi-remote/README.md) |
 | `@nothumanwork/pi-tps` | [pi-tps](pi-tps/README.md) |
