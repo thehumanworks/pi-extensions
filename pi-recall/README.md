@@ -77,7 +77,7 @@ Summaries live under Pi's agent directory:
 
 The default agent directory is `~/.pi/agent`; Pi's configured agent directory is respected. Records have private file permissions and are published by atomic rename. They include the project, source scope, covered entry and conversation-message IDs, requesting session, user/agent origin, snapshot/completion timestamps, model and summary text. They are independent of session files and remain listable after those files are deleted. Corrupt records raise an error rather than silently losing a checkpoint. Nested summary-call markers are also kept as custom session entries; they do not enter model context.
 
-Generation uses **`vercel-ai-gateway / inception/mercury-3`**, with a maximum of 4,096 output tokens and no prompt-cache retention requested. This model must exist in Pi's model registry with configured credentials. There is no fallback to the current model.
+Generation uses **`vercel-ai-gateway / inception/mercury-3`**, with a maximum of 16,384 output tokens, reasoning turned off and no prompt-cache retention requested. This model must exist in Pi's model registry with configured credentials. There is no fallback to the current model.
 
 Input uses recall's condensed message format: long messages are shortened and tool results are reduced. Thinking and custom/compaction messages are excluded. A conservative context-size estimate rejects oversized history before the model call rather than silently dropping whole sessions. Citations are requested as verbatim excerpts keyed by `session_id/message_id`, but are model-generated and are not independently verified. This is a saved recall summary, **not** Pi session compaction.
 

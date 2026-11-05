@@ -8,7 +8,7 @@ const model = { provider: SUMMARISER.provider, id: SUMMARISER.id, maxTokens: 320
 
 function registry(reply: Partial<AssistantMessage>, options: { known?: boolean; auth?: boolean } = {}) {
   const calls: Context[] = [];
-  const completionOptions: { signal?: AbortSignal; maxTokens?: number; cacheRetention?: string }[] = [];
+  const completionOptions: { signal?: AbortSignal; maxTokens?: number; thinkingEnabled?: boolean; cacheRetention?: string }[] = [];
   const stub = {
     find: (provider: string, id: string) =>
       options.known !== false && provider === SUMMARISER.provider && id === SUMMARISER.id ? model : undefined,
@@ -49,7 +49,7 @@ describe("summarise", () => {
     const { registry: stub, calls, completionOptions } = registry({ content: [{ type: "text", text: "Summary" }] });
     const controller = new AbortController();
     await summarise(stub, [entry("a1", "first")], { signal: controller.signal, notes: () => ({ label: "important" }) });
-    expect(completionOptions[0]).toEqual({ signal: controller.signal, maxTokens: 4096, cacheRetention: "none" });
+    expect(completionOptions[0]).toEqual({ signal: controller.signal, maxTokens: 16384, thinkingEnabled: false, cacheRetention: "none" });
     expect(String(calls[0]!.messages[0]!.content)).toContain('"label":"important"');
     stub.find = () => ({ ...model, maxTokens: 1024 }) as never;
     await summarise(stub, [entry("a1", "first")]);
@@ -68,6 +68,7 @@ describe("summarise", () => {
   test("throws on errors and empty replies", async () => {
     await expect(summarise(registry({ stopReason: "error", errorMessage: "boom" }).registry, [entry("a1", "x")])).rejects.toThrow("boom");
     await expect(summarise(registry({}).registry, [entry("a1", "x")])).rejects.toThrow("empty summary");
+    await expect(summarise(registry({ stopReason: "length" }).registry, [entry("a1", "x")])).rejects.toThrow("16384-token output limit");
     await expect(summarise(registry({}).registry, [])).rejects.toThrow("No messages");
   });
 });

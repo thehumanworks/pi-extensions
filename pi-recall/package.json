@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-recall",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "description": "Recall conversation history, label and assign priority categories to messages",
   "publishConfig": {
