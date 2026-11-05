@@ -15,9 +15,9 @@ const STATUS_KEY = "pi-recall-marks";
 
 /**
  * Shows how many of the agent's marks and unmarks the user has not reviewed, in pi's footer: those in this
- * project and the projects recallConfig names for it. Returns the count.
+ * project and the projects its recallConfig setting lists. Returns the count.
  */
-export async function refreshStatus(ctx: Pick<ExtensionContext, "ui"> & ScopeContext): Promise<number> {
+export async function refreshStatus(ctx: ScopeContext & Pick<ExtensionContext, "ui">): Promise<number> {
   const scope = await resolveScope(ctx);
   const n = unreviewed(await loadMarks(scope.index, scope.projects)).length;
   ctx.ui.setStatus(STATUS_KEY, n === 0 ? undefined : ctx.ui.theme.fg("warning", `◆ ${n} unreviewed mark${n === 1 ? "" : "s"} · /recall marks`));

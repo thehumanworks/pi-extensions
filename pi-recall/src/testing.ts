@@ -5,9 +5,6 @@ import { type ExtensionToolContext, SessionManager } from "@earendil-works/pi-co
 import { resolveScope, type ScopeContext, sessionFolderName, SETTINGS_KEY } from "./projects.ts";
 import { listSessions } from "./sessions.ts";
 
-// pi's agent folder, with its global settings, is a temporary one, so tests never read ~/.pi.
-process.env.PI_CODING_AGENT_DIR = await mkdtemp(join(tmpdir(), "pi-recall-agent-"));
-
 /** Saved sessions in one project; each message is later than every message before it from the same clock. */
 function sessions(cwd: string, sessionDir: string, clock: { now: number }) {
   return {

@@ -23,7 +23,7 @@ function messageText(entry: RecalledEntry): string {
 }
 
 /**
- * The newest critical marks in this project and the projects recallConfig names for it, as a block for the model,
+ * The newest critical marks in this project and the projects its recallConfig setting lists, as a block for the model,
  * or undefined if there are none. Messages still in the current context are left out, including copies of
  * them in a session forked from where they were marked.
  */

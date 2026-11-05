@@ -48,8 +48,8 @@ export function callLabel(args: unknown): string {
 
 const chars = (n: number) => `${n.toLocaleString("en-US")} chars`;
 
-/** A one-line summary of a message, chosen by role. */
-export function summarize(message: Message): string {
+/** A deterministic one-line preview of a message, chosen by role; no model call. */
+export function preview(message: Message): string {
   switch (message.role) {
     case "user":
       return clip(contentText(message.content));
@@ -107,10 +107,10 @@ function entryMessage(entry: RecalledEntry): Message | undefined {
   return entry.type === "message" ? entry.message : sessionEntryToContextMessages(entry).at(-1);
 }
 
-/** A one-line summary of an entry. */
+/** A one-line preview of an entry. */
 export function entryClip(entry: RecalledEntry): string {
   const message = entryMessage(entry);
-  return message ? summarize(message) : "";
+  return message ? preview(message) : "";
 }
 
 const textOrNothing = (text: string, max: number): JsonObject => (text.trim() ? { text: excerpt(text, max) } : {});

@@ -6,6 +6,8 @@ import { registerRecallCommand } from "./src/command/command.ts";
 import { recallTool } from "./src/recall.ts";
 import { searchTool } from "./src/search.ts";
 import { sessionsTool } from "./src/sessions-tool.ts";
+import { SummaryService } from "./src/summaries/service.ts";
+import { createSummaryTool, registerSummaryActivity } from "./src/summaries/tool.ts";
 
 export default function (pi: ExtensionAPI) {
   pi.registerTool(recallTool);
@@ -15,5 +17,8 @@ export default function (pi: ExtensionAPI) {
   labels.register(pi);
   pi.registerTool(createMarkTool(loadGuidance(), labels));
   registerMarksReader(pi);
-  registerRecallCommand(pi, labels);
+  const summaries = new SummaryService();
+  pi.registerTool(createSummaryTool(summaries));
+  registerSummaryActivity(pi, summaries);
+  registerRecallCommand(pi, labels, summaries);
 }

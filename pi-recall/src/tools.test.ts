@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import type { SessionMessageEntry } from "@earendil-works/pi-coding-agent";
-import { formatEntry, summarize } from "./format.ts";
+import { formatEntry, preview } from "./format.ts";
 import { recall, recallTool } from "./recall.ts";
 import { sessionsTool } from "./sessions-tool.ts";
 import { context, project } from "./testing.ts";
@@ -26,17 +26,17 @@ const usage = {
 
 const image = { type: "image" as const, data: "A".repeat(400), mimeType: "image/png" };
 
-describe("summarize", () => {
+describe("preview", () => {
   test("clips user text and marks images", () => {
     const text = `hello\n  world ${"x".repeat(500)}`;
-    const clip = summarize({ role: "user", content: [{ type: "text", text }, image], timestamp: 0 });
+    const clip = preview({ role: "user", content: [{ type: "text", text }, image], timestamp: 0 });
     expect(clip.startsWith("hello world x")).toBe(true);
     expect(clip.length).toBe(240);
     expect(clip.endsWith("…")).toBe(true);
   });
 
   test("lists assistant tool calls and errors, without thinking", () => {
-    const clip = summarize({
+    const clip = preview({
       role: "assistant",
       content: [
         { type: "thinking", thinking: "secret plan" },
@@ -51,28 +51,28 @@ describe("summarize", () => {
   });
 
   test("names the tool of a tool result", () => {
-    expect(summarize({
+    expect(preview({
       role: "toolResult", toolCallId: "c1", toolName: "read", isError: true,
       content: [{ type: "text", text: "ENOENT" }], timestamp: 0,
     })).toBe("read ✗ 6 chars: ENOENT");
   });
 
   test("shows the command and status of a shell execution", () => {
-    expect(summarize({
+    expect(preview({
       role: "bashExecution", command: "ls", output: "a\nb", exitCode: 0, cancelled: false, truncated: false,
       timestamp: 0,
     })).toBe("$ ls (exit 0): a b");
   });
 
   test("uses the summary of summaries and the type of custom messages", () => {
-    expect(summarize({ role: "compactionSummary", summary: "Did X", tokensBefore: 1, timestamp: 0 })).toBe("Did X");
-    expect(summarize({ role: "branchSummary", summary: "Tried Y", fromId: null, timestamp: 0 })).toBe("Tried Y");
-    expect(summarize({ role: "custom", customType: "note", content: "hi", display: true, timestamp: 0 }))
+    expect(preview({ role: "compactionSummary", summary: "Did X", tokensBefore: 1, timestamp: 0 })).toBe("Did X");
+    expect(preview({ role: "branchSummary", summary: "Tried Y", fromId: null, timestamp: 0 })).toBe("Tried Y");
+    expect(preview({ role: "custom", customType: "note", content: "hi", display: true, timestamp: 0 }))
       .toBe("note: hi");
   });
 
   test("tolerates unknown roles", () => {
-    expect(summarize({ role: "other", content: "data" } as unknown as Message)).toBe("data");
+    expect(preview({ role: "other", content: "data" } as unknown as Message)).toBe("data");
   });
 });
 

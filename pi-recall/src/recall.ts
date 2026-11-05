@@ -1,4 +1,4 @@
-import { type ExtensionContext, defineTool } from "@earendil-works/pi-coding-agent";
+import { defineTool } from "@earendil-works/pi-coding-agent";
 import { type JsonObject, StringEnum } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { type EntryNotes, type RecalledEntry, type SessionView, sessionView } from "./entries.ts";
@@ -14,7 +14,7 @@ export const MAX_LIMIT = 20;
 /** The project parameter, as the recall tools describe it. */
 export const PROJECT_DESCRIPTION =
   `Another project to read: its path, or the last folders of its path such as "pi-memory"; "${ALL_PROJECTS}" for every project. ` +
-  "Omit for this project and the projects recallConfig names for it";
+  "Omit for this project and the projects its recallConfig setting lists";
 
 export interface HistoryOptions {
   /** Read only this session instead of the whole project. */
@@ -26,7 +26,7 @@ export interface HistoryOptions {
   limit?: number;
   /** Also return current-session entries that are still in the model's context. */
   includeContext?: boolean;
-  /** The sessions to read, newest first; by default this project's and those recallConfig names for it. */
+  /** The sessions to read, newest first; by default this project's and those its recallConfig setting names. */
   sources?: SessionSource[];
   /**
    * Entries to leave out of this read. Each belongs to the shown entry before it: a from cursor at one starts
