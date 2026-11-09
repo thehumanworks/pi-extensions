@@ -200,3 +200,19 @@ test("cli test treats a path that does not exist yet as a new file for ignoreNew
 		await setupDir.dispose();
 	}
 });
+
+test("with no judge model set, question rules stay inactive with a warning, and nothing is sent", async (t) => {
+	const setupDir = await setup({ judge: { mode: "auto" } });
+	const fetches = t.mock.method(globalThis, "fetch", async () => new Response("{}"));
+	try {
+		await writeFile(join(setupDir.repo, ".agents", "ttsr", "judged-claims.md"), "---\ncondition: tests pass\nscope: text\nquestion: Does it claim tests pass without running them?\n---\nRun the tests first.");
+		await mkdir(join(setupDir.home, ".pi", "agent"), { recursive: true });
+		await writeFile(join(setupDir.home, ".pi", "agent", "auth.json"), JSON.stringify({ "vercel-ai-gateway": { type: "api_key", key: "stored" } }));
+		const start = await setupDir.hook({ hook_event_name: "SessionStart" });
+		assert.match(start.systemMessage, /no judge model set: choose one with judge\.provider and judge\.model[^]*question rules stay inactive: judged-claims/);
+		assert.equal(await setupDir.hook({ hook_event_name: "Stop", stop_hook_active: false, last_assistant_message: "Done, the tests pass." }), undefined);
+		assert.equal(fetches.mock.callCount(), 0);
+	} finally {
+		await setupDir.dispose();
+	}
+});

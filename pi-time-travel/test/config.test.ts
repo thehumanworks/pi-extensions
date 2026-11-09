@@ -15,11 +15,11 @@ async function fixture(files: Record<string, unknown>) {
 	return { root, home: join(root, "home"), repo: join(root, "repo"), dispose: () => rm(root, { recursive: true, force: true }) };
 }
 
-test("defaults: withdraw, always act, GPT-6 Luna on Vercel AI Gateway as the judge", () => {
+test("defaults: withdraw, always act, and no judge model until the user picks one", () => {
 	assert.equal(DEFAULTS.contextMode, "discard");
 	assert.equal(DEFAULTS.repeatMode, "always");
-	assert.equal(DEFAULTS.judge.provider, "vercel-ai-gateway");
-	assert.equal(DEFAULTS.judge.model, "openai/gpt-6-luna-decisions");
+	assert.equal(DEFAULTS.judge.provider, undefined);
+	assert.equal(DEFAULTS.judge.model, undefined);
 });
 
 test("user, project, and $PI_TIME_TRAVEL_CONFIG layers merge in order", async () => {
@@ -51,7 +51,7 @@ test("a repository cannot redirect the judge, its credentials, or the files read
 		assert.deepEqual(config.ruleDirs, []);
 		assert.equal(config.judge.baseUrl, undefined);
 		assert.equal(config.judge.apiKeyEnv, undefined);
-		assert.equal(config.judge.provider, "vercel-ai-gateway");
+		assert.equal(config.judge.provider, undefined);
 		assert.equal(config.judge.blocking, true, "behaviour settings still apply");
 		assert.equal(warnings.length, 5);
 	} finally {
@@ -76,8 +76,9 @@ test("bad values warn and keep the default; untrusted projects are not read; env
 test("the hook's judge key: explicit env var, else Pi's stored key, else the provider's env var", async () => {
 	const f = await fixture({ "home/.pi/agent/auth.json": { "vercel-ai-gateway": { type: "api_key", key: "stored" }, openrouter: { type: "api_key", key: "$OR_KEY" } } });
 	try {
-		const judge = { ...DEFAULTS.judge };
-		const endpoint = (j: typeof judge, env: NodeJS.ProcessEnv) => judgeEndpoint(j, env, f.home);
+		const judge = { ...DEFAULTS.judge, provider: "vercel-ai-gateway", model: "openai/gpt-6-luna-decisions" };
+		const endpoint = (j: typeof DEFAULTS.judge, env: NodeJS.ProcessEnv) => judgeEndpoint(j, env, f.home);
+		assert.match((endpoint(DEFAULTS.judge, { AI_GATEWAY_API_KEY: "env" }) as { error: string }).error, /no judge model set/, "a stored key alone picks no judge");
 		assert.deepEqual(endpoint(judge, { AI_GATEWAY_API_KEY: "env" }), { api: "system-one", baseUrl: "https://ai-gateway.vercel.sh/typesafe/v1", apiKey: "stored", model: judge.model });
 		assert.equal((endpoint({ ...judge, apiKeyEnv: "MINE" }, { MINE: "mine", AI_GATEWAY_API_KEY: "env" }) as { apiKey: string }).apiKey, "mine");
 		assert.equal((endpoint({ ...judge, provider: "openrouter" }, { OR_KEY: "interpolated" }) as { apiKey: string }).apiKey, "interpolated");

@@ -43,6 +43,8 @@
     "enforce": true,
     "config": {
       "judge": {
+        "provider": "vercel-ai-gateway",
+        "model": "openai/gpt-6-luna-decisions",
         "mode": "on",
         "confirm": true
       }
@@ -67,6 +69,8 @@
     ],
     "config": {
       "judge": {
+        "provider": "vercel-ai-gateway",
+        "model": "openai/gpt-6-luna-decisions",
         "mode": "on",
         "blocking": true
       }

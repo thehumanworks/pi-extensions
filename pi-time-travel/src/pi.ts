@@ -2,6 +2,7 @@ import type { AssistantMessage, JsonObject } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext, SessionBoundaryDraft } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { homedir } from "node:os";
+import { type JudgeConfig, judgeModel } from "./config.ts";
 import { type Evaluation, type Finding, FiredState, interrupts, reminders } from "./engine.ts";
 import type { Classify } from "./judge.ts";
 import { fileLogger, type Logger } from "./log.ts";
@@ -72,7 +73,11 @@ function recentCommands(ctx: ExtensionContext, limit = 30): string[] {
 	return commands.slice(-limit);
 }
 
-function piClassifier(ctx: ExtensionContext, provider: string, modelId: string, timeoutMs: number): Classify | { error: string } {
+function piClassifier(ctx: ExtensionContext, judge: JudgeConfig): Classify | { error: string } {
+	const chosen = judgeModel(judge);
+	if ("error" in chosen) return chosen;
+	const { provider, model: modelId } = chosen;
+	const { timeoutMs } = judge;
 	const model = ctx.modelRegistry.findOfType("classifier", provider, modelId);
 	if (!model) return { error: `classifier ${provider}/${modelId} is not in Pi's model registry` };
 	if (!ctx.modelRegistry.getProviderAuthStatus(provider).configured) return { error: `no credentials for ${provider}` };
@@ -110,7 +115,7 @@ export default function timeTravel(pi: ExtensionAPI): void {
 			home: homedir(),
 			env: process.env,
 			project: ctx.isProjectTrusted(),
-			judge: (config) => piClassifier(ctx, config.judge.provider, config.judge.model, config.judge.timeoutMs),
+			judge: (config) => piClassifier(ctx, config.judge),
 			log: (config) => fileLogger(config.logFile, { harness: "pi", session: ctx.sessionManager.getSessionId() }),
 		});
 		log = fileLogger(runtime.config.logFile, { harness: "pi", session: ctx.sessionManager.getSessionId() });

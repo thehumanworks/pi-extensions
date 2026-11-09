@@ -11,9 +11,9 @@ export type JudgeApi = "system-one" | "openai-decisions";
 export interface JudgeConfig {
 	/** `auto` judges when the model has credentials; `on` also warns when it has none; `off` never judges. */
 	mode: JudgeMode;
-	/** Provider and classifier model id, as Pi names them. */
-	provider: string;
-	model: string;
+	/** Provider and classifier model id, as Pi names them. Unset by default: nothing is judged until the user picks a model. */
+	provider?: string;
+	model?: string;
 	/** Claude Code hook only (Pi resolves these itself): wire protocol, endpoint, and API key variable. */
 	api?: JudgeApi;
 	baseUrl?: string;
@@ -49,8 +49,8 @@ export interface Config {
 }
 
 /**
- * The decision model defaults to GPT-6 Luna through Vercel AI Gateway. Change `judge.provider`
- * and `judge.model` in the user config to use another classifier.
+ * There is no default judge model. `question` rules send the agent's output to a third party, so
+ * they stay inactive, with a warning, until the user sets `judge.provider` and `judge.model`.
  */
 export const DEFAULTS: Config = {
 	enabled: true,
@@ -65,8 +65,6 @@ export const DEFAULTS: Config = {
 	importOmpRules: false,
 	judge: {
 		mode: "auto",
-		provider: "vercel-ai-gateway",
-		model: "openai/gpt-6-luna-decisions",
 		threshold: 0.85,
 		blocking: false,
 		confirm: false,
@@ -253,18 +251,27 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
 	return { config, warnings, sources };
 }
 
+/** The judge's provider and model, or why there is none. */
+export function judgeModel(judge: JudgeConfig): { provider: string; model: string } | { error: string } {
+	if (!judge.provider || !judge.model) return { error: "no judge model set: choose one with judge.provider and judge.model in ~/.agents/ttsr/config.json" };
+	return { provider: judge.provider, model: judge.model };
+}
+
 /**
  * The hook's HTTP endpoint for the configured judge, or why there is none. The key comes from
  * `judge.apiKeyEnv` when set; otherwise from Pi's stored credentials, like Pi itself, and then
  * the provider's usual environment variable.
  */
 export function judgeEndpoint(judge: JudgeConfig, env: NodeJS.ProcessEnv, home: string): { api: JudgeApi; baseUrl: string; apiKey: string; model: string } | { error: string } {
-	const known = JUDGE_ENDPOINTS[judge.provider];
+	const chosen = judgeModel(judge);
+	if ("error" in chosen) return chosen;
+	const { provider, model } = chosen;
+	const known = JUDGE_ENDPOINTS[provider];
 	const api = judge.api ?? known?.api;
 	const baseUrl = judge.baseUrl ?? known?.baseUrl;
 	const apiKeyEnv = judge.apiKeyEnv ?? known?.apiKeyEnv;
-	if (!api || !baseUrl || !apiKeyEnv) return { error: `no endpoint known for judge provider "${judge.provider}"; set judge.api, judge.baseUrl, and judge.apiKeyEnv` };
-	const apiKey = judge.apiKeyEnv ? env[judge.apiKeyEnv] : (piStoredApiKey(judge.provider, home, env) ?? env[apiKeyEnv]);
-	if (!apiKey) return { error: `no API key: neither Pi's stored ${judge.provider} key nor ${apiKeyEnv} is set` };
-	return { api, baseUrl, apiKey, model: judge.model };
+	if (!api || !baseUrl || !apiKeyEnv) return { error: `no endpoint known for judge provider "${provider}"; set judge.api, judge.baseUrl, and judge.apiKeyEnv` };
+	const apiKey = judge.apiKeyEnv ? env[judge.apiKeyEnv] : (piStoredApiKey(provider, home, env) ?? env[apiKeyEnv]);
+	if (!apiKey) return { error: `no API key: neither Pi's stored ${provider} key nor ${apiKeyEnv} is set` };
+	return { api, baseUrl, apiKey, model };
 }

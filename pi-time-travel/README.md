@@ -31,7 +31,7 @@ pi-time-travel install claude
 
 The npm commands work after the package has been published. From a checkout of this repository, run `npm ci --ignore-scripts` and `npm run build --workspace @nothumanwork/pi-time-travel` at the root. Then run `pi install ./pi-time-travel` for Pi, or `node pi-time-travel/dist/src/cli.js install claude` for Claude Code.
 
-Requires Node.js 22.19 or later. Rules need no other setup; only `question` rules (below) need credentials for a classifier.
+Requires Node.js 22.19 or later. Rules need no other setup; only `question` rules (below) need a classifier, which you choose.
 
 ## Rules
 
@@ -124,24 +124,23 @@ A project's configuration file cannot set `ruleDirs`, `logFile`, `importOmpRules
 
 Regular expressions decide most rules, instantly and locally. A rule with a `question` is decided by a classifier (a decision model) instead. It is asked once per finished message or tool call, about every candidate rule at once. It also sees the shell commands run so far this session, so "claims tests pass without having run them" can be checked.
 
+There is no default judge model. A judged rule sends the agent's output (up to 24,000 characters per check) to the classifier's provider, so the choice of provider is yours. Until you make it, `question` rules stay inactive, and the session starts with a warning that names them. To choose one, add it to `~/.agents/ttsr/config.json`:
+
 ```json
 {
   "judge": {
-    "mode": "auto",
     "provider": "vercel-ai-gateway",
-    "model": "openai/gpt-6-luna-decisions",
-    "threshold": 0.85,
-    "blocking": false,
-    "confirm": false,
-    "timeoutMs": 8000
+    "model": "openai/gpt-6-luna-decisions"
   }
 }
 ```
 
+The other settings, with their defaults: `"mode": "auto"`, `"threshold": 0.85`, `"blocking": false`, `"confirm": false`, `"timeoutMs": 8000`.
+
 | Key | Meaning |
 | --- | --- |
-| `mode` | `auto` judges when a rule needs it and credentials are found. `on` also warns when they are missing. `off` never judges, so `question` rules never fire. |
-| `provider`, `model` | The classifier, named as Pi names it. Pi uses its own model registry and credentials. Claude Code knows `vercel-ai-gateway`, `openrouter`, `typesafe`, and `openai` (model `gpt-6-luna`); for anything else, set `api` (`system-one` or `openai-decisions`), `baseUrl`, and `apiKeyEnv`. |
+| `mode` | `auto` judges when a rule needs it, a model is set, and its credentials are found. `on` also warns when a `confirm` setting needs a judge that is not available. `off` never judges, so `question` rules never fire. |
+| `provider`, `model` | The classifier, named as Pi names it. No default. Pi uses its own model registry and credentials. Claude Code knows `vercel-ai-gateway`, `openrouter`, `typesafe`, and `openai` (model `gpt-6-luna`); for anything else, set `api` (`system-one` or `openai-decisions`), `baseUrl`, and `apiKeyEnv`. |
 | `threshold` | The probability at or above which the judge's "yes" counts. |
 | `blocking` | Judged violations interrupt like regex matches. By default they only remind: the judge sees finished output, and a false positive should not cost the agent its work. |
 | `confirm` | Also ask the judge to confirm every regex match before acting on it. |

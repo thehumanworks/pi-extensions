@@ -1,4 +1,4 @@
-import { type Config, type LoadedConfig, loadConfig } from "./config.ts";
+import { type Config, type LoadedConfig, judgeModel, loadConfig } from "./config.ts";
 import { Engine } from "./engine.ts";
 import type { Classify } from "./judge.ts";
 import type { Logger } from "./log.ts";
@@ -41,15 +41,17 @@ export function loadRuntime(options: RuntimeOptions): Runtime {
 	let classify: Classify | undefined;
 	let judgeStatus = config.judge.mode === "off" ? "off" : "not needed: no rule asks the judge";
 	if (needsJudge(config, ruleSet.rules)) {
-		const built = options.judge(config);
+		const chosen = judgeModel(config.judge);
+		const built = "error" in chosen ? chosen : options.judge(config);
+		const name = "error" in chosen ? "judge" : `judge ${chosen.provider}/${chosen.model}`;
 		if (typeof built === "function") {
 			classify = built;
-			judgeStatus = `${config.judge.provider}/${config.judge.model}`;
+			judgeStatus = name.slice("judge ".length);
 		} else {
 			judgeStatus = `unavailable: ${built.error}`;
 			const questions = ruleSet.rules.filter((rule) => rule.question).map((rule) => rule.name);
 			if (config.judge.mode === "on" || questions.length > 0) {
-				warnings.push(`judge ${config.judge.provider}/${config.judge.model} is unavailable (${built.error})${questions.length ? `; question rules stay inactive: ${questions.join(", ")}` : ""}`);
+				warnings.push(`${name} is unavailable (${built.error})${questions.length ? `; question rules stay inactive: ${questions.join(", ")}` : ""}`);
 			}
 		}
 	}
