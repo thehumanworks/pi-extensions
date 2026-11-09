@@ -1,0 +1,1 @@
+{ "name": "tiny-duration", "version": "2.1.0", "type": "module", "main": "index.js", "exports": "./index.js" }

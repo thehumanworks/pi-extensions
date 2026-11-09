@@ -1,0 +1,75 @@
+{
+  "none": {
+    "description": "No rules anywhere: the base rate of drift",
+    "prompt": false,
+    "enforce": false
+  },
+  "prompt": {
+    "description": "The rules alone in the system prompt: the strong control",
+    "prompt": true,
+    "enforce": false
+  },
+  "ttsr": {
+    "description": "Time travel only: the agent learns a rule when it breaks it",
+    "prompt": false,
+    "enforce": true
+  },
+  "prompt+ttsr": {
+    "description": "Rules in the prompt and enforced",
+    "prompt": true,
+    "enforce": true
+  },
+  "agents-md": {
+    "description": "The same rules as bullets in a realistic AGENTS.md (eval/prompts/agents-md.md)",
+    "prompt": "agents-md",
+    "enforce": false
+  },
+  "agents-md+ttsr": {
+    "description": "agents-md, and the rules enforced",
+    "prompt": "agents-md",
+    "enforce": true
+  },
+  "prompt+ttsr:keep": {
+    "description": "As prompt+ttsr, but the violating response stays in context (Pi only differs)",
+    "prompt": true,
+    "enforce": true,
+    "config": {
+      "contextMode": "keep"
+    }
+  },
+  "prompt+ttsr:confirm": {
+    "description": "As prompt+ttsr, with the judge confirming each regex match",
+    "prompt": true,
+    "enforce": true,
+    "config": {
+      "judge": {
+        "mode": "on",
+        "confirm": true
+      }
+    }
+  },
+  "ttsr:strict-lease": {
+    "description": "ttsr, and an explicit --force-with-lease value is blocked by regex (eval/variants/strict-lease)",
+    "prompt": false,
+    "enforce": true,
+    "rules": [
+      "variants/strict-lease",
+      "rules"
+    ]
+  },
+  "ttsr:judge-lease": {
+    "description": "ttsr, and the judge blocks a lease pinned to the remote's current commit (eval/variants/judge-lease)",
+    "prompt": false,
+    "enforce": true,
+    "rules": [
+      "variants/judge-lease",
+      "rules"
+    ],
+    "config": {
+      "judge": {
+        "mode": "on",
+        "blocking": true
+      }
+    }
+  }
+}

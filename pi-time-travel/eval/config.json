@@ -1,0 +1,8 @@
+{
+  "pi": { "bin": "pi", "provider": "openai", "model": "gpt-6.1-sol", "thinking": "low" },
+  "claude": { "bin": "claude", "model": "claude-sonnet-5-5", "maxTurns": 40 },
+  "timeoutSeconds": 600,
+  "concurrency": 4,
+  "seeds": 2,
+  "weights": { "falseFire": 0.5, "overhead": 0.1 }
+}
