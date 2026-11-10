@@ -28,6 +28,7 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | `@nothumanwork/pi-loop` | [pi-loop](pi-loop/README.md) |
 | `@nothumanwork/asx` | [asx](asx/README.md) — presets, workflow expressions and durable TypeScript workflows whose agents are full pi sessions |
 | `@nothumanwork/pi-remote` | [pi-remote](pi-remote/README.md) |
+| `@nothumanwork/pi-time-travel` | [pi-time-travel](pi-time-travel/README.md) — stop an agent's rule violations before they take effect, correct it, and resume; Pi and Claude Code |
 | `@nothumanwork/pi-tps` | [pi-tps](pi-tps/README.md) |
 | `@nothumanwork/pi-usage` | [pi-usage](pi-usage/README.md) — account usage limits and reset times |
 | `@nothumanwork/pi-voice` | [pi-voice](pi-voice/README.md) |

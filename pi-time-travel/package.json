@@ -1,0 +1,61 @@
+{
+  "name": "@nothumanwork/pi-time-travel",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Time-traveling stream rules for Pi and Claude Code: catch a rule violation as the agent makes it, withdraw it before it takes effect, and resume with a correction",
+  "keywords": [
+    "pi-package",
+    "claude-code",
+    "hooks",
+    "rules",
+    "ttsr"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-time-travel"
+  },
+  "bin": {
+    "pi-time-travel": "./dist/src/cli.js"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "dist",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "test": "tsx --test test/*.test.ts",
+    "eval": "tsx eval/run.ts",
+    "eval:report": "tsx eval/report.ts"
+  },
+  "dependencies": {
+    "yaml": "2.9.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-tui": "1.4.0",
+    "@types/node": "^22.19.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}

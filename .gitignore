@@ -13,3 +13,6 @@ pi-memory/eval/long/state-*/history/*/project/
 
 # Background compaction replays write timestamped result directories
 pi-background-compaction/eval/results/20*/
+
+# Time travel quality matrix runs
+pi-time-travel/eval/results/
