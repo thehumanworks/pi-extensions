@@ -7,7 +7,7 @@ export type StepKey = string;
 export type ModelName = `${string}/${string}`;
 export type ModelRef = { provider: string; modelId: string } | ModelName;
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
-export interface RunBudget { maxAgents?: number; maxCostUsd?: number; maxTokens?: number; maxDurationMs?: number }
+export interface RunBudget { maxCostUsd?: number; maxTokens?: number; maxDurationMs?: number }
 export interface AgentSpec {
   model?: ModelRef;
   thinkingLevel?: ThinkingLevel;
@@ -31,7 +31,7 @@ export interface AgentSpec {
   timeoutMs?: number;
   retries?: number;
 }
-export interface AgentOptions extends AgentSpec { label?: string; phase?: string; agentType?: string; key?: string }
+export interface AgentOptions extends AgentSpec { label?: string; phase?: string; key?: string }
 /** Options for ctx.preset(); the template sees them as `args`, `inputs`, `copy`, `iteration` and `feedback`. */
 export interface PresetOptions {
   args?: Record<string, unknown>;
@@ -78,7 +78,7 @@ export interface WorkflowContext<Args = unknown> {
   readonly args: Args;
   readonly cwd: string;
   readonly depth: number;
-  readonly budget: { costUsd: number | null; agents: number | null };
+  readonly budget: { costUsd: number | null };
   agent<S extends TSchema>(prompt: string, options: AgentOptions & { schema: S }): Promise<Static<S>>;
   agent(prompt: string, options?: AgentOptions): Promise<string>;
   /** Render a preset's task template (journaled) and run it as a pi session; returns the agent's final text. */
@@ -101,10 +101,10 @@ export interface WorkflowContext<Args = unknown> {
   random(): number;
 }
 export interface WorkflowDefinition<A extends TSchema = TSchema, R = unknown> {
-  name: string;
+  /** Defaults to the workflow file's kebab-case basename. Set an explicit name for an alias. */
+  name?: string;
   description?: string;
   args?: A;
-  agents?: Record<string, AgentSpec>;
   defaults?: AgentSpec;
   budget?: RunBudget;
   /** Extra durable tools; explicitly add their names to an agent's tool allowlist. */
@@ -113,7 +113,7 @@ export interface WorkflowDefinition<A extends TSchema = TSchema, R = unknown> {
 }
 /** Define a typed workflow. Loading and launch perform runtime schema and option validation. */
 export function defineWorkflow<A extends TSchema = TObject<{}>, R = unknown>(definition: WorkflowDefinition<A, R>): WorkflowDefinition<A, R> {
-  if (!definition || typeof definition.name !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(definition.name)) {
+  if (!definition || definition.name !== undefined && (typeof definition.name !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(definition.name))) {
     throw new Error("Workflow name must be kebab-case, for example 'review-changes'.");
   }
   if (typeof definition.run !== "function") throw new Error("Workflow must define an async run(ctx) function.");
@@ -147,7 +147,7 @@ export interface RunRecord {
   workflow: { name: string; path: string; hash: string };
   args: unknown;
   cwd: string;
-  /** The model agents use unless their options, agentType or the definition's defaults choose one. */
+  /** The model agents use unless their options or the definition's defaults choose one. */
   model?: ModelName;
   thinkingLevel?: ThinkingLevel;
   budget?: RunBudget;

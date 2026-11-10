@@ -44,7 +44,7 @@ buildNpmPackage {
     cp nix/package-lock.json package-lock.json
   '';
 
-  npmDepsHash = "sha256-VZC/ZwBqYapkgbDAJe0pKsLWxgro9b9bhfhXnZ27Lk8=";
+  npmDepsHash = "sha256-kjfuTVXonErsSUAEWXJDkyzQ8CpeyVmuAhs403NE/48=";
   # Match the repository's peer-dependency policy.
   npmFlags = [ "--legacy-peer-deps" ];
   # The build phase already compiled dist; do not run prepack a second time.

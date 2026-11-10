@@ -71,10 +71,9 @@ const parameters = Type.Object({
     description: "For run: \"provider/model\" for agents that choose none. Default: this session's model. The workflow's defaults.model takes precedence.",
   })),
   budget: Type.Optional(Type.Object({
-    maxAgents: Type.Optional(Type.Integer({ minimum: 1, description: "Cap only; the workflow code decides how many agents run." })),
     maxCostUsd: Type.Optional(Type.Number({ minimum: 0 })),
     maxTokens: Type.Optional(Type.Integer({ minimum: 1 })), maxDurationMs: Type.Optional(Type.Integer({ minimum: 1 })),
-  }, { description: "For run: limits that stop the run when reached, merged over the workflow's own budget." })),
+  }, { additionalProperties: false, description: "For run: optional cost, token and duration limits, merged over the workflow's own budget. Agent calls in the workflow define how many agents run." })),
   runId: Type.Optional(Type.String({ description: "Run to act on, from run or list." })),
   verbose: Type.Optional(Type.Boolean({ description: "For status: every step with its result, usage and journal details." })),
   wait: Type.Optional(Type.Boolean({ description: "For run: wait for the outcome instead of returning at once." })),

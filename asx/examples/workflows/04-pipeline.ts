@@ -9,7 +9,7 @@ const VERDICT = Type.Object({ file: Type.String(), confirmed: Type.Array(Type.Ob
 export default defineWorkflow({
   name: "audit-pipeline",
   description: "Audit every file under a path: find → verify → write fix notes, streaming per file",
-  args: Type.Object({ path: Type.String(), pattern: Type.Optional(Type.String({ default: "**/*.ts" })) }),
+  args: Type.Object({ path: Type.String() }),
 
   run: async (ctx) => {
     // A journaled side effect: the file list must be stable across replays.

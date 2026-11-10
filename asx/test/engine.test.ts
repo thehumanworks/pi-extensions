@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, readFile, realpath } from "node:fs/promises";
+import { access, mkdir, readFile, realpath, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { test } from "node:test";
 import type { BackgroundAgentRecord, CatalogEntry, RunRecord, ValidationResult } from "../src/index.ts";
@@ -210,6 +210,112 @@ test("catalog reports a broken file without hiding valid workflows", async () =>
   } finally { await f.close(); }
 });
 
+test("workflow filenames supply names and typed agent options compose at the call site", async () => {
+  const f = await fixture({ workflows: {
+    review: workflow(`{
+      defaults: { tools: ["read"] },
+      async run(ctx) {
+        ctx.phase("Review");
+        const reviews = await ctx.parallel([
+          () => ctx.agent("ECHO one", { ...reviewer, label: "first" }),
+          () => ctx.agent("BASH printf two", { ...reviewer, tools: ["bash"], label: "second" }),
+        ]);
+        const summary = await ctx.agent("ECHO final", { ...reviewer, label: "summary" });
+        return { reviews, summary, budget: ctx.budget };
+      },
+    }`, 'import type { AgentSpec } from "@nothumanwork/asx";\nconst reviewer = { tools: [] } satisfies AgentSpec;'),
+    "01-example": workflow(`{ name: "custom-alias", async run() { return "alias"; } }`),
+    "Bad_Name": workflow(`{ async run() { return "invalid filename"; } }`),
+  } });
+  try {
+    // A project definition retains precedence when both names come from filenames.
+    const userWorkflows = join(f.root, "a", "workflows");
+    await mkdir(userWorkflows, { recursive: true });
+    await writeFile(join(userWorkflows, "review.ts"), workflow(`{ async run() { return "user definition"; } }`));
+    const catalog = await f.request<CatalogEntry[]>({ action: "catalog", cwd: f.project });
+    assert.deepEqual(catalog.map(entry => [entry.name, entry.error === undefined]), [["custom-alias", true], ["Bad_Name", false], ["review", true]]);
+    assert.equal(catalog.find(entry => entry.name === "review")?.source, "project");
+    assert.match(catalog[1].error!, /Rename the file to review-changes\.ts or set name: 'review-changes'/);
+    const validation = await f.request<ValidationResult>({ action: "validate", workflow: { name: "review" }, cwd: f.project });
+    assert.equal(validation.valid, true, JSON.stringify(validation.diagnostics));
+    assert.equal(validation.name, "review");
+    const run = await f.run("review");
+    assert.equal(run.status, "completed", JSON.stringify(run.error));
+    assert.equal(run.workflow.name, "review");
+    assert.deepEqual(run.result, { reviews: ["one", "tool output: two"], summary: "final", budget: { costUsd: null } });
+    assert.equal(run.usage.agents, 3);
+    assert.deepEqual(run.steps.filter(item => item.kind === "agent").map(item => item.phase), ["Review", "Review", "Review"]);
+    const alias = await f.run("custom-alias");
+    assert.equal(alias.workflow.name, "custom-alias");
+    assert.equal(alias.result, "alias");
+  } finally { await f.close(); }
+});
+
+test("symlinked workflow names survive run and retry while imports use the source directory", async () => {
+  const f = await fixture();
+  try {
+    const sourceDir = join(f.root, "store");
+    const workflows = join(f.project, ".pi", "workflows");
+    await mkdir(sourceDir);
+    await mkdir(workflows, { recursive: true });
+    const source = join(sourceDir, "123-store-source.ts");
+    const path = join(workflows, "linked-review.ts");
+    await writeFile(join(sourceDir, "helper.ts"), "export const answer = 42;\n");
+    await writeFile(source, workflow(`{ async run(ctx) { return ctx.step("answer", async () => answer); } }`, 'import { answer } from "./helper.ts";'));
+    await symlink(source, path);
+    const validation = await f.request<ValidationResult>({ action: "validate", workflow: { name: "linked-review" }, cwd: f.project });
+    assert.equal(validation.valid, true, JSON.stringify(validation.diagnostics));
+    assert.equal(validation.name, "linked-review");
+    assert.equal(validation.path, path);
+    const catalog = await f.request<CatalogEntry[]>({ action: "catalog", cwd: f.project });
+    assert.deepEqual(catalog.map(entry => [entry.name, entry.path, entry.error]), [["linked-review", path, undefined]]);
+    const run = await f.run("linked-review");
+    assert.equal(run.status, "completed", JSON.stringify(run.error));
+    assert.equal(run.workflow.path, path);
+    assert.equal(run.result, 42);
+    await f.request({ action: "retry", runId: run.id });
+    const retried = await f.wait(run.id);
+    assert.equal(retried.status, "completed", JSON.stringify(retried.error));
+    assert.equal(retried.workflow.name, "linked-review");
+    assert.equal(retried.result, 42);
+    await writeFile(source, "export default { async run() { const x = ; } };\n");
+    const invalid = await f.request<ValidationResult>({ action: "validate", workflow: { name: "linked-review" }, cwd: f.project });
+    assert.deepEqual(invalid.diagnostics.map(item => [item.code, item.path]), [["invalid_workflow", source]]);
+  } finally { await f.close(); }
+});
+
+test("retired workflow configuration is rejected and variable agent options are checked at runtime", async () => {
+  const f = await fixture({ workflows: {
+    cap: workflow(`{ name: "cap", budget: { maxAgents: 1 }, async run() { return 1; } }`),
+    registry: workflow(`{ name: "registry", agents: { reviewer: { tools: [] } }, async run() { return 1; } }`),
+    role: workflow(`{ name: "role", async run(ctx) { return ctx.agent("ECHO hi", { agentType: "reviewer" }); } }`),
+    count: workflow(`{ name: "count", async run(ctx) { return ctx.budget.agents; } }`),
+    negative: workflow(`{ name: "negative", budget: { maxCostUsd: -1 }, async run() { return 1; } }`),
+    variable: workflow(`{ name: "variable", async run(ctx) { const options = { agentType: "reviewer" }; return ctx.agent("ECHO hi", options); } }`),
+  } });
+  try {
+    for (const [name, message] of [
+      ["cap", /Remove maxAgents/], ["registry", /Remove agents; pass options to ctx\.agent/],
+      ["role", /Replace agentType/], ["count", /budget\.agents was removed/], ["negative", /maxCostUsd >= 0/],
+    ] as const) {
+      const validation = await f.request<ValidationResult>({ action: "validate", workflow: { name }, cwd: f.project });
+      assert.equal(validation.valid, false, name);
+      assert.match(validation.diagnostics.map(item => item.message).join("\n"), message, name);
+      await assert.rejects(f.launch(name), (error: { code: string; message: string }) => {
+        assert.equal(error.code, "invalid_workflow");
+        assert.match(error.message, message);
+        return true;
+      });
+    }
+    assert.deepEqual(await f.request<RunRecord[]>({ action: "list", filter: { all: true } }), []);
+    const variable = await f.run("variable");
+    assert.equal(variable.status, "failed");
+    assert.equal(variable.error?.reason, "unknown_agent_option");
+    assert.match(variable.error?.message ?? "", /Replace agentType/);
+    assert.equal(variable.usage.agents, 0);
+  } finally { await f.close(); }
+});
+
 test("agents return text or validated structured results with one repair turn", async () => {
   const f = await fixture({ workflows: { agents: workflow(`{
     name: "agents",
@@ -237,12 +343,12 @@ test("agents return text or validated structured results with one repair turn", 
   } finally { await f.close(); }
 });
 
-test("agent retries recover provider failures and budgets stop new agents", async () => {
+test("agent retries recover provider failures and token budgets stop new agents", async () => {
   const f = await fixture({ workflows: {
     flaky: workflow(`{ name: "flaky", async run(ctx) { return ctx.agent("FAIL_ONCE a", { tools: [], retries: 1 }); } }`),
     capped: workflow(`{
       name: "capped",
-      budget: { maxAgents: 1 },
+      budget: { maxTokens: 0 },
       async run(ctx) { await ctx.agent("ECHO one", { tools: [] }); return ctx.agent("ECHO two", { tools: [] }); },
     }`),
   } });

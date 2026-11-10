@@ -15,10 +15,6 @@ export default defineWorkflow({
   name: "best-of-n-fix",
   description: "Try N independent fixes for a failing test in separate worktrees; report the passing candidate that reads best; return its patch without applying it",
   args: Type.Object({ failingTest: Type.String(), n: Type.Optional(Type.Integer({ minimum: 2, maximum: 8, default: 4 })) }),
-  agents: {
-    fixer: { isolation: "worktree", budget: { maxTurns: 40 } },
-    judge: { thinkingLevel: "high", tools: ["read"] },
-  },
 
   run: async (ctx) => {
     const n = ctx.args.n ?? 4;
@@ -31,7 +27,7 @@ export default defineWorkflow({
       (i) =>
         ctx.agent(
           `Make test "${ctx.args.failingTest}" pass. Preferred angle: ${angles[i % angles.length]}. Finish by running the test and reporting the diff.`,
-          { agentType: "fixer", label: `attempt-${i}`, schema: ATTEMPT },
+          { isolation: "worktree", budget: { maxTurns: 40 }, label: `attempt-${i}`, schema: ATTEMPT },
         ),
       {
         // Stage 1 is deterministic: only passing attempts are judged. Stage 2 is a judge agent.
@@ -42,7 +38,7 @@ export default defineWorkflow({
           const verdict = await ctx.agent(
             `Pick the best patch (smallest, clearest, least risky). Reply with the index.\n` +
               passing.map((x) => `[${x.i}] ${x.c.approach}\n${x.c.patch}`).join("\n\n"),
-            { agentType: "judge", label: "judge", schema: Type.Object({ index: Type.Integer() }) },
+            { thinkingLevel: "high", tools: ["read"], label: "judge", schema: Type.Object({ index: Type.Integer() }) },
           );
           return verdict.index;
         },

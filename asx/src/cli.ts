@@ -27,7 +27,7 @@ ${program} catalog [--cwd DIR]          saved workflows and presets
 ${program} validate <path.ts|name> [--cwd DIR]
 ${program} run <preset|'<expression>'|path.ts|name> [--args JSON|--args-file FILE] [--cwd DIR] [--render]
   [--model PROVIDER/MODEL[:THINKING]] [--thinking LEVEL] [--bg|--background] [--request-id ID]
-  [--max-agents N] [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
+  [--max-cost-usd N] [--max-tokens N] [--max-duration-ms N]
 ${program} status <runId> [--verbose]
 ${program} poll <runId> [--interval 1s] [--until signal|done] [--once]
 ${program} watch <runId> [--interval 1s]
@@ -239,7 +239,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         json: { type: "boolean" }, home: { type: "string" }, cwd: { type: "string" }, help: { type: "boolean", short: "h" },
         args: { type: "string" }, "args-file": { type: "string" }, model: { type: "string" }, thinking: { type: "string" },
         "request-id": { type: "string" }, "keep-worktrees": { type: "boolean" },
-        bg: { type: "boolean" }, background: { type: "boolean" }, "max-agents": { type: "string" },
+        bg: { type: "boolean" }, background: { type: "boolean" },
         "max-cost-usd": { type: "string" }, "max-tokens": { type: "string" }, "budget-tokens": { type: "string" },
         "max-duration-ms": { type: "string" }, verbose: { type: "boolean" }, status: { type: "string" },
         all: { type: "boolean" }, from: { type: "string" }, "allow-changed": { type: "boolean" },
@@ -341,7 +341,6 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
           workflowArgs = { expression: format(ast), args: workflowArgs ?? {}, presetDirs, env: forwardedEnv(env) };
         } else if (values.render) throw new CliError("--render applies to presets and expressions.");
         const budget = {
-          maxAgents: numberOption(values["max-agents"], "max-agents", true),
           maxCostUsd: numberOption(values["max-cost-usd"], "max-cost-usd"),
           maxTokens: numberOption(values["max-tokens"] ?? values["budget-tokens"], "max-tokens", true),
           maxDurationMs: numberOption(values["max-duration-ms"], "max-duration-ms", true),
@@ -473,7 +472,7 @@ export async function runCli(argv: string[], context: CliContext = {}): Promise<
         const directory = join(cwd, ".pi", "workflows");
         const path = join(directory, `${name}.ts`);
         await mkdir(directory, { recursive: true });
-        try { await writeFile(path, template(name), { flag: "wx" }); }
+        try { await writeFile(path, template(), { flag: "wx" }); }
         catch (error) {
           if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new CliError(`${path} already exists; edit it or choose another name.`);
           throw error;
