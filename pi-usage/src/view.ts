@@ -1,7 +1,33 @@
 import type { Theme } from "@earendil-works/pi-coding-agent";
-import { Key, matchesKey, ScrollView, Text, truncateToWidth, type Component, type KeybindingsManager, type TUI, type TuiMouseEvent } from "@earendil-works/pi-tui";
+import { Key, matchesKey, ScrollView, Text, truncateToWidth, visibleWidth, type Component, type KeybindingsManager, type TUI, type TuiMouseEvent } from "@earendil-works/pi-tui";
 import { formatUsage } from "./format.ts";
 import type { UsageResult } from "./types.ts";
+
+type CompositeLineAt = (base: string, overlay: string, col: number, overlayWidth: number, totalWidth: number) => string;
+
+/**
+ * pi-tui keeps a chat row that anchors an image instead of drawing an overlay on
+ * it, then places the image over the overlay. While the usage view is open, treat
+ * rows under a full-width overlay as blank, so their images are removed and not
+ * drawn again. This relies on pi-tui's private compositeLineAt and does nothing if
+ * that method is missing.
+ */
+function hideImagesUnderFullWidthOverlays(tui: object): () => void {
+  const target = tui as { compositeLineAt?: CompositeLineAt; requestRender?: (force?: boolean) => void };
+  const original = target.compositeLineAt;
+  if (typeof original !== "function") return () => {};
+  const hadOwn = Object.hasOwn(tui, "compositeLineAt");
+  const patched: CompositeLineAt = (base, overlay, col, overlayWidth, totalWidth) =>
+    original.call(tui, col === 0 && overlayWidth >= totalWidth ? "" : base, overlay, col, overlayWidth, totalWidth);
+  target.compositeLineAt = patched;
+  return () => {
+    if (target.compositeLineAt === patched) {
+      if (hadOwn) target.compositeLineAt = original;
+      else delete target.compositeLineAt;
+    }
+    target.requestRender?.(true);
+  };
+}
 
 /** Built from Pi's layout, wrapping, scroll and input components, not another TUI. */
 export class UsageView implements Component {
@@ -27,8 +53,11 @@ export class UsageView implements Component {
     this.heading = heading;
     this.body = body;
     this.scroll = scroll;
+    this.restoreImages = hideImagesUnderFullWidthOverlays(tui);
     this.refresh();
   }
+
+  private readonly restoreImages: () => void;
 
   refresh(): void {
     if (this.disposed || this.request) return;
@@ -69,8 +98,19 @@ export class UsageView implements Component {
   render(width: number): string[] {
     // Pi 1.4 overlays call render() directly in BOTH screen modes, bypassing the
     // layout engine. Supply the viewport to ScrollView and clip here so neither
-    // the footer nor later providers disappear below the overlay's maxHeight.
-    const height = Math.max(1, Math.floor((this.tui.terminal?.rows ?? 24) * 0.85));
+    // the footer nor later providers disappear below the overlay.
+    const height = Math.max(1, this.tui.terminal?.rows ?? 24);
+    // Overlays are composited over the chat without clearing it. Fill the whole
+    // screen, with no border, so the terminal's own row selection copies only usage text.
+    // One column of left padding, matching Pi's chat messages.
+    const pad = width > 1 ? " " : "";
+    const lines = this.renderContent(width - pad.length, height).map((line) => pad + line);
+    const footer = lines.length > 1 ? lines.splice(-1) : [];
+    while (lines.length + footer.length < height) lines.push("");
+    return [...lines, ...footer].map((line) => line + " ".repeat(Math.max(0, width - visibleWidth(line))));
+  }
+
+  private renderContent(width: number, height: number): string[] {
     const heading = height >= 4 ? this.heading.render(width).slice(0, 1) : [];
     const footer = height >= 2 ? [truncateToWidth("r refresh · ↑/↓ scroll · PgUp/PgDn · Enter/Esc close", width)] : [];
     const gap = height >= 8 ? [""] : [];
@@ -117,5 +157,6 @@ export class UsageView implements Component {
     if (this.disposed) return;
     this.disposed = true;
     this.request?.abort();
+    this.restoreImages();
   }
 }

@@ -110,8 +110,12 @@ test("overlay viewport stays bounded, scrolls to later providers and resizes", a
   ]);
   await tick();
   let lines = view.render(70);
-  assert.ok(lines.length <= Math.floor(terminal.rows * 0.85));
+  assert.equal(lines.length, terminal.rows, "fills the screen so no chat shows below");
   assert.match(lines.at(-1)!, /r refresh/);
+  assert.doesNotMatch(lines.join("\n"), /[│╭╮╰╯]/, "no border to pollute terminal selection");
+  assert.ok(lines.every((line) => visibleWidth(line) === 70), "every row covers the overlay width");
+  assert.ok(lines.every((line) => line.startsWith(" ")), "one column of left padding like the chat");
+  assert.match(lines[0]!, /^ Account usage/);
   assert.doesNotMatch(lines.join("\n"), /Second provider/);
   for (let i = 0; i < 12; i++) view.handleInput("down");
   lines = view.render(70);
@@ -120,10 +124,10 @@ test("overlay viewport stays bounded, scrolls to later providers and resizes", a
   assert.match(view.render(70).join("\n"), /Manage usage/);
   terminal.rows = 8;
   lines = view.render(20);
-  assert.ok(lines.length <= Math.floor(terminal.rows * 0.85));
+  assert.ok(lines.length <= terminal.rows);
   assert.ok(lines.every((line) => visibleWidth(line) <= 20));
   terminal.rows = 3;
-  assert.ok(view.render(20).length <= Math.floor(terminal.rows * 0.85));
+  assert.ok(view.render(20).length <= terminal.rows);
   view.dispose();
 });
 
