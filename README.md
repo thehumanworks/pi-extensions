@@ -13,28 +13,27 @@ pi install npm:@nothumanwork/pi-advisor
 pi install npm:@nothumanwork/pi-loop@0.1.0
 ```
 
-| Package | Source and documentation |
-| --- | --- |
-| `@nothumanwork/pi-advisor` | [pi-advisor](pi-advisor/README.md) |
-| `@nothumanwork/pi-agent` | [pi-agent](pi-agent/README.md) — home-rooted specialists, native sessions and scheduled loops |
-| `@nothumanwork/pi-atlassian` | [pi-atlassian](pi-atlassian/README.md) |
-| `@nothumanwork/pi-background-compaction` | [pi-background-compaction](pi-background-compaction/README.md) |
-| `@nothumanwork/pi-bot` | [pi-bot](pi-bot/README.md) — named bots that run as native Pi sessions in their own home directory |
-| `@nothumanwork/pi-canary` | [pi-canary](pi-canary/README.md) |
-| `@nothumanwork/pi-create-document` | [pi-create-document](pi-create-document/README.md) — create, convert and read PDF, Word, PowerPoint, Excel, CSV and PNG files with no system tools |
-| `@nothumanwork/pi-fast` | [pi-fast](pi-fast/README.md) |
-| `@nothumanwork/pi-idle-compaction` | [pi-idle-compaction](pi-idle-compaction/README.md) — compact a large conversation once it has sat idle past the prompt cache lifetime |
-| `@nothumanwork/pi-loggly` | [pi-loggly](pi-loggly/README.md) — Loggly log tools, health dashboard and status line |
-| `@nothumanwork/pi-loop` | [pi-loop](pi-loop/README.md) |
-| `@nothumanwork/pi-memory` | [pi-memory](pi-memory/README.md) |
-| `@nothumanwork/asx` | [asx](asx/README.md) — presets, workflow expressions and durable TypeScript workflows whose agents are full pi sessions |
-| `@nothumanwork/pi-remote` | [pi-remote](pi-remote/README.md) |
-| `@nothumanwork/pi-tps` | [pi-tps](pi-tps/README.md) |
-| `@nothumanwork/pi-usage` | [pi-usage](pi-usage/README.md) — account usage limits and reset times |
-| `@nothumanwork/pi-voice` | [pi-voice](pi-voice/README.md) |
-| `@nothumanwork/pi-workspace` | [pi-workspace](pi-workspace/README.md) — Confluence folders/pages as local knowledge workspaces, with reviewed skill snapshots; no FUSE |
-| `@nothumanwork/pi-worktree` | [pi-worktree](pi-worktree/README.md) — run Pi in a git worktree |
-| `@nothumanwork/pi-xai` | [pi-xai](pi-xai/README.md) |
+| Package                                  | Source and documentation                                                                                                                           |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@nothumanwork/pi-advisor`               | [pi-advisor](pi-advisor/README.md)                                                                                                                 |
+| `@nothumanwork/pi-agent`                 | [pi-agent](pi-agent/README.md) — home-rooted specialists, native sessions and scheduled loops                                                      |
+| `@nothumanwork/pi-atlassian`             | [pi-atlassian](pi-atlassian/README.md)                                                                                                             |
+| `@nothumanwork/pi-background-compaction` | [pi-background-compaction](pi-background-compaction/README.md)                                                                                     |
+| `@nothumanwork/pi-bot`                   | [pi-bot](pi-bot/README.md) — named bots that run as native Pi sessions in their own home directory                                                 |
+| `@nothumanwork/pi-canary`                | [pi-canary](pi-canary/README.md)                                                                                                                   |
+| `@nothumanwork/pi-create-document`       | [pi-create-document](pi-create-document/README.md) — create, convert and read PDF, Word, PowerPoint, Excel, CSV and PNG files with no system tools |
+| `@nothumanwork/pi-fast`                  | [pi-fast](pi-fast/README.md)                                                                                                                       |
+| `@nothumanwork/pi-idle-compaction`       | [pi-idle-compaction](pi-idle-compaction/README.md) — compact a large conversation once it has sat idle past the prompt cache lifetime              |
+| `@nothumanwork/pi-loggly`                | [pi-loggly](pi-loggly/README.md) — Loggly log tools, health dashboard and status line                                                              |
+| `@nothumanwork/pi-loop`                  | [pi-loop](pi-loop/README.md)                                                                                                                       |
+| `@nothumanwork/pi-memory`                | [pi-memory](pi-memory/README.md)                                                                                                                   |
+| `@nothumanwork/pi-remote`                | [pi-remote](pi-remote/README.md)                                                                                                                   |
+| `@nothumanwork/pi-tps`                   | [pi-tps](pi-tps/README.md)                                                                                                                         |
+| `@nothumanwork/pi-usage`                 | [pi-usage](pi-usage/README.md) — account usage limits and reset times                                                                              |
+| `@nothumanwork/pi-voice`                 | [pi-voice](pi-voice/README.md)                                                                                                                     |
+| `@nothumanwork/pi-workspace`             | [pi-workspace](pi-workspace/README.md) — Confluence folders/pages as local knowledge workspaces, with reviewed skill snapshots; no FUSE            |
+| `@nothumanwork/pi-worktree`              | [pi-worktree](pi-worktree/README.md) — run Pi in a git worktree                                                                                    |
+| `@nothumanwork/pi-xai`                   | [pi-xai](pi-xai/README.md)                                                                                                                         |
 
 Pi 1.4.0 supports Git repository installs but does not offer a Git subdirectory selector. Use npm package names for separate remote installs. Before publishing, you can install a workspace directly from this checkout:
 
