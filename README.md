@@ -26,8 +26,8 @@ pi install npm:@nothumanwork/pi-loop@0.1.0
 | `@nothumanwork/pi-idle-compaction`       | [pi-idle-compaction](pi-idle-compaction/README.md) — compact a large conversation once it has sat idle past the prompt cache lifetime              |
 | `@nothumanwork/pi-loggly`                | [pi-loggly](pi-loggly/README.md) — Loggly log tools, health dashboard and status line                                                              |
 | `@nothumanwork/pi-loop`                  | [pi-loop](pi-loop/README.md)                                                                                                                       |
-| `@nothumanwork/pi-memory`                | [pi-memory](pi-memory/README.md)                                                                                                                   |
 | `@nothumanwork/pi-remote`                | [pi-remote](pi-remote/README.md)                                                                                                                   |
+| `@nothumanwork/pi-time-travel`           | [pi-time-travel](pi-time-travel/README.md) — stop an agent's rule violations before they take effect, correct it, and resume; Pi and Claude Code   |
 | `@nothumanwork/pi-tps`                   | [pi-tps](pi-tps/README.md)                                                                                                                         |
 | `@nothumanwork/pi-usage`                 | [pi-usage](pi-usage/README.md) — account usage limits and reset times                                                                              |
 | `@nothumanwork/pi-voice`                 | [pi-voice](pi-voice/README.md)                                                                                                                     |

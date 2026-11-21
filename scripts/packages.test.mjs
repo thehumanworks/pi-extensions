@@ -68,6 +68,11 @@ for (const { directory: dir } of workspaces) {
       assert.ok(![...files].some(f => f.startsWith('eval/')));
       assert.ok(files.has('LICENSE'));
     }
+    if (dir === 'pi-recall') {
+      for (const file of ['src/recall.ts', 'src/summaries/service.ts', 'src/summaries/store.ts', 'src/summaries/tool.ts']) assert.ok(files.has(file), `missing ${file}`);
+      for (const file of ['src/testing.ts', 'src/test-setup.ts']) assert.ok(!files.has(file), `test helper included: ${file}`);
+      assert.equal(pkg.dependencies['proper-lockfile'], '4.1.2');
+    }
     if (dir === 'pi-xai') assert.ok(files.has('dist/src/index.js'));
     if (dir === 'pi-workspace') {
       for (const file of ['src/extension.ts', 'src/confluence.ts', 'src/workspace.ts', 'src/model.ts', 'src/store.ts', 'src/operations.ts', 'src/migration.ts']) assert.ok(files.has(file), `missing ${file}`);
@@ -81,16 +86,5 @@ for (const { directory: dir } of workspaces) {
       for (const file of ['src/config.ts', 'src/controller.ts', 'src/plan.ts', 'src/prompts.ts', 'src/summarize.ts']) assert.ok(files.has(file), `missing ${file}`);
       assert.ok(![...files].some(f => f.startsWith('eval/')));
     }
-    if (dir === 'pi-memory') {
-      assert.ok(files.has('prompts/memory-agent.preset.md'));
-      assert.ok(files.has('src/capture.ts'));
-      assert.ok(files.has('src/store.ts'));
-      assert.ok(![...files].some(f => f.startsWith('eval/')));
-    }
   });
 }
-
-test('the vendored pi-durable job queue is identical in every package', () => {
-  const [compaction, memory] = ['pi-background-compaction', 'pi-memory'].map(dir => readFileSync(new URL(`${dir}/src/jobs.ts`, root), 'utf8'));
-  assert.equal(memory, compaction, 'copy pi-background-compaction/src/jobs.ts to pi-memory/src/jobs.ts');
-});

@@ -309,7 +309,7 @@ describe("labels in /tree", () => {
     current.appendLabelChange(c, "mine");
     const { labels, settle } = treeLabels(current);
     let idle = false;
-    const ctx = { sessionManager: current, isIdle: () => idle };
+    const ctx = { sessionManager: current, isIdle: () => idle, isProjectTrusted: () => true };
 
     labels.request(ctx, sid, a, true);
     labels.request(ctx, sid, c, true);

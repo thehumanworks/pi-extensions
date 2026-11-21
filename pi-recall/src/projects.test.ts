@@ -6,11 +6,11 @@ import { type ExtensionToolContext, getAgentDir, type Theme } from "@earendil-wo
 import { marksSection } from "./marks/reader.ts";
 import { MarkStore } from "./marks/store.ts";
 import { createMarkTool } from "./marks/tool.ts";
-import { matchProjects, type Project, projectIndex, projectName, readRecallConfig, resolveScope } from "./projects.ts";
+import { matchProjects, type Project, projectIndex, projectName, readRecallConfig, resolveScope, SETTINGS_KEY } from "./projects.ts";
 import { recall } from "./recall.ts";
 import { search } from "./search.ts";
 import { recallSessions } from "./sessions-tool.ts";
-import { context, workspace } from "./testing.ts";
+import { context, recallConfig, workspace } from "./testing.ts";
 
 const at = (...paths: string[]): Project[] => paths.map((path) => ({ path, sessionDir: "" }));
 
@@ -44,6 +44,20 @@ describe("naming projects", () => {
     expect(projects.map((p) => projectName(p, projects))).toEqual(["pi-memory", "pi-memory-old", "b/nixos", "c/nixos", "notes"]);
   });
 
+  test("recallConfig names projects as a list, or by project in a map", async () => {
+    const ws = await workspace();
+    const p = await ws.project("app");
+    const current: Project = { path: p.cwd, sessionDir: "" };
+    const agentDir = join(ws.root, "agent");
+    await mkdir(agentDir);
+    expect(await readRecallConfig(current, true, agentDir)).toEqual([]);
+    await writeFile(join(agentDir, "settings.json"), JSON.stringify({ [SETTINGS_KEY]: { app: ["app-old"], "other/app": ["nope"], "~/elsewhere": ["nope"] } }));
+    await recallConfig(p.cwd, ["pi-memory", "~/notes"]);
+    expect(await readRecallConfig(current, true, agentDir)).toEqual(["app-old", "pi-memory", "~/notes"]);
+    expect(await readRecallConfig(current, false, agentDir)).toEqual(["app-old"]);
+    await recallConfig(p.cwd, "pi-memory");
+    await expect(readRecallConfig(current, true, agentDir)).rejects.toThrow(`${SETTINGS_KEY} in ${join(p.cwd, ".pi", "settings.json")} must map projects`);
+  });
 });
 
 describe("recallConfig in pi's settings", () => {
@@ -185,6 +199,7 @@ for (const shared of [false, true]) {
         await rm(global);
       }
       await projectSettings(now.cwd, ["pi-memory"]);
+      expect(await marksSection(ctx)).toContain(`project="${old.cwd}"`);
       expect((await recall(ctx)).sessions[0]!.entries[0]).toMatchObject({ mark: { by: "agent", reason: "Chose the store" } });
     });
   });
