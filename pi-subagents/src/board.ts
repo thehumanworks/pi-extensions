@@ -2,19 +2,23 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import type { AgentMessage } from "@earendil-works/pi-agent-core";
+import type { AgentMessage, ThinkingLevel } from "@earendil-works/pi-agent-core";
 
 import type { FileEntry } from "@earendil-works/pi-coding-agent";
 
 export type State = "queued" | "running" | "waiting" | "blocked" | "failed" | "done";
-export type Job = {
+export type WorkerConfig = {
+  provider: string;
+  model: string;
+  reasoningEffort?: ThinkingLevel;
+  systemPrompt?: string;
+};
+export type Job = WorkerConfig & {
   id: string;
   parent: string | null;
   depth: number;
   state: State;
   task: string;
-  provider: string;
-  model: string;
   prompt: string;
   history: AgentMessage[];
   entries?: FileEntry[];
@@ -106,17 +110,26 @@ export class Board {
       )
       .run(j.id, j.state, JSON.stringify(j));
   }
-  add(task: string, provider: string, model: string, parent: Job | null = null) {
+  add(task: string, config: WorkerConfig) {
+    return this.enqueue(task, config, null, 1);
+  }
+  private enqueue(
+    task: string,
+    { provider, model, reasoningEffort, systemPrompt }: WorkerConfig,
+    parent: string | null,
+    depth: number,
+  ) {
     if (!task.trim()) throw new Error("Task cannot be empty.");
-    const depth = (parent?.depth ?? 0) + 1;
     if (depth > this.limits().depth) throw new Error("Delegation depth limit reached.");
     const j: Job = {
       id: randomUUID(),
-      parent: parent?.id ?? null,
+      parent,
       depth,
       task,
       provider,
       model,
+      reasoningEffort,
+      systemPrompt,
       state: "queued",
       history: [],
       prompt: task,
@@ -200,7 +213,7 @@ export class Board {
       j.note = outcome.text;
       j.dirty = false;
       if (outcome.kind === "delegate" && j.depth < this.limits().depth) {
-        const child = this.add(outcome.text, j.provider, j.model, j);
+        const child = this.enqueue(outcome.text, j, j.id, j.depth + 1);
         j.state = "waiting";
         j.note = "Waiting for " + child.id;
       } else {

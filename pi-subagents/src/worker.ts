@@ -24,7 +24,7 @@ export async function runWorker(
   const inherited = accessible(pi);
   const active = pi.getActiveTools().filter((n) => !management.has(n));
   const systemPrompt =
-    ctx.getSystemPrompt() +
+    (job.systemPrompt ?? ctx.getSystemPrompt()) +
     "\nYou are a background worker speaking only to the lead. Use the provided tools. Return your result as your final answer. If blocked, start the final answer with BLOCKED: followed by what you need." +
     (job.depth < board.limits().depth
       ? " To delegate one narrower task and wait for its result, return DELEGATE: followed by the full assignment."
@@ -48,7 +48,7 @@ export async function runWorker(
     sessionManager: manager,
     settingsManager,
     resourceLoader,
-    thinkingLevel: ctx.thinkingLevel,
+    thinkingLevel: job.reasoningEffort ?? ctx.thinkingLevel,
     tools: inherited.map((t) => t.name),
     excludeTools: [...management],
     customTools: inherited

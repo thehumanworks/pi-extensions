@@ -8,6 +8,8 @@ import { test, type TestContext } from "node:test";
 import { Board } from "../src/board.ts";
 import { Scheduler } from "../src/scheduler.ts";
 
+const worker = { provider: "p", model: "m" };
+
 function temp(t: TestContext) {
   const d = mkdtempSync(join(tmpdir(), "subagents-"));
   t.after(() => rmSync(d, { recursive: true, force: true }));
@@ -17,8 +19,8 @@ test("one owner; recover safe work but require reconciliation for an interrupted
   const dir = temp(t);
   let b = new Board(dir);
   assert.throws(() => new Board(dir), /locked|busy/i);
-  const a = b.add("A", "p", "m"),
-    c = b.add("C", "p", "m");
+  const a = b.add("A", worker),
+    c = b.add("C", worker);
   b.claim();
   b.claim();
   b.markMutation(a.id, "edit");
@@ -32,15 +34,29 @@ test("one owner; recover safe work but require reconciliation for an interrupted
   b.close();
 });
 test("a waiting parent releases its slot; child result and parent continuation commit together", (t) => {
-  const b = new Board(temp(t));
+  const dir = temp(t);
+  let b = new Board(dir);
   b.configure({ depth: 2, concurrency: 1 });
-  const j = b.add("top", "p", "m");
+  const config = { ...worker, reasoningEffort: "low" as const, systemPrompt: "Review only." };
+  const j = b.add("top", config);
   b.claim();
   b.finish(j.id, { kind: "delegate", text: "sub", history: [] });
+  b.close();
+  b = new Board(dir);
   const child = b.claim()!;
   assert.equal(child.depth, 2);
   assert.equal(b.get(j.id).state, "waiting");
-  assert.throws(() => b.add("too deep", "p", "m", child));
+  assert.equal(child.provider, config.provider);
+  assert.equal(child.model, config.model);
+  assert.equal(child.reasoningEffort, config.reasoningEffort);
+  assert.equal(child.systemPrompt, config.systemPrompt);
+  b.finish(child.id, { kind: "delegate", text: "too deep", history: [] });
+  assert.match(b.get(child.id).note, /Depth limit reached/);
+  b.resume(child.id, "Answer directly.");
+  const resumed = b.claim()!;
+  assert.equal(resumed.id, child.id);
+  assert.equal(resumed.systemPrompt, config.systemPrompt);
+  assert.equal(resumed.reasoningEffort, config.reasoningEffort);
   b.finish(child.id, { kind: "done", text: "answer", history: [] });
   assert.match(b.claim()!.prompt, /answer/);
   b.close();
@@ -49,7 +65,7 @@ test("global concurrency cap, nonblocking submission, bounded retries, and shutd
   const dir = temp(t),
     b = new Board(dir);
   b.configure({ concurrency: 2, depth: 1 });
-  const ids = ["fail", "hang", "hang"].map((s) => b.add(s, "p", "m").id);
+  const ids = ["fail", "hang", "hang"].map((s) => b.add(s, worker).id);
   let running = 0,
     peak = 0,
     attempts = 0;
@@ -100,7 +116,7 @@ test(
         "--input-type=module",
         "-e",
         `import {Board} from ${JSON.stringify(moduleUrl)};
-      const b=new Board(process.argv[1]); const j=b.add("write report","p","m");
+      const b=new Board(process.argv[1]); const j=b.add("write report",{provider:"p",model:"m"});
       b.claim(); b.markMutation(j.id,"write on report"); console.log(j.id); setInterval(()=>{},1000);`,
         dir,
       ],

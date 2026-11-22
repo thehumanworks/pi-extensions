@@ -5,6 +5,7 @@ import { getAgentDir, type ExtensionAPI, type ExtensionContext } from "@earendil
 import { Type } from "typebox";
 import { LeadBridge } from "./src/bridge.ts";
 import { Board } from "./src/board.ts";
+import { delegateParameters, resolveWorkerConfig, scopedModelChoices } from "./src/delegation.ts";
 import { Scheduler } from "./src/scheduler.ts";
 import { runWorker } from "./src/worker.ts";
 
@@ -82,6 +83,7 @@ export default function (pi: ExtensionAPI) {
     if (ctx.sessionManager.getSessionFile() && existsSync(join(directory(ctx), "board.sqlite"))) open(ctx);
   });
   pi.on("before_agent_start", (event, ctx) => {
+    const models = scopedModelChoices(ctx.scopedModels ?? []);
     const jobs = scheduler?.board.summaries() ?? [];
     const active = jobs.filter((j) => j.state !== "done" && j.state !== "failed");
     const status = active
@@ -92,6 +94,7 @@ export default function (pi: ExtensionAPI) {
       systemPrompt:
         event.systemPrompt +
         "\nSubagents inherit this session's tools except subagent management. Include necessary context when delegating. Wait for completion or blocker messages instead of polling." +
+        (models ? "\nScoped worker models: " + models : "") +
         (status ? "\nWorker board (" + active.length + " unfinished): " + status : ""),
     };
   });
@@ -105,14 +108,13 @@ export default function (pi: ExtensionAPI) {
     label: "Delegate",
     description:
       "Queue an independent assignment and return immediately. Give all needed context. You receive completion and blocker messages; do not poll.",
-    parameters: Type.Object({ task: Type.String({ minLength: 1 }) }),
+    parameters: delegateParameters,
     prepareLoadout: (loadout) => bridge.capture(loadout),
     async execute(_id, params, _s, _u, ctx) {
       if (bridge.bind(params, ctx)) return reply("");
-      const { task } = params;
-      if (!ctx.model) throw new Error("Select a Pi model first.");
+      const config = resolveWorkerConfig(params, ctx, pi.getSettings());
       const s = open(ctx);
-      const j = s.board.add(task, ctx.model.provider, ctx.model.id);
+      const j = s.board.add(params.task, config);
       s.wake();
       return reply({ id: j.id, state: j.state });
     },

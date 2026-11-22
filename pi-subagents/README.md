@@ -13,7 +13,30 @@ pi
 
 After publication: `pi install npm:@nothumanwork/pi-subagents`.
 
-Ask the lead: “Delegate a review of these requirements for contradictions. While that runs, help me choose acceptance tests.” The worker gets the assignment, the lead's system instructions, and its **own** conversation, not a copy of the lead's message history. Workers use the provider and model selected at dispatch through Pi's model registry and request-time authentication. There is no separate API key, hosted workflow service, or worker daemon.
+Ask the lead: “Delegate a review of these requirements for contradictions. While that runs, help me choose acceptance tests.” The worker gets the assignment and its **own** conversation, not a copy of the lead's message history. By default it uses the lead's active model, thinking level, and system instructions. Workers use Pi's model registry and request-time authentication. There is no separate API key, hosted workflow service, or worker daemon.
+
+### Choose worker settings
+
+Only `task` is required. A lead can set any combination of the other arguments on `subagent_delegate` without changing the lead session:
+
+| Argument | If supplied | If omitted |
+| --- | --- | --- |
+| `model` | An exact `<provider>/<model>` from the lead's `/scoped-models` list. Model IDs can contain slashes. | Use the lead's active model, even if no scope is configured. |
+| `reasoningEffort` | A Pi thinking level: `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. Pi limits the level to what the model supports. | Keep the lead's level. For an explicit model, use the first level set: scope, per-model setting, global setting, or lead session. |
+| `systemPrompt` | Literal text (not a file path) that replaces the inherited system prompt for this worker. Worker reporting instructions and tool permissions still apply. | Inherit the lead's effective system prompt when the worker starts or resumes. |
+
+For example, replace the model placeholder below with a name from your scope:
+
+```json
+{
+  "task": "Find contradictions in the requirements and cite the conflicting lines.",
+  "model": "<provider>/<model>",
+  "reasoningEffort": "high",
+  "systemPrompt": "You are a requirements reviewer. Report only contradictions supported by the text."
+}
+```
+
+Pi resolves the scope from `/scoped-models`, `enabledModels`, or `--models`. If the scope is empty, omit `model` or configure a scope first. An out-of-scope name fails before the task is queued. The selected provider receives the worker's prompt, assignment, and tool results. Retries, resumes, and child tasks keep the saved model, effort, and any custom prompt.
 
 ### Worker access
 

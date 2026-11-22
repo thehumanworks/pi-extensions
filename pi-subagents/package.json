@@ -1,6 +1,6 @@
 {
   "name": "@nothumanwork/pi-subagents",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Session-owned asynchronous Pi workers with a durable task board",
   "keywords": [

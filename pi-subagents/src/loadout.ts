@@ -62,7 +62,10 @@ export async function resources(pi: ExtensionAPI, ctx: ExtensionContext, tools: 
     noThemes: true,
     noPromptTemplates: true,
     noContextFiles: true,
-    systemPrompt: prompt,
+    // The prompt is complete. Skip SYSTEM.md / APPEND_SYSTEM.md discovery and treat it as literal text.
+    systemPrompt: "",
+    appendSystemPrompt: [],
+    systemPromptOverride: () => prompt,
     extensionsOverride(result) {
       return { ...result, extensions: result.extensions.filter((e) => !e.tools.has("subagent_delegate")) };
     },
