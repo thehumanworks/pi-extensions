@@ -16,6 +16,8 @@ export type WorkerConfig = {
 export type Job = WorkerConfig & {
   id: string;
   parent: string | null;
+  waitingFor?: string;
+  notifyLead?: true;
   depth: number;
   state: State;
   task: string;
@@ -35,6 +37,8 @@ export type Outcome = {
   entries?: FileEntry[];
 };
 export type Limits = { concurrency: number; depth: number };
+
+const waitingNotePrefix = "Waiting for ";
 
 export function checkLimits({ concurrency, depth }: Limits) {
   if (
@@ -58,7 +62,10 @@ export class Board {
       this.db.exec(
         "PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, state TEXT NOT NULL, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS config(value TEXT NOT NULL); COMMIT;",
       );
-      for (const j of this.list("running")) this.interrupt(j);
+      this.transaction(() => {
+        for (const j of this.list("running")) this.interrupt(j);
+        this.recoverFailedChildren();
+      });
     } catch (err) {
       this.db.close();
       throw err;
@@ -66,6 +73,16 @@ export class Board {
   }
   close() {
     this.db.close();
+  }
+  private transaction(fn: () => void) {
+    this.db.exec("BEGIN");
+    try {
+      fn();
+      this.db.exec("COMMIT");
+    } catch (err) {
+      this.db.exec("ROLLBACK");
+      throw err;
+    }
   }
   limits(): Limits {
     const row = this.db.prepare("SELECT value FROM config").get();
@@ -82,9 +99,10 @@ export class Board {
     return rows.map((r) => JSON.parse(String(r.data)));
   }
   summaries() {
-    return this.db
+    const rows = this.db
       .prepare(
         `SELECT id,state,json_extract(data,'$.parent') parent,
+      json_extract(data,'$.notifyLead') notifyLead,
       json_extract(data,'$.revision') revision,substr(json_extract(data,'$.task'),1,180) task,
       substr(json_extract(data,'$.note'),1,1200) note FROM jobs ORDER BY rowid`,
       )
@@ -92,10 +110,12 @@ export class Board {
       id: string;
       state: State;
       parent: string | null;
+      notifyLead: number | null;
       revision: number;
       task: string;
       note: string;
     }[];
+    return rows.map((row) => ({ ...row, notifyLead: row.notifyLead === 1 }));
   }
   get(id: string): Job {
     const row = this.db.prepare("SELECT data FROM jobs WHERE id=?").get(id);
@@ -180,6 +200,7 @@ export class Board {
     j.state = j.dirty ? "blocked" : j.attempts >= 3 ? "failed" : "queued";
     j.note = error + (j.dirty ? ". " + j.note + " Verify the outcome before resuming." : "");
     this.save(j);
+    if (j.state === "failed") this.releaseParent(j);
   }
   pause(id: string) {
     const j = this.get(id);
@@ -188,8 +209,9 @@ export class Board {
   }
   fail(id: string, reason: string, delayMs = 1000) {
     const j = this.get(id);
+    if (j.state !== "running") return;
     j.readyAt = Date.now() + delayMs * 2 ** Math.max(0, j.attempts - 1);
-    this.interrupt(j, reason);
+    this.transaction(() => this.interrupt(j, reason));
   }
   resume(id: string, input: string) {
     const j = this.get(id);
@@ -204,9 +226,9 @@ export class Board {
     this.save(j);
   }
   finish(id: string, outcome: Outcome) {
-    this.db.exec("BEGIN");
-    try {
-      const j = this.get(id);
+    const j = this.get(id);
+    if (j.state !== "running") return;
+    this.transaction(() => {
       j.history = outcome.history;
       j.entries = outcome.entries;
       j.prompt = "";
@@ -215,23 +237,47 @@ export class Board {
       if (outcome.kind === "delegate" && j.depth < this.limits().depth) {
         const child = this.enqueue(outcome.text, j, j.id, j.depth + 1);
         j.state = "waiting";
-        j.note = "Waiting for " + child.id;
+        j.waitingFor = child.id;
+        j.note = waitingNotePrefix + child.id;
       } else {
         j.state = outcome.kind === "done" ? "done" : "blocked";
         if (outcome.kind === "delegate") j.note = "Depth limit reached. Requested: " + outcome.text;
-        if (j.parent && j.state === "done") {
-          const parent = this.get(j.parent);
-          parent.state = "queued";
-          parent.attempts = 0;
-          parent.prompt = "Child task " + j.id + " returned:\n" + outcome.text;
-          this.save(parent);
+        if (j.state === "done" && j.parent && !this.releaseParent(j)) {
+          // A parent that already received a failure may have moved on.
+          j.notifyLead = true;
         }
       }
       this.save(j);
-      this.db.exec("COMMIT");
-    } catch (err) {
-      this.db.exec("ROLLBACK");
-      throw err;
-    }
+    });
+  }
+  private recoverFailedChildren() {
+    // Older boards left parents waiting when their child exhausted retries.
+    const rows = this.db
+      .prepare(
+        `SELECT c.data FROM jobs p JOIN jobs c ON
+        c.id = coalesce(json_extract(p.data,'$.waitingFor'), substr(json_extract(p.data,'$.note'),?))
+        WHERE p.state='waiting' AND c.state='failed'`,
+      )
+      .all(waitingNotePrefix.length + 1);
+    for (const row of rows) this.releaseParent(JSON.parse(String(row.data)));
+  }
+  private releaseParent(child: Job): boolean {
+    if (!child.parent) return false;
+    const parent = this.get(child.parent);
+    if (parent.state !== "waiting") return false;
+    // The exact note identifies the pending child on boards without waitingFor.
+    const expected =
+      parent.waitingFor === undefined
+        ? parent.note === waitingNotePrefix + child.id
+        : parent.waitingFor === child.id;
+    if (!expected) return false;
+    parent.state = "queued";
+    parent.attempts = 0;
+    parent.note = "";
+    delete parent.waitingFor;
+    const result = child.state === "failed" ? " failed:\n" : " returned:\n";
+    parent.prompt = "Child task " + child.id + result + child.note;
+    this.save(parent);
+    return true;
   }
 }
