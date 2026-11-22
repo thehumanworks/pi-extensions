@@ -1,0 +1,49 @@
+{
+  "name": "@nothumanwork/pi-subagents",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Session-owned asynchronous Pi workers with a durable task board",
+  "keywords": [
+    "pi-package"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehumanworks/pi-extensions.git",
+    "directory": "pi-subagents"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-ai": "*",
+    "typebox": "*",
+    "@earendil-works/pi-agent-core": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/node": "^22.19.0",
+    "tsx": "^4.20.0",
+    "typebox": "1.4.3",
+    "typescript": "^5.9.3",
+    "@earendil-works/pi-agent-core": "1.4.0"
+  }
+}
