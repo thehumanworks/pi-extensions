@@ -38,7 +38,7 @@ export function registerUsage(pi: ExtensionAPI, providers: readonly UsageProvide
               collectUsage(selected, ctx.modelRegistry, AbortSignal.any([signal, controller.signal]), { activeProvider: ctx.model?.provider }));
             controller.signal.addEventListener("abort", () => view.close(), { once: true });
             return view;
-          }, { overlay: true, overlayOptions: { width: "90%", maxHeight: "85%" } });
+          }, { overlay: true, overlayOptions: { width: "100%", maxHeight: "100%" } });
         } else {
           const results = await collectUsage(selected, ctx.modelRegistry, controller.signal, { activeProvider: ctx.model?.provider });
           if (!controller.signal.aborted) ctx.ui.notify(formatUsage(results), "info");

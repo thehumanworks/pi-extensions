@@ -102,7 +102,7 @@ test("TUI command selects an overlay and exposes no extra model tools", async ()
   await h.command.handler("", { ...h.ctx, mode: "tui", ui: { ...h.ctx.ui, custom: async (_factory, options) => {
     custom = true;
     assert.equal(options?.overlay, true);
-    assert.deepEqual(options?.overlayOptions, { width: "90%", maxHeight: "85%" });
+    assert.deepEqual(options?.overlayOptions, { width: "100%", maxHeight: "100%" });
     return undefined;
   } } } as ExtensionCommandContext);
   assert.equal(custom, true);
